@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Task 009
+## Current State After Task 010
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, and gatekeeper report generation.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, and issue-scoped context pack generation.
 
 The Python scaffold defines a `cosheaf` package, a Typer-based `cosheaf` CLI entry point, development dependencies, Makefile targets, a Dockerfile for reproducible local development, and smoke tests for import and CLI help/version behavior.
 
@@ -19,6 +19,8 @@ The graph layer builds directed dependency edges from artifact to dependency, de
 The index rebuild command writes `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json` from scratch. The SQLite index stores artifact ID, type, status, path, title, and domain, plus deterministic dependency rows. The manifest ordering is deterministic and stable across delete-and-rebuild cycles.
 
 The gatekeeper command runs G1-G5 implemented gates and G6-G8 placeholder gates. It writes JSON and Markdown reports to `.cosheaf/reports/` by default, can persist copies under `reviews/gatekeeper/` with `--persist-review`, and exits nonzero when blocking issues exist. Placeholder gates are reported as skipped and do not pretend to pass.
+
+The agent harness layer now builds bounded deterministic context packs for issue IDs. Context packs are written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`, `ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and `COMMANDS.md`. Relevant artifacts are selected from the issue's related artifacts plus one dependency hop; draft artifacts are visibly labeled.
 
 No verifier adapters exist yet. No CI configuration exists yet.
 
@@ -57,6 +59,9 @@ No verifier adapters exist yet. No CI configuration exists yet.
 - Graph and index tests in `tests/test_claim_graph.py` and `tests/test_index_rebuild.py`.
 - Gatekeeper reports in `cosheaf/gates/gatekeeper.py`.
 - Gatekeeper tests in `tests/test_gatekeeper.py`.
+- Context pack generation in `cosheaf/agent/context_pack.py`.
+- Context pack CLI commands `cosheaf context build <issue-id>` and `cosheaf context show <issue-id>`.
+- Context pack tests in `tests/test_context_pack.py`.
 
 ## Not Implemented Yet
 
@@ -64,3 +69,4 @@ No verifier adapters exist yet. No CI configuration exists yet.
 - Verifier adapters.
 - Verifier gate, reproducibility metadata gate, and PR checklist gate beyond skipped placeholders.
 - CI.
+- Advanced relevance ranking beyond issue-related artifacts plus one dependency hop.

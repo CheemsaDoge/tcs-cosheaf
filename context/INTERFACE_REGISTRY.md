@@ -28,6 +28,10 @@
 - `cosheaf gate run`: explicit gatekeeper run command.
 - `cosheaf gate run --repo-root <path>`: runs the gatekeeper for an explicit repository root.
 - `cosheaf gate run --persist-review`: also persists report copies under `reviews/gatekeeper/`.
+- `cosheaf context build <issue-id>`: builds a bounded deterministic context pack under `context/TASKS/<issue-id>/`.
+- `cosheaf context build <issue-id> --repo-root <path>`: builds a context pack for an explicit repository root.
+- `cosheaf context show <issue-id>`: builds the context pack and prints `CONTEXT.md`.
+- `cosheaf context show <issue-id> --repo-root <path>`: shows context for an explicit repository root.
 
 ### Python API
 
@@ -136,6 +140,26 @@ The initial validation orchestrator is deterministic and filesystem-backed. It
 does not run verifier adapters. `run_gatekeeper` currently runs G1-G5 gates and
 records G6-G8 as skipped placeholders, writing JSON and Markdown reports under
 `.cosheaf/reports/` by default.
+
+#### Agent Context Packs
+
+- `cosheaf.agent.context_pack.ContextPackError`: expected context pack generation error, such as a missing issue ID.
+- `cosheaf.agent.context_pack.ContextPackResult`: written context pack metadata with issue ID, task directory, and file paths.
+- `cosheaf.agent.context_pack.build_context_pack(context: RepoContext, issue_id: str) -> ContextPackResult`
+- `cosheaf.agent.context_pack.show_context_pack(context: RepoContext, issue_id: str) -> str`
+
+Context pack generation loads repository YAML records, finds an issue by ID,
+selects artifacts from `related_artifacts` plus one dependency hop, prefers
+accepted artifacts before draft artifacts, visibly labels draft artifacts, and
+writes deterministic Markdown files under `context/TASKS/<issue-id>/`.
+
+Generated context pack files are:
+
+- `CONTEXT.md`
+- `ACCEPTANCE.md`
+- `RELEVANT_ARTIFACTS.md`
+- `KNOWN_FAILURES.md`
+- `COMMANDS.md`
 
 ### Makefile Targets
 

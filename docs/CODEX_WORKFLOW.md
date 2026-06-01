@@ -32,6 +32,26 @@ Architecture changes require ADR.
 
 Do not hide verification failures. If an intended command does not exist yet, the task must either implement it or clearly state why it is not available yet.
 
+## Context Packs
+
+Use `cosheaf context build <issue-id>` to generate a bounded task context pack
+under `context/TASKS/<issue-id>/`.
+
+Each context pack contains:
+
+- `CONTEXT.md`
+- `ACCEPTANCE.md`
+- `RELEVANT_ARTIFACTS.md`
+- `KNOWN_FAILURES.md`
+- `COMMANDS.md`
+
+Context packs are deterministic, issue-scoped, and intentionally short. They
+must prefer accepted artifacts over draft artifacts, visibly mark draft
+artifacts, and avoid including every repository artifact by default.
+
+Use `cosheaf context show <issue-id>` to build the pack and print the main
+context document for quick handoff into a new Codex conversation.
+
 ## Handoff
 
 User handoff messages should be written in Chinese. Project-facing documentation should remain in English unless a task explicitly requests otherwise.

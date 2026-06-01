@@ -7,6 +7,11 @@ import typer
 from rich.console import Console
 
 from cosheaf import __version__
+from cosheaf.agent.context_pack import (
+    ContextPackError,
+    build_context_pack,
+    show_context_pack,
+)
 from cosheaf.gates.gatekeeper import (
     GatekeeperRunResult,
     ValidationReport,
@@ -43,10 +48,16 @@ gate_app = typer.Typer(
     add_completion=False,
     help="Gatekeeper commands.",
 )
+context_app = typer.Typer(
+    add_completion=False,
+    help="Context pack commands.",
+    no_args_is_help=True,
+)
 app.add_typer(artifact_app, name="artifact")
 app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
 app.add_typer(gate_app, name="gate")
+app.add_typer(context_app, name="context")
 
 
 @app.command()
@@ -179,6 +190,48 @@ def gate_run(
 ) -> None:
     """Run gatekeeper checks and write JSON/Markdown reports."""
     _run_gatekeeper_cli(repo_root=repo_root, persist_review=persist_review)
+
+
+@context_app.command("build")
+def context_build(
+    issue_id: str = typer.Argument(..., help="Issue ID to build context for."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+) -> None:
+    """Build a bounded deterministic context pack for an issue."""
+    console = Console(width=120, markup=False)
+    try:
+        result = build_context_pack(RepoContext(repo_root), issue_id)
+    except ContextPackError as exc:
+        console.print(f"Context pack failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    console.print(f"Context pack built: {result.task_dir}")
+    for path in result.files:
+        console.print(f"- {path}")
+
+
+@context_app.command("show")
+def context_show(
+    issue_id: str = typer.Argument(..., help="Issue ID to show context for."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+) -> None:
+    """Build and print the main context document for an issue."""
+    console = Console(width=120, markup=False)
+    try:
+        rendered = show_context_pack(RepoContext(repo_root), issue_id)
+    except ContextPackError as exc:
+        console.print(f"Context pack failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    typer.echo(rendered, nl=False)
 
 
 def _run_validation(
