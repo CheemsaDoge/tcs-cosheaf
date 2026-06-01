@@ -1,0 +1,22 @@
+id: claim.fixture.b
+type: claim
+title: Fixture claim B
+domain:
+  - graph-theory
+status: draft
+created_at: "2026-06-01T00:00:00Z"
+updated_at: "2026-06-01T00:00:00Z"
+authors:
+  - fixture-author
+depends_on: []
+supersedes: []
+tags:
+  - fixture
+statement: Claim B.
+evidence: []
+review:
+  state: none
+  notes: ""
+risk:
+  level: low
+  notes: ""

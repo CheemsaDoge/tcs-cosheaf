@@ -1,0 +1,7 @@
+id: claim.fixture.bad
+type: claim
+title: Bad YAML
+status: draft
+authors:
+  - fixture-author
+statement: [unterminated

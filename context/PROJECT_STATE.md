@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Task 005
+## Current State After Task 006
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, and initial Pydantic v2 core artifact models.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, and filesystem-backed storage loading utilities.
 
 The Python scaffold defines a `cosheaf` package, a Typer-based `cosheaf` CLI entry point, development dependencies, Makefile targets, a Dockerfile for reproducible local development, and smoke tests for import and CLI help/version behavior.
 
@@ -10,7 +10,9 @@ The filesystem layout now includes accepted and draft knowledge-base directories
 
 The core model layer now defines artifact type and status enums, base artifact data models, artifact ID validation, timestamp validation, risk/evidence/review value objects, and pure status/path helper functions.
 
-No artifact loader exists yet. No repository scanning exists yet. No CLI schema validation exists yet. No gatekeeper implementation exists yet. No verifier adapters exist yet. No CI configuration exists yet.
+The storage layer now defines `RepoContext`, YAML discovery under `kb/`, `issues/`, and `examples/`, typed YAML loading into `BaseArtifact`, `IssueRecord`, or `ReviewRecord`, repository-relative source paths on loaded records, deterministic ordering by path then ID, clear load errors, and deterministic YAML writing helpers.
+
+No SQLite storage exists yet. No dependency graph exists yet. No CLI schema validation exists yet. No gatekeeper implementation exists yet. No verifier adapters exist yet. No CI configuration exists yet.
 
 ## Implemented
 
@@ -32,11 +34,13 @@ No artifact loader exists yet. No repository scanning exists yet. No CLI schema 
 - Pydantic v2 core models under `cosheaf/core/`.
 - Artifact status/path helper functions that do not scan the repository.
 - Model tests in `tests/test_artifact_models.py`.
+- Repository path helpers in `cosheaf/core/paths.py`.
+- Filesystem-backed storage context, loader, and writer under `cosheaf/storage/`.
+- Storage loader tests and fixtures in `tests/test_loader.py` and `tests/fixtures/`.
 
 ## Not Implemented Yet
 
-- Artifact loader.
-- Repository scanning.
+- SQLite storage.
 - Dependency graph.
 - Gatekeeper.
 - Verifier adapters.

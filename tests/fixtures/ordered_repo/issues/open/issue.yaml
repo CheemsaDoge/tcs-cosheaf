@@ -1,0 +1,14 @@
+id: issue.fixture.open
+type: issue
+title: Fixture open issue
+status: open
+created_at: "2026-06-01T00:00:00Z"
+updated_at: "2026-06-01T00:00:00Z"
+authors:
+  - fixture-author
+severity: low
+description: Fixture issue.
+related_artifacts:
+  - claim.fixture.a
+tags:
+  - fixture

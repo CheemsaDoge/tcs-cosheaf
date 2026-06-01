@@ -1,0 +1,5 @@
+id: claim.fixture.missing
+type: claim
+title: Missing fields
+status: draft
+statement: Missing required fields.
