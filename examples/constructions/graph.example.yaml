@@ -1,0 +1,27 @@
+id: construction.example.triangle-graph
+type: construction
+title: Triangle graph K_3
+domain:
+  - graph-theory
+status: draft
+created_at: "2026-06-01T00:00:00Z"
+updated_at: "2026-06-01T00:00:00Z"
+authors:
+  - example-author
+depends_on: []
+supersedes: []
+tags:
+  - complete-graph
+  - finite-graph
+statement: >
+  The triangle graph K_3 has vertices {a, b, c} and edges {ab, ac, bc}.
+evidence:
+  - kind: construction
+    path: examples/constructions/graph.example.yaml
+    summary: Explicit finite graph construction.
+review:
+  state: requested
+  notes: Example construction artifact only.
+risk:
+  level: low
+  notes: Small explicit object with no external dependencies.

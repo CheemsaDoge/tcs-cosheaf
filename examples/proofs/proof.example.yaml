@@ -1,0 +1,32 @@
+id: proof.example.complete-graph-edge-count
+type: proof
+title: Pair-counting proof for complete graph edge count
+domain:
+  - graph-theory
+  - combinatorics
+status: draft
+created_at: "2026-06-01T00:00:00Z"
+updated_at: "2026-06-01T00:00:00Z"
+authors:
+  - example-author
+depends_on:
+  - claim.example.complete-graph-edge-count
+supersedes: []
+tags:
+  - complete-graph
+  - counting
+statement: >
+  In K_n, every edge is uniquely determined by an unordered pair of distinct
+  vertices. There are n choices for the first endpoint and n - 1 choices for
+  the second endpoint, and each unordered pair is counted twice. Therefore the
+  number of edges is n(n - 1) / 2.
+evidence:
+  - kind: argument
+    path: examples/proofs/proof.example.yaml
+    summary: Direct combinatorial counting argument.
+review:
+  state: requested
+  notes: Example proof artifact only.
+risk:
+  level: low
+  notes: No machine checking is attached yet.

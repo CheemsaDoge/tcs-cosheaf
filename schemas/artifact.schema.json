@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/artifact.schema.json",
+  "title": "TCS-Cosheaf Artifact",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "type",
+    "title",
+    "domain",
+    "status",
+    "created_at",
+    "updated_at",
+    "authors",
+    "depends_on",
+    "supersedes",
+    "tags",
+    "statement",
+    "evidence",
+    "review",
+    "risk"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "definition",
+        "claim",
+        "theorem",
+        "conjecture",
+        "proof",
+        "proof_attempt",
+        "construction",
+        "algorithm",
+        "reduction",
+        "counterexample",
+        "experiment",
+        "review",
+        "verifier",
+        "issue"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "domain": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "status": {
+      "$ref": "#/$defs/status"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "supersedes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "statement": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "path", "summary"],
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "notes"],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["none", "requested", "in_review", "approved", "changes_requested"]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "notes"],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "status": {
+      "type": "string",
+      "enum": [
+        "raw",
+        "draft",
+        "locally_tested",
+        "adversarially_tested",
+        "machine_checked",
+        "human_reviewed",
+        "accepted",
+        "refuted",
+        "obsolete",
+        "superseded"
+      ]
+    }
+  }
+}

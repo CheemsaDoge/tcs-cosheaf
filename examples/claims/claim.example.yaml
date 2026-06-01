@@ -1,0 +1,29 @@
+id: claim.example.complete-graph-edge-count
+type: claim
+title: Complete graph edge count
+domain:
+  - graph-theory
+  - combinatorics
+status: draft
+created_at: "2026-06-01T00:00:00Z"
+updated_at: "2026-06-01T00:00:00Z"
+authors:
+  - example-author
+depends_on: []
+supersedes: []
+tags:
+  - complete-graph
+  - counting
+statement: >
+  For every integer n >= 1, the complete undirected graph K_n has n(n - 1) / 2
+  edges.
+evidence:
+  - kind: proof
+    path: examples/proofs/proof.example.yaml
+    summary: Counts unordered pairs of distinct vertices.
+review:
+  state: requested
+  notes: Example artifact for schema scaffolding; not an accepted knowledge-base claim.
+risk:
+  level: low
+  notes: Standard result, but example remains draft until validation and review exist.
