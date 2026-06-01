@@ -12,7 +12,12 @@
 
 - `cosheaf --help`: shows CLI help.
 - `cosheaf version`: prints the package version.
-- `cosheaf validate`: scaffold-only placeholder. It reports that artifact schema validation is not implemented yet and that no artifacts were checked.
+- `cosheaf validate`: validates repository YAML records discovered under `kb/`, `issues/`, and `examples/`.
+- `cosheaf validate --repo-root <path>`: validates a repository rooted at `<path>`.
+- `cosheaf validate --debug`: shows tracebacks for unexpected validation errors.
+- `cosheaf artifact validate <path>`: validates one YAML file with file-local checks.
+- `cosheaf artifact validate <path> --repo-root <path>`: resolves the artifact path against an explicit repository root.
+- `cosheaf artifact validate <path> --debug`: shows tracebacks for unexpected validation errors.
 - `cosheaf gate`: scaffold-only placeholder. It reports that gatekeeper enforcement is not implemented yet and that no repository gates were enforced.
 
 ### Python API
@@ -72,12 +77,31 @@ The writer preserves mapping insertion order by disabling YAML key sorting.
 
 Storage does not use SQLite and does not implement gatekeeper behavior.
 
+#### Validation Gates
+
+- `cosheaf.gates.schema_gate.ValidationFailure`: deterministic validation failure row.
+- `cosheaf.gates.schema_gate.SchemaGateResult`: schema/model loading result.
+- `cosheaf.gates.schema_gate.load_schema_valid_records(context: RepoContext) -> SchemaGateResult`
+- `cosheaf.gates.schema_gate.load_schema_valid_record(context: RepoContext, path: Path) -> SchemaGateResult`
+- `cosheaf.gates.schema_gate.sort_failures(failures: Iterable[ValidationFailure]) -> tuple[ValidationFailure, ...]`
+- `cosheaf.gates.status_gate.validate_status_paths(records: tuple[LoadedRecord, ...]) -> list[ValidationFailure]`
+- `cosheaf.gates.status_gate.validate_evidence_paths(context: RepoContext, records: tuple[LoadedRecord, ...]) -> list[ValidationFailure]`
+- `cosheaf.gates.dependency_gate.validate_id_uniqueness(records: tuple[LoadedRecord, ...]) -> list[ValidationFailure]`
+- `cosheaf.gates.dependency_gate.validate_dependencies(records: tuple[LoadedRecord, ...]) -> list[ValidationFailure]`
+- `cosheaf.gates.gatekeeper.ValidationReport`: validation report with loaded records and failures.
+- `cosheaf.gates.gatekeeper.validate_repository(context: RepoContext) -> ValidationReport`
+- `cosheaf.gates.gatekeeper.validate_artifact_file(context: RepoContext, path: Path) -> ValidationReport`
+
+The initial validation orchestrator is deterministic and filesystem-backed. It
+does not run verifier adapters, build a dependency graph, use SQLite, or enforce
+the full future `cosheaf gate` workflow.
+
 ### Makefile Targets
 
 - `make lint`: runs `python -m ruff check .`
 - `make typecheck`: runs `python -m mypy cosheaf tests`
 - `make test`: runs `python -m pytest`
-- `make validate`: runs the scaffold-only CLI validation placeholder.
+- `make validate`: runs `python -m cosheaf.cli validate`.
 - `make gate`: runs the scaffold-only CLI gate placeholder.
 
 ## Registration Rule

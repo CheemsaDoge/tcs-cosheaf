@@ -8,11 +8,13 @@ Gates enforce repository invariants before artifacts or behavior changes are acc
 
 ### Schema Gate
 
-Checks that every artifact conforms to the project artifact schema.
+Checks that every discovered YAML record parses and conforms to the current
+Pydantic model contracts for artifacts, issues, or reviews.
 
 ### ID Uniqueness Gate
 
-Checks that artifact IDs are globally unique across accepted and draft artifacts.
+Checks that loaded record IDs are globally unique across the repository
+discovery roots.
 
 ### Status/Path Gate
 
@@ -25,6 +27,8 @@ Checks that artifact dependencies are valid and that accepted artifacts do not d
 ### Evidence Path Gate
 
 Checks that referenced evidence paths exist, are repository-local, and are appropriate for the artifact status.
+Evidence entries marked with `kind: external` or paths starting with `external:`
+are treated as external references and are not required to resolve locally.
 
 ### Verifier Gate
 
@@ -44,4 +48,14 @@ Gate results should distinguish pass, fail, skipped, and not implemented. A skip
 
 ## Current Implementation Status
 
-These gates are specified but not implemented yet. This repository currently contains documentation scaffolding only.
+`cosheaf validate` now implements the schema/model gate, ID uniqueness gate,
+status/path gate, dependency gate, and evidence path gate over YAML records
+discovered under `kb/`, `issues/`, and `examples/`.
+
+`cosheaf artifact validate <path>` validates a single YAML file with
+file-local schema/model, status/path, and evidence path checks. Whole-repository
+checks such as ID uniqueness and dependency existence run through
+`cosheaf validate`.
+
+The verifier gate, reproducibility metadata gate, and PR checklist gate remain
+specified but not implemented. `cosheaf gate` remains a scaffold-only command.

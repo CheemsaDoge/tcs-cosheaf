@@ -1,15 +1,30 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from pathlib import Path
+
 import typer
 from rich.console import Console
 
 from cosheaf import __version__
+from cosheaf.gates.gatekeeper import (
+    ValidationReport,
+    validate_artifact_file,
+    validate_repository,
+)
+from cosheaf.storage.repo import RepoContext
 
 app = typer.Typer(
     add_completion=False,
     help="TCS-Cosheaf research knowledge base harness.",
     no_args_is_help=True,
 )
+artifact_app = typer.Typer(
+    add_completion=False,
+    help="Artifact commands.",
+    no_args_is_help=True,
+)
+app.add_typer(artifact_app, name="artifact")
 
 
 @app.command()
@@ -19,11 +34,25 @@ def version() -> None:
 
 
 @app.command()
-def validate() -> None:
-    """Report scaffold-only validation status."""
-    Console().print(
-        "scaffold-only: artifact schema validation is not implemented yet; "
-        "no artifacts were checked."
+def validate(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to validate.",
+    ),
+    debug: bool = typer.Option(
+        False,
+        "--debug",
+        help="Show tracebacks for unexpected validation errors.",
+    ),
+) -> None:
+    """Validate repository YAML records and implemented invariants."""
+    context = RepoContext(repo_root)
+    _run_validation(
+        report_factory=lambda: validate_repository(context),
+        success_message="Validation passed",
+        failure_message="Validation failed",
+        debug=debug,
     )
 
 
@@ -34,6 +63,87 @@ def gate() -> None:
         "scaffold-only: gatekeeper is not implemented yet; "
         "no repository gates were enforced."
     )
+
+
+@artifact_app.command("validate")
+def artifact_validate(
+    path: Path = typer.Argument(..., help="Repository-local artifact YAML path."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used to resolve the artifact path.",
+    ),
+    debug: bool = typer.Option(
+        False,
+        "--debug",
+        help="Show tracebacks for unexpected validation errors.",
+    ),
+) -> None:
+    """Validate one artifact YAML file with file-local checks."""
+    context = RepoContext(repo_root)
+    _run_validation(
+        report_factory=lambda: validate_artifact_file(context, path),
+        success_message="Artifact validation passed",
+        failure_message="Artifact validation failed",
+        debug=debug,
+    )
+
+
+def _run_validation(
+    *,
+    report_factory: Callable[[], ValidationReport],
+    success_message: str,
+    failure_message: str,
+    debug: bool,
+) -> None:
+    console = Console(width=120)
+    try:
+        report = report_factory()
+    except Exception:
+        if debug:
+            console.print_exception()
+        else:
+            console.print(
+                "[bold red]Unexpected validation error.[/bold red] "
+                "Rerun with --debug for traceback."
+            )
+        raise typer.Exit(code=2) from None
+
+    _print_validation_report(
+        console=console,
+        report=report,
+        success_message=success_message,
+        failure_message=failure_message,
+    )
+    if not report.ok:
+        raise typer.Exit(code=1)
+
+
+def _print_validation_report(
+    *,
+    console: Console,
+    report: ValidationReport,
+    success_message: str,
+    failure_message: str,
+) -> None:
+    if report.ok:
+        console.print(
+            f"[bold green]{success_message}[/bold green]: "
+            f"checked {report.checked_count} YAML record(s)."
+        )
+        return
+
+    console.print(
+        f"[bold red]{failure_message}[/bold red]: "
+        f"{len(report.failures)} failure(s) across "
+        f"{report.checked_count} loaded YAML record(s)."
+    )
+    for failure in report.failures:
+        source_path = failure.source_path or "-"
+        artifact_id = failure.artifact_id or "-"
+        console.print(
+            f"- {failure.gate} | {source_path} | {artifact_id} | {failure.message}"
+        )
 
 
 if __name__ == "__main__":
