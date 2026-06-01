@@ -171,6 +171,9 @@ Generated context pack files are:
 - `cosheaf.verification.registry.default_verifier_registry() -> VerifierRegistry`
 - `cosheaf.verification.python_checker.PythonCheckerAdapter`: verifier adapter for `kind: python_checker` evidence.
 - `cosheaf.verification.python_checker.PythonCheckerSpec`: normalized Python checker evidence command specification.
+- `cosheaf.verification.sat_adapter.SatAdapter`: optional SAT solver skeleton adapter.
+- `cosheaf.verification.smt_adapter.SmtAdapter`: optional SMT solver skeleton adapter.
+- `cosheaf.verification.lean_adapter.LeanAdapter`: optional Lean skeleton adapter.
 
 `VerifierAdapter` requires:
 
@@ -215,7 +218,9 @@ run-to-run variation when callers construct results with live clock values.
 Registry ordering is deterministic by adapter name. Duplicate adapter names
 raise `VerifierRegistryError`.
 
-The default verifier registry currently registers `PythonCheckerAdapter`.
+The default verifier registry currently registers `LeanAdapter`,
+`PythonCheckerAdapter`, `SatAdapter`, and `SmtAdapter`. Registry ordering is
+deterministic by adapter name.
 
 `PythonCheckerAdapter` exposes:
 
@@ -229,6 +234,36 @@ from the active Python executable, the evidence `path`, and the artifact source
 path. It writes stdout and stderr under `.cosheaf/logs/`, records command and
 cwd metadata, returns `pass` for exit code `0`, `fail` for nonzero exit code,
 and `error` for timeout or missing checker scripts.
+
+`SatAdapter` exposes:
+
+- `name = "sat"`
+- `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
+- `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
+
+It recognizes evidence kinds `sat`, `sat_solver`, and `sat_checker`. It checks
+the configured SAT solver command, defaults to `kissat`, and returns `skipped`
+when the solver is unavailable or when real SAT verification is still TODO.
+
+`SmtAdapter` exposes:
+
+- `name = "smt"`
+- `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
+- `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
+
+It recognizes evidence kinds `smt`, `smt_solver`, and `smt_checker`. It checks
+the configured SMT solver command, defaults to `z3`, and returns `skipped` when
+the solver is unavailable or when real SMT verification is still TODO.
+
+`LeanAdapter` exposes:
+
+- `name = "lean"`
+- `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
+- `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
+
+It recognizes evidence kinds `lean`, `lean4`, and `lean_checker`. It checks the
+configured Lean command, defaults to `lean`, and returns `skipped` when Lean is
+unavailable or when real Lean verification is still TODO.
 
 ### Makefile Targets
 

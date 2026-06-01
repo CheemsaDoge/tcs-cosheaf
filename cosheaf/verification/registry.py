@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from cosheaf.verification.base import VerifierAdapter
+from cosheaf.verification.lean_adapter import LeanAdapter
 from cosheaf.verification.python_checker import PythonCheckerAdapter
+from cosheaf.verification.sat_adapter import SatAdapter
+from cosheaf.verification.smt_adapter import SmtAdapter
 
 
 class VerifierRegistryError(ValueError):
@@ -43,5 +46,8 @@ class VerifierRegistry:
 def default_verifier_registry() -> VerifierRegistry:
     """Return the default verifier registry for gatekeeper runs."""
     registry = VerifierRegistry()
+    registry.register(LeanAdapter())
     registry.register(PythonCheckerAdapter())
+    registry.register(SatAdapter())
+    registry.register(SmtAdapter())
     return registry

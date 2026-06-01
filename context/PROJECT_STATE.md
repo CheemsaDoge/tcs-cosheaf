@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Task 012
+## Current State After Task 013
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, issue-scoped context pack generation, the initial verifier adapter interface, and a Python checker verifier adapter.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, issue-scoped context pack generation, the initial verifier adapter interface, a Python checker verifier adapter, and optional-tool SAT/SMT/Lean verifier skeleton adapters.
 
 The Python scaffold defines a `cosheaf` package, a Typer-based `cosheaf` CLI entry point, development dependencies, Makefile targets, a Dockerfile for reproducible local development, and smoke tests for import and CLI help/version behavior.
 
@@ -26,7 +26,9 @@ The verification layer now defines the `VerifierAdapter` protocol, normalized `V
 
 The Python checker adapter runs `kind: python_checker` evidence from the repository root, enforces a timeout, writes stdout/stderr logs under `.cosheaf/logs/`, and records command metadata in `VerificationResult`. The gatekeeper G6 verifier gate now runs the default verifier registry and reports Python checker results. G6 is skipped only when no verifier adapters are applicable.
 
-No SAT, SMT, or Lean verifier adapters exist yet. No CI configuration exists yet.
+The SAT, SMT, and Lean adapters are optional-tool skeletons. They check for configured solver/tool availability, return `skipped` when the tool is unavailable, and do not add hard dependencies on Lean, Z3, cvc5, Sage, or PySAT. They are registered in the default verifier registry but do not run unless an artifact has matching SAT, SMT, or Lean evidence.
+
+No real SAT, SMT, or Lean verification execution exists yet. No CI configuration exists yet.
 
 ## Implemented
 
@@ -74,11 +76,15 @@ No SAT, SMT, or Lean verifier adapters exist yet. No CI configuration exists yet
 - Python checker evaluator example in `experiments/evaluators/check_graph_example.py`.
 - Python checker tests in `tests/test_python_checker.py`.
 - Gatekeeper G6 verifier gate execution for the default Python checker registry.
+- SAT verifier skeleton in `cosheaf/verification/sat_adapter.py`.
+- SMT verifier skeleton in `cosheaf/verification/smt_adapter.py`.
+- Lean verifier skeleton in `cosheaf/verification/lean_adapter.py`.
+- Optional verifier skeleton tests in `tests/test_optional_verifier_skeletons.py`.
 
 ## Not Implemented Yet
 
 - SQLite-backed query API beyond deterministic index rebuild output.
-- SAT, SMT, and Lean verifier adapters.
+- Real SAT, SMT, and Lean solver invocation and result parsing.
 - Reproducibility metadata gate and PR checklist gate beyond skipped placeholders.
 - CI.
 - Advanced relevance ranking beyond issue-related artifacts plus one dependency hop.

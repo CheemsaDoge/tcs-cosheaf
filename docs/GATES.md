@@ -69,6 +69,20 @@ derives the command as:
 Exit code `0` produces `pass`, a nonzero exit code produces `fail`, and timeout
 or missing checker scripts produce `error`.
 
+SAT, SMT, and Lean verifier adapters currently exist as optional-tool
+skeletons. They check for configured solver/tool availability without adding
+hard dependencies on Lean, Z3, cvc5, Sage, or PySAT. When a matching artifact
+evidence entry exists but the configured tool is absent, the adapter returns a
+`skipped` `VerificationResult`; this is not a pass. If the tool is present, the
+adapter still returns `skipped` with a TODO message until real solver invocation
+and result parsing are implemented.
+
+Skeleton evidence kinds are:
+
+- SAT: `sat`, `sat_solver`, `sat_checker`
+- SMT: `smt`, `smt_solver`, `smt_checker`
+- Lean: `lean`, `lean4`, `lean_checker`
+
 ### Reproducibility Metadata Gate
 
 Checks that artifacts and verifier results include the planned metadata needed to reproduce or interpret generated outputs.
@@ -125,7 +139,7 @@ checks such as ID uniqueness and dependency existence run through
 - G3 status/path gate
 - G4 dependency gate
 - G5 evidence path gate
-- G6 verifier gate with the Python checker adapter
+- G6 verifier gate with the Python checker adapter and optional SAT/SMT/Lean skeleton adapters
 - G7 reproducibility metadata gate placeholder
 - G8 PR checklist gate placeholder
 
