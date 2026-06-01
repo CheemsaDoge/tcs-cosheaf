@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from cosheaf.verification.base import VerifierAdapter
+from cosheaf.verification.python_checker import PythonCheckerAdapter
 
 
 class VerifierRegistryError(ValueError):
@@ -37,3 +38,10 @@ class VerifierRegistry:
     def adapters(self) -> tuple[VerifierAdapter, ...]:
         """Return registered adapters in deterministic name order."""
         return tuple(self._adapters[name] for name in self.names)
+
+
+def default_verifier_registry() -> VerifierRegistry:
+    """Return the default verifier registry for gatekeeper runs."""
+    registry = VerifierRegistry()
+    registry.register(PythonCheckerAdapter())
+    return registry

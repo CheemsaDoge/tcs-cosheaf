@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
+from cosheaf.core.artifact import BaseArtifact
 from cosheaf.gates.dependency_gate import (
     validate_dependencies,
     validate_id_uniqueness,
@@ -25,6 +26,8 @@ from cosheaf.gates.status_gate import (
 )
 from cosheaf.storage.loader import LoadedRecord
 from cosheaf.storage.repo import RepoContext
+from cosheaf.verification.registry import default_verifier_registry
+from cosheaf.verification.result import VerificationResult, VerificationStatus
 
 GateStatus = Literal["pass", "fail", "skipped", "not_applicable"]
 GateVerdict = Literal["pass", "fail"]
@@ -102,6 +105,7 @@ class GateResult:
     summary: str
     blocking_issues: tuple[GateIssue, ...] = ()
     nonblocking_issues: tuple[GateIssue, ...] = ()
+    details: tuple[dict[str, object], ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -115,6 +119,7 @@ class GateResult:
             "nonblocking_issues": [
                 issue.to_dict() for issue in self.nonblocking_issues
             ],
+            "details": list(self.details),
         }
 
 
@@ -203,7 +208,7 @@ def run_gatekeeper(
             failures=validate_evidence_paths(context, records),
             pass_summary="All local evidence paths exist.",
         ),
-        _placeholder_gate("G6", "verifier gate placeholder"),
+        _verifier_gate(context, records),
         _placeholder_gate("G7", "reproducibility metadata gate placeholder"),
         _placeholder_gate("G8", "PR checklist gate placeholder"),
     )
@@ -301,6 +306,108 @@ def _placeholder_gate(gate_id: str, name: str) -> GateResult:
         status="skipped",
         summary="Skipped: gate is specified but not implemented yet.",
         nonblocking_issues=(issue,),
+    )
+
+
+def _verifier_gate(
+    context: RepoContext,
+    records: tuple[LoadedRecord, ...],
+) -> GateResult:
+    registry = default_verifier_registry()
+    results: list[VerificationResult] = []
+    for adapter in registry.adapters:
+        for loaded in records:
+            if not isinstance(loaded.record, BaseArtifact):
+                continue
+            if adapter.can_verify(loaded.record, context):
+                results.append(adapter.verify(loaded.record, context))
+
+    if not results:
+        issue = GateIssue(
+            gate_id="G6",
+            gate_name="verifier gate",
+            source_path="",
+            artifact_id="",
+            message="No verifier adapters were applicable.",
+            severity="nonblocking",
+        )
+        return GateResult(
+            gate_id="G6",
+            name="verifier gate",
+            status="skipped",
+            summary="Skipped: no verifier adapters were applicable.",
+            nonblocking_issues=(issue,),
+        )
+
+    blocking_issues = tuple(
+        _issue_from_verification_result(result)
+        for result in results
+        if result.status in {VerificationStatus.FAIL, VerificationStatus.ERROR}
+    )
+    nonblocking_issues = tuple(
+        _issue_from_verification_result(result)
+        for result in results
+        if result.status is VerificationStatus.SKIPPED
+    )
+    details = tuple(result.to_dict() for result in _sort_verification_results(results))
+    if blocking_issues:
+        return GateResult(
+            gate_id="G6",
+            name="verifier gate",
+            status="fail",
+            summary=f"{len(blocking_issues)} blocking verifier issue(s).",
+            blocking_issues=blocking_issues,
+            nonblocking_issues=nonblocking_issues,
+            details=details,
+        )
+    if nonblocking_issues:
+        return GateResult(
+            gate_id="G6",
+            name="verifier gate",
+            status="skipped",
+            summary=f"{len(nonblocking_issues)} verifier result(s) skipped.",
+            nonblocking_issues=nonblocking_issues,
+            details=details,
+        )
+    return GateResult(
+        gate_id="G6",
+        name="verifier gate",
+        status="pass",
+        summary=f"Verifier gate passed for {len(results)} result(s).",
+        details=details,
+    )
+
+
+def _sort_verification_results(
+    results: list[VerificationResult],
+) -> tuple[VerificationResult, ...]:
+    return tuple(
+        sorted(
+            results,
+            key=lambda result: (
+                result.artifact_id,
+                result.verifier,
+                result.status.value,
+                result.message,
+            ),
+        )
+    )
+
+
+def _issue_from_verification_result(result: VerificationResult) -> GateIssue:
+    severity: Literal["blocking", "nonblocking"]
+    severity = (
+        "nonblocking"
+        if result.status is VerificationStatus.SKIPPED
+        else "blocking"
+    )
+    return GateIssue(
+        gate_id="G6",
+        gate_name="verifier gate",
+        source_path="",
+        artifact_id=result.artifact_id,
+        message=f"{result.verifier} {result.status.value}: {result.message}",
+        severity=severity,
     )
 
 

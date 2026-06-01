@@ -129,7 +129,7 @@ depending on draft or otherwise pre-accepted artifacts.
 - `cosheaf.gates.gatekeeper.validate_repository(context: RepoContext) -> ValidationReport`
 - `cosheaf.gates.gatekeeper.validate_artifact_file(context: RepoContext, path: Path) -> ValidationReport`
 - `cosheaf.gates.gatekeeper.GateIssue`: blocking or nonblocking gatekeeper issue row.
-- `cosheaf.gates.gatekeeper.GateResult`: one gate result in a gatekeeper run.
+- `cosheaf.gates.gatekeeper.GateResult`: one gate result in a gatekeeper run, including optional machine-readable `details`.
 - `cosheaf.gates.gatekeeper.GatekeeperReport`: machine-readable gatekeeper report.
 - `cosheaf.gates.gatekeeper.GatekeeperRunResult`: report and written report paths.
 - `cosheaf.gates.gatekeeper.GateStatus`: gate status literal type.
@@ -168,6 +168,9 @@ Generated context pack files are:
 - `cosheaf.verification.result.VerificationResult`: Pydantic v2 model for normalized verifier output.
 - `cosheaf.verification.registry.VerifierRegistry`: instance-local verifier adapter registry.
 - `cosheaf.verification.registry.VerifierRegistryError`: registry registration error.
+- `cosheaf.verification.registry.default_verifier_registry() -> VerifierRegistry`
+- `cosheaf.verification.python_checker.PythonCheckerAdapter`: verifier adapter for `kind: python_checker` evidence.
+- `cosheaf.verification.python_checker.PythonCheckerSpec`: normalized Python checker evidence command specification.
 
 `VerifierAdapter` requires:
 
@@ -211,6 +214,21 @@ run-to-run variation when callers construct results with live clock values.
 
 Registry ordering is deterministic by adapter name. Duplicate adapter names
 raise `VerifierRegistryError`.
+
+The default verifier registry currently registers `PythonCheckerAdapter`.
+
+`PythonCheckerAdapter` exposes:
+
+- `name = "python_checker"`
+- `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
+- `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
+
+The adapter runs evidence entries with `kind: python_checker` from the
+repository root. With the current artifact evidence model, it derives the command
+from the active Python executable, the evidence `path`, and the artifact source
+path. It writes stdout and stderr under `.cosheaf/logs/`, records command and
+cwd metadata, returns `pass` for exit code `0`, `fail` for nonzero exit code,
+and `error` for timeout or missing checker scripts.
 
 ### Makefile Targets
 

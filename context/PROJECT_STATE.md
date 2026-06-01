@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Task 011
+## Current State After Task 012
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, issue-scoped context pack generation, and the initial verifier adapter interface.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, issue-scoped context pack generation, the initial verifier adapter interface, and a Python checker verifier adapter.
 
 The Python scaffold defines a `cosheaf` package, a Typer-based `cosheaf` CLI entry point, development dependencies, Makefile targets, a Dockerfile for reproducible local development, and smoke tests for import and CLI help/version behavior.
 
@@ -22,9 +22,11 @@ The gatekeeper command runs G1-G5 implemented gates and G6-G8 placeholder gates.
 
 The agent harness layer now builds bounded deterministic context packs for issue IDs. Context packs are written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`, `ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and `COMMANDS.md`. Relevant artifacts are selected from the issue's related artifacts plus one dependency hop; draft artifacts are visibly labeled.
 
-The verification layer now defines the `VerifierAdapter` protocol, normalized `VerificationResult` model, `VerificationStatus` enum, and instance-local `VerifierRegistry`. Verification results distinguish `pass`, `fail`, `error`, and `skipped`; command-backed results record command and working directory metadata.
+The verification layer now defines the `VerifierAdapter` protocol, normalized `VerificationResult` model, `VerificationStatus` enum, instance-local `VerifierRegistry`, and `PythonCheckerAdapter`. Verification results distinguish `pass`, `fail`, `error`, and `skipped`; command-backed results record command and working directory metadata.
 
-No concrete verifier adapters exist yet. The verifier gate remains a skipped placeholder and does not execute adapters yet. No CI configuration exists yet.
+The Python checker adapter runs `kind: python_checker` evidence from the repository root, enforces a timeout, writes stdout/stderr logs under `.cosheaf/logs/`, and records command metadata in `VerificationResult`. The gatekeeper G6 verifier gate now runs the default verifier registry and reports Python checker results. G6 is skipped only when no verifier adapters are applicable.
+
+No SAT, SMT, or Lean verifier adapters exist yet. No CI configuration exists yet.
 
 ## Implemented
 
@@ -68,12 +70,15 @@ No concrete verifier adapters exist yet. The verifier gate remains a skipped pla
 - Normalized verification result model in `cosheaf/verification/result.py`.
 - Instance-local verifier registry in `cosheaf/verification/registry.py`.
 - Verification result and registry tests in `tests/test_verification_result.py`.
+- Python checker verifier adapter in `cosheaf/verification/python_checker.py`.
+- Python checker evaluator example in `experiments/evaluators/check_graph_example.py`.
+- Python checker tests in `tests/test_python_checker.py`.
+- Gatekeeper G6 verifier gate execution for the default Python checker registry.
 
 ## Not Implemented Yet
 
 - SQLite-backed query API beyond deterministic index rebuild output.
-- Concrete verifier adapters.
-- Verifier gate adapter execution.
-- Verifier gate, reproducibility metadata gate, and PR checklist gate beyond skipped placeholders.
+- SAT, SMT, and Lean verifier adapters.
+- Reproducibility metadata gate and PR checklist gate beyond skipped placeholders.
 - CI.
 - Advanced relevance ranking beyond issue-related artifacts plus one dependency hop.

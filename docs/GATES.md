@@ -55,6 +55,20 @@ paths, evidence paths, and a review message. Status values are:
 `skipped` is not `pass`, and `error` is not `fail`. External command-backed
 verifiers must record the command and working directory they used.
 
+The current concrete verifier is the Python checker adapter. It runs artifact
+evidence entries with `kind: python_checker` from the repository root, writes
+stdout and stderr logs under `.cosheaf/logs/`, enforces a timeout, and records
+the command, working directory, exit code, log paths, and evidence paths in a
+`VerificationResult`. With the current artifact evidence model, the checker
+derives the command as:
+
+- current Python executable
+- evidence `path`
+- artifact source path
+
+Exit code `0` produces `pass`, a nonzero exit code produces `fail`, and timeout
+or missing checker scripts produce `error`.
+
 ### Reproducibility Metadata Gate
 
 Checks that artifacts and verifier results include the planned metadata needed to reproduce or interpret generated outputs.
@@ -111,13 +125,11 @@ checks such as ID uniqueness and dependency existence run through
 - G3 status/path gate
 - G4 dependency gate
 - G5 evidence path gate
-- G6 verifier gate placeholder
+- G6 verifier gate with the Python checker adapter
 - G7 reproducibility metadata gate placeholder
 - G8 PR checklist gate placeholder
 
-G6, G7, and G8 are intentionally reported as skipped placeholders until their
-implementations exist. `cosheaf gate` with no subcommand also runs the
-gatekeeper so the existing `make gate` target performs real gate enforcement.
-
-The verification adapter protocol, verification result model, and instance-local
-verifier registry now exist, but G6 still does not execute adapters.
+G7 and G8 are intentionally reported as skipped placeholders until their
+implementations exist. G6 is reported as skipped when no verifier adapters are
+applicable. `cosheaf gate` with no subcommand also runs the gatekeeper so the
+existing `make gate` target performs real gate enforcement.
