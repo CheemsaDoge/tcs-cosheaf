@@ -18,6 +18,10 @@
 - `cosheaf artifact validate <path>`: validates one YAML file with file-local checks.
 - `cosheaf artifact validate <path> --repo-root <path>`: resolves the artifact path against an explicit repository root.
 - `cosheaf artifact validate <path> --debug`: shows tracebacks for unexpected validation errors.
+- `cosheaf index rebuild`: rebuilds `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json`.
+- `cosheaf index rebuild --repo-root <path>`: rebuilds index outputs for an explicit repository root.
+- `cosheaf graph show`: prints the directed artifact dependency graph.
+- `cosheaf graph show --repo-root <path>`: prints the graph for an explicit repository root.
 - `cosheaf gate`: scaffold-only placeholder. It reports that gatekeeper enforcement is not implemented yet and that no repository gates were enforced.
 
 ### Python API
@@ -75,7 +79,31 @@ The writer preserves mapping insertion order by disabling YAML key sorting.
 - `cosheaf.storage.loader.LoadError`
 - `cosheaf.storage.loader.UnsupportedArtifactTypeError`
 
-Storage does not use SQLite and does not implement gatekeeper behavior.
+The storage loader and writer do not use SQLite and do not implement gatekeeper
+behavior.
+
+#### Storage Index
+
+- `cosheaf.storage.index.IndexRebuildResult`: paths and counts produced by an index rebuild.
+- `cosheaf.storage.index.rebuild_index(context: RepoContext) -> IndexRebuildResult`
+
+The index rebuild writes `.cosheaf/index.sqlite` and
+`.cosheaf/artifact_manifest.json` from scratch. The SQLite index stores artifact
+ID, type, status, path, title, domain, and dependency rows. The manifest is
+ordered deterministically by artifact ID and dependency tuple.
+
+#### Dependency Graph
+
+- `cosheaf.graph.claim_graph.GraphNode`: deterministic artifact graph node.
+- `cosheaf.graph.claim_graph.GraphEdge`: directed dependency edge from artifact to dependency.
+- `cosheaf.graph.claim_graph.GraphIssue`: deterministic graph issue row.
+- `cosheaf.graph.claim_graph.DependencyGraph`: graph nodes, edges, and detected issues.
+- `cosheaf.graph.claim_graph.build_dependency_graph(records: Iterable[LoadedRecord]) -> DependencyGraph`
+
+Graph edge direction is artifact-to-dependency, for example
+`claim.example.a -> claim.example.b` means artifact `a` depends on artifact `b`.
+The graph reports missing dependencies, directed cycles, and accepted artifacts
+depending on draft or otherwise pre-accepted artifacts.
 
 #### Validation Gates
 
@@ -93,8 +121,8 @@ Storage does not use SQLite and does not implement gatekeeper behavior.
 - `cosheaf.gates.gatekeeper.validate_artifact_file(context: RepoContext, path: Path) -> ValidationReport`
 
 The initial validation orchestrator is deterministic and filesystem-backed. It
-does not run verifier adapters, build a dependency graph, use SQLite, or enforce
-the full future `cosheaf gate` workflow.
+does not run verifier adapters or enforce the full future `cosheaf gate`
+workflow.
 
 ### Makefile Targets
 

@@ -14,6 +14,22 @@ Defines the artifact model, artifact status concepts, artifact type vocabulary, 
 
 Loads artifacts from Git-backed paths, builds deterministic indexes, and records repository-local metadata needed by other layers.
 
+Current index outputs are:
+
+- `.cosheaf/index.sqlite`
+- `.cosheaf/artifact_manifest.json`
+
+Index rebuilds load repository YAML records, normalize artifact rows, write
+SQLite from scratch, and emit a deterministic JSON manifest ordered by artifact
+ID and dependency tuple.
+
+### Graph Layer
+
+Builds a directed artifact dependency graph from `depends_on`. Edge direction is
+artifact-to-dependency, for example `claim -> dependency`. The graph layer
+detects missing dependencies, directed cycles, and accepted artifacts that depend
+on draft or otherwise pre-accepted artifacts.
+
 ### Verification Layer
 
 Runs verifier adapters and normalizes verifier outcomes. Optional external tools must remain optional; missing tools should produce skipped verifier results instead of crashing the core system.

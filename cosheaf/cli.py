@@ -12,6 +12,9 @@ from cosheaf.gates.gatekeeper import (
     validate_artifact_file,
     validate_repository,
 )
+from cosheaf.graph.claim_graph import DependencyGraph, build_dependency_graph
+from cosheaf.storage.index import rebuild_index
+from cosheaf.storage.loader import load_artifacts
 from cosheaf.storage.repo import RepoContext
 
 app = typer.Typer(
@@ -24,7 +27,19 @@ artifact_app = typer.Typer(
     help="Artifact commands.",
     no_args_is_help=True,
 )
+index_app = typer.Typer(
+    add_completion=False,
+    help="Index commands.",
+    no_args_is_help=True,
+)
+graph_app = typer.Typer(
+    add_completion=False,
+    help="Graph commands.",
+    no_args_is_help=True,
+)
 app.add_typer(artifact_app, name="artifact")
+app.add_typer(index_app, name="index")
+app.add_typer(graph_app, name="graph")
 
 
 @app.command()
@@ -89,6 +104,49 @@ def artifact_validate(
     )
 
 
+@index_app.command("rebuild")
+def index_rebuild(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to index.",
+    ),
+) -> None:
+    """Rebuild deterministic SQLite and manifest index outputs."""
+    console = Console(width=120)
+    try:
+        result = rebuild_index(RepoContext(repo_root))
+    except Exception as exc:
+        console.print(f"[bold red]Index rebuild failed[/bold red]: {exc}")
+        raise typer.Exit(code=1) from None
+
+    console.print(
+        "[bold green]Index rebuilt[/bold green]: "
+        f"{result.sqlite_path} and {result.manifest_path} "
+        f"({result.artifact_count} artifact(s), {result.edge_count} edge(s))."
+    )
+
+
+@graph_app.command("show")
+def graph_show(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+) -> None:
+    """Show the directed artifact dependency graph."""
+    console = Console(width=120)
+    try:
+        records = tuple(load_artifacts(RepoContext(repo_root)))
+        graph = build_dependency_graph(records)
+    except Exception as exc:
+        console.print(f"[bold red]Graph load failed[/bold red]: {exc}")
+        raise typer.Exit(code=1) from None
+
+    _print_dependency_graph(console, graph)
+
+
 def _run_validation(
     *,
     report_factory: Callable[[], ValidationReport],
@@ -143,6 +201,31 @@ def _print_validation_report(
         artifact_id = failure.artifact_id or "-"
         console.print(
             f"- {failure.gate} | {source_path} | {artifact_id} | {failure.message}"
+        )
+
+
+def _print_dependency_graph(console: Console, graph: DependencyGraph) -> None:
+    console.print(
+        f"[bold]Dependency graph[/bold]: "
+        f"{len(graph.nodes)} node(s), {len(graph.edges)} edge(s)."
+    )
+    if graph.edges:
+        for edge in graph.edges:
+            console.print(f"- {edge.source_id} -> {edge.target_id}")
+    else:
+        console.print("- no dependency edges")
+
+    for issue in graph.missing_dependencies:
+        console.print(
+            f"[red]- missing dependency[/red] | "
+            f"{issue.source_id} -> {issue.target_id} | {issue.source_path}"
+        )
+    for cycle in graph.cycles:
+        console.print(f"[red]- cycle[/red] | {' -> '.join(cycle)}")
+    for issue in graph.accepted_draft_violations:
+        console.print(
+            f"[red]- accepted->draft[/red] | "
+            f"{issue.source_id} -> {issue.target_id} | {issue.source_path}"
         )
 
 

@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Task 007
+## Current State After Task 008
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, and initial repository validation gates.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, and deterministic repository index rebuilds.
 
 The Python scaffold defines a `cosheaf` package, a Typer-based `cosheaf` CLI entry point, development dependencies, Makefile targets, a Dockerfile for reproducible local development, and smoke tests for import and CLI help/version behavior.
 
@@ -12,9 +12,13 @@ The core model layer now defines artifact type and status enums, base artifact d
 
 The storage layer defines `RepoContext`, YAML discovery under `kb/`, `issues/`, and `examples/`, typed YAML loading into `BaseArtifact`, `IssueRecord`, or `ReviewRecord`, repository-relative source paths on loaded records, deterministic ordering by path then ID, clear load errors, and deterministic YAML writing helpers.
 
-The validation CLI now implements repository validation for YAML parse/model parse, ID uniqueness, status/path consistency, dependency existence, accepted-artifact-to-draft-artifact dependencies, and local evidence path existence. Expected validation failures produce concise Rich output and nonzero exit codes without stack traces unless `--debug` is used.
+The validation CLI implements repository validation for YAML parse/model parse, ID uniqueness, status/path consistency, dependency existence, accepted-artifact-to-draft-artifact dependencies, and local evidence path existence. Expected validation failures produce concise Rich output and nonzero exit codes without stack traces unless `--debug` is used.
 
-No SQLite storage exists yet. No dependency graph exists yet. No verifier adapters exist yet. No CI configuration exists yet. `cosheaf gate` remains scaffold-only.
+The graph layer builds directed dependency edges from artifact to dependency, detects missing dependencies, detects directed cycles, and reports accepted artifacts depending on draft or otherwise pre-accepted artifacts.
+
+The index rebuild command writes `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json` from scratch. The SQLite index stores artifact ID, type, status, path, title, and domain, plus deterministic dependency rows. The manifest ordering is deterministic and stable across delete-and-rebuild cycles.
+
+No verifier adapters exist yet. No CI configuration exists yet. `cosheaf gate` remains scaffold-only.
 
 ## Implemented
 
@@ -28,6 +32,8 @@ No SQLite storage exists yet. No dependency graph exists yet. No verifier adapte
 - Makefile targets for `lint`, `typecheck`, `test`, `validate`, and `gate`.
 - Implemented `cosheaf validate` repository validation CLI.
 - Implemented `cosheaf artifact validate <path>` single-file validation CLI.
+- Implemented `cosheaf index rebuild` deterministic repository index rebuild CLI.
+- Implemented `cosheaf graph show` dependency graph inspection CLI.
 - Scaffold-only `gate` CLI placeholder that explicitly reports that full gatekeeper enforcement is not implemented.
 - Dockerfile for local development.
 - Smoke tests under `tests/`.
@@ -43,11 +49,13 @@ No SQLite storage exists yet. No dependency graph exists yet. No verifier adapte
 - Storage loader tests and fixtures in `tests/test_loader.py` and `tests/fixtures/`.
 - Initial validation gates under `cosheaf/gates/`.
 - Validation CLI tests in `tests/test_validate_cli.py` and `tests/test_status_path_validation.py`.
+- Dependency graph utilities under `cosheaf/graph/`.
+- Deterministic SQLite and manifest index rebuild in `cosheaf/storage/index.py`.
+- Graph and index tests in `tests/test_claim_graph.py` and `tests/test_index_rebuild.py`.
 
 ## Not Implemented Yet
 
-- SQLite storage.
-- Dependency graph.
+- SQLite-backed query API beyond deterministic index rebuild output.
 - Full gatekeeper enforcement beyond the initial validation orchestrator.
 - Verifier adapters.
 - Verifier gate, reproducibility metadata gate, and PR checklist gate.
