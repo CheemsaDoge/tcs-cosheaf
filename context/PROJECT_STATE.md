@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Task 010
+## Current State After Task 011
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, and issue-scoped context pack generation.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, issue-scoped context pack generation, and the initial verifier adapter interface.
 
 The Python scaffold defines a `cosheaf` package, a Typer-based `cosheaf` CLI entry point, development dependencies, Makefile targets, a Dockerfile for reproducible local development, and smoke tests for import and CLI help/version behavior.
 
@@ -22,7 +22,9 @@ The gatekeeper command runs G1-G5 implemented gates and G6-G8 placeholder gates.
 
 The agent harness layer now builds bounded deterministic context packs for issue IDs. Context packs are written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`, `ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and `COMMANDS.md`. Relevant artifacts are selected from the issue's related artifacts plus one dependency hop; draft artifacts are visibly labeled.
 
-No verifier adapters exist yet. No CI configuration exists yet.
+The verification layer now defines the `VerifierAdapter` protocol, normalized `VerificationResult` model, `VerificationStatus` enum, and instance-local `VerifierRegistry`. Verification results distinguish `pass`, `fail`, `error`, and `skipped`; command-backed results record command and working directory metadata.
+
+No concrete verifier adapters exist yet. The verifier gate remains a skipped placeholder and does not execute adapters yet. No CI configuration exists yet.
 
 ## Implemented
 
@@ -62,11 +64,16 @@ No verifier adapters exist yet. No CI configuration exists yet.
 - Context pack generation in `cosheaf/agent/context_pack.py`.
 - Context pack CLI commands `cosheaf context build <issue-id>` and `cosheaf context show <issue-id>`.
 - Context pack tests in `tests/test_context_pack.py`.
+- Verifier adapter protocol in `cosheaf/verification/base.py`.
+- Normalized verification result model in `cosheaf/verification/result.py`.
+- Instance-local verifier registry in `cosheaf/verification/registry.py`.
+- Verification result and registry tests in `tests/test_verification_result.py`.
 
 ## Not Implemented Yet
 
 - SQLite-backed query API beyond deterministic index rebuild output.
-- Verifier adapters.
+- Concrete verifier adapters.
+- Verifier gate adapter execution.
 - Verifier gate, reproducibility metadata gate, and PR checklist gate beyond skipped placeholders.
 - CI.
 - Advanced relevance ranking beyond issue-related artifacts plus one dependency hop.

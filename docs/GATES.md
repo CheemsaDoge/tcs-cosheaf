@@ -32,7 +32,28 @@ are treated as external references and are not required to resolve locally.
 
 ### Verifier Gate
 
-Runs configured verifier adapters and normalizes results. Missing optional external tools should produce skipped verifier results, not core system crashes.
+Runs configured verifier adapters and normalizes results. Missing optional
+external tools should produce skipped verifier results, not core system crashes.
+
+The verifier adapter interface is defined by `VerifierAdapter`, with:
+
+- `name: str`
+- `can_verify(artifact, repo) -> bool`
+- `verify(artifact, repo) -> VerificationResult`
+
+`VerificationResult` records verifier name, artifact ID, normalized status,
+timestamps, command metadata, working directory, exit code, stdout/stderr log
+paths, evidence paths, and a review message. Status values are:
+
+- `pass`: the verifier checked the artifact and accepted it.
+- `fail`: the verifier checked the artifact and found an artifact-level failure.
+- `error`: the verifier or runtime errored before producing a verification
+  judgment.
+- `skipped`: the verifier did not run, for example because an optional external
+  tool is unavailable.
+
+`skipped` is not `pass`, and `error` is not `fail`. External command-backed
+verifiers must record the command and working directory they used.
 
 ### Reproducibility Metadata Gate
 
@@ -97,3 +118,6 @@ checks such as ID uniqueness and dependency existence run through
 G6, G7, and G8 are intentionally reported as skipped placeholders until their
 implementations exist. `cosheaf gate` with no subcommand also runs the
 gatekeeper so the existing `make gate` target performs real gate enforcement.
+
+The verification adapter protocol, verification result model, and instance-local
+verifier registry now exist, but G6 still does not execute adapters.

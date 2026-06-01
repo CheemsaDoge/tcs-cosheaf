@@ -161,6 +161,57 @@ Generated context pack files are:
 - `KNOWN_FAILURES.md`
 - `COMMANDS.md`
 
+#### Verification
+
+- `cosheaf.verification.base.VerifierAdapter`: protocol for verifier adapters.
+- `cosheaf.verification.result.VerificationStatus`: normalized result status enum with `pass`, `fail`, `error`, and `skipped`.
+- `cosheaf.verification.result.VerificationResult`: Pydantic v2 model for normalized verifier output.
+- `cosheaf.verification.registry.VerifierRegistry`: instance-local verifier adapter registry.
+- `cosheaf.verification.registry.VerifierRegistryError`: registry registration error.
+
+`VerifierAdapter` requires:
+
+- `name: str`
+- `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
+- `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
+
+`VerificationResult` fields are:
+
+- `verifier`
+- `artifact_id`
+- `status`
+- `started_at`
+- `ended_at`
+- `command`
+- `cwd`
+- `exit_code`
+- `stdout_path`
+- `stderr_path`
+- `evidence_paths`
+- `message`
+
+`VerificationResult.to_dict() -> dict[str, Any]` returns a deterministic
+machine-readable mapping in model field order. `VerificationResult.to_json() ->
+str` returns deterministic JSON for the result. Timestamps are the only expected
+run-to-run variation when callers construct results with live clock values.
+
+`VerificationResult` exposes status helpers:
+
+- `is_pass`
+- `is_fail`
+- `is_error`
+- `is_skipped`
+
+`VerifierRegistry` exposes:
+
+- `register(adapter: VerifierAdapter) -> None`
+- `get(name: str) -> VerifierAdapter | None`
+- `names -> tuple[str, ...]`
+- `adapters -> tuple[VerifierAdapter, ...]`
+
+Registry ordering is deterministic by adapter name. Duplicate adapter names
+raise `VerifierRegistryError`.
+
 ### Makefile Targets
 
 - `make lint`: runs `python -m ruff check .`
