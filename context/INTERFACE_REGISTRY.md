@@ -22,7 +22,12 @@
 - `cosheaf index rebuild --repo-root <path>`: rebuilds index outputs for an explicit repository root.
 - `cosheaf graph show`: prints the directed artifact dependency graph.
 - `cosheaf graph show --repo-root <path>`: prints the graph for an explicit repository root.
-- `cosheaf gate`: scaffold-only placeholder. It reports that gatekeeper enforcement is not implemented yet and that no repository gates were enforced.
+- `cosheaf gate`: runs the gatekeeper with default options and writes reports under `.cosheaf/reports/`.
+- `cosheaf gate --repo-root <path>`: runs the gatekeeper for an explicit repository root.
+- `cosheaf gate --persist-review`: also persists report copies under `reviews/gatekeeper/`.
+- `cosheaf gate run`: explicit gatekeeper run command.
+- `cosheaf gate run --repo-root <path>`: runs the gatekeeper for an explicit repository root.
+- `cosheaf gate run --persist-review`: also persists report copies under `reviews/gatekeeper/`.
 
 ### Python API
 
@@ -119,10 +124,18 @@ depending on draft or otherwise pre-accepted artifacts.
 - `cosheaf.gates.gatekeeper.ValidationReport`: validation report with loaded records and failures.
 - `cosheaf.gates.gatekeeper.validate_repository(context: RepoContext) -> ValidationReport`
 - `cosheaf.gates.gatekeeper.validate_artifact_file(context: RepoContext, path: Path) -> ValidationReport`
+- `cosheaf.gates.gatekeeper.GateIssue`: blocking or nonblocking gatekeeper issue row.
+- `cosheaf.gates.gatekeeper.GateResult`: one gate result in a gatekeeper run.
+- `cosheaf.gates.gatekeeper.GatekeeperReport`: machine-readable gatekeeper report.
+- `cosheaf.gates.gatekeeper.GatekeeperRunResult`: report and written report paths.
+- `cosheaf.gates.gatekeeper.GateStatus`: gate status literal type.
+- `cosheaf.gates.gatekeeper.GateVerdict`: gatekeeper verdict literal type.
+- `cosheaf.gates.gatekeeper.run_gatekeeper(context: RepoContext, *, persist_review: bool = False, timestamp: str | None = None) -> GatekeeperRunResult`
 
 The initial validation orchestrator is deterministic and filesystem-backed. It
-does not run verifier adapters or enforce the full future `cosheaf gate`
-workflow.
+does not run verifier adapters. `run_gatekeeper` currently runs G1-G5 gates and
+records G6-G8 as skipped placeholders, writing JSON and Markdown reports under
+`.cosheaf/reports/` by default.
 
 ### Makefile Targets
 
@@ -130,7 +143,7 @@ workflow.
 - `make typecheck`: runs `python -m mypy cosheaf tests`
 - `make test`: runs `python -m pytest`
 - `make validate`: runs `python -m cosheaf.cli validate`.
-- `make gate`: runs the scaffold-only CLI gate placeholder.
+- `make gate`: runs `python -m cosheaf.cli gate`, which defaults to a real gatekeeper run.
 
 ## Registration Rule
 

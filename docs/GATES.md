@@ -46,6 +46,32 @@ Checks that the PR records required review items, public interface updates, ADR 
 
 Gate results should distinguish pass, fail, skipped, and not implemented. A skipped result must explain why the gate could not run. A failed result must preserve enough evidence for review.
 
+## Gatekeeper Reports
+
+`cosheaf gate run` writes both machine-readable JSON and human-readable
+Markdown reports. By default, reports are written under `.cosheaf/reports/` so
+local runs do not create review noise:
+
+- `.cosheaf/reports/<timestamp>-gate-report.json`
+- `.cosheaf/reports/<timestamp>-gate-report.md`
+
+Use `cosheaf gate run --persist-review` to also copy the same reports under
+`reviews/gatekeeper/` for durable review artifacts.
+
+The JSON report contains:
+
+- `verdict`: `pass` or `fail`
+- `blocking_issues`
+- `nonblocking_issues`
+- `summary`
+- `started_at`
+- `ended_at`
+- `gates`
+
+Any blocking issue makes the verdict `fail` and causes a nonzero CLI exit code.
+Placeholder gates must be reported as `skipped` or `not_applicable`; they must
+not be reported as `pass`.
+
 ## Current Implementation Status
 
 `cosheaf validate` now implements the schema/model gate, ID uniqueness gate,
@@ -57,5 +83,17 @@ file-local schema/model, status/path, and evidence path checks. Whole-repository
 checks such as ID uniqueness and dependency existence run through
 `cosheaf validate`.
 
-The verifier gate, reproducibility metadata gate, and PR checklist gate remain
-specified but not implemented. `cosheaf gate` remains a scaffold-only command.
+`cosheaf gate run` now runs:
+
+- G1 schema gate
+- G2 ID uniqueness gate
+- G3 status/path gate
+- G4 dependency gate
+- G5 evidence path gate
+- G6 verifier gate placeholder
+- G7 reproducibility metadata gate placeholder
+- G8 PR checklist gate placeholder
+
+G6, G7, and G8 are intentionally reported as skipped placeholders until their
+implementations exist. `cosheaf gate` with no subcommand also runs the
+gatekeeper so the existing `make gate` target performs real gate enforcement.

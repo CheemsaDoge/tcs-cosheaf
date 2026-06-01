@@ -8,7 +8,9 @@ from rich.console import Console
 
 from cosheaf import __version__
 from cosheaf.gates.gatekeeper import (
+    GatekeeperRunResult,
     ValidationReport,
+    run_gatekeeper,
     validate_artifact_file,
     validate_repository,
 )
@@ -37,9 +39,14 @@ graph_app = typer.Typer(
     help="Graph commands.",
     no_args_is_help=True,
 )
+gate_app = typer.Typer(
+    add_completion=False,
+    help="Gatekeeper commands.",
+)
 app.add_typer(artifact_app, name="artifact")
 app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
+app.add_typer(gate_app, name="gate")
 
 
 @app.command()
@@ -68,15 +75,6 @@ def validate(
         success_message="Validation passed",
         failure_message="Validation failed",
         debug=debug,
-    )
-
-
-@app.command()
-def gate() -> None:
-    """Report scaffold-only gate status."""
-    Console().print(
-        "scaffold-only: gatekeeper is not implemented yet; "
-        "no repository gates were enforced."
     )
 
 
@@ -147,6 +145,42 @@ def graph_show(
     _print_dependency_graph(console, graph)
 
 
+@gate_app.callback(invoke_without_command=True)
+def gate(
+    ctx: typer.Context,
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to gate.",
+    ),
+    persist_review: bool = typer.Option(
+        False,
+        "--persist-review",
+        help="Also persist reports under reviews/gatekeeper/.",
+    ),
+) -> None:
+    """Run the gatekeeper when no gate subcommand is provided."""
+    if ctx.invoked_subcommand is None:
+        _run_gatekeeper_cli(repo_root=repo_root, persist_review=persist_review)
+
+
+@gate_app.command("run")
+def gate_run(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to gate.",
+    ),
+    persist_review: bool = typer.Option(
+        False,
+        "--persist-review",
+        help="Also persist reports under reviews/gatekeeper/.",
+    ),
+) -> None:
+    """Run gatekeeper checks and write JSON/Markdown reports."""
+    _run_gatekeeper_cli(repo_root=repo_root, persist_review=persist_review)
+
+
 def _run_validation(
     *,
     report_factory: Callable[[], ValidationReport],
@@ -201,6 +235,34 @@ def _print_validation_report(
         artifact_id = failure.artifact_id or "-"
         console.print(
             f"- {failure.gate} | {source_path} | {artifact_id} | {failure.message}"
+        )
+
+
+def _run_gatekeeper_cli(repo_root: Path, persist_review: bool) -> None:
+    console = Console(width=120)
+    result = run_gatekeeper(
+        RepoContext(repo_root),
+        persist_review=persist_review,
+    )
+    _print_gatekeeper_result(console, result)
+    if result.report.blocking_issues:
+        raise typer.Exit(code=1)
+
+
+def _print_gatekeeper_result(
+    console: Console,
+    result: GatekeeperRunResult,
+) -> None:
+    report = result.report
+    console.print(f"Gate verdict: {report.verdict}")
+    console.print(f"JSON report: {result.json_path}")
+    console.print(f"Markdown report: {result.markdown_path}")
+    for issue in report.blocking_issues:
+        source_path = issue.source_path or "-"
+        artifact_id = issue.artifact_id or "-"
+        console.print(
+            f"- {issue.gate_id} {issue.gate_name} | "
+            f"{source_path} | {artifact_id} | {issue.message}"
         )
 
 

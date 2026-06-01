@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Task 008
+## Current State After Task 009
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, and deterministic repository index rebuilds.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, and gatekeeper report generation.
 
 The Python scaffold defines a `cosheaf` package, a Typer-based `cosheaf` CLI entry point, development dependencies, Makefile targets, a Dockerfile for reproducible local development, and smoke tests for import and CLI help/version behavior.
 
@@ -18,7 +18,9 @@ The graph layer builds directed dependency edges from artifact to dependency, de
 
 The index rebuild command writes `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json` from scratch. The SQLite index stores artifact ID, type, status, path, title, and domain, plus deterministic dependency rows. The manifest ordering is deterministic and stable across delete-and-rebuild cycles.
 
-No verifier adapters exist yet. No CI configuration exists yet. `cosheaf gate` remains scaffold-only.
+The gatekeeper command runs G1-G5 implemented gates and G6-G8 placeholder gates. It writes JSON and Markdown reports to `.cosheaf/reports/` by default, can persist copies under `reviews/gatekeeper/` with `--persist-review`, and exits nonzero when blocking issues exist. Placeholder gates are reported as skipped and do not pretend to pass.
+
+No verifier adapters exist yet. No CI configuration exists yet.
 
 ## Implemented
 
@@ -34,7 +36,8 @@ No verifier adapters exist yet. No CI configuration exists yet. `cosheaf gate` r
 - Implemented `cosheaf artifact validate <path>` single-file validation CLI.
 - Implemented `cosheaf index rebuild` deterministic repository index rebuild CLI.
 - Implemented `cosheaf graph show` dependency graph inspection CLI.
-- Scaffold-only `gate` CLI placeholder that explicitly reports that full gatekeeper enforcement is not implemented.
+- Implemented `cosheaf gate run` gatekeeper report CLI.
+- Implemented `cosheaf gate` default gatekeeper run for the existing `make gate` target.
 - Dockerfile for local development.
 - Smoke tests under `tests/`.
 - Repository layout under `kb/`, `issues/`, `experiments/`, and `reviews/`.
@@ -52,11 +55,12 @@ No verifier adapters exist yet. No CI configuration exists yet. `cosheaf gate` r
 - Dependency graph utilities under `cosheaf/graph/`.
 - Deterministic SQLite and manifest index rebuild in `cosheaf/storage/index.py`.
 - Graph and index tests in `tests/test_claim_graph.py` and `tests/test_index_rebuild.py`.
+- Gatekeeper reports in `cosheaf/gates/gatekeeper.py`.
+- Gatekeeper tests in `tests/test_gatekeeper.py`.
 
 ## Not Implemented Yet
 
 - SQLite-backed query API beyond deterministic index rebuild output.
-- Full gatekeeper enforcement beyond the initial validation orchestrator.
 - Verifier adapters.
-- Verifier gate, reproducibility metadata gate, and PR checklist gate.
+- Verifier gate, reproducibility metadata gate, and PR checklist gate beyond skipped placeholders.
 - CI.
