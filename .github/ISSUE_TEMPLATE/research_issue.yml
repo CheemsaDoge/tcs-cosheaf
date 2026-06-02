@@ -1,0 +1,61 @@
+name: Research Issue
+description: Track a TCS research question or artifact investigation.
+title: "Research: "
+labels:
+  - research
+body:
+  - type: textarea
+    id: problem_statement
+    attributes:
+      label: Problem Statement
+      description: State the mathematical or theoretical computer science problem.
+    validations:
+      required: true
+  - type: input
+    id: domain
+    attributes:
+      label: Domain
+      description: Name the relevant TCS area or subarea.
+      placeholder: "complexity theory, graph algorithms, proof complexity, ..."
+    validations:
+      required: true
+  - type: textarea
+    id: known_baselines
+    attributes:
+      label: Known Baselines
+      description: List known theorems, algorithms, reductions, lower bounds, or references.
+    validations:
+      required: true
+  - type: textarea
+    id: relevant_artifacts
+    attributes:
+      label: Relevant Artifacts
+      description: List related artifact IDs or repository paths.
+      placeholder: |
+        - claim.example...
+        - kb/accepted/...
+    validations:
+      required: true
+  - type: textarea
+    id: expected_evidence
+    attributes:
+      label: Expected Evidence
+      description: Describe the evidence needed, such as proof sketches, verifier output, experiments, or counterexamples.
+    validations:
+      required: true
+  - type: textarea
+    id: required_gates
+    attributes:
+      label: Required Gates
+      description: List the gates that must pass or explain why a gate is not applicable.
+      value: |
+        - schema gate
+        - ID uniqueness gate
+        - status/path gate
+        - dependency gate
+        - evidence path gate
+        - verifier gate
+        - reproducibility metadata gate
+        - PR checklist gate
+    validations:
+      required: true

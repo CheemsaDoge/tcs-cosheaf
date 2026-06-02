@@ -16,9 +16,9 @@ tags:
 statement: >
   The triangle graph K_3 has vertices {a, b, c} and edges {ab, ac, bc}.
 evidence:
-  - kind: construction
-    path: examples/constructions/graph.example.yaml
-    summary: Explicit finite graph construction.
+  - kind: python_checker
+    path: experiments/evaluators/check_graph_example.py
+    summary: Verifies the explicit triangle graph example.
 review:
   state: requested
   notes: Example construction artifact only.

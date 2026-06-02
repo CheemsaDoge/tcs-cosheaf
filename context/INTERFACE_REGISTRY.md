@@ -22,7 +22,16 @@
 - `cosheaf index rebuild --repo-root <path>`: rebuilds index outputs for an explicit repository root.
 - `cosheaf graph show`: prints the directed artifact dependency graph.
 - `cosheaf graph show --repo-root <path>`: prints the graph for an explicit repository root.
-- `cosheaf gate`: scaffold-only placeholder. It reports that gatekeeper enforcement is not implemented yet and that no repository gates were enforced.
+- `cosheaf gate`: runs the gatekeeper with default options and writes reports under `.cosheaf/reports/`.
+- `cosheaf gate --repo-root <path>`: runs the gatekeeper for an explicit repository root.
+- `cosheaf gate --persist-review`: also persists report copies under `reviews/gatekeeper/`.
+- `cosheaf gate run`: explicit gatekeeper run command.
+- `cosheaf gate run --repo-root <path>`: runs the gatekeeper for an explicit repository root.
+- `cosheaf gate run --persist-review`: also persists report copies under `reviews/gatekeeper/`.
+- `cosheaf context build <issue-id>`: builds a bounded deterministic context pack under `context/TASKS/<issue-id>/`.
+- `cosheaf context build <issue-id> --repo-root <path>`: builds a context pack for an explicit repository root.
+- `cosheaf context show <issue-id>`: builds the context pack and prints `CONTEXT.md`.
+- `cosheaf context show <issue-id> --repo-root <path>`: shows context for an explicit repository root.
 
 ### Python API
 
@@ -119,10 +128,142 @@ depending on draft or otherwise pre-accepted artifacts.
 - `cosheaf.gates.gatekeeper.ValidationReport`: validation report with loaded records and failures.
 - `cosheaf.gates.gatekeeper.validate_repository(context: RepoContext) -> ValidationReport`
 - `cosheaf.gates.gatekeeper.validate_artifact_file(context: RepoContext, path: Path) -> ValidationReport`
+- `cosheaf.gates.gatekeeper.GateIssue`: blocking or nonblocking gatekeeper issue row.
+- `cosheaf.gates.gatekeeper.GateResult`: one gate result in a gatekeeper run, including optional machine-readable `details`.
+- `cosheaf.gates.gatekeeper.GatekeeperReport`: machine-readable gatekeeper report.
+- `cosheaf.gates.gatekeeper.GatekeeperRunResult`: report and written report paths.
+- `cosheaf.gates.gatekeeper.GateStatus`: gate status literal type.
+- `cosheaf.gates.gatekeeper.GateVerdict`: gatekeeper verdict literal type.
+- `cosheaf.gates.gatekeeper.run_gatekeeper(context: RepoContext, *, persist_review: bool = False, timestamp: str | None = None) -> GatekeeperRunResult`
 
 The initial validation orchestrator is deterministic and filesystem-backed. It
-does not run verifier adapters or enforce the full future `cosheaf gate`
-workflow.
+does not run verifier adapters. `run_gatekeeper` currently runs G1-G5 gates and
+records G6-G8 as skipped placeholders, writing JSON and Markdown reports under
+`.cosheaf/reports/` by default.
+
+#### Agent Context Packs
+
+- `cosheaf.agent.context_pack.ContextPackError`: expected context pack generation error, such as a missing issue ID.
+- `cosheaf.agent.context_pack.ContextPackResult`: written context pack metadata with issue ID, task directory, and file paths.
+- `cosheaf.agent.context_pack.build_context_pack(context: RepoContext, issue_id: str) -> ContextPackResult`
+- `cosheaf.agent.context_pack.show_context_pack(context: RepoContext, issue_id: str) -> str`
+
+Context pack generation loads repository YAML records, finds an issue by ID,
+selects artifacts from `related_artifacts` plus one dependency hop, prefers
+accepted artifacts before draft artifacts, visibly labels draft artifacts, and
+writes deterministic Markdown files under `context/TASKS/<issue-id>/`.
+
+Generated context pack files are:
+
+- `CONTEXT.md`
+- `ACCEPTANCE.md`
+- `RELEVANT_ARTIFACTS.md`
+- `KNOWN_FAILURES.md`
+- `COMMANDS.md`
+
+#### Verification
+
+- `cosheaf.verification.base.VerifierAdapter`: protocol for verifier adapters.
+- `cosheaf.verification.result.VerificationStatus`: normalized result status enum with `pass`, `fail`, `error`, and `skipped`.
+- `cosheaf.verification.result.VerificationResult`: Pydantic v2 model for normalized verifier output.
+- `cosheaf.verification.registry.VerifierRegistry`: instance-local verifier adapter registry.
+- `cosheaf.verification.registry.VerifierRegistryError`: registry registration error.
+- `cosheaf.verification.registry.default_verifier_registry() -> VerifierRegistry`
+- `cosheaf.verification.python_checker.PythonCheckerAdapter`: verifier adapter for `kind: python_checker` evidence.
+- `cosheaf.verification.python_checker.PythonCheckerSpec`: normalized Python checker evidence command specification.
+- `cosheaf.verification.sat_adapter.SatAdapter`: optional SAT solver skeleton adapter.
+- `cosheaf.verification.smt_adapter.SmtAdapter`: optional SMT solver skeleton adapter.
+- `cosheaf.verification.lean_adapter.LeanAdapter`: optional Lean skeleton adapter.
+
+`VerifierAdapter` requires:
+
+- `name: str`
+- `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
+- `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
+
+`VerificationResult` fields are:
+
+- `verifier`
+- `artifact_id`
+- `status`
+- `started_at`
+- `ended_at`
+- `command`
+- `cwd`
+- `exit_code`
+- `stdout_path`
+- `stderr_path`
+- `evidence_paths`
+- `message`
+
+`VerificationResult.to_dict() -> dict[str, Any]` returns a deterministic
+machine-readable mapping in model field order. `VerificationResult.to_json() ->
+str` returns deterministic JSON for the result. Timestamps are the only expected
+run-to-run variation when callers construct results with live clock values.
+
+`VerificationResult` exposes status helpers:
+
+- `is_pass`
+- `is_fail`
+- `is_error`
+- `is_skipped`
+
+`VerifierRegistry` exposes:
+
+- `register(adapter: VerifierAdapter) -> None`
+- `get(name: str) -> VerifierAdapter | None`
+- `names -> tuple[str, ...]`
+- `adapters -> tuple[VerifierAdapter, ...]`
+
+Registry ordering is deterministic by adapter name. Duplicate adapter names
+raise `VerifierRegistryError`.
+
+The default verifier registry currently registers `LeanAdapter`,
+`PythonCheckerAdapter`, `SatAdapter`, and `SmtAdapter`. Registry ordering is
+deterministic by adapter name.
+
+`PythonCheckerAdapter` exposes:
+
+- `name = "python_checker"`
+- `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
+- `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
+
+The adapter runs evidence entries with `kind: python_checker` from the
+repository root. With the current artifact evidence model, it derives the command
+from the active Python executable, the evidence `path`, and the artifact source
+path. It writes stdout and stderr under `.cosheaf/logs/`, records command and
+cwd metadata, returns `pass` for exit code `0`, `fail` for nonzero exit code,
+and `error` for timeout or missing checker scripts.
+
+`SatAdapter` exposes:
+
+- `name = "sat"`
+- `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
+- `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
+
+It recognizes evidence kinds `sat`, `sat_solver`, and `sat_checker`. It checks
+the configured SAT solver command, defaults to `kissat`, and returns `skipped`
+when the solver is unavailable or when real SAT verification is still TODO.
+
+`SmtAdapter` exposes:
+
+- `name = "smt"`
+- `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
+- `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
+
+It recognizes evidence kinds `smt`, `smt_solver`, and `smt_checker`. It checks
+the configured SMT solver command, defaults to `z3`, and returns `skipped` when
+the solver is unavailable or when real SMT verification is still TODO.
+
+`LeanAdapter` exposes:
+
+- `name = "lean"`
+- `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
+- `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
+
+It recognizes evidence kinds `lean`, `lean4`, and `lean_checker`. It checks the
+configured Lean command, defaults to `lean`, and returns `skipped` when Lean is
+unavailable or when real Lean verification is still TODO.
 
 ### Makefile Targets
 
@@ -130,7 +271,7 @@ workflow.
 - `make typecheck`: runs `python -m mypy cosheaf tests`
 - `make test`: runs `python -m pytest`
 - `make validate`: runs `python -m cosheaf.cli validate`.
-- `make gate`: runs the scaffold-only CLI gate placeholder.
+- `make gate`: runs `python -m cosheaf.cli gate`, which defaults to a real gatekeeper run.
 
 ## Registration Rule
 
