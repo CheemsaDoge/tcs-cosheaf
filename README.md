@@ -66,7 +66,6 @@ Planned or incomplete:
 - Real SAT, SMT, and Lean solver invocation and result parsing.
 - SQLite-backed query API beyond rebuild outputs.
 - First end-to-end TCS pilot workflow.
-- Branch protection and review policy documentation.
 
 ## Core Concepts
 
@@ -141,7 +140,6 @@ but not implemented are reported as skipped, not passed.
 The roadmap is tracked in [docs/ROADMAP.md](docs/ROADMAP.md). Current active
 issues include:
 
-- [#4 Document branch protection and review policy](https://github.com/CheemsaDoge/tcs-cosheaf/issues/4)
 - [#5 Create first graph-theory TCS pilot workflow](https://github.com/CheemsaDoge/tcs-cosheaf/issues/5)
 - [#6 Implement reproducibility metadata gate](https://github.com/CheemsaDoge/tcs-cosheaf/issues/6)
 
@@ -165,6 +163,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Gatekeeper and validation gates](docs/GATES.md)
 - [Artifact schema](docs/ARTIFACT_SCHEMA.md)
 - [Codex workflow](docs/CODEX_WORKFLOW.md)
+- [Review policy](docs/REVIEW_POLICY.md)
 - [Current milestone](context/CURRENT_MILESTONE.md)
 - [Project state](context/PROJECT_STATE.md)
 - [Public interface registry](context/INTERFACE_REGISTRY.md)
