@@ -22,6 +22,33 @@ One task = one branch = one PR. Tasks should be small enough to review, verify, 
 
 Do not run large tasks. Split broad work into sequenced branches with clear handoff notes and follow-up tasks.
 
+## GitHub Workflow
+
+Pull requests are the review unit for Codex tasks. Each PR should use the
+repository pull request template and explicitly record the summary, changed
+files, tests run, risks, interface changes, documentation changes,
+artifact/schema changes, and gatekeeper result.
+
+GitHub issue forms are provided for feature tasks, bug tasks, and research
+issues. Feature task issues should constrain Codex work with a goal, allowed
+files, acceptance criteria, required commands, and a context pack path. Research
+issues should record the problem statement, domain, known baselines, relevant
+artifacts, expected evidence, and required gates. Bug task issues should record
+observed behavior, expected behavior, reproduction steps, logs, and the
+suspected module.
+
+GitHub Actions CI runs on pull requests and pushes to `main` using Python 3.11.
+CI installs the package with development dependencies and then runs:
+
+- `make lint`
+- `make typecheck`
+- `make test`
+- `make validate`
+- `make gate`
+
+CI must not require optional external formal tools such as Lean, Sage, Z3, cvc5,
+or SAT solvers. Tests must not make network calls.
+
 ## Interface and Architecture Changes
 
 Public interface changes require INTERFACE_REGISTRY update in `context/INTERFACE_REGISTRY.md`.

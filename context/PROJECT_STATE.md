@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Task 013
+## Current State After Task 014
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, issue-scoped context pack generation, the initial verifier adapter interface, a Python checker verifier adapter, and optional-tool SAT/SMT/Lean verifier skeleton adapters.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, issue-scoped context pack generation, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, GitHub Actions CI, and GitHub collaboration templates.
 
 The Python scaffold defines a `cosheaf` package, a Typer-based `cosheaf` CLI entry point, development dependencies, Makefile targets, a Dockerfile for reproducible local development, and smoke tests for import and CLI help/version behavior.
 
@@ -28,7 +28,17 @@ The Python checker adapter runs `kind: python_checker` evidence from the reposit
 
 The SAT, SMT, and Lean adapters are optional-tool skeletons. They check for configured solver/tool availability, return `skipped` when the tool is unavailable, and do not add hard dependencies on Lean, Z3, cvc5, Sage, or PySAT. They are registered in the default verifier registry but do not run unless an artifact has matching SAT, SMT, or Lean evidence.
 
-No real SAT, SMT, or Lean verification execution exists yet. No CI configuration exists yet.
+No real SAT, SMT, or Lean verification execution exists yet.
+
+GitHub Actions CI is configured to run on pull requests and pushes to `main`
+with Python 3.11. It installs the package with development dependencies and
+runs `make lint`, `make typecheck`, `make test`, `make validate`, and
+`make gate`. The CI workflow does not install optional external formal tools.
+
+GitHub issue templates now cover feature tasks, bug tasks, and research issues.
+The pull request template requires summary, changed files, tests run, risks,
+interface changes, documentation changes, artifact/schema changes, and the
+gatekeeper result.
 
 ## Implemented
 
@@ -80,11 +90,13 @@ No real SAT, SMT, or Lean verification execution exists yet. No CI configuration
 - SMT verifier skeleton in `cosheaf/verification/smt_adapter.py`.
 - Lean verifier skeleton in `cosheaf/verification/lean_adapter.py`.
 - Optional verifier skeleton tests in `tests/test_optional_verifier_skeletons.py`.
+- GitHub Actions CI in `.github/workflows/ci.yml`.
+- Feature task, bug task, and research issue forms under `.github/ISSUE_TEMPLATE/`.
+- Pull request template in `.github/pull_request_template.md`.
 
 ## Not Implemented Yet
 
 - SQLite-backed query API beyond deterministic index rebuild output.
 - Real SAT, SMT, and Lean solver invocation and result parsing.
 - Reproducibility metadata gate and PR checklist gate beyond skipped placeholders.
-- CI.
 - Advanced relevance ranking beyond issue-related artifacts plus one dependency hop.

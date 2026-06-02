@@ -1,0 +1,57 @@
+name: Feature Task
+description: Plan a bounded implementation task for TCS-Cosheaf.
+title: "Task: "
+labels:
+  - task
+  - feature
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: Describe the concrete behavior, workflow, or repository capability to add.
+      placeholder: "Implement ..."
+    validations:
+      required: true
+  - type: textarea
+    id: allowed_files
+    attributes:
+      label: Allowed Files
+      description: List the exact files or directories the task may create or update.
+      placeholder: |
+        - cosheaf/...
+        - tests/...
+        - docs/...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: List the observable requirements that must be true before review.
+      placeholder: |
+        - ...
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: required_commands
+    attributes:
+      label: Required Commands
+      description: List verification commands Codex must run before handoff.
+      value: |
+        - make lint
+        - make typecheck
+        - make test
+        - make validate
+        - make gate
+    validations:
+      required: true
+  - type: input
+    id: context_pack_path
+    attributes:
+      label: Context Pack Path
+      description: Repository path to the generated task context pack, if one exists.
+      placeholder: "context/TASKS/<issue-id>/"
+    validations:
+      required: true

@@ -1,0 +1,48 @@
+name: Bug Task
+description: Report a reproducible defect for a bounded fix task.
+title: "Bug: "
+labels:
+  - bug
+  - task
+body:
+  - type: textarea
+    id: observed_behavior
+    attributes:
+      label: Observed Behavior
+      description: Describe what actually happened.
+    validations:
+      required: true
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+      description: Describe the intended behavior or invariant.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide exact steps, commands, or fixture paths that reproduce the bug.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste concise logs, command output, report paths, or failure snippets.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: suspected_module
+    attributes:
+      label: Suspected Module
+      description: Name the most likely package, layer, or file path.
+      placeholder: "cosheaf/gates/..."
+    validations:
+      required: true
