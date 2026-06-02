@@ -62,6 +62,13 @@ class PythonCheckerAdapter:
                 stdout_path=None,
                 stderr_path=None,
                 evidence_paths=(),
+                timeout_seconds=None,
+                input_paths=(),
+                output_paths=(),
+                tool_name="python",
+                tool_version=_python_version(),
+                seed=None,
+                environment=f"python_executable={self.python_executable}",
                 message="No python_checker evidence found.",
             )
 
@@ -105,6 +112,11 @@ class PythonCheckerAdapter:
                 stderr_path=stderr_path,
                 repo=repo,
                 evidence_paths=(spec.path,),
+                timeout_seconds=spec.timeout_seconds,
+                input_paths=(spec.path, artifact_source),
+                tool_name="python",
+                tool_version=_python_version(),
+                environment=f"python_executable={self.python_executable}",
                 message=message,
             )
 
@@ -137,6 +149,11 @@ class PythonCheckerAdapter:
                 stderr_path=stderr_path,
                 repo=repo,
                 evidence_paths=(spec.path,),
+                timeout_seconds=spec.timeout_seconds,
+                input_paths=(spec.path, artifact_source),
+                tool_name="python",
+                tool_version=_python_version(),
+                environment=f"python_executable={self.python_executable}",
                 message=message,
             )
         except OSError as exc:
@@ -155,6 +172,11 @@ class PythonCheckerAdapter:
                 stderr_path=stderr_path,
                 repo=repo,
                 evidence_paths=(spec.path,),
+                timeout_seconds=spec.timeout_seconds,
+                input_paths=(spec.path, artifact_source),
+                tool_name="python",
+                tool_version=_python_version(),
+                environment=f"python_executable={self.python_executable}",
                 message=message,
             )
 
@@ -182,6 +204,11 @@ class PythonCheckerAdapter:
             stderr_path=stderr_path,
             repo=repo,
             evidence_paths=(spec.path,),
+            timeout_seconds=spec.timeout_seconds,
+            input_paths=(spec.path, artifact_source),
+            tool_name="python",
+            tool_version=_python_version(),
+            environment=f"python_executable={self.python_executable}",
             message=message,
         )
 
@@ -287,8 +314,15 @@ def _result(
     stderr_path: Path,
     repo: RepoContext,
     evidence_paths: tuple[str, ...],
+    timeout_seconds: float,
+    input_paths: tuple[str, ...],
+    tool_name: str,
+    tool_version: str | None,
+    environment: str,
     message: str,
 ) -> VerificationResult:
+    stdout_relative = _repo_relative(repo, stdout_path)
+    stderr_relative = _repo_relative(repo, stderr_path)
     return VerificationResult(
         verifier=PythonCheckerAdapter.name,
         artifact_id=artifact.id,
@@ -298,9 +332,16 @@ def _result(
         command=command,
         cwd=cwd,
         exit_code=exit_code,
-        stdout_path=_repo_relative(repo, stdout_path),
-        stderr_path=_repo_relative(repo, stderr_path),
+        stdout_path=stdout_relative,
+        stderr_path=stderr_relative,
         evidence_paths=evidence_paths,
+        timeout_seconds=timeout_seconds,
+        input_paths=input_paths,
+        output_paths=(stdout_relative, stderr_relative),
+        tool_name=tool_name,
+        tool_version=tool_version,
+        seed=None,
+        environment=environment,
         message=message,
     )
 
@@ -319,3 +360,7 @@ def _process_output(value: bytes | str | None) -> str:
 
 def _now() -> datetime:
     return datetime.now(UTC)
+
+
+def _python_version() -> str:
+    return sys.version.split()[0]

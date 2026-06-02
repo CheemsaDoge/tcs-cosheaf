@@ -96,6 +96,9 @@ def _skipped_result(
         stdout_path=None,
         stderr_path=None,
         evidence_paths=evidence_paths,
+        input_paths=evidence_paths,
+        tool_name=SmtAdapter.name,
+        tool_version=None,
         message=message,
     )
 

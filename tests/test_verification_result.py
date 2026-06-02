@@ -67,6 +67,13 @@ def test_pass_result_serializes_deterministically() -> None:
         "stdout_path",
         "stderr_path",
         "evidence_paths",
+        "timeout_seconds",
+        "input_paths",
+        "output_paths",
+        "tool_name",
+        "tool_version",
+        "seed",
+        "environment",
         "message",
     ]
     assert serialized["status"] == "pass"

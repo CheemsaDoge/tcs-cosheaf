@@ -94,6 +94,6 @@ Machine-readable JSON Schema files exist, along with example YAML artifacts and
 initial Pydantic v2 models. Filesystem-backed loading, repository scanning,
 schema/model validation through `cosheaf validate`, single-file validation
 through `cosheaf artifact validate <path>`, and gatekeeper report generation
-through `cosheaf gate` are implemented. Some planned gate checks, such as
-reproducibility metadata and PR checklist enforcement, are still reported as
-skipped placeholders.
+through `cosheaf gate` are implemented. The reproducibility metadata gate is
+implemented for executable evidence through verifier-result metadata. PR
+checklist enforcement is still reported as a skipped placeholder.

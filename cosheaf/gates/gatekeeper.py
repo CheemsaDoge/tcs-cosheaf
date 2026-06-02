@@ -14,6 +14,10 @@ from cosheaf.gates.dependency_gate import (
     validate_dependencies,
     validate_id_uniqueness,
 )
+from cosheaf.gates.reproducibility_gate import (
+    ReproducibilityMetadataResult,
+    validate_reproducibility_metadata,
+)
 from cosheaf.gates.schema_gate import (
     ValidationFailure,
     load_schema_valid_record,
@@ -175,6 +179,7 @@ def run_gatekeeper(
 
     schema_result = load_schema_valid_records(context)
     records = schema_result.records
+    verification_results = _run_verifiers(context, records)
     gates = (
         _gate_from_failures(
             gate_id="G1",
@@ -208,8 +213,10 @@ def run_gatekeeper(
             failures=validate_evidence_paths(context, records),
             pass_summary="All local evidence paths exist.",
         ),
-        _verifier_gate(context, records),
-        _placeholder_gate("G7", "reproducibility metadata gate placeholder"),
+        _verifier_gate(verification_results),
+        _reproducibility_metadata_gate(
+            validate_reproducibility_metadata(records, verification_results)
+        ),
         _placeholder_gate("G8", "PR checklist gate placeholder"),
     )
 
@@ -309,10 +316,10 @@ def _placeholder_gate(gate_id: str, name: str) -> GateResult:
     )
 
 
-def _verifier_gate(
+def _run_verifiers(
     context: RepoContext,
     records: tuple[LoadedRecord, ...],
-) -> GateResult:
+) -> tuple[VerificationResult, ...]:
     registry = default_verifier_registry()
     results: list[VerificationResult] = []
     for adapter in registry.adapters:
@@ -321,7 +328,10 @@ def _verifier_gate(
                 continue
             if adapter.can_verify(loaded.record, context):
                 results.append(adapter.verify(loaded.record, context))
+    return _sort_verification_results(results)
 
+
+def _verifier_gate(results: tuple[VerificationResult, ...]) -> GateResult:
     if not results:
         issue = GateIssue(
             gate_id="G6",
@@ -349,7 +359,7 @@ def _verifier_gate(
         for result in results
         if result.status is VerificationStatus.SKIPPED
     )
-    details = tuple(result.to_dict() for result in _sort_verification_results(results))
+    details = tuple(result.to_dict() for result in results)
     if blocking_issues:
         return GateResult(
             gate_id="G6",
@@ -374,6 +384,43 @@ def _verifier_gate(
         name="verifier gate",
         status="pass",
         summary=f"Verifier gate passed for {len(results)} result(s).",
+        details=details,
+    )
+
+
+def _reproducibility_metadata_gate(
+    result: ReproducibilityMetadataResult,
+) -> GateResult:
+    details = tuple(check.to_dict() for check in result.checks)
+    if result.failures:
+        issues = tuple(
+            _issue_from_failure("G7", "reproducibility metadata gate", failure)
+            for failure in result.failures
+        )
+        return GateResult(
+            gate_id="G7",
+            name="reproducibility metadata gate",
+            status="fail",
+            summary=f"{len(issues)} blocking reproducibility metadata issue(s).",
+            blocking_issues=issues,
+            details=details,
+        )
+    if result.applicable_count == 0:
+        return GateResult(
+            gate_id="G7",
+            name="reproducibility metadata gate",
+            status="not_applicable",
+            summary="No executable evidence requires reproducibility metadata.",
+            details=details,
+        )
+    return GateResult(
+        gate_id="G7",
+        name="reproducibility metadata gate",
+        status="pass",
+        summary=(
+            "Reproducibility metadata passed for "
+            f"{result.applicable_count} executable evidence item(s)."
+        ),
         details=details,
     )
 

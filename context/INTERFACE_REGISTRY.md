@@ -125,6 +125,9 @@ depending on draft or otherwise pre-accepted artifacts.
 - `cosheaf.gates.status_gate.validate_evidence_paths(context: RepoContext, records: tuple[LoadedRecord, ...]) -> list[ValidationFailure]`
 - `cosheaf.gates.dependency_gate.validate_id_uniqueness(records: tuple[LoadedRecord, ...]) -> list[ValidationFailure]`
 - `cosheaf.gates.dependency_gate.validate_dependencies(records: tuple[LoadedRecord, ...]) -> list[ValidationFailure]`
+- `cosheaf.gates.reproducibility_gate.ReproducibilityCheck`: one executable evidence metadata check row.
+- `cosheaf.gates.reproducibility_gate.ReproducibilityMetadataResult`: aggregate reproducibility metadata gate result.
+- `cosheaf.gates.reproducibility_gate.validate_reproducibility_metadata(records: tuple[LoadedRecord, ...], verification_results: tuple[VerificationResult, ...]) -> ReproducibilityMetadataResult`
 - `cosheaf.gates.gatekeeper.ValidationReport`: validation report with loaded records and failures.
 - `cosheaf.gates.gatekeeper.validate_repository(context: RepoContext) -> ValidationReport`
 - `cosheaf.gates.gatekeeper.validate_artifact_file(context: RepoContext, path: Path) -> ValidationReport`
@@ -139,8 +142,9 @@ depending on draft or otherwise pre-accepted artifacts.
 The validation orchestrator is deterministic and filesystem-backed.
 `validate_repository` does not run verifier adapters. `run_gatekeeper` runs
 G1-G5 validation gates, runs the G6 verifier gate through the default verifier
-registry, and records G7-G8 as skipped placeholders. It writes JSON and
-Markdown reports under `.cosheaf/reports/` by default.
+registry, runs the G7 reproducibility metadata gate over executable evidence
+and verifier results, and records G8 as a skipped placeholder. It writes JSON
+and Markdown reports under `.cosheaf/reports/` by default.
 
 #### Agent Context Packs
 
@@ -195,6 +199,13 @@ Generated context pack files are:
 - `stdout_path`
 - `stderr_path`
 - `evidence_paths`
+- `timeout_seconds`
+- `input_paths`
+- `output_paths`
+- `tool_name`
+- `tool_version`
+- `seed`
+- `environment`
 - `message`
 
 `VerificationResult.to_dict() -> dict[str, Any]` returns a deterministic
@@ -232,9 +243,10 @@ deterministic by adapter name.
 The adapter runs evidence entries with `kind: python_checker` from the
 repository root. With the current artifact evidence model, it derives the command
 from the active Python executable, the evidence `path`, and the artifact source
-path. It writes stdout and stderr under `.cosheaf/logs/`, records command and
-cwd metadata, returns `pass` for exit code `0`, `fail` for nonzero exit code,
-and `error` for timeout or missing checker scripts.
+path. It writes stdout and stderr under `.cosheaf/logs/`, records command, cwd,
+timeout, input path, output path, tool, tool version, and environment metadata,
+returns `pass` for exit code `0`, `fail` for nonzero exit code, and `error` for
+timeout or missing checker scripts.
 
 `SatAdapter` exposes:
 
