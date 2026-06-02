@@ -18,7 +18,11 @@ The graph layer builds directed dependency edges from artifact to dependency, de
 
 The index rebuild command writes `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json` from scratch. The SQLite index stores artifact ID, type, status, path, title, and domain, plus deterministic dependency rows. The manifest ordering is deterministic and stable across delete-and-rebuild cycles.
 
-The gatekeeper command runs G1-G5 implemented gates and G6-G8 placeholder gates. It writes JSON and Markdown reports to `.cosheaf/reports/` by default, can persist copies under `reviews/gatekeeper/` with `--persist-review`, and exits nonzero when blocking issues exist. Placeholder gates are reported as skipped and do not pretend to pass.
+The gatekeeper command runs G1-G5 implemented gates, the G6 verifier gate, and
+G7-G8 placeholder gates. It writes JSON and Markdown reports to
+`.cosheaf/reports/` by default, can persist copies under `reviews/gatekeeper/`
+with `--persist-review`, and exits nonzero when blocking issues exist.
+Placeholder gates are reported as skipped and do not pretend to pass.
 
 The agent harness layer now builds bounded deterministic context packs for issue IDs. Context packs are written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`, `ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and `COMMANDS.md`. Relevant artifacts are selected from the issue's related artifacts plus one dependency hop; draft artifacts are visibly labeled.
 
@@ -33,7 +37,8 @@ No real SAT, SMT, or Lean verification execution exists yet.
 GitHub Actions CI is configured to run on pull requests and pushes to `main`
 with Python 3.11. It installs the package with development dependencies and
 runs `make lint`, `make typecheck`, `make test`, `make validate`, and
-`make gate`. The CI workflow does not install optional external formal tools.
+`make gate` as separate status checks. The CI workflow does not install
+optional external formal tools.
 
 GitHub issue templates now cover feature tasks, bug tasks, and research issues.
 The pull request template requires summary, changed files, tests run, risks,

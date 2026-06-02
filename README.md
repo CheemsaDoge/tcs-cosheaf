@@ -26,11 +26,17 @@ make validate
 make gate
 ```
 
-The `validate` and `gate` targets are scaffold-only placeholders at this stage. They report that artifact validation and gatekeeper enforcement are not implemented yet.
+The `validate` target runs repository validation for YAML/model parsing, ID
+uniqueness, status/path consistency, dependency checks, and local evidence path
+checks. The `gate` target runs the gatekeeper, writes reports under
+`.cosheaf/reports/`, and reports not-yet-implemented gates as skipped rather
+than pretending they passed.
 
 Use the CLI:
 
 ```bash
 cosheaf --help
 cosheaf version
+cosheaf validate
+cosheaf gate
 ```

@@ -136,10 +136,11 @@ depending on draft or otherwise pre-accepted artifacts.
 - `cosheaf.gates.gatekeeper.GateVerdict`: gatekeeper verdict literal type.
 - `cosheaf.gates.gatekeeper.run_gatekeeper(context: RepoContext, *, persist_review: bool = False, timestamp: str | None = None) -> GatekeeperRunResult`
 
-The initial validation orchestrator is deterministic and filesystem-backed. It
-does not run verifier adapters. `run_gatekeeper` currently runs G1-G5 gates and
-records G6-G8 as skipped placeholders, writing JSON and Markdown reports under
-`.cosheaf/reports/` by default.
+The validation orchestrator is deterministic and filesystem-backed.
+`validate_repository` does not run verifier adapters. `run_gatekeeper` runs
+G1-G5 validation gates, runs the G6 verifier gate through the default verifier
+registry, and records G7-G8 as skipped placeholders. It writes JSON and
+Markdown reports under `.cosheaf/reports/` by default.
 
 #### Agent Context Packs
 
