@@ -1,0 +1,52 @@
+id: construction.example.graph-toy.0001
+type: construction
+title: Example toy five-cycle graph
+domain:
+  - graph-theory
+  - finite-combinatorics
+status: draft
+created_at: "2026-06-02T00:00:00Z"
+updated_at: "2026-06-02T00:00:00Z"
+authors:
+  - codex
+depends_on: []
+supersedes: []
+tags:
+  - finite-graph
+  - cycle-graph
+  - example
+statement: |
+  This example mirrors the draft graph pilot construction in a non-authoritative
+  examples path. It is a small finite graph fixture, not an accepted artifact
+  and not a novelty claim.
+
+  CHECKER_DATA:
+  vertices:
+    - v0
+    - v1
+    - v2
+    - v3
+    - v4
+  edges:
+    - [v0, v1]
+    - [v1, v2]
+    - [v2, v3]
+    - [v3, v4]
+    - [v4, v0]
+  expected:
+    vertex_count: 5
+    edge_count: 5
+    degree_sequence: [2, 2, 2, 2, 2]
+    connected: true
+    triangle_free: true
+    contains_triangle: false
+evidence:
+  - kind: python_checker
+    path: experiments/evaluators/check_graph_toy.py
+    summary: Verifies the toy graph fixture properties.
+review:
+  state: requested
+  notes: Example fixture only.
+risk:
+  level: low
+  notes: Small explicit graph fixture with local checker evidence.

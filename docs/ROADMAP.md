@@ -20,33 +20,24 @@ Completed scaffold pieces include:
 - Context pack generation for issue-scoped agent work.
 - Verifier adapter protocol, Python checker adapter, and SAT/SMT/Lean skeleton
   adapters.
+- Reproducibility metadata gate for executable evidence verifier results.
+- Branch protection and review policy documentation.
+- First graph-theory pilot workflow with draft artifact evidence and a local
+  Python checker.
 - GitHub Actions CI and collaboration templates.
 
 ## Active Issues
 
-- [#4 Document branch protection and review policy](https://github.com/CheemsaDoge/tcs-cosheaf/issues/4)  
-  Make the PR review path explicit so required checks, branch protection, and
-  repository rules are discoverable.
-
-- [#5 Create first graph-theory TCS pilot workflow](https://github.com/CheemsaDoge/tcs-cosheaf/issues/5)  
-  Exercise the artifact, validation, context, and verifier flow on a small
-  graph-theory example without claiming broad theorem-proving capability.
-
-- [#6 Implement reproducibility metadata gate](https://github.com/CheemsaDoge/tcs-cosheaf/issues/6)  
-  Replace the current reproducibility metadata placeholder gate with concrete
-  checks for metadata needed to interpret generated outputs and verifier runs.
+- [#9 Implement task, worker contract, and orchestrator stub](https://github.com/CheemsaDoge/tcs-cosheaf/issues/9)
+- [#10 Improve context pack relevance ranking](https://github.com/CheemsaDoge/tcs-cosheaf/issues/10)
+- [#11 Add artifact create and move-status CLI](https://github.com/CheemsaDoge/tcs-cosheaf/issues/11)
+- [#13 Add second pilot: small SAT/SMT-checkable gadget](https://github.com/CheemsaDoge/tcs-cosheaf/issues/13)
 
 ## Next Named Milestones
 
 ### MVP Usability
 
 - Replace the PR checklist placeholder gate with real checks.
-- Add the reproducibility metadata gate from issue
-  [#6](https://github.com/CheemsaDoge/tcs-cosheaf/issues/6).
-- Document branch protection and review policy from issue
-  [#4](https://github.com/CheemsaDoge/tcs-cosheaf/issues/4).
-- Run the first graph-theory pilot workflow from issue
-  [#5](https://github.com/CheemsaDoge/tcs-cosheaf/issues/5).
 
 ### Verification Depth
 

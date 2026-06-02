@@ -96,6 +96,13 @@ def test_validate_artifact_id_returns_valid_id() -> None:
     )
 
 
+def test_validate_artifact_id_allows_numeric_version_segment() -> None:
+    assert (
+        validate_artifact_id("issue.graph-toy-search.0001")
+        == "issue.graph-toy-search.0001"
+    )
+
+
 def test_risk_defaults_work() -> None:
     data = _valid_artifact_data()
     data.pop("risk")

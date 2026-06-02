@@ -1,6 +1,6 @@
 # Project State
 
-## Current State After Issue 6
+## Current State After Issue 5
 
 TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, issue-scoped context pack generation, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, GitHub Actions CI, and GitHub collaboration templates.
 
@@ -45,6 +45,14 @@ evidence verifier results for command, working directory, timeout, input paths,
 stdout/stderr and output paths, tool metadata, and exit code for pass/fail
 results. Randomized evidence requires seed metadata. Non-executable evidence is
 reported as not applicable.
+
+The first graph-theory pilot workflow now exists for
+`issue.graph-toy-search.0001`. It adds a finite-combinatorics issue, a
+`locally_tested` draft construction artifact for a toy five-cycle graph, a
+matching example artifact, and executable Python-checker evidence. The checker
+verifies vertex count, edge count, sorted degree sequence, connectedness, and
+triangle-freeness. The artifact is not accepted and does not claim a new
+theorem or novelty.
 
 GitHub Actions CI is configured to run on pull requests and pushes to `main`
 with Python 3.11. It installs the package with development dependencies and
@@ -108,6 +116,11 @@ gatekeeper result.
 - SMT verifier skeleton in `cosheaf/verification/smt_adapter.py`.
 - Lean verifier skeleton in `cosheaf/verification/lean_adapter.py`.
 - Optional verifier skeleton tests in `tests/test_optional_verifier_skeletons.py`.
+- First graph-theory pilot issue in `issues/open/issue.graph-toy-search.0001.yaml`.
+- Draft toy graph construction in `kb/draft/constructions/construction.graph-toy.0001.yaml`.
+- Toy graph example in `examples/constructions/graph.toy.yaml`.
+- Toy graph Python checker in `experiments/evaluators/check_graph_toy.py`.
+- Toy graph checker tests in `tests/test_graph_toy_pilot.py`.
 - GitHub Actions CI in `.github/workflows/ci.yml`.
 - Feature task, bug task, and research issue forms under `.github/ISSUE_TEMPLATE/`.
 - Pull request template in `.github/pull_request_template.md`.

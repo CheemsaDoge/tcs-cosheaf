@@ -57,15 +57,17 @@ Implemented:
 - Issue-scoped context pack generation with `cosheaf context build <issue-id>`.
 - Verifier adapter protocol, Python checker adapter, and SAT/SMT/Lean skeleton
   adapters.
+- Reproducibility metadata gate for executable evidence verifier results.
+- First graph-theory pilot workflow with draft artifact evidence and a local
+  Python checker.
 - GitHub Actions CI with separate `lint`, `typecheck`, `test`, `validate`, and
   `gate` checks.
 
 Planned or incomplete:
 
-- Reproducibility metadata gate and PR checklist gate implementations.
+- PR checklist gate implementation.
 - Real SAT, SMT, and Lean solver invocation and result parsing.
 - SQLite-backed query API beyond rebuild outputs.
-- First end-to-end TCS pilot workflow.
 
 ## Core Concepts
 
@@ -140,8 +142,10 @@ but not implemented are reported as skipped, not passed.
 The roadmap is tracked in [docs/ROADMAP.md](docs/ROADMAP.md). Current active
 issues include:
 
-- [#5 Create first graph-theory TCS pilot workflow](https://github.com/CheemsaDoge/tcs-cosheaf/issues/5)
-- [#6 Implement reproducibility metadata gate](https://github.com/CheemsaDoge/tcs-cosheaf/issues/6)
+- [#9 Implement task, worker contract, and orchestrator stub](https://github.com/CheemsaDoge/tcs-cosheaf/issues/9)
+- [#10 Improve context pack relevance ranking](https://github.com/CheemsaDoge/tcs-cosheaf/issues/10)
+- [#11 Add artifact create and move-status CLI](https://github.com/CheemsaDoge/tcs-cosheaf/issues/11)
+- [#13 Add second pilot: small SAT/SMT-checkable gadget](https://github.com/CheemsaDoge/tcs-cosheaf/issues/13)
 
 ## Non-Goals
 
