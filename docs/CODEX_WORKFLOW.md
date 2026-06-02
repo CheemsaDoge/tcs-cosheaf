@@ -29,6 +29,11 @@ repository pull request template and explicitly record the summary, changed
 files, tests run, risks, interface changes, documentation changes,
 artifact/schema changes, and gatekeeper result.
 
+Branch protection and review requirements are documented in
+[`docs/REVIEW_POLICY.md`](REVIEW_POLICY.md). Direct pushes to `main` are
+disallowed. All changes should follow the issue -> branch -> PR -> CI/gate ->
+review -> merge workflow.
+
 GitHub issue forms are provided for feature tasks, bug tasks, and research
 issues. Feature task issues should constrain Codex work with a goal, allowed
 files, acceptance criteria, required commands, and a context pack path. Research

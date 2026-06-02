@@ -41,6 +41,18 @@ The base artifact schema currently defines these common fields:
 - `review`
 - `risk`
 
+## ID Format
+
+Artifact and issue IDs are globally unique, dot-separated identifiers. The
+first segment must be a lowercase slug. Later segments may be lowercase slugs
+or numeric version/index segments such as `0001`.
+
+Examples:
+
+- `claim.example.complete-graph-edge-count`
+- `construction.graph-toy.0001`
+- `issue.graph-toy-search.0001`
+
 ## Status Values
 
 The initial artifact status values are:

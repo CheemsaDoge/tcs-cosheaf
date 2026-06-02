@@ -4,6 +4,11 @@
 
 TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, issue-scoped context pack generation, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, GitHub Actions CI, and GitHub collaboration templates.
 
+Branch protection and review expectations are now documented in
+`docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
+disallows direct pushes to `main`, and routes all changes through issue,
+branch, pull request, CI/gate checks, review, and merge.
+
 The Python scaffold defines a `cosheaf` package, a Typer-based `cosheaf` CLI entry point, development dependencies, Makefile targets, a Dockerfile for reproducible local development, and smoke tests for import and CLI help/version behavior.
 
 The filesystem layout now includes accepted and draft knowledge-base directories, refuted and obsolete artifact areas, issue directories, experiment directories, and review directories. The initial schemas live under `schemas/`, and examples live under `examples/`.
@@ -111,6 +116,7 @@ gatekeeper result.
 - GitHub Actions CI in `.github/workflows/ci.yml`.
 - Feature task, bug task, and research issue forms under `.github/ISSUE_TEMPLATE/`.
 - Pull request template in `.github/pull_request_template.md`.
+- Branch protection and review policy in `docs/REVIEW_POLICY.md`.
 
 ## Not Implemented Yet
 
