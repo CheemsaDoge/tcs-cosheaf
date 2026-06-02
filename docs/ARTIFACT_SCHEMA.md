@@ -90,4 +90,10 @@ The initial example YAML files are:
 
 ## Current Implementation Status
 
-Machine-readable JSON Schema files exist, along with example YAML artifacts and initial Pydantic v2 models. Artifact loading, repository scanning, schema validation CLI behavior, and gatekeeper enforcement are not implemented yet.
+Machine-readable JSON Schema files exist, along with example YAML artifacts and
+initial Pydantic v2 models. Filesystem-backed loading, repository scanning,
+schema/model validation through `cosheaf validate`, single-file validation
+through `cosheaf artifact validate <path>`, and gatekeeper report generation
+through `cosheaf gate` are implemented. Some planned gate checks, such as
+reproducibility metadata and PR checklist enforcement, are still reported as
+skipped placeholders.
