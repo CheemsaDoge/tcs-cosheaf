@@ -1,22 +1,128 @@
-# tcs-cosheaf
+# TCS-Cosheaf
 
-TCS-Cosheaf is a Git-backed research knowledge base and agent harness for theoretical computer science. It is intended to manage typed research artifacts and the verification workflow around them.
+TCS-Cosheaf is a Git-backed typed research knowledge base and agent harness for
+AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
+constructions, algorithms, reductions, counterexamples, experiments, reviews,
+issues, and verifier evidence in reviewable repository files.
 
-Current status: pre-MVP scaffold.
+Current status: **pre-MVP scaffold**. The repository has working Python
+scaffolding, typed artifact models, filesystem loading, validation, dependency
+graph indexing, gatekeeper reports, context-pack generation, verifier adapter
+skeletons, a Python checker adapter, GitHub Actions CI, and collaboration
+templates. It is not production software and does not yet provide a web UI,
+automatic theorem proving, full Lean autoformalization, or multi-user
+permissions.
 
-See [AGENTS.md](AGENTS.md) for project-wide engineering rules.
+## Problem
 
-## Development
+Research projects in theoretical computer science accumulate claims, proof
+attempts, constructions, counterexamples, experiments, and review notes across
+papers, chats, scripts, and local files. That makes it hard to answer basic
+questions:
 
-This project targets Python 3.11+.
+- Which claims are accepted, draft, refuted, or obsolete?
+- Which artifacts depend on which assumptions?
+- Which evidence was checked, by what command, and from what repository state?
+- What context should a human or agent read before working on an issue?
 
-Install the development dependencies:
+TCS-Cosheaf treats the repository as the durable project memory so research
+state can be reviewed, validated, indexed, and handed to agents without relying
+on conversation history.
+
+## Approach
+
+- Store typed research artifacts as Git-backed YAML files.
+- Validate artifact shape, IDs, status/path invariants, dependencies, and local
+  evidence paths.
+- Build deterministic dependency graphs and repository indexes.
+- Run gatekeeper checks before accepting behavior or artifact changes.
+- Normalize verifier outputs through optional adapters.
+- Generate bounded context packs for issue-scoped Codex or agent tasks.
+
+Optional formal tools stay optional. Missing SAT, SMT, Lean, or similar tools
+must produce skipped verifier results rather than crashing the core system.
+
+## Current Status
+
+Implemented:
+
+- Python 3.11+ package scaffold with Typer CLI.
+- Pydantic v2 artifact models and status helpers.
+- Initial JSON Schemas and example YAML records.
+- Filesystem-backed artifact/issue/review loading and deterministic YAML
+  writing.
+- `cosheaf validate` and `cosheaf artifact validate <path>`.
+- Dependency graph inspection and deterministic SQLite/manifest index rebuilds.
+- `cosheaf gate` and `cosheaf gate run` report generation.
+- Issue-scoped context pack generation with `cosheaf context build <issue-id>`.
+- Verifier adapter protocol, Python checker adapter, and SAT/SMT/Lean skeleton
+  adapters.
+- GitHub Actions CI with separate `lint`, `typecheck`, `test`, `validate`, and
+  `gate` checks.
+
+Planned or incomplete:
+
+- Reproducibility metadata gate and PR checklist gate implementations.
+- Real SAT, SMT, and Lean solver invocation and result parsing.
+- SQLite-backed query API beyond rebuild outputs.
+- First end-to-end TCS pilot workflow.
+- Branch protection and review policy documentation.
+
+## Core Concepts
+
+- **Artifact**: A typed research record such as a definition, claim, proof,
+  construction, algorithm, reduction, counterexample, experiment, review,
+  verifier, or issue.
+- **Status lattice**: Artifact status values such as `draft`, `accepted`,
+  `refuted`, `obsolete`, and `superseded` describe lifecycle state.
+- **Accepted knowledge**: `kb/accepted/` contains only accepted artifacts.
+  Accepted artifacts must not depend on draft artifacts.
+- **Draft knowledge**: `kb/draft/` contains draft or pre-accepted artifacts.
+- **Gatekeeper**: Repository checks that turn schema, dependency, evidence,
+  verifier, and review invariants into machine-readable and human-readable
+  reports.
+- **Context pack**: A deterministic issue-scoped bundle of repository context
+  for Codex or other agents.
+- **Verifier adapter**: A pluggable checker interface that records normalized
+  `pass`, `fail`, `error`, or `skipped` results.
+
+## Quickstart
 
 ```bash
+git clone https://github.com/CheemsaDoge/tcs-cosheaf.git
+cd tcs-cosheaf
 python -m pip install -e ".[dev]"
 ```
 
-Run the intended local checks:
+Inspect the CLI:
+
+```bash
+cosheaf --help
+cosheaf version
+```
+
+Run repository validation and gatekeeper checks:
+
+```bash
+cosheaf validate
+cosheaf gate
+```
+
+Build an index and inspect the artifact dependency graph:
+
+```bash
+cosheaf index rebuild
+cosheaf graph show
+```
+
+Generate task context for an issue:
+
+```bash
+cosheaf context build <issue-id>
+cosheaf context show <issue-id>
+```
+
+## Development Commands
 
 ```bash
 make lint
@@ -26,17 +132,43 @@ make validate
 make gate
 ```
 
-The `validate` target runs repository validation for YAML/model parsing, ID
-uniqueness, status/path consistency, dependency checks, and local evidence path
-checks. The `gate` target runs the gatekeeper, writes reports under
-`.cosheaf/reports/`, and reports not-yet-implemented gates as skipped rather
-than pretending they passed.
+`make validate` runs the current repository validation CLI. `make gate` runs the
+gatekeeper and writes reports under `.cosheaf/reports/`. Gates that are specified
+but not implemented are reported as skipped, not passed.
 
-Use the CLI:
+## Roadmap
 
-```bash
-cosheaf --help
-cosheaf version
-cosheaf validate
-cosheaf gate
-```
+The roadmap is tracked in [docs/ROADMAP.md](docs/ROADMAP.md). Current active
+issues include:
+
+- [#4 Document branch protection and review policy](https://github.com/CheemsaDoge/tcs-cosheaf/issues/4)
+- [#5 Create first graph-theory TCS pilot workflow](https://github.com/CheemsaDoge/tcs-cosheaf/issues/5)
+- [#6 Implement reproducibility metadata gate](https://github.com/CheemsaDoge/tcs-cosheaf/issues/6)
+
+## Non-Goals
+
+For the MVP, TCS-Cosheaf does not aim to provide:
+
+- A web UI.
+- Model training.
+- An automatic theorem-proving agent.
+- Full Lean autoformalization.
+- A multi-user permission system.
+- A replacement for peer review, formal proof assistants, or domain expert
+  judgment.
+
+## Key Documentation
+
+- [Project rules](AGENTS.md)
+- [Product spec](docs/PRODUCT_SPEC.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Gatekeeper and validation gates](docs/GATES.md)
+- [Artifact schema](docs/ARTIFACT_SCHEMA.md)
+- [Codex workflow](docs/CODEX_WORKFLOW.md)
+- [Current milestone](context/CURRENT_MILESTONE.md)
+- [Project state](context/PROJECT_STATE.md)
+- [Public interface registry](context/INTERFACE_REGISTRY.md)
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE).
