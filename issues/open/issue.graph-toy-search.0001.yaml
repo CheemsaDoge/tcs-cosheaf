@@ -1,0 +1,27 @@
+id: issue.graph-toy-search.0001
+type: issue
+title: Build a tiny graph-theory pilot workflow
+status: open
+created_at: "2026-06-02T00:00:00Z"
+updated_at: "2026-06-02T00:00:00Z"
+authors:
+  - codex
+severity: medium
+description: |
+  Create a small graph-theory pilot that demonstrates the TCS-Cosheaf workflow
+  without claiming novelty or acceptance.
+
+  - Keep the graph finite, explicit, and easy to inspect.
+  - Store the graph as a draft construction artifact.
+  - Attach executable Python-checker evidence to the artifact.
+  - Verify vertex count, edge count, degree sequence, connectedness, and
+    triangle-freeness.
+  - Run `make lint`, `make typecheck`, `make test`, `make validate`,
+    `make gate`, and `cosheaf context build issue.graph-toy-search.0001`.
+related_artifacts:
+  - construction.graph-toy.0001
+tags:
+  - graph-theory
+  - finite-combinatorics
+  - pilot
+  - python-checker

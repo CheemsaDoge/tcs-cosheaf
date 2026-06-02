@@ -50,6 +50,9 @@
 #### Core Helpers
 
 - `cosheaf.core.ids.validate_artifact_id(value: str) -> str`
+  - IDs are dot-separated. The first segment must be a lowercase slug; later
+    segments may be lowercase slugs or numeric version/index segments such as
+    `0001`.
 - `cosheaf.core.paths.normalize_repo_path(path: str | Path) -> str`
 - `cosheaf.core.paths.repo_relative_path(repo_root: Path, path: Path) -> Path`
 - `cosheaf.core.paths.repo_relative_posix(repo_root: Path, path: Path) -> str`

@@ -46,6 +46,7 @@ EXAMPLE_FILES = [
     "examples/claims/claim.example.yaml",
     "examples/proofs/proof.example.yaml",
     "examples/constructions/graph.example.yaml",
+    "examples/constructions/graph.toy.yaml",
     "examples/reviews/review.example.yaml",
 ]
 

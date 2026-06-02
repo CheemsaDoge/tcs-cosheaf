@@ -1,6 +1,6 @@
 # Project State
 
-## Current State After Task 014
+## Current State After Issue 5
 
 TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, issue-scoped context pack generation, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, GitHub Actions CI, and GitHub collaboration templates.
 
@@ -33,6 +33,14 @@ The Python checker adapter runs `kind: python_checker` evidence from the reposit
 The SAT, SMT, and Lean adapters are optional-tool skeletons. They check for configured solver/tool availability, return `skipped` when the tool is unavailable, and do not add hard dependencies on Lean, Z3, cvc5, Sage, or PySAT. They are registered in the default verifier registry but do not run unless an artifact has matching SAT, SMT, or Lean evidence.
 
 No real SAT, SMT, or Lean verification execution exists yet.
+
+The first graph-theory pilot workflow now exists for
+`issue.graph-toy-search.0001`. It adds a finite-combinatorics issue, a
+`locally_tested` draft construction artifact for a toy five-cycle graph, a
+matching example artifact, and executable Python-checker evidence. The checker
+verifies vertex count, edge count, sorted degree sequence, connectedness, and
+triangle-freeness. The artifact is not accepted and does not claim a new
+theorem or novelty.
 
 GitHub Actions CI is configured to run on pull requests and pushes to `main`
 with Python 3.11. It installs the package with development dependencies and
@@ -95,6 +103,11 @@ gatekeeper result.
 - SMT verifier skeleton in `cosheaf/verification/smt_adapter.py`.
 - Lean verifier skeleton in `cosheaf/verification/lean_adapter.py`.
 - Optional verifier skeleton tests in `tests/test_optional_verifier_skeletons.py`.
+- First graph-theory pilot issue in `issues/open/issue.graph-toy-search.0001.yaml`.
+- Draft toy graph construction in `kb/draft/constructions/construction.graph-toy.0001.yaml`.
+- Toy graph example in `examples/constructions/graph.toy.yaml`.
+- Toy graph Python checker in `experiments/evaluators/check_graph_toy.py`.
+- Toy graph checker tests in `tests/test_graph_toy_pilot.py`.
 - GitHub Actions CI in `.github/workflows/ci.yml`.
 - Feature task, bug task, and research issue forms under `.github/ISSUE_TEMPLATE/`.
 - Pull request template in `.github/pull_request_template.md`.
