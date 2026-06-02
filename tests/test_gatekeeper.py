@@ -73,7 +73,7 @@ def test_passing_repo_produces_pass_report(tmp_path: Path) -> None:
     assert {"started_at", "ended_at"} <= set(report)
     gate_statuses = {gate["id"]: gate["status"] for gate in report["gates"]}
     assert gate_statuses["G6"] == "skipped"
-    assert gate_statuses["G7"] == "skipped"
+    assert gate_statuses["G7"] == "not_applicable"
     assert gate_statuses["G8"] == "skipped"
     assert "pass" not in {gate_statuses["G6"], gate_statuses["G7"], gate_statuses["G8"]}
     assert not (tmp_path / "reviews" / "gatekeeper").exists()

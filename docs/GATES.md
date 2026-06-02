@@ -43,7 +43,9 @@ The verifier adapter interface is defined by `VerifierAdapter`, with:
 
 `VerificationResult` records verifier name, artifact ID, normalized status,
 timestamps, command metadata, working directory, exit code, stdout/stderr log
-paths, evidence paths, and a review message. Status values are:
+paths, evidence paths, timeout, input/output paths, tool metadata, optional
+random seed metadata, environment notes, and a review message. Status values
+are:
 
 - `pass`: the verifier checked the artifact and accepted it.
 - `fail`: the verifier checked the artifact and found an artifact-level failure.
@@ -85,7 +87,40 @@ Skeleton evidence kinds are:
 
 ### Reproducibility Metadata Gate
 
-Checks that artifacts and verifier results include the planned metadata needed to reproduce or interpret generated outputs.
+Checks executable evidence and verifier results for metadata needed to reproduce
+or interpret generated outputs.
+
+The gate is applicable to executable evidence kinds:
+
+- `python_checker`
+- `sat`, `sat_solver`, `sat_checker`
+- `smt`, `smt_solver`, `smt_checker`
+- `lean`, `lean4`, `lean_checker`
+
+For executed verifier results, the gate requires:
+
+- `command`
+- `cwd`
+- `timeout_seconds`
+- `input_paths`
+- `stdout_path`
+- `stderr_path`
+- `output_paths`
+- `tool_name`
+- `exit_code` for `pass` and `fail` results
+
+For skipped verifier results, such as optional external tools that are absent,
+the gate requires enough metadata to explain the attempted verifier:
+
+- `command`
+- `cwd`
+- `evidence_paths`
+- `tool_name`
+
+Randomized evidence, detected from artifact/evidence text such as
+`randomized`, `randomness`, `stochastic`, or `monte carlo`, must include
+`seed` metadata in the verifier result. Deterministic artifacts do not require a
+seed. Non-executable evidence is reported as `not_applicable`, not `pass`.
 
 ### PR Checklist Gate
 
@@ -140,10 +175,13 @@ checks such as ID uniqueness and dependency existence run through
 - G4 dependency gate
 - G5 evidence path gate
 - G6 verifier gate with the Python checker adapter and optional SAT/SMT/Lean skeleton adapters
-- G7 reproducibility metadata gate placeholder
+- G7 reproducibility metadata gate
 - G8 PR checklist gate placeholder
 
-G7 and G8 are intentionally reported as skipped placeholders until their
-implementations exist. G6 is reported as skipped when no verifier adapters are
-applicable. `cosheaf gate` with no subcommand also runs the gatekeeper so the
-existing `make gate` target performs real gate enforcement.
+G7 is reported as `pass` when applicable executable evidence has reproducibility
+metadata, `fail` when required metadata is missing, and `not_applicable` when no
+loaded evidence is executable. G8 is intentionally reported as a skipped
+placeholder until its implementation exists. G6 is reported as skipped when no
+verifier adapters are applicable. `cosheaf gate` with no subcommand also runs
+the gatekeeper so the existing `make gate` target performs real gate
+enforcement.
