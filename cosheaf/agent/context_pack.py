@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import shorten
@@ -53,6 +54,14 @@ class ContextPackResult:
     files: tuple[Path, ...]
 
 
+@dataclass(frozen=True)
+class RankedArtifact:
+    """A selected artifact plus deterministic ranking reasons."""
+
+    record: LoadedRecord
+    reasons: tuple[str, ...]
+
+
 def build_context_pack(context: RepoContext, issue_id: str) -> ContextPackResult:
     """Build a deterministic bounded context pack for an issue."""
     records = tuple(load_artifacts(context))
@@ -101,33 +110,116 @@ def _find_issue(records: tuple[LoadedRecord, ...], issue_id: str) -> IssueRecord
 def _select_relevant_artifacts(
     records: tuple[LoadedRecord, ...],
     issue: IssueRecord,
-) -> tuple[LoadedRecord, ...]:
+) -> tuple[RankedArtifact, ...]:
     artifact_records = [
         record for record in records if isinstance(record.record, BaseArtifact)
     ]
     artifact_by_id = {record.id: record for record in artifact_records}
-    relevant_ids = set(issue.related_artifacts)
+    direct_ids = set(issue.related_artifacts)
+    dependency_ids: set[str] = set()
 
     for artifact_id in sorted(issue.related_artifacts):
         record = artifact_by_id.get(artifact_id)
         if isinstance(record, LoadedRecord) and isinstance(record.record, BaseArtifact):
-            relevant_ids.update(record.record.depends_on)
+            dependency_ids.update(record.record.depends_on)
 
-    selected = [
-        record
-        for record in artifact_records
-        if record.record.id in relevant_ids and isinstance(record.record, BaseArtifact)
-    ]
+    issue_terms = _issue_terms(issue)
+    issue_tags = {_normalize_term(tag) for tag in issue.tags}
+    selected: list[RankedArtifact] = []
+
+    for record in artifact_records:
+        artifact = _as_artifact(record)
+        reasons = _relevance_reasons(
+            artifact,
+            direct_ids=direct_ids,
+            dependency_ids=dependency_ids,
+            issue_terms=issue_terms,
+            issue_tags=issue_tags,
+        )
+        if reasons:
+            selected.append(RankedArtifact(record=record, reasons=reasons))
+
     return tuple(sorted(selected, key=_artifact_sort_key))
 
 
-def _artifact_sort_key(record: LoadedRecord) -> tuple[int, str, str]:
-    artifact = _as_artifact(record)
+def _relevance_reasons(
+    artifact: BaseArtifact,
+    *,
+    direct_ids: set[str],
+    dependency_ids: set[str],
+    issue_terms: set[str],
+    issue_tags: set[str],
+) -> tuple[str, ...]:
+    reasons: list[str] = []
+    if artifact.id in direct_ids:
+        reasons.append("direct reference")
+    if artifact.id in dependency_ids:
+        reasons.append("dependency neighbor")
+    if _artifact_domain_matches_issue(artifact, issue_terms):
+        reasons.append("domain match")
+    if issue_tags.intersection({_normalize_term(tag) for tag in artifact.tags}):
+        reasons.append("tag match")
+    return tuple(reasons)
+
+
+def _artifact_domain_matches_issue(
+    artifact: BaseArtifact,
+    issue_terms: set[str],
+) -> bool:
+    for domain in artifact.domain:
+        terms = _term_variants(domain)
+        if terms.intersection(issue_terms):
+            return True
+        parts = _term_parts(domain)
+        if parts and parts.issubset(issue_terms):
+            return True
+    return False
+
+
+def _artifact_sort_key(record: RankedArtifact) -> tuple[int, int, str, str]:
+    artifact = _as_artifact(record.record)
     return (
+        _reason_priority(record.reasons),
         _status_priority(artifact.status),
         artifact.id,
-        record.source_path.as_posix(),
+        record.record.source_path.as_posix(),
     )
+
+
+def _reason_priority(reasons: tuple[str, ...]) -> int:
+    priorities = {
+        "direct reference": 0,
+        "dependency neighbor": 1,
+        "domain match": 2,
+        "tag match": 3,
+    }
+    return min(priorities[reason] for reason in reasons)
+
+
+def _issue_terms(issue: IssueRecord) -> set[str]:
+    terms: set[str] = set()
+    for value in (issue.title, issue.description, *issue.tags):
+        terms.update(_term_variants(value))
+    return terms
+
+
+def _term_variants(value: str) -> set[str]:
+    normalized = _normalize_term(value)
+    variants = {normalized}
+    variants.update(
+        match.group(0)
+        for match in re.finditer(r"[a-z0-9]+(?:-[a-z0-9]+)*", normalized)
+    )
+    return {variant for variant in variants if variant}
+
+
+def _term_parts(value: str) -> set[str]:
+    normalized = _normalize_term(value)
+    return set(re.findall(r"[a-z0-9]+", normalized))
+
+
+def _normalize_term(value: str) -> str:
+    return value.strip().lower().replace("_", "-")
 
 
 def _status_priority(status: ArtifactStatus) -> int:
@@ -143,17 +235,22 @@ def _status_priority(status: ArtifactStatus) -> int:
 def _render_context(
     context: RepoContext,
     issue: IssueRecord,
-    artifacts: tuple[LoadedRecord, ...],
+    artifacts: tuple[RankedArtifact, ...],
 ) -> str:
     accepted = [
         record
         for record in artifacts
-        if is_accepted_status(_as_artifact(record).status)
+        if is_accepted_status(_as_artifact(record.record).status)
     ]
     drafts = [
         record
         for record in artifacts
-        if is_preaccepted_status(_as_artifact(record).status)
+        if is_preaccepted_status(_as_artifact(record.record).status)
+    ]
+    known_failures = [
+        record
+        for record in artifacts
+        if _as_artifact(record.record).status in KNOWN_FAILURE_STATUSES
     ]
 
     lines = [
@@ -170,9 +267,11 @@ def _render_context(
         "## Relevant Accepted Artifacts",
         "",
     ]
-    lines.extend(_artifact_lines(accepted, draft_label=False))
+    lines.extend(_artifact_lines(accepted))
     lines.extend(["", "## Relevant Draft Artifacts", ""])
-    lines.extend(_artifact_lines(drafts, draft_label=True))
+    lines.extend(_artifact_lines(drafts))
+    lines.extend(["", "## Relevant Known Failures", ""])
+    lines.extend(_artifact_lines(known_failures))
     lines.extend(
         [
             "",
@@ -221,7 +320,7 @@ def _render_acceptance(issue: IssueRecord) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _render_relevant_artifacts(artifacts: tuple[LoadedRecord, ...]) -> str:
+def _render_relevant_artifacts(artifacts: tuple[RankedArtifact, ...]) -> str:
     lines = ["# Relevant Artifacts", ""]
     if artifacts:
         lines.extend(_artifact_reference_line(record) for record in artifacts)
@@ -230,11 +329,11 @@ def _render_relevant_artifacts(artifacts: tuple[LoadedRecord, ...]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _render_known_failures(artifacts: tuple[LoadedRecord, ...]) -> str:
+def _render_known_failures(artifacts: tuple[RankedArtifact, ...]) -> str:
     known_failures = [
         record
         for record in artifacts
-        if _as_artifact(record).status in KNOWN_FAILURE_STATUSES
+        if _as_artifact(record.record).status in KNOWN_FAILURE_STATUSES
     ]
     lines = ["# Known Failures", ""]
     if known_failures:
@@ -251,30 +350,42 @@ def _render_commands() -> str:
 
 
 def _artifact_lines(
-    records: list[LoadedRecord],
-    *,
-    draft_label: bool,
+    records: list[RankedArtifact],
 ) -> list[str]:
     if not records:
         return ["- None"]
     lines = []
     for record in records:
-        artifact = _as_artifact(record)
-        prefix = "[DRAFT] " if draft_label else ""
+        artifact = _as_artifact(record.record)
+        prefix = _status_prefix(artifact.status)
         lines.append(
             f"- {prefix}{artifact.id} | {artifact.title} | "
-            f"{record.source_path.as_posix()}"
+            f"{artifact.status.value} | {record.record.source_path.as_posix()} | "
+            f"reasons: {_format_reasons(record.reasons)}"
         )
     return lines
 
 
-def _artifact_reference_line(record: LoadedRecord) -> str:
-    artifact = _as_artifact(record)
-    prefix = "[DRAFT] " if is_preaccepted_status(artifact.status) else ""
+def _artifact_reference_line(record: RankedArtifact) -> str:
+    artifact = _as_artifact(record.record)
+    prefix = _status_prefix(artifact.status)
     return (
         f"- {prefix}{artifact.id} | {artifact.title} | "
-        f"{artifact.status.value} | {record.source_path.as_posix()}"
+        f"{artifact.status.value} | {record.record.source_path.as_posix()} | "
+        f"reasons: {_format_reasons(record.reasons)}"
     )
+
+
+def _status_prefix(status: ArtifactStatus) -> str:
+    if is_preaccepted_status(status):
+        return "[DRAFT] "
+    if status in KNOWN_FAILURE_STATUSES:
+        return f"[{status.value.upper()}] "
+    return ""
+
+
+def _format_reasons(reasons: tuple[str, ...]) -> str:
+    return ", ".join(reasons)
 
 
 def _as_artifact(record: LoadedRecord) -> BaseArtifact:

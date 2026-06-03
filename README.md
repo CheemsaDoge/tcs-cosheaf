@@ -7,11 +7,11 @@ issues, and verifier evidence in reviewable repository files.
 
 Current status: **pre-MVP scaffold**. The repository has working Python
 scaffolding, typed artifact models, filesystem loading, validation, dependency
-graph indexing, gatekeeper reports, context-pack generation, verifier adapter
-skeletons, a Python checker adapter, GitHub Actions CI, and collaboration
-templates. It is not production software and does not yet provide a web UI,
-automatic theorem proving, full Lean autoformalization, or multi-user
-permissions.
+graph indexing, gatekeeper reports, ranked context-pack generation, local task
+harness stubs, verifier adapter skeletons, a Python checker adapter, GitHub
+Actions CI, and collaboration templates. It is not production software and does
+not yet provide a web UI, automatic theorem proving, full Lean
+autoformalization, or multi-user permissions.
 
 ## Problem
 
@@ -37,7 +37,7 @@ on conversation history.
 - Build deterministic dependency graphs and repository indexes.
 - Run gatekeeper checks before accepting behavior or artifact changes.
 - Normalize verifier outputs through optional adapters.
-- Generate bounded context packs for issue-scoped Codex or agent tasks.
+- Generate ranked bounded context packs for issue-scoped Codex or agent tasks.
 
 Optional formal tools stay optional. Missing SAT, SMT, Lean, or similar tools
 must produce skipped verifier results rather than crashing the core system.
@@ -54,7 +54,10 @@ Implemented:
 - `cosheaf validate` and `cosheaf artifact validate <path>`.
 - Dependency graph inspection and deterministic SQLite/manifest index rebuilds.
 - `cosheaf gate` and `cosheaf gate run` report generation.
-- Issue-scoped context pack generation with `cosheaf context build <issue-id>`.
+- Ranked issue-scoped context pack generation with
+  `cosheaf context build <issue-id>`.
+- Local task harness stubs with `cosheaf task create`, `cosheaf task list`, and
+  `cosheaf task complete`.
 - Verifier adapter protocol, Python checker adapter, and SAT/SMT/Lean skeleton
   adapters.
 - Reproducibility metadata gate for executable evidence verifier results.
@@ -82,8 +85,8 @@ Planned or incomplete:
 - **Gatekeeper**: Repository checks that turn schema, dependency, evidence,
   verifier, and review invariants into machine-readable and human-readable
   reports.
-- **Context pack**: A deterministic issue-scoped bundle of repository context
-  for Codex or other agents.
+- **Context pack**: A deterministic issue-scoped bundle of ranked repository
+  context for Codex or other agents.
 - **Verifier adapter**: A pluggable checker interface that records normalized
   `pass`, `fail`, `error`, or `skipped` results.
 
@@ -142,8 +145,6 @@ but not implemented are reported as skipped, not passed.
 The roadmap is tracked in [docs/ROADMAP.md](docs/ROADMAP.md). Current active
 issues include:
 
-- [#9 Implement task, worker contract, and orchestrator stub](https://github.com/CheemsaDoge/tcs-cosheaf/issues/9)
-- [#10 Improve context pack relevance ranking](https://github.com/CheemsaDoge/tcs-cosheaf/issues/10)
 - [#11 Add artifact create and move-status CLI](https://github.com/CheemsaDoge/tcs-cosheaf/issues/11)
 - [#13 Add second pilot: small SAT/SMT-checkable gadget](https://github.com/CheemsaDoge/tcs-cosheaf/issues/13)
 

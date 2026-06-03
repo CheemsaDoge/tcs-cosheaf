@@ -38,6 +38,7 @@ def _artifact_data(
     *,
     status: str,
     title: str | None = None,
+    domain: list[str] | None = None,
     depends_on: list[str] | None = None,
     tags: list[str] | None = None,
 ) -> dict[str, Any]:
@@ -45,7 +46,7 @@ def _artifact_data(
         "id": artifact_id,
         "type": "claim",
         "title": title or f"Claim {artifact_id}",
-        "domain": ["testing"],
+        "domain": domain or ["testing"],
         "status": status,
         "created_at": "2026-06-01T00:00:00Z",
         "updated_at": "2026-06-01T00:00:00Z",
@@ -63,6 +64,8 @@ def _artifact_data(
 def _issue_data(
     issue_id: str = "issue.fixture.context",
     related_artifacts: list[str] | None = None,
+    description: str | None = None,
+    tags: list[str] | None = None,
 ) -> dict[str, Any]:
     return {
         "id": issue_id,
@@ -73,7 +76,8 @@ def _issue_data(
         "updated_at": "2026-06-01T00:00:00Z",
         "authors": ["tester"],
         "severity": "medium",
-        "description": (
+        "description": description
+        or (
             "The task needs a short, deterministic handoff.\n"
             "- Include accepted background before draft material.\n"
             "- Mark draft artifacts visibly.\n"
@@ -83,7 +87,7 @@ def _issue_data(
             "claim.fixture.draft",
             "claim.fixture.refuted",
         ],
-        "tags": ["context-pack"],
+        "tags": tags or ["context-pack"],
     }
 
 
@@ -156,6 +160,153 @@ def test_context_pack_output_is_deterministic(tmp_path: Path) -> None:
     }
 
     assert second_contents == first_contents
+
+
+def test_relevant_artifacts_are_ranked_by_explainable_reasons(
+    tmp_path: Path,
+) -> None:
+    _write_context_docs(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "issues/open/ranking.yaml",
+        _issue_data(
+            related_artifacts=["claim.fixture.direct"],
+            description="Need context for graph-theory ranking.",
+            tags=["ranked-context", "search"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/draft/claims/direct.yaml",
+        _artifact_data(
+            "claim.fixture.direct",
+            status="draft",
+            title="Direct draft",
+            depends_on=["claim.fixture.dependency"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/accepted/claims/dependency.yaml",
+        _artifact_data(
+            "claim.fixture.dependency",
+            status="accepted",
+            title="Accepted dependency",
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/accepted/claims/domain.yaml",
+        _artifact_data(
+            "claim.fixture.domain",
+            status="accepted",
+            title="Domain match",
+            domain=["graph-theory"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/accepted/claims/tag.yaml",
+        _artifact_data(
+            "claim.fixture.tag",
+            status="accepted",
+            title="Tag match",
+            tags=["search"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/accepted/claims/unrelated.yaml",
+        _artifact_data(
+            "claim.fixture.unrelated",
+            status="accepted",
+            title="Unrelated accepted",
+            domain=["number-theory"],
+            tags=["unrelated"],
+        ),
+    )
+
+    build_context_pack(RepoContext(tmp_path), "issue.fixture.context")
+
+    relevant_md = (
+        tmp_path
+        / "context"
+        / "TASKS"
+        / "issue.fixture.context"
+        / "RELEVANT_ARTIFACTS.md"
+    ).read_text(encoding="utf-8")
+    ordered_ids = [
+        "claim.fixture.direct",
+        "claim.fixture.dependency",
+        "claim.fixture.domain",
+        "claim.fixture.tag",
+    ]
+    positions = [relevant_md.index(artifact_id) for artifact_id in ordered_ids]
+
+    assert positions == sorted(positions)
+    assert "claim.fixture.direct" in relevant_md
+    assert "reasons: direct reference" in relevant_md
+    assert "claim.fixture.dependency" in relevant_md
+    assert "reasons: dependency neighbor" in relevant_md
+    assert "claim.fixture.domain" in relevant_md
+    assert "reasons: domain match" in relevant_md
+    assert "claim.fixture.tag" in relevant_md
+    assert "reasons: tag match" in relevant_md
+    assert "claim.fixture.unrelated" not in relevant_md
+
+
+def test_related_known_failures_are_marked_not_current_truth(
+    tmp_path: Path,
+) -> None:
+    _write_context_docs(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "issues/open/known-failure.yaml",
+        _issue_data(related_artifacts=[], tags=["failed-approach"]),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/refuted/refuted.yaml",
+        _artifact_data(
+            "claim.fixture.refuted-tag",
+            status="refuted",
+            title="Refuted tagged claim",
+            tags=["failed-approach"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/obsolete/obsolete.yaml",
+        _artifact_data(
+            "claim.fixture.obsolete-tag",
+            status="obsolete",
+            title="Obsolete tagged claim",
+            tags=["failed-approach"],
+        ),
+    )
+
+    build_context_pack(RepoContext(tmp_path), "issue.fixture.context")
+
+    context_md = (
+        tmp_path
+        / "context"
+        / "TASKS"
+        / "issue.fixture.context"
+        / "CONTEXT.md"
+    ).read_text(encoding="utf-8")
+    known_failures = (
+        tmp_path
+        / "context"
+        / "TASKS"
+        / "issue.fixture.context"
+        / "KNOWN_FAILURES.md"
+    ).read_text(encoding="utf-8")
+
+    assert "## Relevant Known Failures" in context_md
+    assert "[REFUTED] claim.fixture.refuted-tag" in context_md
+    assert "[OBSOLETE] claim.fixture.obsolete-tag" in context_md
+    assert "[REFUTED] claim.fixture.refuted-tag" in known_failures
+    assert "[OBSOLETE] claim.fixture.obsolete-tag" in known_failures
 
 
 def test_missing_issue_fails_with_clear_error(tmp_path: Path) -> None:

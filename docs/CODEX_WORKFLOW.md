@@ -77,9 +77,19 @@ Each context pack contains:
 - `KNOWN_FAILURES.md`
 - `COMMANDS.md`
 
-Context packs are deterministic, issue-scoped, and intentionally short. They
-must prefer accepted artifacts over draft artifacts, visibly mark draft
-artifacts, and avoid including every repository artifact by default.
+Context packs are deterministic, issue-scoped, and intentionally short. They do
+not include every repository artifact by default. Relevant artifacts are ranked
+with explainable local reasons:
+
+- direct references from the issue;
+- one-hop dependency neighbors of directly referenced artifacts;
+- artifact domains matching issue title, description, or tags;
+- artifact tags matching issue tags.
+
+Within the same relevance class, accepted artifacts are preferred over draft
+artifacts. Draft artifacts are visibly marked as `[DRAFT]`. Refuted, obsolete,
+and superseded artifacts are shown only when they match the issue and are marked
+with their terminal status, not presented as current truth.
 
 Use `cosheaf context show <issue-id>` to build the pack and print the main
 context document for quick handoff into a new Codex conversation.

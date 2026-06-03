@@ -47,6 +47,14 @@ Current agent harness outputs are:
 - `context/TASKS/<issue-id>/` context packs.
 - `.cosheaf/tasks/<task-id>.yaml` runtime task records.
 
+Context packs use deterministic relevance ranking. The ranking includes direct
+issue artifact references, one-hop dependency neighbors, artifact domains that
+match issue text or tags, and artifact tags that match issue tags. Each listed
+artifact includes explainable ranking reasons. Accepted artifacts are preferred
+over draft artifacts within the same relevance class. Refuted, obsolete, and
+superseded artifacts are included only when relevant and are marked as known
+failures, not current truth.
+
 The task harness defines protocol-level worker types only. Creating, listing,
 or completing tasks does not call LLMs, external services, or concrete worker
 runtimes. The orchestrator stub validates that tasks are issue-scoped, records
