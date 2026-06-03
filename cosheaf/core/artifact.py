@@ -27,7 +27,13 @@ class ReviewRef(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     state: Literal[
-        "none", "requested", "in_review", "approved", "changes_requested"
+        "none",
+        "requested",
+        "in_review",
+        "approved",
+        "changes_requested",
+        "human_reviewed",
+        "accepted",
     ] = "none"
     notes: str = ""
 
@@ -67,7 +73,12 @@ class BaseArtifact(BaseModel):
     def _validate_id(cls, value: str) -> str:
         return validate_artifact_id(value)
 
-    @field_validator("depends_on", "supersedes")
+    @field_validator("depends_on")
+    @classmethod
+    def _validate_dependency_refs(cls, values: list[str]) -> list[str]:
+        return [validate_dependency_ref(value) for value in values]
+
+    @field_validator("supersedes")
     @classmethod
     def _validate_artifact_id_list(cls, values: list[str]) -> list[str]:
         return [validate_artifact_id(value) for value in values]
@@ -86,3 +97,19 @@ class BaseArtifact(BaseModel):
         if isinstance(created_at, datetime) and value < created_at:
             raise ValueError("updated_at must be greater than or equal to created_at")
         return value
+
+
+def is_external_dependency_ref(value: str) -> bool:
+    """Return whether a dependency reference is explicitly external."""
+    normalized = value.strip().lower()
+    return normalized.startswith("external:") and bool(
+        normalized.removeprefix("external:").strip()
+    )
+
+
+def validate_dependency_ref(value: str) -> str:
+    """Validate a local artifact ID or explicit external dependency reference."""
+    stripped = value.strip()
+    if is_external_dependency_ref(stripped):
+        return stripped
+    return validate_artifact_id(stripped)

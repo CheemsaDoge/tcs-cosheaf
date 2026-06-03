@@ -55,8 +55,8 @@ Implemented:
 - Optional `cosheaf.toml` workspace configuration with multiple KB roots,
   readonly roots, public/private dependency policy, and legacy fallback.
 - `cosheaf validate`, `cosheaf artifact validate <path>`,
-  `cosheaf artifact create`, `cosheaf artifact move-status`, and
-  `cosheaf workspace info`.
+  `cosheaf artifact create`, `cosheaf artifact move-status`,
+  `cosheaf artifact promote`, and `cosheaf workspace info`.
 - Dependency graph inspection and deterministic SQLite/manifest index rebuilds.
 - `cosheaf gate` and `cosheaf gate run` report generation.
 - Ranked issue-scoped context pack generation with
@@ -128,6 +128,16 @@ Create and move draft lifecycle artifacts:
 cosheaf artifact create --id claim.example.new --type claim --title "New claim" --domain graph-theory --status draft --statement "Statement under review."
 cosheaf artifact move-status claim.example.new locally_tested
 ```
+
+Promote eligible reviewed artifacts into accepted knowledge:
+
+```bash
+cosheaf artifact promote claim.example.new
+```
+
+Direct accepted creation and direct `move-status ... accepted` remain refused.
+Promotion requires repository validation, gatekeeper, target verifier,
+dependency, and review checks.
 
 Build an index and inspect the artifact dependency graph:
 

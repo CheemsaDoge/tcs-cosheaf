@@ -33,6 +33,8 @@
 - `cosheaf artifact create ... --created-at <timestamp>`: sets `created_at` and `updated_at`; defaults to current UTC if omitted.
 - `cosheaf artifact move-status <artifact-id> <new-status>`: moves a unique artifact ID through a non-accepted lifecycle status transition after status/path and repository validation. In configured workspaces, it refuses artifacts loaded from readonly KB roots.
 - `cosheaf artifact move-status <artifact-id> <new-status> --repo-root <path>`: moves the artifact status for an explicit repository root.
+- `cosheaf artifact promote <artifact-id>`: promotes an eligible lifecycle artifact into `kb/accepted/<type-dir>/<artifact-id>.yaml` after repository validation, gatekeeper, target verifier, dependency, and review checks.
+- `cosheaf artifact promote <artifact-id> --repo-root <path>`: promotes the artifact for an explicit repository root.
 - `cosheaf index rebuild`: rebuilds `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json`.
 - `cosheaf index rebuild --repo-root <path>`: rebuilds index outputs for an explicit repository root.
 - `cosheaf graph show`: prints the directed artifact dependency graph.
@@ -111,6 +113,10 @@
   - IDs are dot-separated. The first segment must be a lowercase slug; later
     segments may be lowercase slugs or numeric version/index segments such as
     `0001`.
+- `cosheaf.core.artifact.is_external_dependency_ref(value: str) -> bool`
+- `cosheaf.core.artifact.validate_dependency_ref(value: str) -> str`
+  - Dependency references are either local artifact IDs or explicit external
+    references beginning with `external:`.
 - `cosheaf.core.paths.normalize_repo_path(path: str | Path) -> str`
 - `cosheaf.core.paths.repo_relative_path(repo_root: Path, path: Path) -> Path`
 - `cosheaf.core.paths.repo_relative_posix(repo_root: Path, path: Path) -> str`
@@ -124,7 +130,7 @@
 - `cosheaf.core.status.expected_status_for_path(path: str) -> frozenset[ArtifactStatus]`
 - `cosheaf.core.task.create_task_id(issue_id: str, worker_type: WorkerType | str) -> str`
 
-These helpers are pure validation, path-formatting, status-classification, or deterministic ID helpers. They do not scan the repository, use SQLite, or run gatekeeper behavior.
+These helpers are pure validation, path-formatting, status-classification, or deterministic ID/reference helpers. They do not scan the repository, use SQLite, or run gatekeeper behavior.
 
 #### Storage Models and Context
 
@@ -224,11 +230,13 @@ dependencies across KB roots, and public-artifact-to-private-artifact
 dependencies.
 
 The validation orchestrator is deterministic and filesystem-backed.
-`validate_repository` does not run verifier adapters. `run_gatekeeper` runs
-G1-G5 validation gates, runs the G6 verifier gate through the default verifier
-registry, runs the G7 reproducibility metadata gate over executable evidence
-and verifier results, and records G8 as a skipped placeholder. It writes JSON
-and Markdown reports under `.cosheaf/reports/` by default.
+`validate_repository` does not run verifier adapters. It treats dependency
+references beginning with `external:` as explicit external references rather
+than missing local artifacts. `run_gatekeeper` runs G1-G5 validation gates, runs
+the G6 verifier gate through the default verifier registry, runs the G7
+reproducibility metadata gate over executable evidence and verifier results,
+and records G8 as a skipped placeholder. It writes JSON and Markdown reports
+under `.cosheaf/reports/` by default.
 
 #### Agent Context Packs
 
@@ -413,7 +421,11 @@ unavailable or when real Lean verification is still TODO.
 
 ### Schemas
 
-- `schemas/artifact.schema.json`: artifact YAML schema.
+- `schemas/artifact.schema.json`: artifact YAML schema. Inline
+  `review.state` accepts `none`, `requested`, `in_review`, `approved`,
+  `changes_requested`, `human_reviewed`, and `accepted`; accepted promotion
+  requires `human_reviewed` or `accepted`. Artifact `depends_on` accepts local
+  artifact IDs and explicit external references beginning with `external:`.
 - `schemas/issue.schema.json`: issue YAML schema.
 - `schemas/review.schema.json`: review YAML schema.
 - `schemas/verifier.schema.json`: verifier result schema.

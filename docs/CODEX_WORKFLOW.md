@@ -145,8 +145,17 @@ current artifact path already matches its current status, validates the
 repository before moving, writes deterministic YAML, and refuses direct moves to
 `accepted`.
 
-Accepted promotion requires a future dedicated review/gate workflow. Until that
-exists, do not move artifacts into `kb/accepted/` manually.
+Use `cosheaf artifact promote <artifact-id>` to promote eligible artifacts into
+accepted knowledge. Promotion validates the repository, runs the gatekeeper,
+refuses blocking gatekeeper issues, refuses target verifier `fail` or `error`
+results, requires `review.state` to be `human_reviewed` or `accepted`, requires
+dependencies to be accepted local artifacts or explicit external references, and
+writes deterministic YAML under `kb/accepted/<type-dir>/<artifact-id>.yaml`.
+
+Do not move artifacts into `kb/accepted/` manually. Direct accepted creation and
+direct `cosheaf artifact move-status <artifact-id> accepted` remain refused.
+Issue, task, and review records are not lifecycle artifacts and must not be
+promoted with `artifact promote`.
 
 ## Context Packs
 
