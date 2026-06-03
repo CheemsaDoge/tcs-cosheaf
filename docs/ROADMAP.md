@@ -15,6 +15,8 @@ Completed scaffold pieces include:
 - Typed artifact models and initial schemas.
 - Filesystem-backed artifact loading and deterministic YAML writing.
 - Repository validation CLI.
+- Artifact creation and lifecycle status movement CLI for non-accepted
+  transitions.
 - Dependency graph and deterministic index rebuild outputs.
 - Gatekeeper reports with machine-readable JSON and human-readable Markdown.
 - Ranked context pack generation for issue-scoped agent work.
@@ -29,7 +31,6 @@ Completed scaffold pieces include:
 
 ## Active Issues
 
-- [#11 Add artifact create and move-status CLI](https://github.com/CheemsaDoge/tcs-cosheaf/issues/11)
 - [#13 Add second pilot: small SAT/SMT-checkable gadget](https://github.com/CheemsaDoge/tcs-cosheaf/issues/13)
 
 ## Next Named Milestones

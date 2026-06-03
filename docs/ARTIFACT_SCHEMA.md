@@ -2,7 +2,11 @@
 
 ## Purpose
 
-This document describes the research artifact vocabulary and the initial machine-readable schema files. The schemas are intentionally lightweight at this stage: they define file-level contracts for examples and future loaders, but no Pydantic models or CLI validation implementation exists yet.
+This document describes the research artifact vocabulary, lifecycle assumptions,
+and initial machine-readable schema files. The schemas are intentionally
+lightweight at this stage: they define file-level contracts that are enforced by
+the Pydantic model layer, repository validation, and artifact lifecycle CLI
+commands.
 
 ## Planned Artifact Types
 
@@ -68,6 +72,29 @@ The initial artifact status values are:
 - `obsolete`
 - `superseded`
 
+## Lifecycle Paths
+
+The lifecycle path rules are part of the artifact contract:
+
+- `kb/draft/<type-plural>/<artifact-id>.yaml` may store `raw`, `draft`,
+  `locally_tested`, `adversarially_tested`, `machine_checked`,
+  `human_reviewed`, `refuted`, `obsolete`, or `superseded` artifacts. It never
+  stores `accepted` artifacts.
+- `kb/accepted/<type-plural>/<artifact-id>.yaml` stores only `accepted`
+  artifacts.
+- `kb/refuted/<artifact-id>.yaml` stores only `refuted` artifacts.
+- `kb/obsolete/<artifact-id>.yaml` stores only `obsolete` or `superseded`
+  artifacts.
+
+The lifecycle CLI derives canonical paths from artifact type, status, and ID.
+Draft and pre-accepted artifacts are created under `kb/draft/` by default.
+Moving an artifact to `refuted`, `obsolete`, or `superseded` moves it to the
+terminal-status area. Direct accepted creation is refused; accepted promotion
+requires a dedicated gate/review workflow rather than a silent file move.
+
+`review` and `issue` records have separate loader models and are not artifact
+lifecycle records for `cosheaf artifact create`.
+
 ## Schema Files
 
 The initial JSON Schema files are:
@@ -105,7 +132,10 @@ The initial example YAML files are:
 Machine-readable JSON Schema files exist, along with example YAML artifacts and
 initial Pydantic v2 models. Filesystem-backed loading, repository scanning,
 schema/model validation through `cosheaf validate`, single-file validation
-through `cosheaf artifact validate <path>`, and gatekeeper report generation
-through `cosheaf gate` are implemented. The reproducibility metadata gate is
-implemented for executable evidence through verifier-result metadata. PR
+through `cosheaf artifact validate <path>`, deterministic artifact creation
+through `cosheaf artifact create`, safe pre-accepted and terminal status moves
+through `cosheaf artifact move-status`, and gatekeeper report generation through
+`cosheaf gate` are implemented. The reproducibility metadata gate is implemented
+for executable evidence through verifier-result metadata. Direct accepted
+promotion remains blocked until the dedicated review/gate workflow exists. PR
 checklist enforcement is still reported as a skipped placeholder.

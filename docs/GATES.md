@@ -18,11 +18,32 @@ discovery roots.
 
 ### Status/Path Gate
 
-Checks that accepted artifacts live only under `kb/accepted/` and draft or pre-accepted artifacts live only under `kb/draft/`.
+Checks that accepted artifacts live only under `kb/accepted/`, draft or
+pre-accepted artifacts live under non-accepted paths such as `kb/draft/`, and
+terminal failure states are consistent with their terminal paths when present.
 
 ### Dependency Gate
 
 Checks that artifact dependencies are valid and that accepted artifacts do not depend on draft artifacts.
+
+## Accepted Promotion Requirements
+
+Moving an artifact into `kb/accepted/` is intentionally not a plain file move.
+Accepted promotion must be mediated by the gate/review workflow so the following
+conditions are checked before accepted knowledge is created:
+
+- schema/model validation passes;
+- artifact IDs remain globally unique;
+- the target path is under `kb/accepted/` and the artifact status is `accepted`;
+- accepted artifacts do not depend on draft or otherwise pre-accepted
+  artifacts;
+- local evidence paths resolve;
+- relevant verifier and reproducibility gates run without blocking issues;
+- review evidence is present and approved.
+
+`cosheaf artifact move-status <artifact-id> accepted` currently fails clearly
+instead of moving anything into `kb/accepted/`. This preserves the invariant that
+accepted knowledge is introduced only through an explicit review and gate flow.
 
 ### Evidence Path Gate
 
@@ -166,6 +187,13 @@ discovered under `kb/`, `issues/`, and `examples/`.
 file-local schema/model, status/path, and evidence path checks. Whole-repository
 checks such as ID uniqueness and dependency existence run through
 `cosheaf validate`.
+
+`cosheaf artifact create` creates deterministic artifact YAML records in the
+lifecycle tree, refuses duplicate IDs, and runs single-file validation before
+reporting success. `cosheaf artifact move-status <artifact-id> <new-status>`
+checks the current artifact's status/path consistency, validates the repository
+before the move, refuses direct accepted promotion, and writes the moved artifact
+with the deterministic YAML writer.
 
 `cosheaf gate run` now runs:
 

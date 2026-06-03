@@ -7,11 +7,11 @@ issues, and verifier evidence in reviewable repository files.
 
 Current status: **pre-MVP scaffold**. The repository has working Python
 scaffolding, typed artifact models, filesystem loading, validation, dependency
-graph indexing, gatekeeper reports, ranked context-pack generation, local task
-harness stubs, verifier adapter skeletons, a Python checker adapter, GitHub
-Actions CI, and collaboration templates. It is not production software and does
-not yet provide a web UI, automatic theorem proving, full Lean
-autoformalization, or multi-user permissions.
+graph indexing, artifact lifecycle CLI commands, gatekeeper reports, ranked
+context-pack generation, local task harness stubs, verifier adapter skeletons, a
+Python checker adapter, GitHub Actions CI, and collaboration templates. It is
+not production software and does not yet provide a web UI, automatic theorem
+proving, full Lean autoformalization, or multi-user permissions.
 
 ## Problem
 
@@ -51,7 +51,8 @@ Implemented:
 - Initial JSON Schemas and example YAML records.
 - Filesystem-backed artifact/issue/review loading and deterministic YAML
   writing.
-- `cosheaf validate` and `cosheaf artifact validate <path>`.
+- `cosheaf validate`, `cosheaf artifact validate <path>`,
+  `cosheaf artifact create`, and `cosheaf artifact move-status`.
 - Dependency graph inspection and deterministic SQLite/manifest index rebuilds.
 - `cosheaf gate` and `cosheaf gate run` report generation.
 - Ranked issue-scoped context pack generation with
@@ -112,6 +113,13 @@ cosheaf validate
 cosheaf gate
 ```
 
+Create and move draft lifecycle artifacts:
+
+```bash
+cosheaf artifact create --id claim.example.new --type claim --title "New claim" --domain graph-theory --status draft --statement "Statement under review."
+cosheaf artifact move-status claim.example.new locally_tested
+```
+
 Build an index and inspect the artifact dependency graph:
 
 ```bash
@@ -145,7 +153,6 @@ but not implemented are reported as skipped, not passed.
 The roadmap is tracked in [docs/ROADMAP.md](docs/ROADMAP.md). Current active
 issues include:
 
-- [#11 Add artifact create and move-status CLI](https://github.com/CheemsaDoge/tcs-cosheaf/issues/11)
 - [#13 Add second pilot: small SAT/SMT-checkable gadget](https://github.com/CheemsaDoge/tcs-cosheaf/issues/13)
 
 ## Non-Goals

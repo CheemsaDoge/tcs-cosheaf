@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
 
 import typer
+from pydantic import ValidationError
 from rich.console import Console
 
 from cosheaf import __version__
@@ -14,6 +16,14 @@ from cosheaf.agent.context_pack import (
 )
 from cosheaf.agent.orchestrator_stub import OrchestratorStub, TaskHarnessError
 from cosheaf.agent.task import WorkerType
+from cosheaf.core.artifact import BaseArtifact
+from cosheaf.core.ids import validate_artifact_id
+from cosheaf.core.paths import lifecycle_artifact_path
+from cosheaf.core.status import (
+    ArtifactStatus,
+    ArtifactType,
+    expected_status_for_path,
+)
 from cosheaf.gates.gatekeeper import (
     GatekeeperRunResult,
     ValidationReport,
@@ -23,8 +33,9 @@ from cosheaf.gates.gatekeeper import (
 )
 from cosheaf.graph.claim_graph import DependencyGraph, build_dependency_graph
 from cosheaf.storage.index import rebuild_index
-from cosheaf.storage.loader import load_artifacts
+from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
 from cosheaf.storage.repo import RepoContext
+from cosheaf.storage.writer import write_yaml_deterministic
 
 app = typer.Typer(
     add_completion=False,
@@ -119,6 +130,108 @@ def artifact_validate(
         failure_message="Artifact validation failed",
         debug=debug,
     )
+
+
+@artifact_app.command("create")
+def artifact_create(
+    artifact_id: str = typer.Option(..., "--id", help="Globally unique artifact ID."),
+    artifact_type: ArtifactType = typer.Option(..., "--type", help="Artifact type."),
+    title: str = typer.Option(..., "--title", help="Artifact title."),
+    domain: list[str] = typer.Option(
+        ...,
+        "--domain",
+        help="Artifact domain. Repeat for multiple domains.",
+    ),
+    status: ArtifactStatus = typer.Option(
+        ...,
+        "--status",
+        help="Initial artifact lifecycle status.",
+    ),
+    statement: str = typer.Option(..., "--statement", help="Artifact statement."),
+    author: list[str] | None = typer.Option(
+        None,
+        "--author",
+        help="Artifact author. Repeat for multiple authors.",
+    ),
+    tag: list[str] | None = typer.Option(
+        None,
+        "--tag",
+        help="Artifact tag. Repeat for multiple tags.",
+    ),
+    depends_on: list[str] | None = typer.Option(
+        None,
+        "--depends-on",
+        help="Artifact dependency ID. Repeat for multiple dependencies.",
+    ),
+    supersedes: list[str] | None = typer.Option(
+        None,
+        "--supersedes",
+        help="Superseded artifact ID. Repeat for multiple IDs.",
+    ),
+    created_at: str | None = typer.Option(
+        None,
+        "--created-at",
+        help="UTC timestamp for created_at/updated_at; defaults to current UTC.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for artifact creation.",
+    ),
+) -> None:
+    """Create a deterministic artifact YAML record in the lifecycle tree."""
+    console = Console(width=120, markup=False)
+    try:
+        artifact, relative_path = _create_artifact_record(
+            context=RepoContext(repo_root),
+            artifact_id=artifact_id,
+            artifact_type=artifact_type,
+            title=title,
+            domain=domain,
+            status=status,
+            statement=statement,
+            authors=author or [],
+            tags=tag or [],
+            depends_on=depends_on or [],
+            supersedes=supersedes or [],
+            created_at=created_at,
+        )
+    except ArtifactLifecycleError as exc:
+        console.print(f"Artifact create failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    console.print(f"Artifact created: {relative_path.as_posix()}")
+    console.print(f"- id: {artifact.id}")
+    console.print(f"- status: {artifact.status.value}")
+
+
+@artifact_app.command("move-status")
+def artifact_move_status(
+    artifact_id: str = typer.Argument(..., help="Artifact ID to move."),
+    new_status: ArtifactStatus = typer.Argument(..., help="New lifecycle status."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for status movement.",
+    ),
+) -> None:
+    """Move an artifact through a safe lifecycle status transition."""
+    console = Console(width=120, markup=False)
+    try:
+        old_status, old_path, new_path = _move_artifact_status(
+            context=RepoContext(repo_root),
+            artifact_id=artifact_id,
+            new_status=new_status,
+        )
+    except ArtifactLifecycleError as exc:
+        console.print(f"Artifact move-status failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    console.print(
+        f"Artifact moved: {artifact_id} | {old_status.value} -> {new_status.value}"
+    )
+    console.print(f"- from: {old_path.as_posix()}")
+    console.print(f"- to: {new_path.as_posix()}")
 
 
 @index_app.command("rebuild")
@@ -438,6 +551,249 @@ def _print_dependency_graph(console: Console, graph: DependencyGraph) -> None:
             f"[red]- accepted->draft[/red] | "
             f"{issue.source_id} -> {issue.target_id} | {issue.source_path}"
         )
+
+
+class ArtifactLifecycleError(ValueError):
+    """Raised for expected artifact lifecycle CLI failures."""
+
+
+def _create_artifact_record(
+    *,
+    context: RepoContext,
+    artifact_id: str,
+    artifact_type: ArtifactType,
+    title: str,
+    domain: list[str],
+    status: ArtifactStatus,
+    statement: str,
+    authors: list[str],
+    tags: list[str],
+    depends_on: list[str],
+    supersedes: list[str],
+    created_at: str | None,
+) -> tuple[BaseArtifact, Path]:
+    if not domain:
+        raise ArtifactLifecycleError("at least one --domain value is required")
+    if status is ArtifactStatus.ACCEPTED:
+        raise ArtifactLifecycleError(
+            "accepted artifacts must be promoted through a dedicated gate/review "
+            "workflow"
+        )
+
+    try:
+        validate_artifact_id(artifact_id)
+    except ValueError as exc:
+        raise ArtifactLifecycleError(str(exc)) from exc
+
+    timestamp = _parse_artifact_timestamp(created_at)
+    try:
+        relative_path = lifecycle_artifact_path(artifact_type, status, artifact_id)
+    except ValueError as exc:
+        raise ArtifactLifecycleError(str(exc)) from exc
+
+    _ensure_artifact_id_is_available(context, artifact_id)
+    target_path = context.resolve(relative_path)
+    if target_path.exists():
+        raise ArtifactLifecycleError(
+            f"artifact path already exists: {relative_path.as_posix()}"
+        )
+
+    try:
+        artifact = BaseArtifact.model_validate(
+            {
+                "id": artifact_id,
+                "type": artifact_type,
+                "title": title,
+                "domain": domain,
+                "status": status,
+                "created_at": timestamp,
+                "updated_at": timestamp,
+                "authors": authors,
+                "depends_on": depends_on,
+                "supersedes": supersedes,
+                "tags": tags,
+                "statement": statement,
+                "evidence": [],
+                "review": {"state": "requested", "notes": "Created by CLI."},
+                "risk": {"level": "low", "notes": ""},
+            }
+        )
+    except ValidationError as exc:
+        raise ArtifactLifecycleError(_format_pydantic_errors(exc)) from exc
+
+    write_yaml_deterministic(target_path, artifact)
+    report = validate_artifact_file(context, relative_path)
+    if report.ok:
+        return artifact, relative_path
+
+    target_path.unlink(missing_ok=True)
+    raise ArtifactLifecycleError(_format_report_failures(report))
+
+
+def _move_artifact_status(
+    *,
+    context: RepoContext,
+    artifact_id: str,
+    new_status: ArtifactStatus,
+) -> tuple[ArtifactStatus, Path, Path]:
+    records = _load_records_for_lifecycle(context)
+    loaded = _find_unique_base_artifact(records, artifact_id)
+    artifact = loaded.record
+    if not isinstance(artifact, BaseArtifact):
+        raise AssertionError("unreachable non-artifact lifecycle record")
+
+    _ensure_kb_lifecycle_record(loaded)
+    _ensure_current_status_path_consistent(loaded)
+
+    if new_status is ArtifactStatus.ACCEPTED:
+        raise ArtifactLifecycleError(
+            "accepted promotion requires a dedicated gate/review workflow; "
+            "move-status refuses direct moves into kb/accepted"
+        )
+
+    old_status = artifact.status
+    old_relative_path = loaded.source_path
+    new_relative_path = lifecycle_artifact_path(artifact.type, new_status, artifact.id)
+
+    if old_status is new_status and old_relative_path == new_relative_path:
+        return old_status, old_relative_path, new_relative_path
+
+    _ensure_repository_valid_for_lifecycle_move(context)
+    _write_status_move(
+        context=context,
+        artifact=artifact,
+        source_relative_path=old_relative_path,
+        target_relative_path=new_relative_path,
+        new_status=new_status,
+    )
+    report = validate_artifact_file(context, new_relative_path)
+    if not report.ok:
+        raise ArtifactLifecycleError(_format_report_failures(report))
+    return old_status, old_relative_path, new_relative_path
+
+
+def _write_status_move(
+    *,
+    context: RepoContext,
+    artifact: BaseArtifact,
+    source_relative_path: Path,
+    target_relative_path: Path,
+    new_status: ArtifactStatus,
+) -> None:
+    source_path = context.resolve(source_relative_path)
+    target_path = context.resolve(target_relative_path)
+    if target_path.exists() and source_path != target_path:
+        raise ArtifactLifecycleError(
+            f"target artifact path already exists: {target_relative_path.as_posix()}"
+        )
+
+    updated = artifact.model_copy(update={"status": new_status})
+    original_text = source_path.read_text(encoding="utf-8")
+    write_yaml_deterministic(source_path, updated)
+    if source_path == target_path:
+        return
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        source_path.rename(target_path)
+    except OSError:
+        source_path.write_text(original_text, encoding="utf-8", newline="\n")
+        raise
+
+
+def _parse_artifact_timestamp(value: str | None) -> datetime:
+    if value is None:
+        return datetime.now(UTC).replace(microsecond=0)
+    try:
+        normalized = value.replace("Z", "+00:00") if value.endswith("Z") else value
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError as exc:
+        raise ArtifactLifecycleError(
+            f"invalid --created-at timestamp: {value}"
+        ) from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ArtifactLifecycleError("--created-at must include timezone information")
+    return parsed.astimezone(UTC).replace(microsecond=0)
+
+
+def _ensure_artifact_id_is_available(context: RepoContext, artifact_id: str) -> None:
+    records = _load_records_for_lifecycle(context)
+    if any(record.id == artifact_id for record in records):
+        raise ArtifactLifecycleError(f"artifact already exists: {artifact_id}")
+
+
+def _load_records_for_lifecycle(context: RepoContext) -> tuple[LoadedRecord, ...]:
+    try:
+        return tuple(load_artifacts(context))
+    except LoadError as exc:
+        raise ArtifactLifecycleError(
+            f"cannot load repository records: {exc}"
+        ) from exc
+
+
+def _find_unique_base_artifact(
+    records: tuple[LoadedRecord, ...],
+    artifact_id: str,
+) -> LoadedRecord:
+    matches = [record for record in records if record.id == artifact_id]
+    if not matches:
+        raise ArtifactLifecycleError(f"artifact not found: {artifact_id}")
+    if len(matches) > 1:
+        paths = ", ".join(sorted(record.source_path.as_posix() for record in matches))
+        raise ArtifactLifecycleError(f"duplicate artifact id {artifact_id}: {paths}")
+
+    loaded = matches[0]
+    if not isinstance(loaded.record, BaseArtifact):
+        raise ArtifactLifecycleError(f"record is not an artifact: {artifact_id}")
+    return loaded
+
+
+def _ensure_kb_lifecycle_record(loaded: LoadedRecord) -> None:
+    parts = loaded.source_path.parts
+    if not parts or parts[0] != "kb":
+        raise ArtifactLifecycleError(
+            "lifecycle status moves are only supported for records under kb/: "
+            f"{loaded.source_path.as_posix()}"
+        )
+
+
+def _ensure_current_status_path_consistent(loaded: LoadedRecord) -> None:
+    artifact = loaded.record
+    if not isinstance(artifact, BaseArtifact):
+        return
+    allowed = expected_status_for_path(loaded.source_path.as_posix())
+    if artifact.status in allowed:
+        return
+    expected = ", ".join(sorted(status.value for status in allowed))
+    raise ArtifactLifecycleError(
+        "status/path mismatch: "
+        f"{loaded.source_path.as_posix()} has status {artifact.status.value}; "
+        f"expected one of {expected}"
+    )
+
+
+def _ensure_repository_valid_for_lifecycle_move(context: RepoContext) -> None:
+    report = validate_repository(context)
+    if not report.ok:
+        raise ArtifactLifecycleError(
+            "repository validation failed before status move: "
+            f"{_format_report_failures(report)}"
+        )
+
+
+def _format_pydantic_errors(exc: ValidationError) -> str:
+    return "; ".join(
+        f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}"
+        for error in exc.errors()
+    )
+
+
+def _format_report_failures(report: ValidationReport) -> str:
+    return "; ".join(
+        f"{failure.gate} | {failure.source_path} | "
+        f"{failure.artifact_id} | {failure.message}"
+        for failure in report.failures
+    )
 
 
 if __name__ == "__main__":

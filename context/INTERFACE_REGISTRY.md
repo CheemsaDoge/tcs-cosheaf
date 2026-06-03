@@ -18,6 +18,15 @@
 - `cosheaf artifact validate <path>`: validates one YAML file with file-local checks.
 - `cosheaf artifact validate <path> --repo-root <path>`: resolves the artifact path against an explicit repository root.
 - `cosheaf artifact validate <path> --debug`: shows tracebacks for unexpected validation errors.
+- `cosheaf artifact create --id <artifact-id> --type <artifact-type> --title <title> --domain <domain> --status <status> --statement <statement>`: creates a deterministic artifact YAML record under the lifecycle tree and validates it before reporting success.
+- `cosheaf artifact create ... --repo-root <path>`: creates the artifact for an explicit repository root.
+- `cosheaf artifact create ... --author <author>`: records one author value; repeat for multiple authors.
+- `cosheaf artifact create ... --tag <tag>`: records one tag value; repeat for multiple tags.
+- `cosheaf artifact create ... --depends-on <artifact-id>`: records one dependency; repeat for multiple dependencies.
+- `cosheaf artifact create ... --supersedes <artifact-id>`: records one superseded artifact ID; repeat for multiple IDs.
+- `cosheaf artifact create ... --created-at <timestamp>`: sets `created_at` and `updated_at`; defaults to current UTC if omitted.
+- `cosheaf artifact move-status <artifact-id> <new-status>`: moves a unique artifact ID through a non-accepted lifecycle status transition after status/path and repository validation.
+- `cosheaf artifact move-status <artifact-id> <new-status> --repo-root <path>`: moves the artifact status for an explicit repository root.
 - `cosheaf index rebuild`: rebuilds `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json`.
 - `cosheaf index rebuild --repo-root <path>`: rebuilds index outputs for an explicit repository root.
 - `cosheaf graph show`: prints the directed artifact dependency graph.
@@ -66,6 +75,9 @@
 - `cosheaf.core.paths.repo_relative_path(repo_root: Path, path: Path) -> Path`
 - `cosheaf.core.paths.repo_relative_posix(repo_root: Path, path: Path) -> str`
 - `cosheaf.core.paths.is_yaml_path(path: Path) -> bool`
+- `cosheaf.core.paths.ARTIFACT_TYPE_DIRECTORIES`: mapping from lifecycle artifact type enums to knowledge-base directory names.
+- `cosheaf.core.paths.artifact_type_directory(artifact_type: ArtifactType) -> str`
+- `cosheaf.core.paths.lifecycle_artifact_path(artifact_type: ArtifactType, status: ArtifactStatus, artifact_id: str) -> Path`
 - `cosheaf.core.status.is_terminal_status(status: ArtifactStatus) -> bool`
 - `cosheaf.core.status.is_preaccepted_status(status: ArtifactStatus) -> bool`
 - `cosheaf.core.status.is_accepted_status(status: ArtifactStatus) -> bool`
