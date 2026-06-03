@@ -66,6 +66,8 @@ Implemented:
 - Verifier adapter protocol, Python checker adapter, and SAT/SMT/Lean skeleton
   adapters.
 - Reproducibility metadata gate for executable evidence verifier results.
+- Local PR checklist gate support through `cosheaf gate run --pr-checklist
+  <path>`.
 - First graph-theory pilot workflow with draft artifact evidence and a local
   Python checker.
 - Second SAT/CNF pilot workflow with optional SAT evidence, a known satisfying
@@ -75,7 +77,6 @@ Implemented:
 
 Planned or incomplete:
 
-- PR checklist gate implementation.
 - Real SAT, SMT, and Lean solver invocation and result parsing.
 - SQLite-backed query API beyond rebuild outputs.
 
@@ -167,8 +168,9 @@ make gate
 ```
 
 `make validate` runs the current repository validation CLI. `make gate` runs the
-gatekeeper and writes reports under `.cosheaf/reports/`. Gates that are specified
-but not implemented are reported as skipped, not passed.
+gatekeeper and writes reports under `.cosheaf/reports/`. G8 is skipped when no
+PR checklist source is provided; use `cosheaf gate run --pr-checklist <path>` to
+validate a local PR body markdown file.
 
 ## Roadmap
 

@@ -42,9 +42,11 @@
 - `cosheaf gate`: runs the gatekeeper with default options and writes reports under `.cosheaf/reports/`.
 - `cosheaf gate --repo-root <path>`: runs the gatekeeper for an explicit repository root.
 - `cosheaf gate --persist-review`: also persists report copies under `reviews/gatekeeper/`.
+- `cosheaf gate --pr-checklist <path>`: validates a local PR checklist markdown file through G8 when running the default gate command.
 - `cosheaf gate run`: explicit gatekeeper run command.
 - `cosheaf gate run --repo-root <path>`: runs the gatekeeper for an explicit repository root.
 - `cosheaf gate run --persist-review`: also persists report copies under `reviews/gatekeeper/`.
+- `cosheaf gate run --pr-checklist <path>`: validates a local PR checklist markdown file through G8 without using GitHub API or network access.
 - `cosheaf context build <issue-id>`: builds a bounded deterministic context pack under `context/TASKS/<issue-id>/`.
 - `cosheaf context build <issue-id> --repo-root <path>`: builds a context pack for an explicit repository root.
 - `cosheaf context show <issue-id>`: builds the context pack and prints `CONTEXT.md`.
@@ -223,7 +225,8 @@ depending on draft or otherwise pre-accepted artifacts.
 - `cosheaf.gates.gatekeeper.GatekeeperRunResult`: report and written report paths.
 - `cosheaf.gates.gatekeeper.GateStatus`: gate status literal type.
 - `cosheaf.gates.gatekeeper.GateVerdict`: gatekeeper verdict literal type.
-- `cosheaf.gates.gatekeeper.run_gatekeeper(context: RepoContext, *, persist_review: bool = False, timestamp: str | None = None) -> GatekeeperRunResult`
+- `cosheaf.gates.gatekeeper.REQUIRED_PR_CHECKLIST_SECTIONS`: ordered tuple of required G8 PR checklist section names.
+- `cosheaf.gates.gatekeeper.run_gatekeeper(context: RepoContext, *, persist_review: bool = False, pr_checklist_path: Path | None = None, timestamp: str | None = None) -> GatekeeperRunResult`
 
 The dependency gate validates missing dependencies, accepted-to-draft
 dependencies across KB roots, and public-artifact-to-private-artifact
@@ -235,8 +238,11 @@ references beginning with `external:` as explicit external references rather
 than missing local artifacts. `run_gatekeeper` runs G1-G5 validation gates, runs
 the G6 verifier gate through the default verifier registry, runs the G7
 reproducibility metadata gate over executable evidence and verifier results,
-and records G8 as a skipped placeholder. It writes JSON and Markdown reports
-under `.cosheaf/reports/` by default.
+and runs the G8 PR checklist gate. G8 is `skipped` when
+`pr_checklist_path`/`--pr-checklist` is omitted, `fail` when the explicit local
+markdown checklist is missing required sections, and `pass` when all required
+sections are present. It does not call GitHub or require network access. It
+writes JSON and Markdown reports under `.cosheaf/reports/` by default.
 
 #### Agent Context Packs
 

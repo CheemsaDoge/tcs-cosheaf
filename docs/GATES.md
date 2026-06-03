@@ -169,7 +169,28 @@ seed. Non-executable evidence is reported as `not_applicable`, not `pass`.
 
 ### PR Checklist Gate
 
-Checks that the PR records required review items, public interface updates, ADR updates, and verification status.
+Checks that an available PR checklist records the required review items. The
+gate is local and filesystem-only; it does not call the GitHub API and does not
+require network access.
+
+When no checklist source is available, G8 is reported as `skipped` with a clear
+reason. This keeps `make gate` and CI-compatible local runs usable before a PR
+body exists. Skipped remains distinct from pass.
+
+Use `cosheaf gate run --pr-checklist <path>` to check an explicit markdown file
+such as a local PR body draft. When a checklist source is provided, G8 fails if
+any required section is missing.
+
+Required markdown sections are:
+
+- `Summary`
+- `Changed Files`
+- `Tests Run`
+- `Risks`
+- `Interface Changes`
+- `Documentation Changes`
+- `Artifact/Schema Changes`
+- `Gatekeeper Result`
 
 ## Gate Result Semantics
 
@@ -234,12 +255,13 @@ moving eligible artifacts into the accepted area of their KB root.
 - G5 evidence path gate
 - G6 verifier gate with the Python checker adapter and optional SAT/SMT/Lean skeleton adapters
 - G7 reproducibility metadata gate
-- G8 PR checklist gate placeholder
+- G8 PR checklist gate
 
 G7 is reported as `pass` when applicable executable evidence has reproducibility
 metadata, `fail` when required metadata is missing, and `not_applicable` when no
-loaded evidence is executable. G8 is intentionally reported as a skipped
-placeholder until its implementation exists. G6 is reported as skipped when no
-verifier adapters are applicable. `cosheaf gate` with no subcommand also runs
-the gatekeeper so the existing `make gate` target performs real gate
-enforcement.
+loaded evidence is executable. G8 is reported as `skipped` when no PR checklist
+source is available, `fail` when an explicit checklist source is missing
+required sections, and `pass` when all required sections are present. G6 is
+reported as skipped when no verifier adapters are applicable. `cosheaf gate`
+with no subcommand also runs the gatekeeper so the existing `make gate` target
+performs real gate enforcement.

@@ -20,6 +20,7 @@ Completed scaffold pieces include:
 - Controlled accepted-artifact promotion workflow.
 - Dependency graph and deterministic index rebuild outputs.
 - Gatekeeper reports with machine-readable JSON and human-readable Markdown.
+- Local G8 PR checklist gate for explicit PR body markdown files.
 - Ranked context pack generation for issue-scoped agent work.
 - Local task, worker contract, and orchestrator stubs.
 - Verifier adapter protocol, Python checker adapter, and SAT/SMT/Lean skeleton
@@ -40,7 +41,8 @@ Completed scaffold pieces include:
 
 ### MVP Usability
 
-- Replace the PR checklist placeholder gate with real checks.
+- Improve PR checklist ergonomics for hosted PR workflows without making local
+  gates depend on GitHub API access.
 
 ### Verification Depth
 

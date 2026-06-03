@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -10,6 +11,7 @@ from pathlib import Path
 from typing import Literal
 
 from cosheaf.core.artifact import BaseArtifact
+from cosheaf.core.paths import repo_relative_posix
 from cosheaf.gates.dependency_gate import (
     validate_dependencies,
     validate_id_uniqueness,
@@ -35,6 +37,17 @@ from cosheaf.verification.result import VerificationResult, VerificationStatus
 
 GateStatus = Literal["pass", "fail", "skipped", "not_applicable"]
 GateVerdict = Literal["pass", "fail"]
+REQUIRED_PR_CHECKLIST_SECTIONS = (
+    "summary",
+    "changed files",
+    "tests run",
+    "risks",
+    "interface changes",
+    "documentation changes",
+    "artifact/schema changes",
+    "gatekeeper result",
+)
+_MARKDOWN_HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s+(.+?)\s*$")
 
 
 @dataclass(frozen=True)
@@ -170,6 +183,7 @@ def run_gatekeeper(
     context: RepoContext,
     *,
     persist_review: bool = False,
+    pr_checklist_path: Path | None = None,
     timestamp: str | None = None,
 ) -> GatekeeperRunResult:
     """Run all current gates and write machine/human-readable reports."""
@@ -217,7 +231,7 @@ def run_gatekeeper(
         _reproducibility_metadata_gate(
             validate_reproducibility_metadata(records, verification_results)
         ),
-        _placeholder_gate("G8", "PR checklist gate placeholder"),
+        _pr_checklist_gate(context, pr_checklist_path),
     )
 
     blocking_issues = tuple(
@@ -298,22 +312,134 @@ def _gate_from_failures(
     )
 
 
-def _placeholder_gate(gate_id: str, name: str) -> GateResult:
-    issue = GateIssue(
-        gate_id=gate_id,
-        gate_name=name,
-        source_path="",
-        artifact_id="",
-        message="Gate is specified but not implemented yet.",
-        severity="nonblocking",
+def _pr_checklist_gate(
+    context: RepoContext,
+    pr_checklist_path: Path | None,
+) -> GateResult:
+    gate_name = "PR checklist gate"
+    if pr_checklist_path is None:
+        issue = GateIssue(
+            gate_id="G8",
+            gate_name=gate_name,
+            source_path="",
+            artifact_id="",
+            message="No PR checklist source was provided.",
+            severity="nonblocking",
+        )
+        return GateResult(
+            gate_id="G8",
+            name=gate_name,
+            status="skipped",
+            summary="Skipped: No PR checklist source was provided.",
+            nonblocking_issues=(issue,),
+            details=(
+                {
+                    "source_path": "",
+                    "required_sections": list(REQUIRED_PR_CHECKLIST_SECTIONS),
+                    "missing_sections": list(REQUIRED_PR_CHECKLIST_SECTIONS),
+                },
+            ),
+        )
+
+    source_path = _resolve_pr_checklist_path(context, pr_checklist_path)
+    source_label = _pr_checklist_source_label(context, source_path)
+    if not source_path.is_file():
+        issue = GateIssue(
+            gate_id="G8",
+            gate_name=gate_name,
+            source_path=source_label,
+            artifact_id="",
+            message=f"PR checklist source does not exist: {source_label}",
+            severity="blocking",
+        )
+        return GateResult(
+            gate_id="G8",
+            name=gate_name,
+            status="fail",
+            summary="PR checklist source is unavailable.",
+            blocking_issues=(issue,),
+            details=(
+                {
+                    "source_path": source_label,
+                    "required_sections": list(REQUIRED_PR_CHECKLIST_SECTIONS),
+                    "missing_sections": list(REQUIRED_PR_CHECKLIST_SECTIONS),
+                },
+            ),
+        )
+
+    headings = _markdown_section_headings(source_path.read_text(encoding="utf-8"))
+    missing_sections = tuple(
+        section
+        for section in REQUIRED_PR_CHECKLIST_SECTIONS
+        if section not in headings
     )
+    details: tuple[dict[str, object], ...] = (
+        {
+            "source_path": source_label,
+            "required_sections": list(REQUIRED_PR_CHECKLIST_SECTIONS),
+            "missing_sections": list(missing_sections),
+        },
+    )
+    if missing_sections:
+        issues = tuple(
+            GateIssue(
+                gate_id="G8",
+                gate_name=gate_name,
+                source_path=source_label,
+                artifact_id="",
+                message=f"missing PR checklist section: {section}",
+                severity="blocking",
+            )
+            for section in missing_sections
+        )
+        return GateResult(
+            gate_id="G8",
+            name=gate_name,
+            status="fail",
+            summary=f"{len(issues)} required PR checklist section(s) missing.",
+            blocking_issues=issues,
+            details=details,
+        )
+
     return GateResult(
-        gate_id=gate_id,
-        name=name,
-        status="skipped",
-        summary="Skipped: gate is specified but not implemented yet.",
-        nonblocking_issues=(issue,),
+        gate_id="G8",
+        name=gate_name,
+        status="pass",
+        summary=(
+            "PR checklist includes all "
+            f"{len(REQUIRED_PR_CHECKLIST_SECTIONS)} required section(s)."
+        ),
+        details=details,
     )
+
+
+def _resolve_pr_checklist_path(context: RepoContext, path: Path) -> Path:
+    if path.is_absolute():
+        return path.resolve()
+    return context.resolve(path)
+
+
+def _pr_checklist_source_label(context: RepoContext, path: Path) -> str:
+    try:
+        return repo_relative_posix(context.repo_root, path)
+    except ValueError:
+        return path.as_posix()
+
+
+def _markdown_section_headings(markdown: str) -> frozenset[str]:
+    headings: set[str] = set()
+    for line in markdown.splitlines():
+        match = _MARKDOWN_HEADING_RE.match(line)
+        if match is None:
+            continue
+        headings.add(_normalize_markdown_heading(match.group(1)))
+    return frozenset(headings)
+
+
+def _normalize_markdown_heading(value: str) -> str:
+    heading = value.strip().strip("#").strip()
+    heading = re.sub(r"\s+", " ", heading).lower()
+    return heading
 
 
 def _run_verifiers(

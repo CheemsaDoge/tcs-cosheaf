@@ -1,6 +1,6 @@
 # Project State
 
-## Current State After Issue 19
+## Current State After Issue 26
 
 TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
@@ -69,11 +69,14 @@ The graph layer builds directed dependency edges from artifact to dependency, de
 The index rebuild command writes `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json` from scratch. The SQLite index stores artifact ID, type, status, path, title, domain, source KB root, and deterministic dependency rows. The manifest ordering is deterministic and stable across delete-and-rebuild cycles.
 
 The gatekeeper command runs G1-G5 implemented gates, the G6 verifier gate, the
-G7 reproducibility metadata gate, and the G8 PR checklist placeholder gate. It writes JSON and Markdown reports to
-`.cosheaf/reports/` by default, can persist copies under `reviews/gatekeeper/`
-with `--persist-review`, and exits nonzero when blocking issues exist.
-Placeholder gates are reported as skipped and do not pretend to pass. G7 reports
-`pass`, `fail`, or `not_applicable` depending on executable evidence metadata.
+G7 reproducibility metadata gate, and the G8 PR checklist gate. It writes JSON
+and Markdown reports to `.cosheaf/reports/` by default, can persist copies
+under `reviews/gatekeeper/` with `--persist-review`, and exits nonzero when
+blocking issues exist. G7 reports `pass`, `fail`, or `not_applicable` depending
+on executable evidence metadata. G8 is a local filesystem-only gate: it reports
+`skipped` when no PR checklist source is provided, and `cosheaf gate run
+--pr-checklist <path>` checks a local markdown PR body for the required
+checklist sections without GitHub API or network access.
 
 The agent harness layer now builds bounded deterministic context packs for issue IDs. Context packs are written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`, `ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and `COMMANDS.md`. Relevant artifacts are selected and ranked from direct issue references, one-hop dependency neighbors, domain matches against issue text/tags, and artifact tag matches against issue tags. Each selected artifact includes explainable reasons. Draft artifacts are visibly labeled, and refuted/obsolete/superseded artifacts appear only when relevant and are marked as known failures rather than current truth.
 
@@ -143,6 +146,8 @@ gatekeeper result.
 - Implemented `cosheaf index rebuild` deterministic repository index rebuild CLI.
 - Implemented `cosheaf graph show` dependency graph inspection CLI.
 - Implemented `cosheaf gate run` gatekeeper report CLI.
+- Implemented `cosheaf gate run --pr-checklist <path>` local G8 PR checklist
+  gate input.
 - Implemented `cosheaf gate` default gatekeeper run for the existing `make gate` target.
 - Implemented optional `cosheaf.toml` workspace configuration with
   `WorkspaceConfig`, `WorkspacePolicy`, and `KbRootConfig` Pydantic models.
@@ -223,4 +228,3 @@ gatekeeper result.
 - Task scheduling, retries, cancellation, and dependency management.
 - Automatic merge of task outputs into accepted knowledge.
 - Real SAT, SMT, and Lean solver invocation and result parsing.
-- PR checklist gate beyond a skipped placeholder.

@@ -24,8 +24,9 @@ toward the MVP.
 - Core artifact models and status helpers exist.
 - Filesystem-backed loading, deterministic writing, dependency graph, and
   repository index rebuilds exist.
-- `cosheaf validate` and `cosheaf gate` run real implemented checks where
-  available and report placeholder gates as skipped.
+- `cosheaf validate` and `cosheaf gate` run implemented local checks; G8 can
+  validate explicit PR body markdown files and is skipped when no PR checklist
+  source is available.
 - Python checker and optional SAT/SMT/Lean verifier skeleton adapters exist.
 - Issue-scoped context pack generation exists.
 - GitHub Actions CI runs `lint`, `typecheck`, `test`, `validate`, and `gate`
@@ -34,7 +35,6 @@ toward the MVP.
 
 ## Next Focus
 
-- Reproducibility metadata gate.
-- PR checklist gate.
+- Hosted PR checklist source discovery beyond explicit local markdown files.
 - Real SAT/SMT/Lean solver invocation and result parsing.
 - SQLite-backed query API beyond rebuild output.

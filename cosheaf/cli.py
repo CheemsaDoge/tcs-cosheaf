@@ -355,10 +355,19 @@ def gate(
         "--persist-review",
         help="Also persist reports under reviews/gatekeeper/.",
     ),
+    pr_checklist: Path | None = typer.Option(
+        None,
+        "--pr-checklist",
+        help="Local PR checklist markdown file to validate with G8.",
+    ),
 ) -> None:
     """Run the gatekeeper when no gate subcommand is provided."""
     if ctx.invoked_subcommand is None:
-        _run_gatekeeper_cli(repo_root=repo_root, persist_review=persist_review)
+        _run_gatekeeper_cli(
+            repo_root=repo_root,
+            persist_review=persist_review,
+            pr_checklist=pr_checklist,
+        )
 
 
 @gate_app.command("run")
@@ -373,9 +382,18 @@ def gate_run(
         "--persist-review",
         help="Also persist reports under reviews/gatekeeper/.",
     ),
+    pr_checklist: Path | None = typer.Option(
+        None,
+        "--pr-checklist",
+        help="Local PR checklist markdown file to validate with G8.",
+    ),
 ) -> None:
     """Run gatekeeper checks and write JSON/Markdown reports."""
-    _run_gatekeeper_cli(repo_root=repo_root, persist_review=persist_review)
+    _run_gatekeeper_cli(
+        repo_root=repo_root,
+        persist_review=persist_review,
+        pr_checklist=pr_checklist,
+    )
 
 
 @context_app.command("build")
@@ -565,11 +583,16 @@ def _print_validation_report(
         )
 
 
-def _run_gatekeeper_cli(repo_root: Path, persist_review: bool) -> None:
+def _run_gatekeeper_cli(
+    repo_root: Path,
+    persist_review: bool,
+    pr_checklist: Path | None,
+) -> None:
     console = Console(width=120)
     result = run_gatekeeper(
         RepoContext(repo_root),
         persist_review=persist_review,
+        pr_checklist_path=pr_checklist,
     )
     _print_gatekeeper_result(console, result)
     if result.report.blocking_issues:
