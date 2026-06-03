@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Issue 9
+## Current State After Issue 10
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, GitHub Actions CI, and GitHub collaboration templates.
 
 Branch protection and review expectations are now documented in
 `docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
@@ -30,7 +30,7 @@ with `--persist-review`, and exits nonzero when blocking issues exist.
 Placeholder gates are reported as skipped and do not pretend to pass. G7 reports
 `pass`, `fail`, or `not_applicable` depending on executable evidence metadata.
 
-The agent harness layer now builds bounded deterministic context packs for issue IDs. Context packs are written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`, `ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and `COMMANDS.md`. Relevant artifacts are selected from the issue's related artifacts plus one dependency hop; draft artifacts are visibly labeled.
+The agent harness layer now builds bounded deterministic context packs for issue IDs. Context packs are written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`, `ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and `COMMANDS.md`. Relevant artifacts are selected and ranked from direct issue references, one-hop dependency neighbors, domain matches against issue text/tags, and artifact tag matches against issue tags. Each selected artifact includes explainable reasons. Draft artifacts are visibly labeled, and refuted/obsolete/superseded artifacts appear only when relevant and are marked as known failures rather than current truth.
 
 The agent task harness now defines protocol worker types for `reasoner`, `verifier`, `counterexampleer`, `construction_searcher`, `formalizer`, `literature_scout`, and `orchestrator`. Task records use deterministic default IDs of the form `task.<issue-id>.<worker-type-slug>`, support lifecycle statuses `open`, `in_progress`, `blocked`, `completed`, `failed`, and `cancelled`, and are written under `.cosheaf/tasks/`. The `cosheaf task create`, `cosheaf task list`, and `cosheaf task complete` CLI commands are local filesystem stubs only: they do not call LLMs, do not make network calls, and do not execute concrete worker runtimes.
 
@@ -104,7 +104,7 @@ gatekeeper result.
 - Graph and index tests in `tests/test_claim_graph.py` and `tests/test_index_rebuild.py`.
 - Gatekeeper reports in `cosheaf/gates/gatekeeper.py`.
 - Gatekeeper tests in `tests/test_gatekeeper.py`.
-- Context pack generation in `cosheaf/agent/context_pack.py`.
+- Ranked context pack generation in `cosheaf/agent/context_pack.py`.
 - Context pack CLI commands `cosheaf context build <issue-id>` and `cosheaf context show <issue-id>`.
 - Context pack tests in `tests/test_context_pack.py`.
 - Agent task model in `cosheaf/agent/task.py`.
@@ -145,4 +145,3 @@ gatekeeper result.
 - Automatic merge of task outputs into accepted knowledge.
 - Real SAT, SMT, and Lean solver invocation and result parsing.
 - PR checklist gate beyond a skipped placeholder.
-- Advanced relevance ranking beyond issue-related artifacts plus one dependency hop.

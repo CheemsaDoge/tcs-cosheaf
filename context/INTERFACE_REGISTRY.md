@@ -167,9 +167,14 @@ and Markdown reports under `.cosheaf/reports/` by default.
 - `cosheaf.agent.context_pack.show_context_pack(context: RepoContext, issue_id: str) -> str`
 
 Context pack generation loads repository YAML records, finds an issue by ID,
-selects artifacts from `related_artifacts` plus one dependency hop, prefers
-accepted artifacts before draft artifacts, visibly labels draft artifacts, and
-writes deterministic Markdown files under `context/TASKS/<issue-id>/`.
+selects and ranks artifacts from direct `related_artifacts`, one-hop dependency
+neighbors, artifact domains that match issue text or tags, and artifact tags
+that match issue tags. Ranking is deterministic and each listed artifact
+includes explainable `reasons`. Accepted artifacts are preferred over draft
+artifacts within the same relevance class. Draft artifacts are visibly labeled
+as `[DRAFT]`; refuted, obsolete, and superseded artifacts are included only when
+relevant and are labeled with their terminal status. Context pack files are
+written under `context/TASKS/<issue-id>/`.
 
 Generated context pack files are:
 
@@ -178,6 +183,10 @@ Generated context pack files are:
 - `RELEVANT_ARTIFACTS.md`
 - `KNOWN_FAILURES.md`
 - `COMMANDS.md`
+
+`RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and the artifact sections inside
+`CONTEXT.md` use lines containing artifact ID, title, status, source path, and
+ranking reasons.
 
 #### Agent Tasks
 

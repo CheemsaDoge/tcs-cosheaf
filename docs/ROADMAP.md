@@ -17,7 +17,8 @@ Completed scaffold pieces include:
 - Repository validation CLI.
 - Dependency graph and deterministic index rebuild outputs.
 - Gatekeeper reports with machine-readable JSON and human-readable Markdown.
-- Context pack generation for issue-scoped agent work.
+- Ranked context pack generation for issue-scoped agent work.
+- Local task, worker contract, and orchestrator stubs.
 - Verifier adapter protocol, Python checker adapter, and SAT/SMT/Lean skeleton
   adapters.
 - Reproducibility metadata gate for executable evidence verifier results.
@@ -28,8 +29,6 @@ Completed scaffold pieces include:
 
 ## Active Issues
 
-- [#9 Implement task, worker contract, and orchestrator stub](https://github.com/CheemsaDoge/tcs-cosheaf/issues/9)
-- [#10 Improve context pack relevance ranking](https://github.com/CheemsaDoge/tcs-cosheaf/issues/10)
 - [#11 Add artifact create and move-status CLI](https://github.com/CheemsaDoge/tcs-cosheaf/issues/11)
 - [#13 Add second pilot: small SAT/SMT-checkable gadget](https://github.com/CheemsaDoge/tcs-cosheaf/issues/13)
 
@@ -51,8 +50,6 @@ Completed scaffold pieces include:
 
 - Add a SQLite-backed query API beyond deterministic rebuild outputs.
 - Improve artifact search and graph inspection workflows.
-- Improve context-pack relevance ranking beyond explicitly related artifacts
-  plus one dependency hop.
 
 ## Non-Goals for MVP
 
