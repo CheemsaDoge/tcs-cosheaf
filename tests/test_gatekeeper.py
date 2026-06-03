@@ -53,6 +53,36 @@ def _load_single_report(repo_root: Path) -> dict[str, Any]:
     )
 
 
+def _write_pr_checklist(
+    repo_root: Path,
+    *,
+    missing_sections: set[str] | None = None,
+) -> Path:
+    missing = missing_sections or set()
+    sections = [
+        ("Summary", "Implements the requested gate behavior."),
+        ("Changed Files", "- `cosheaf/gates/gatekeeper.py`"),
+        ("Tests Run", "- [x] `make test`"),
+        ("Risks", "None."),
+        ("Interface Changes", "`cosheaf gate run --pr-checklist <path>`."),
+        ("Documentation Changes", "`docs/GATES.md` updated."),
+        ("Artifact/Schema Changes", "None."),
+        (
+            "Gatekeeper Result",
+            "Gate verdict: pass\nJSON report: .cosheaf/reports/example.json",
+        ),
+    ]
+    content = ["# Pull Request", ""]
+    for title, body in sections:
+        if title in missing:
+            continue
+        content.extend([f"## {title}", "", body, ""])
+
+    path = repo_root / "PR_BODY.md"
+    path.write_text("\n".join(content), encoding="utf-8")
+    return path
+
+
 def test_passing_repo_produces_pass_report(tmp_path: Path) -> None:
     _write_artifact(
         tmp_path,
@@ -72,9 +102,11 @@ def test_passing_repo_produces_pass_report(tmp_path: Path) -> None:
     )
     assert {"started_at", "ended_at"} <= set(report)
     gate_statuses = {gate["id"]: gate["status"] for gate in report["gates"]}
+    gate_summaries = {gate["id"]: gate["summary"] for gate in report["gates"]}
     assert gate_statuses["G6"] == "skipped"
     assert gate_statuses["G7"] == "not_applicable"
     assert gate_statuses["G8"] == "skipped"
+    assert "No PR checklist source was provided" in gate_summaries["G8"]
     assert "pass" not in {gate_statuses["G6"], gate_statuses["G7"], gate_statuses["G8"]}
     assert not (tmp_path / "reviews" / "gatekeeper").exists()
 
@@ -134,4 +166,87 @@ def test_persist_review_writes_reviews_gatekeeper(tmp_path: Path) -> None:
     assert len(review_reports) == 1
     review_report = json.loads(review_reports[0].read_text(encoding="utf-8"))
     assert review_report["verdict"] == "pass"
+
+
+def test_pr_checklist_gate_passes_with_required_sections(tmp_path: Path) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.a",
+    )
+    checklist = _write_pr_checklist(tmp_path)
+
+    result = runner.invoke(
+        app,
+        [
+            "gate",
+            "run",
+            "--repo-root",
+            str(tmp_path),
+            "--pr-checklist",
+            str(checklist),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    report = _load_single_report(tmp_path)
+    g8 = next(gate for gate in report["gates"] if gate["id"] == "G8")
+    assert g8["status"] == "pass"
+    assert "PR checklist includes all 8 required section(s)." == g8["summary"]
+    assert g8["details"] == [
+        {
+            "source_path": "PR_BODY.md",
+            "required_sections": [
+                "summary",
+                "changed files",
+                "tests run",
+                "risks",
+                "interface changes",
+                "documentation changes",
+                "artifact/schema changes",
+                "gatekeeper result",
+            ],
+            "missing_sections": [],
+        }
+    ]
+
+
+def test_pr_checklist_gate_fails_when_required_sections_missing(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.a",
+    )
+    checklist = _write_pr_checklist(
+        tmp_path,
+        missing_sections={"Risks", "Gatekeeper Result"},
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "gate",
+            "run",
+            "--repo-root",
+            str(tmp_path),
+            "--pr-checklist",
+            str(checklist),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Gate verdict: fail" in result.output
+    assert "missing PR checklist section: risks" in result.output
+    assert "missing PR checklist section: gatekeeper result" in result.output
+    report = _load_single_report(tmp_path)
+    g8 = next(gate for gate in report["gates"] if gate["id"] == "G8")
+    assert g8["status"] == "fail"
+    assert g8["summary"] == "2 required PR checklist section(s) missing."
+    assert [issue["gate_id"] for issue in g8["blocking_issues"]] == ["G8", "G8"]
+    assert [issue["message"] for issue in g8["blocking_issues"]] == [
+        "missing PR checklist section: risks",
+        "missing PR checklist section: gatekeeper result",
+    ]
 

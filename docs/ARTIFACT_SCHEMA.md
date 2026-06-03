@@ -168,5 +168,7 @@ through `cosheaf artifact move-status`, accepted promotion through
 `cosheaf artifact promote`, and gatekeeper report generation through
 `cosheaf gate` are implemented. The reproducibility metadata gate is
 implemented for executable evidence through verifier-result metadata. Direct
-accepted creation and direct `move-status ... accepted` remain blocked. PR
-checklist enforcement is still reported as a skipped placeholder.
+accepted creation and direct `move-status ... accepted` remain blocked. G8 PR
+checklist enforcement can validate a local PR body markdown file through
+`cosheaf gate run --pr-checklist <path>` and remains skipped when no checklist
+source is available.
