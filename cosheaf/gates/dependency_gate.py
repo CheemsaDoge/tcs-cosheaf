@@ -64,6 +64,18 @@ def validate_dependencies(records: tuple[LoadedRecord, ...]) -> list[ValidationF
             dependency_record = dependency.record
             if not isinstance(dependency_record, BaseArtifact):
                 continue
+            if _public_depends_on_private(loaded, dependency):
+                failures.append(
+                    ValidationFailure(
+                        gate="dependency",
+                        source_path=loaded.source_path.as_posix(),
+                        artifact_id=artifact.id,
+                        message=(
+                            "public artifact depends on private artifact: "
+                            f"{dependency_id} at {dependency.source_path.as_posix()}"
+                        ),
+                    )
+                )
             if (
                 artifact.status is ArtifactStatus.ACCEPTED
                 and is_preaccepted_status(dependency_record.status)
@@ -81,6 +93,10 @@ def validate_dependencies(records: tuple[LoadedRecord, ...]) -> list[ValidationF
                 )
 
     return failures
+
+
+def _public_depends_on_private(source: LoadedRecord, dependency: LoadedRecord) -> bool:
+    return source.kb_root_name == "public" and dependency.kb_root_name == "private"
 
 
 def _record_sort_key(record: LoadedRecord) -> tuple[str, str]:

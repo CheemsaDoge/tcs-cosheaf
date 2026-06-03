@@ -16,6 +16,7 @@ from cosheaf.agent.context_pack import (
 )
 from cosheaf.agent.orchestrator_stub import OrchestratorStub, TaskHarnessError
 from cosheaf.agent.task import WorkerType
+from cosheaf.config.workspace import KbRootConfig, WorkspaceConfigError
 from cosheaf.core.artifact import BaseArtifact
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.paths import lifecycle_artifact_path
@@ -71,18 +72,54 @@ task_app = typer.Typer(
     help="Agent task commands.",
     no_args_is_help=True,
 )
+workspace_app = typer.Typer(
+    add_completion=False,
+    help="Workspace configuration commands.",
+    no_args_is_help=True,
+)
 app.add_typer(artifact_app, name="artifact")
 app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
 app.add_typer(gate_app, name="gate")
 app.add_typer(context_app, name="context")
 app.add_typer(task_app, name="task")
+app.add_typer(workspace_app, name="workspace")
 
 
 @app.command()
 def version() -> None:
     """Print the TCS-Cosheaf version."""
     Console().print(f"tcs-cosheaf {__version__}")
+
+
+@workspace_app.command("info")
+def workspace_info(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+) -> None:
+    """Show workspace configuration and KB roots."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+    except WorkspaceConfigError as exc:
+        console.print(f"Workspace config failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    config = context.workspace_config
+    mode = "configured" if config.configured else "legacy"
+    console.print(f"Workspace: {config.name}")
+    console.print(f"- repo_root: {context.repo_root}")
+    console.print(f"- mode: {mode}")
+    console.print("KB roots:")
+    for root in config.ordered_kb:
+        readonly = str(root.readonly).lower()
+        console.print(
+            f"- {root.name} | {root.path} | "
+            f"readonly={readonly} | priority={root.priority}"
+        )
 
 
 @app.command()
@@ -587,7 +624,12 @@ def _create_artifact_record(
 
     timestamp = _parse_artifact_timestamp(created_at)
     try:
-        relative_path = lifecycle_artifact_path(artifact_type, status, artifact_id)
+        relative_path = _workspace_lifecycle_artifact_path(
+            context=context,
+            artifact_type=artifact_type,
+            status=status,
+            artifact_id=artifact_id,
+        )
     except ValueError as exc:
         raise ArtifactLifecycleError(str(exc)) from exc
 
@@ -644,6 +686,7 @@ def _move_artifact_status(
 
     _ensure_kb_lifecycle_record(loaded)
     _ensure_current_status_path_consistent(loaded)
+    _ensure_loaded_record_is_writable(loaded)
 
     if new_status is ArtifactStatus.ACCEPTED:
         raise ArtifactLifecycleError(
@@ -653,7 +696,7 @@ def _move_artifact_status(
 
     old_status = artifact.status
     old_relative_path = loaded.source_path
-    new_relative_path = lifecycle_artifact_path(artifact.type, new_status, artifact.id)
+    new_relative_path = _workspace_status_move_path(loaded, artifact, new_status)
 
     if old_status is new_status and old_relative_path == new_relative_path:
         return old_status, old_relative_path, new_relative_path
@@ -749,10 +792,9 @@ def _find_unique_base_artifact(
 
 
 def _ensure_kb_lifecycle_record(loaded: LoadedRecord) -> None:
-    parts = loaded.source_path.parts
-    if not parts or parts[0] != "kb":
+    if loaded.kb_relative_path is None:
         raise ArtifactLifecycleError(
-            "lifecycle status moves are only supported for records under kb/: "
+            "lifecycle status moves are only supported for records under a KB root: "
             f"{loaded.source_path.as_posix()}"
         )
 
@@ -761,7 +803,7 @@ def _ensure_current_status_path_consistent(loaded: LoadedRecord) -> None:
     artifact = loaded.record
     if not isinstance(artifact, BaseArtifact):
         return
-    allowed = expected_status_for_path(loaded.source_path.as_posix())
+    allowed = expected_status_for_path(_status_path_for_loaded_record(loaded))
     if artifact.status in allowed:
         return
     expected = ", ".join(sorted(status.value for status in allowed))
@@ -770,6 +812,67 @@ def _ensure_current_status_path_consistent(loaded: LoadedRecord) -> None:
         f"{loaded.source_path.as_posix()} has status {artifact.status.value}; "
         f"expected one of {expected}"
     )
+
+
+def _ensure_loaded_record_is_writable(loaded: LoadedRecord) -> None:
+    if not loaded.kb_root_readonly:
+        return
+    root_name = loaded.kb_root_name or "<unknown>"
+    raise ArtifactLifecycleError(f"readonly KB root cannot be modified: {root_name}")
+
+
+def _workspace_lifecycle_artifact_path(
+    *,
+    context: RepoContext,
+    artifact_type: ArtifactType,
+    status: ArtifactStatus,
+    artifact_id: str,
+) -> Path:
+    legacy_path = lifecycle_artifact_path(artifact_type, status, artifact_id)
+    if not context.workspace_config.configured:
+        return legacy_path
+    root = _default_writable_kb_root(context)
+    return Path(root.path) / _strip_legacy_kb_prefix(legacy_path)
+
+
+def _workspace_status_move_path(
+    loaded: LoadedRecord,
+    artifact: BaseArtifact,
+    new_status: ArtifactStatus,
+) -> Path:
+    legacy_path = lifecycle_artifact_path(artifact.type, new_status, artifact.id)
+    if loaded.kb_root_path is None:
+        return legacy_path
+    return loaded.kb_root_path / _strip_legacy_kb_prefix(legacy_path)
+
+
+def _default_writable_kb_root(context: RepoContext) -> KbRootConfig:
+    writable_roots = [
+        root for root in context.workspace_config.kb if not root.readonly
+    ]
+    if not writable_roots:
+        raise ArtifactLifecycleError("no writable KB root is configured")
+
+    private_roots = [root for root in writable_roots if root.name == "private"]
+    candidates = private_roots or writable_roots
+    return sorted(
+        candidates,
+        key=lambda root: (-root.priority, root.name, root.path),
+    )[0]
+
+
+def _strip_legacy_kb_prefix(path: Path) -> Path:
+    parts = path.parts
+    if parts and parts[0] == "kb":
+        return Path(*parts[1:])
+    return path
+
+
+def _status_path_for_loaded_record(loaded: LoadedRecord) -> str:
+    if loaded.kb_relative_path is None:
+        return loaded.source_path.as_posix()
+    relative = loaded.kb_relative_path.as_posix()
+    return "kb" if not relative else f"kb/{relative}"
 
 
 def _ensure_repository_valid_for_lifecycle_move(context: RepoContext) -> None:

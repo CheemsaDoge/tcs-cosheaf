@@ -12,20 +12,26 @@
 
 - `cosheaf --help`: shows CLI help.
 - `cosheaf version`: prints the package version.
-- `cosheaf validate`: validates repository YAML records discovered under `kb/`, `issues/`, and `examples/`.
+- `cosheaf workspace info`: shows the active workspace name, configured/legacy
+  mode, repository root, and KB roots.
+- `cosheaf workspace info --repo-root <path>`: shows workspace configuration for
+  an explicit repository root.
+- `cosheaf validate`: validates repository YAML records discovered under the
+  active workspace KB roots plus `issues/` and `examples/`. Without
+  `cosheaf.toml`, the KB root remains `kb/`.
 - `cosheaf validate --repo-root <path>`: validates a repository rooted at `<path>`.
 - `cosheaf validate --debug`: shows tracebacks for unexpected validation errors.
 - `cosheaf artifact validate <path>`: validates one YAML file with file-local checks.
 - `cosheaf artifact validate <path> --repo-root <path>`: resolves the artifact path against an explicit repository root.
 - `cosheaf artifact validate <path> --debug`: shows tracebacks for unexpected validation errors.
-- `cosheaf artifact create --id <artifact-id> --type <artifact-type> --title <title> --domain <domain> --status <status> --statement <statement>`: creates a deterministic artifact YAML record under the lifecycle tree and validates it before reporting success.
+- `cosheaf artifact create --id <artifact-id> --type <artifact-type> --title <title> --domain <domain> --status <status> --statement <statement>`: creates a deterministic artifact YAML record under the lifecycle tree and validates it before reporting success. In configured workspaces, it writes to the writable private KB root by default.
 - `cosheaf artifact create ... --repo-root <path>`: creates the artifact for an explicit repository root.
 - `cosheaf artifact create ... --author <author>`: records one author value; repeat for multiple authors.
 - `cosheaf artifact create ... --tag <tag>`: records one tag value; repeat for multiple tags.
 - `cosheaf artifact create ... --depends-on <artifact-id>`: records one dependency; repeat for multiple dependencies.
 - `cosheaf artifact create ... --supersedes <artifact-id>`: records one superseded artifact ID; repeat for multiple IDs.
 - `cosheaf artifact create ... --created-at <timestamp>`: sets `created_at` and `updated_at`; defaults to current UTC if omitted.
-- `cosheaf artifact move-status <artifact-id> <new-status>`: moves a unique artifact ID through a non-accepted lifecycle status transition after status/path and repository validation.
+- `cosheaf artifact move-status <artifact-id> <new-status>`: moves a unique artifact ID through a non-accepted lifecycle status transition after status/path and repository validation. In configured workspaces, it refuses artifacts loaded from readonly KB roots.
 - `cosheaf artifact move-status <artifact-id> <new-status> --repo-root <path>`: moves the artifact status for an explicit repository root.
 - `cosheaf index rebuild`: rebuilds `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json`.
 - `cosheaf index rebuild --repo-root <path>`: rebuilds index outputs for an explicit repository root.
@@ -49,6 +55,40 @@
 - `cosheaf task complete <task-id> --bundle <path> --repo-root <path>`: completes the task for an explicit repository root.
 
 ### Python API
+
+#### Workspace Configuration
+
+- `cosheaf.config.workspace.KbRootConfig`: Pydantic v2 model for one KB root
+  with `name`, repository-relative `path`, `readonly`, and `priority`.
+- `cosheaf.config.workspace.WorkspacePolicy`: Pydantic v2 model for workspace
+  policy fields `private_can_depend_on_public`,
+  `public_can_depend_on_private`, and `accepted_requires_source`.
+- `cosheaf.config.workspace.WorkspaceConfig`: Pydantic v2 model for workspace
+  configuration with `name`, `kb`, `policy`, and `configured` fields.
+- `cosheaf.config.workspace.WorkspaceConfig.legacy(repo_root: Path) -> WorkspaceConfig`:
+  returns the no-config default with one writable `kb` root.
+- `cosheaf.config.workspace.WorkspaceConfig.ordered_kb -> tuple[KbRootConfig, ...]`:
+  returns KB roots sorted by `(priority, name, path)`.
+- `cosheaf.config.workspace.WorkspaceConfig.root_by_name(name: str) -> KbRootConfig | None`:
+  returns one KB root by name when configured.
+- `cosheaf.config.workspace.WorkspaceConfigError`: expected config load or
+  validation error.
+- `cosheaf.config.workspace.load_workspace_config(repo_root: str | Path) -> WorkspaceConfig`:
+  loads `cosheaf.toml`, or returns legacy single-root config when absent.
+
+`cosheaf.toml` uses:
+
+- `[workspace]`
+- `workspace.name`
+- `[[kb]]`
+- `kb.name`
+- `kb.path`
+- `kb.readonly`
+- `kb.priority`
+- `[policy]`
+- `policy.private_can_depend_on_public`
+- `policy.public_can_depend_on_private`
+- `policy.accepted_requires_source`
 
 #### Core Models
 
@@ -88,10 +128,19 @@ These helpers are pure validation, path-formatting, status-classification, or de
 
 #### Storage Models and Context
 
-- `cosheaf.storage.repo.RepoContext`: immutable filesystem repository context with `repo_root`.
+- `cosheaf.storage.repo.RepoContext`: immutable filesystem repository context
+  with `repo_root` and loaded `workspace_config`.
+- `cosheaf.storage.repo.RepoContext.discovery_roots() -> tuple[str, ...]`:
+  returns active repository-relative YAML discovery roots. The roots are
+  configured KB root paths plus `issues` and `examples`; in legacy mode this is
+  `kb`, `issues`, and `examples`.
+- `cosheaf.storage.repo.RepoContext.kb_root_for_path(path: str | Path) -> KbRootConfig | None`:
+  returns the configured KB root containing a repository-relative path.
+- `cosheaf.storage.repo.RepoContext.kb_relative_path(path: str | Path) -> Path | None`:
+  returns a path relative to its configured KB root when applicable.
 - `cosheaf.storage.loader.IssueRecord`: Pydantic v2 model for issue YAML records loaded by storage.
 - `cosheaf.storage.loader.ReviewRecord`: Pydantic v2 model for review YAML records loaded by storage.
-- `cosheaf.storage.loader.LoadedRecord`: loaded record wrapper with repository-relative `source_path` and typed `record`.
+- `cosheaf.storage.loader.LoadedRecord`: loaded record wrapper with repository-relative `source_path`, typed `record`, and optional KB root metadata (`kb_root_name`, `kb_root_path`, `kb_root_readonly`, `kb_relative_path`).
 
 #### Storage Loader
 
@@ -99,7 +148,13 @@ These helpers are pure validation, path-formatting, status-classification, or de
 - `cosheaf.storage.loader.load_yaml_file(context: RepoContext, path: Path) -> LoadedRecord`
 - `cosheaf.storage.loader.load_artifacts(context: RepoContext) -> list[LoadedRecord]`
 
-The loader discovers `.yaml` and `.yml` files under `kb/`, `issues/`, and `examples/`, parses YAML without swallowing parse errors, and returns loaded records in deterministic order by source path then ID. Loaded models currently include `BaseArtifact`, `IssueRecord`, `ReviewRecord`, and `AgentTask` example records. Runtime task records under `.cosheaf/tasks/` are not part of repository discovery.
+The loader discovers `.yaml` and `.yml` files under the active workspace KB
+roots plus `issues/` and `examples/`, parses YAML without swallowing parse
+errors, and returns loaded records in deterministic order by source path then
+ID. Without `cosheaf.toml`, the active KB root is the legacy `kb/` path. Loaded
+models currently include `BaseArtifact`, `IssueRecord`, `ReviewRecord`, and
+`AgentTask` example records. Runtime task records under `.cosheaf/tasks/` are
+not part of repository discovery.
 
 #### Storage Writer
 
@@ -123,8 +178,8 @@ behavior.
 
 The index rebuild writes `.cosheaf/index.sqlite` and
 `.cosheaf/artifact_manifest.json` from scratch. The SQLite index stores artifact
-ID, type, status, path, title, domain, and dependency rows. The manifest is
-ordered deterministically by artifact ID and dependency tuple.
+ID, type, status, path, title, domain, source KB root, and dependency rows. The
+manifest is ordered deterministically by artifact ID and dependency tuple.
 
 #### Dependency Graph
 
@@ -163,6 +218,10 @@ depending on draft or otherwise pre-accepted artifacts.
 - `cosheaf.gates.gatekeeper.GateStatus`: gate status literal type.
 - `cosheaf.gates.gatekeeper.GateVerdict`: gatekeeper verdict literal type.
 - `cosheaf.gates.gatekeeper.run_gatekeeper(context: RepoContext, *, persist_review: bool = False, timestamp: str | None = None) -> GatekeeperRunResult`
+
+The dependency gate validates missing dependencies, accepted-to-draft
+dependencies across KB roots, and public-artifact-to-private-artifact
+dependencies.
 
 The validation orchestrator is deterministic and filesystem-backed.
 `validate_repository` does not run verifier adapters. `run_gatekeeper` runs
@@ -359,6 +418,23 @@ unavailable or when real Lean verification is still TODO.
 - `schemas/review.schema.json`: review YAML schema.
 - `schemas/verifier.schema.json`: verifier result schema.
 - `schemas/task.schema.json`: agent task YAML schema.
+
+### Workspace Config Files
+
+- `cosheaf.toml`: optional repository-root workspace configuration file.
+  Absence preserves legacy single-root behavior.
+- `[workspace] name`: workspace display name.
+- `[[kb]] name`: KB root name.
+- `[[kb]] path`: repository-relative KB root path.
+- `[[kb]] readonly`: whether write commands may modify that root.
+- `[[kb]] priority`: integer priority used for deterministic root ordering and
+  reporting.
+- `[policy] private_can_depend_on_public`: whether private artifacts may depend
+  on public artifacts.
+- `[policy] public_can_depend_on_private`: whether public artifacts may depend
+  on private artifacts.
+- `[policy] accepted_requires_source`: whether accepted public artifacts require
+  source metadata policy enforcement in future promotion workflows.
 
 ## Registration Rule
 

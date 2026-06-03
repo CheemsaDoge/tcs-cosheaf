@@ -60,6 +60,26 @@ Public interface changes require INTERFACE_REGISTRY update in `context/INTERFACE
 
 Architecture changes require ADR.
 
+## Workspace Configuration
+
+Use `cosheaf workspace info` to inspect the active workspace before assuming a
+single KB tree. If `cosheaf.toml` is absent, the repository runs in legacy mode
+with one writable KB root at `kb/`.
+
+When `cosheaf.toml` is present, the `[workspace]` table names the workspace and
+each `[[kb]]` table declares one KB root with `name`, repository-relative
+`path`, `readonly`, and `priority` fields. Storage discovery reads configured
+KB roots plus repository-local `issues/` and `examples/`.
+
+Private artifacts may depend on public artifacts. Public artifacts must not
+depend on private artifacts. Accepted artifacts must not depend on draft or
+pre-accepted artifacts, even across KB roots. Do not manually merge framework
+and KB repositories.
+
+Lifecycle write commands respect readonly roots. `cosheaf artifact create`
+writes into the writable private root by default in configured workspaces, and
+`cosheaf artifact move-status` refuses records loaded from readonly roots.
+
 ## Verification
 
 Do not hide verification failures. If an intended command does not exist yet, the task must either implement it or clearly state why it is not available yet.

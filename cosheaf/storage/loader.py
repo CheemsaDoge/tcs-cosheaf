@@ -13,7 +13,7 @@ from yaml import YAMLError
 
 from cosheaf.core.artifact import BaseArtifact
 from cosheaf.core.ids import validate_artifact_id
-from cosheaf.core.paths import DISCOVERY_ROOTS, is_yaml_path, repo_relative_posix
+from cosheaf.core.paths import is_yaml_path, repo_relative_posix
 from cosheaf.core.status import ArtifactType
 from cosheaf.core.task import AgentTask
 from cosheaf.storage.repo import RepoContext
@@ -89,6 +89,10 @@ class LoadedRecord:
 
     source_path: Path
     record: LoadedModel
+    kb_root_name: str | None = None
+    kb_root_path: Path | None = None
+    kb_root_readonly: bool = False
+    kb_relative_path: Path | None = None
 
     @property
     def id(self) -> str:
@@ -100,13 +104,19 @@ class LoadedRecord:
 def discover_yaml_paths(context: RepoContext) -> list[Path]:
     """Discover YAML files under the repository discovery roots."""
     paths: list[Path] = []
-    for root_name in DISCOVERY_ROOTS:
+    seen: set[str] = set()
+    for root_name in context.discovery_roots():
         root = context.resolve(root_name)
         if not root.exists():
             continue
-        paths.extend(
-            path for path in root.rglob("*") if path.is_file() and is_yaml_path(path)
-        )
+        for path in root.rglob("*"):
+            if not path.is_file() or not is_yaml_path(path):
+                continue
+            relative_path = repo_relative_posix(context.repo_root, path)
+            if relative_path in seen:
+                continue
+            seen.add(relative_path)
+            paths.append(path)
     return sorted(paths, key=lambda path: repo_relative_posix(context.repo_root, path))
 
 
@@ -131,7 +141,16 @@ def load_yaml_file(context: RepoContext, path: Path) -> LoadedRecord:
         raise LoadError(f"{relative_path}: expected a YAML mapping at document root")
 
     record = _parse_record(relative_path, raw)
-    return LoadedRecord(source_path=Path(relative_path), record=record)
+    kb_root = context.kb_root_for_path(relative_path)
+    kb_relative_path = context.kb_relative_path(relative_path)
+    return LoadedRecord(
+        source_path=Path(relative_path),
+        record=record,
+        kb_root_name=kb_root.name if kb_root is not None else None,
+        kb_root_path=Path(kb_root.path) if kb_root is not None else None,
+        kb_root_readonly=kb_root.readonly if kb_root is not None else False,
+        kb_relative_path=kb_relative_path,
+    )
 
 
 def _parse_record(relative_path: str, raw: dict[str, Any]) -> LoadedModel:

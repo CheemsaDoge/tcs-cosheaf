@@ -10,9 +10,25 @@ TCS-Cosheaf is organized as a layered system. Each layer should expose narrow in
 
 Defines the artifact model, artifact status concepts, artifact type vocabulary, and domain-level invariants.
 
+### Configuration Layer
+
+Loads optional repository-local workspace configuration from `cosheaf.toml`.
+When the file is absent, configuration falls back to the legacy single-root
+repository behavior with one writable KB root at `kb/`.
+
+The workspace configuration model contains a workspace name, public/private
+policy fields, and one or more KB roots. Each KB root has a `name`,
+repository-relative `path`, `readonly` flag, and integer `priority`.
+
 ### Storage/Index Layer
 
 Loads artifacts from Git-backed paths, builds deterministic indexes, and records repository-local metadata needed by other layers.
+
+When `cosheaf.toml` exists, storage discovers YAML records under each configured
+KB root plus repository-local `issues/` and `examples/`. Loaded records retain
+their source KB root name, root path, readonly flag, and path relative to the KB
+root. When `cosheaf.toml` is absent, storage keeps the previous discovery roots:
+`kb/`, `issues/`, and `examples/`.
 
 Current index outputs are:
 
@@ -21,7 +37,7 @@ Current index outputs are:
 
 Index rebuilds load repository YAML records, normalize artifact rows, write
 SQLite from scratch, and emit a deterministic JSON manifest ordered by artifact
-ID and dependency tuple.
+ID and dependency tuple. Artifact rows include the source KB root name.
 
 ### Graph Layer
 
@@ -37,6 +53,12 @@ Runs verifier adapters and normalizes verifier outcomes. Optional external tools
 ### Gate/Review Layer
 
 Combines schema checks, repository invariants, dependency checks, verifier outcomes, reproducibility metadata, and PR checklist checks into gate results.
+
+Workspace-aware dependency checks additionally reject public artifacts that
+depend on private artifacts. Status/path checks evaluate artifact lifecycle
+paths relative to each configured KB root, so `kb/public/accepted/...` and
+`kb/private/accepted/...` both use accepted-path semantics inside their own
+roots.
 
 ### Agent Harness Layer
 
@@ -68,14 +90,21 @@ anything into accepted knowledge.
 
 ### CLI Layer
 
-Provides public commands for validation, gate execution, graph inspection, context generation, and verifier invocation.
+Provides public commands for validation, gate execution, graph inspection,
+context generation, workspace inspection, lifecycle artifact writes, and
+verifier invocation.
+
+Lifecycle write commands are workspace-aware. In configured workspaces,
+`cosheaf artifact create` writes to the writable private KB root by default, and
+`cosheaf artifact move-status` refuses to modify records loaded from readonly
+KB roots.
 
 ## Module Dependency Direction
 
 The intended module dependency direction is:
 
 ```text
-core -> storage -> graph -> gates -> verification -> agent -> cli
+core -> config -> storage -> graph -> gates -> verification -> agent -> cli
 ```
 
 Lower-level modules must not import higher-level modules. Public interface changes must be recorded in `context/INTERFACE_REGISTRY.md`.

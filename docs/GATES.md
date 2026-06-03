@@ -14,17 +14,22 @@ Pydantic model contracts for artifacts, issues, or reviews.
 ### ID Uniqueness Gate
 
 Checks that loaded record IDs are globally unique across the repository
-discovery roots.
+discovery roots. In configured workspaces, this includes all configured KB
+roots plus repository-local `issues/` and `examples/`.
 
 ### Status/Path Gate
 
 Checks that accepted artifacts live only under `kb/accepted/`, draft or
 pre-accepted artifacts live under non-accepted paths such as `kb/draft/`, and
 terminal failure states are consistent with their terminal paths when present.
+In configured workspaces, status/path checks are evaluated relative to the
+artifact's configured KB root.
 
 ### Dependency Gate
 
-Checks that artifact dependencies are valid and that accepted artifacts do not depend on draft artifacts.
+Checks that artifact dependencies are valid, that accepted artifacts do not
+depend on draft artifacts, and that public KB artifacts do not depend on private
+KB artifacts.
 
 ## Accepted Promotion Requirements
 
@@ -187,7 +192,8 @@ not be reported as `pass`.
 
 `cosheaf validate` now implements the schema/model gate, ID uniqueness gate,
 status/path gate, dependency gate, and evidence path gate over YAML records
-discovered under `kb/`, `issues/`, and `examples/`.
+discovered under the active workspace KB roots plus `issues/` and `examples/`.
+Without `cosheaf.toml`, the active KB root remains the legacy `kb/` path.
 
 `cosheaf artifact validate <path>` validates a single YAML file with
 file-local schema/model, status/path, and evidence path checks. Whole-repository
@@ -199,7 +205,9 @@ lifecycle tree, refuses duplicate IDs, and runs single-file validation before
 reporting success. `cosheaf artifact move-status <artifact-id> <new-status>`
 checks the current artifact's status/path consistency, validates the repository
 before the move, refuses direct accepted promotion, and writes the moved artifact
-with the deterministic YAML writer.
+with the deterministic YAML writer. In configured workspaces, artifact creation
+writes to the writable private KB root by default, and status movement refuses
+records loaded from readonly KB roots.
 
 `cosheaf gate run` now runs:
 
