@@ -3,6 +3,22 @@
 TCS-Cosheaf separates reusable public knowledge from user-private research
 overlays.
 
+## Recommended User Entry Point
+
+Use
+[`tcs-cosheaf-workspace-template`](https://github.com/CheemsaDoge/tcs-cosheaf-workspace-template)
+for ordinary user workspaces. The template installs or references the
+`tcs-cosheaf` framework, mounts
+[`tcs-kb-public`](https://github.com/CheemsaDoge/tcs-kb-public) as readonly
+public knowledge, and keeps user-owned work under a writable `kb/private`
+overlay.
+
+Do not manually merge the framework repository, public KB repository, and
+private workspace into one mixed repository. Keeping the three roles separate
+preserves review boundaries: framework changes happen in `tcs-cosheaf`, public
+knowledge maintenance happens in `tcs-kb-public`, and private research drafts
+stay in the user workspace.
+
 ## Public KB
 
 Public KB roots are normally readonly in a user workspace. Public KB content
@@ -67,8 +83,7 @@ any KB roots.
 ## Framework Repository Boundary
 
 The `tcs-cosheaf` framework repository may include tiny seed examples for tests
-and documentation, but it must not vendor the full public KB. Users should not
-manually merge the framework repository and KB repositories. The intended user
+and documentation, but it must not vendor the full public KB. The intended user
 model is:
 
 ```text

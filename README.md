@@ -102,6 +102,21 @@ Planned or incomplete:
 
 ## Quickstart
 
+This repository is the framework package. For a user-facing research
+workspace, start from
+[`tcs-cosheaf-workspace-template`](https://github.com/CheemsaDoge/tcs-cosheaf-workspace-template)
+instead of manually merging framework and KB repositories. The intended model
+is:
+
+- `tcs-cosheaf`: framework, CLI, schema, gates, and agent harness.
+- [`tcs-kb-public`](https://github.com/CheemsaDoge/tcs-kb-public): reusable
+  public TCS KB, mounted readonly in downstream workspaces.
+- `tcs-cosheaf-workspace-template`: user entry point with a readonly public KB
+  root plus writable `kb/private` overlay.
+
+Private artifacts may depend on public artifacts. Public artifacts must not
+depend on private artifacts.
+
 ```bash
 git clone https://github.com/CheemsaDoge/tcs-cosheaf.git
 cd tcs-cosheaf
