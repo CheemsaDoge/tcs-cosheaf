@@ -207,7 +207,32 @@ Private KB policy:
 - Placeholder gates must be reported as skipped or not implemented, never pass.
 - Do not mark incomplete behavior as complete.
 
-## 13. Repository Creation Policy
+## 13. Accepted Artifact Promotion Protocol
+
+Accepted knowledge must enter lifecycle KB roots through
+`cosheaf artifact promote <artifact-id>`, not by manually moving YAML files.
+Direct accepted creation and direct `cosheaf artifact move-status <artifact-id>
+accepted` must remain refused.
+
+Promotion must preserve these operating rules:
+
+- Run repository validation before promotion and stop on validation failures.
+- Run gatekeeper before promotion and stop on blocking issues.
+- Stop when target verifier results contain `fail` or `error`.
+- Require `review.state` to be `human_reviewed` or `accepted`.
+- Require dependencies to be accepted local artifacts or explicit
+  `external:<reference>` dependencies.
+- Never promote issue, task, review, or worker-output records as lifecycle
+  artifacts.
+- Refuse records loaded from readonly KB roots.
+- Write deterministic YAML under the accepted area of the artifact's current KB
+  root, set `status` to `accepted`, and refresh `updated_at`.
+
+Skipped verifier results are not pass results. They may remain recorded as
+skipped evidence, but they must never be described as successful verification or
+used to justify a false pass.
+
+## 14. Repository Creation Policy
 
 When asked to create repositories:
 
@@ -222,7 +247,7 @@ Never fake repository creation, branch creation, issue creation, PR creation,
 remote pushes, or passing checks. Do not claim repositories, issues, branches,
 PRs, or checks exist unless they actually exist.
 
-## 14. Review Guidelines
+## 15. Review Guidelines
 
 Reviews should focus on broken invariants, missing tests, nondeterminism,
 swallowed errors, unlogged external commands, schema incompatibility, accepted

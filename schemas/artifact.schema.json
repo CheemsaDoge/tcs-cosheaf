@@ -123,7 +123,15 @@
       "properties": {
         "state": {
           "type": "string",
-          "enum": ["none", "requested", "in_review", "approved", "changes_requested"]
+          "enum": [
+            "none",
+            "requested",
+            "in_review",
+            "approved",
+            "changes_requested",
+            "human_reviewed",
+            "accepted"
+          ]
         },
         "notes": {
           "type": "string"

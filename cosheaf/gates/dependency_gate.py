@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from cosheaf.core.artifact import BaseArtifact
+from cosheaf.core.artifact import BaseArtifact, is_external_dependency_ref
 from cosheaf.core.status import ArtifactStatus, is_preaccepted_status
 from cosheaf.gates.schema_gate import ValidationFailure
 from cosheaf.storage.loader import LoadedRecord
@@ -49,6 +49,8 @@ def validate_dependencies(records: tuple[LoadedRecord, ...]) -> list[ValidationF
         if not isinstance(artifact, BaseArtifact):
             continue
         for dependency_id in artifact.depends_on:
+            if is_external_dependency_ref(dependency_id):
+                continue
             dependency = artifacts_by_id.get(dependency_id)
             if dependency is None:
                 failures.append(

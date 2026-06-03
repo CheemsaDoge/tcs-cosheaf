@@ -57,6 +57,11 @@ Examples:
 - `construction.graph-toy.0001`
 - `issue.graph-toy-search.0001`
 
+Local `depends_on` and `supersedes` entries use the same artifact ID format.
+`depends_on` may also contain explicit external references beginning with
+`external:`. External dependency references are not local artifact IDs and are
+not required to resolve to files in this repository.
+
 ## Status Values
 
 The initial artifact status values are:
@@ -89,11 +94,33 @@ The lifecycle path rules are part of the artifact contract:
 The lifecycle CLI derives canonical paths from artifact type, status, and ID.
 Draft and pre-accepted artifacts are created under `kb/draft/` by default.
 Moving an artifact to `refuted`, `obsolete`, or `superseded` moves it to the
-terminal-status area. Direct accepted creation is refused; accepted promotion
-requires a dedicated gate/review workflow rather than a silent file move.
+terminal-status area. Direct accepted creation is refused, and direct
+`move-status ... accepted` is refused. Accepted promotion uses
+`cosheaf artifact promote <artifact-id>` rather than a silent file move.
+
+Promotion validates the repository, runs the gatekeeper, refuses target verifier
+`fail` or `error` results, requires `review.state` to be `human_reviewed` or
+`accepted`, requires dependencies to be accepted local artifacts or explicit
+external references, updates `status` to `accepted`, refreshes `updated_at`, and
+writes deterministic YAML under `kb/accepted/<type-plural>/<artifact-id>.yaml`.
 
 `review` and `issue` records have separate loader models and are not artifact
-lifecycle records for `cosheaf artifact create`.
+lifecycle records for `cosheaf artifact create` or `cosheaf artifact promote`.
+
+## Inline Review State
+
+Artifact `review.state` currently accepts:
+
+- `none`
+- `requested`
+- `in_review`
+- `approved`
+- `changes_requested`
+- `human_reviewed`
+- `accepted`
+
+Only `human_reviewed` and `accepted` satisfy the accepted-artifact promotion
+review requirement.
 
 ## Schema Files
 
@@ -115,7 +142,10 @@ The initial Pydantic v2 model layer lives under `cosheaf/core/`:
 - `cosheaf.core.status.ArtifactType`
 - `cosheaf.core.status.ArtifactStatus`
 
-The model layer validates artifact IDs, enum values, timezone-aware timestamps, dependency ID lists, evidence records, review state, and risk state. Path/status rules are exposed as pure helper functions; they do not scan the repository.
+The model layer validates artifact IDs, enum values, timezone-aware timestamps,
+dependency references, evidence records, review state, and risk state.
+Path/status rules are exposed as pure helper functions; they do not scan the
+repository.
 
 ## Example Files
 
@@ -134,8 +164,9 @@ initial Pydantic v2 models. Filesystem-backed loading, repository scanning,
 schema/model validation through `cosheaf validate`, single-file validation
 through `cosheaf artifact validate <path>`, deterministic artifact creation
 through `cosheaf artifact create`, safe pre-accepted and terminal status moves
-through `cosheaf artifact move-status`, and gatekeeper report generation through
-`cosheaf gate` are implemented. The reproducibility metadata gate is implemented
-for executable evidence through verifier-result metadata. Direct accepted
-promotion remains blocked until the dedicated review/gate workflow exists. PR
+through `cosheaf artifact move-status`, accepted promotion through
+`cosheaf artifact promote`, and gatekeeper report generation through
+`cosheaf gate` are implemented. The reproducibility metadata gate is
+implemented for executable evidence through verifier-result metadata. Direct
+accepted creation and direct `move-status ... accepted` remain blocked. PR
 checklist enforcement is still reported as a skipped placeholder.

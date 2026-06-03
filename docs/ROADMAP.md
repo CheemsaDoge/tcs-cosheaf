@@ -17,6 +17,7 @@ Completed scaffold pieces include:
 - Repository validation CLI.
 - Artifact creation and lifecycle status movement CLI for non-accepted
   transitions.
+- Controlled accepted-artifact promotion workflow.
 - Dependency graph and deterministic index rebuild outputs.
 - Gatekeeper reports with machine-readable JSON and human-readable Markdown.
 - Ranked context pack generation for issue-scoped agent work.
