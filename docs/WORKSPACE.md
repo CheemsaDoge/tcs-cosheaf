@@ -4,6 +4,31 @@ TCS-Cosheaf workspaces are configured by an optional `cosheaf.toml` file at the
 repository root. If the file is absent, commands preserve the legacy
 single-repository behavior and load one writable KB root at `kb/`.
 
+## Recommended Three-Repository Setup
+
+The framework repository is `tcs-cosheaf`. It provides the CLI, schemas, gates,
+validation, verifier adapters, and agent harness. It is not the recommended
+place for ordinary user-private research notes.
+
+The reusable public knowledge base is
+[`tcs-kb-public`](https://github.com/CheemsaDoge/tcs-kb-public). Downstream user
+workspaces should mount it as a readonly public KB root.
+
+The recommended user entry point is
+[`tcs-cosheaf-workspace-template`](https://github.com/CheemsaDoge/tcs-cosheaf-workspace-template).
+The template combines the framework package with a readonly public KB root and a
+writable `kb/private` overlay. Users should not manually merge the framework
+repository and KB repositories into one ad hoc tree.
+
+The intended dependency direction is:
+
+```text
+private user artifact -> public KB artifact
+```
+
+Public KB artifacts must not depend on private artifacts. Private overlays may
+depend on public artifacts when `[policy] private_can_depend_on_public = true`.
+
 ## Configuration
 
 The current workspace configuration shape is:

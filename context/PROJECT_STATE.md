@@ -1,6 +1,6 @@
 # Project State
 
-## Current State After Issue 28
+## Current State After Issue 30
 
 TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
@@ -16,6 +16,15 @@ public reusable TCS knowledge base, and `tcs-cosheaf-workspace-template` is the
 user-facing workspace template. The documented user model is framework package
 plus readonly public KB plus writable private KB overlay; users should not
 manually merge framework and KB repositories.
+
+Issue 30 extends the framework user-facing documentation for that
+three-repository model. `README.md`, `docs/WORKSPACE.md`, and
+`docs/PUBLIC_PRIVATE_KB.md` now name `tcs-cosheaf-workspace-template` as the
+recommended user entry point, link the public KB repository, explain that
+downstream workspaces should mount public knowledge readonly with private
+knowledge writable, and restate that private artifacts may depend on public
+artifacts while public artifacts must not depend on private artifacts. This is
+documentation-only framework work and does not change code, schemas, or gates.
 
 The durable workflow rules now require nontrivial Codex work to be issue-driven
 where possible, with one issue, one focused `codex/<task>` branch, one PR, and
