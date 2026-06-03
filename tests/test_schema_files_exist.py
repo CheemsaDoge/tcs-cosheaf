@@ -39,6 +39,7 @@ SCHEMA_FILES = [
     "schemas/issue.schema.json",
     "schemas/review.schema.json",
     "schemas/verifier.schema.json",
+    "schemas/task.schema.json",
 ]
 
 EXAMPLE_FILES = [
@@ -48,6 +49,7 @@ EXAMPLE_FILES = [
     "examples/constructions/graph.example.yaml",
     "examples/constructions/graph.toy.yaml",
     "examples/reviews/review.example.yaml",
+    "examples/tasks/task.example.yaml",
 ]
 
 
@@ -80,6 +82,12 @@ def test_example_files_exist_and_are_valid_yaml() -> None:
         assert path.is_file(), f"missing example: {relative_path}"
 
         example = _read_yaml(path)
+        if relative_path.startswith("examples/tasks/"):
+            assert isinstance(example["task_id"], str)
+            assert isinstance(example["issue_id"], str)
+            assert isinstance(example["worker_type"], str)
+            assert isinstance(example["status"], str)
+            continue
         assert isinstance(example["id"], str)
         assert isinstance(example["type"], str)
         assert isinstance(example["status"], str)

@@ -12,6 +12,8 @@ from cosheaf.agent.context_pack import (
     build_context_pack,
     show_context_pack,
 )
+from cosheaf.agent.orchestrator_stub import OrchestratorStub, TaskHarnessError
+from cosheaf.agent.task import WorkerType
 from cosheaf.gates.gatekeeper import (
     GatekeeperRunResult,
     ValidationReport,
@@ -53,11 +55,17 @@ context_app = typer.Typer(
     help="Context pack commands.",
     no_args_is_help=True,
 )
+task_app = typer.Typer(
+    add_completion=False,
+    help="Agent task commands.",
+    no_args_is_help=True,
+)
 app.add_typer(artifact_app, name="artifact")
 app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
 app.add_typer(gate_app, name="gate")
 app.add_typer(context_app, name="context")
+app.add_typer(task_app, name="task")
 
 
 @app.command()
@@ -232,6 +240,94 @@ def context_show(
         raise typer.Exit(code=1) from None
 
     typer.echo(rendered, nl=False)
+
+
+@task_app.command("create")
+def task_create(
+    issue: str = typer.Option(..., "--issue", help="Issue ID for the task."),
+    worker: WorkerType = typer.Option(
+        ...,
+        "--worker",
+        help="Protocol worker type for the task.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+) -> None:
+    """Create an open local agent task without invoking a worker."""
+    console = Console(width=120, markup=False)
+    try:
+        task = OrchestratorStub(RepoContext(repo_root)).create_task(
+            issue_id=issue,
+            worker_type=worker,
+        )
+    except TaskHarnessError as exc:
+        console.print(f"Task create failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    console.print(f"Task created: {task.task_id}")
+    console.print(f"- issue: {task.issue_id}")
+    console.print(f"- worker: {task.worker_type.value}")
+    console.print(f"- status: {task.status.value}")
+
+
+@task_app.command("list")
+def task_list(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+) -> None:
+    """List local agent tasks."""
+    console = Console(width=120, markup=False)
+    try:
+        tasks = OrchestratorStub(RepoContext(repo_root)).list_tasks()
+    except TaskHarnessError as exc:
+        console.print(f"Task list failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if not tasks:
+        console.print("No tasks.")
+        return
+
+    for task in tasks:
+        console.print(
+            f"{task.task_id} | {task.issue_id} | "
+            f"{task.worker_type.value} | {task.status.value}"
+        )
+
+
+@task_app.command("complete")
+def task_complete(
+    task_id: str = typer.Argument(..., help="Task ID to mark complete."),
+    bundle: Path = typer.Option(
+        ...,
+        "--bundle",
+        help="Worker output bundle manifest path or containing directory.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+) -> None:
+    """Validate a worker output bundle and mark the task complete."""
+    console = Console(width=120, markup=False)
+    try:
+        result = OrchestratorStub(RepoContext(repo_root)).complete_task(
+            task_id=task_id,
+            bundle_path=bundle,
+        )
+    except TaskHarnessError as exc:
+        console.print(f"Task complete failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    console.print(f"Task completed: {result.task.task_id}")
+    console.print(f"- bundle outputs: {len(result.bundle.outputs)}")
+    console.print("- accepted knowledge merge: not performed")
 
 
 def _run_validation(

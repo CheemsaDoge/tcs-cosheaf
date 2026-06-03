@@ -42,6 +42,22 @@ Combines schema checks, repository invariants, dependency checks, verifier outco
 
 Builds bounded context packs for Codex and other agents, records task assumptions, and keeps task execution anchored to repository files rather than conversation state.
 
+Current agent harness outputs are:
+
+- `context/TASKS/<issue-id>/` context packs.
+- `.cosheaf/tasks/<task-id>.yaml` runtime task records.
+
+The task harness defines protocol-level worker types only. Creating, listing,
+or completing tasks does not call LLMs, external services, or concrete worker
+runtimes. The orchestrator stub validates that tasks are issue-scoped, records
+deterministic default task IDs, and can mark a task completed only after a local
+worker output bundle passes the worker contract.
+
+Worker output bundles are local YAML manifests. Artifact and review outputs
+must reference repository-local YAML records that pass the existing schema gate.
+Bundles must not target `kb/accepted/`, and task completion does not merge
+anything into accepted knowledge.
+
 ### CLI Layer
 
 Provides public commands for validation, gate execution, graph inspection, context generation, and verifier invocation.

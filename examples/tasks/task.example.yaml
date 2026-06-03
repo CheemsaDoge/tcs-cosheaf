@@ -1,0 +1,13 @@
+task_id: task.issue.example.agent-harness.reasoner
+issue_id: issue.example.agent-harness
+worker_type: reasoner
+status: open
+input_context:
+  - context/TASKS/issue.example.agent-harness/CONTEXT.md
+budget:
+  max_iterations: 1
+expected_outputs:
+  - gate_ready_yaml
+  - worker_notes
+created_at: 2026-06-02T00:00:00Z
+updated_at: 2026-06-02T00:00:00Z

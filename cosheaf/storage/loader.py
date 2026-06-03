@@ -15,6 +15,7 @@ from cosheaf.core.artifact import BaseArtifact
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.paths import DISCOVERY_ROOTS, is_yaml_path, repo_relative_posix
 from cosheaf.core.status import ArtifactType
+from cosheaf.core.task import AgentTask
 from cosheaf.storage.repo import RepoContext
 
 ARTIFACT_TYPE_VALUES = frozenset(artifact_type.value for artifact_type in ArtifactType)
@@ -79,7 +80,7 @@ class ReviewRecord(BaseModel):
         return validate_artifact_id(value)
 
 
-LoadedModel = BaseArtifact | IssueRecord | ReviewRecord
+LoadedModel = BaseArtifact | IssueRecord | ReviewRecord | AgentTask
 
 
 @dataclass(frozen=True)
@@ -91,6 +92,8 @@ class LoadedRecord:
 
     @property
     def id(self) -> str:
+        if isinstance(self.record, AgentTask):
+            return self.record.task_id
         return self.record.id
 
 
@@ -134,6 +137,12 @@ def load_yaml_file(context: RepoContext, path: Path) -> LoadedRecord:
 def _parse_record(relative_path: str, raw: dict[str, Any]) -> LoadedModel:
     record_type = raw.get("type")
     if not isinstance(record_type, str):
+        if _looks_like_task_record(raw):
+            try:
+                return AgentTask.model_validate(raw)
+            except ValidationError as exc:
+                message = _format_validation_error(relative_path, exc)
+                raise LoadError(message) from exc
         raise LoadError(f"{relative_path}: missing required field: type")
 
     try:
@@ -150,6 +159,10 @@ def _parse_record(relative_path: str, raw: dict[str, Any]) -> LoadedModel:
     raise UnsupportedArtifactTypeError(
         f"{relative_path}: unsupported artifact type: {record_type}"
     )
+
+
+def _looks_like_task_record(raw: dict[str, Any]) -> bool:
+    return "task_id" in raw and "worker_type" in raw
 
 
 def _format_validation_error(relative_path: str, exc: ValidationError) -> str:
