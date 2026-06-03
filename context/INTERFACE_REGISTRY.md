@@ -32,6 +32,12 @@
 - `cosheaf context build <issue-id> --repo-root <path>`: builds a context pack for an explicit repository root.
 - `cosheaf context show <issue-id>`: builds the context pack and prints `CONTEXT.md`.
 - `cosheaf context show <issue-id> --repo-root <path>`: shows context for an explicit repository root.
+- `cosheaf task create --issue <issue-id> --worker <worker-type>`: creates an open local agent task under `.cosheaf/tasks/` after confirming the issue exists.
+- `cosheaf task create --issue <issue-id> --worker <worker-type> --repo-root <path>`: creates the task for an explicit repository root.
+- `cosheaf task list`: lists local task records in deterministic task ID order.
+- `cosheaf task list --repo-root <path>`: lists local task records for an explicit repository root.
+- `cosheaf task complete <task-id> --bundle <path>`: validates a local worker output bundle and marks the task completed without merging accepted knowledge.
+- `cosheaf task complete <task-id> --bundle <path> --repo-root <path>`: completes the task for an explicit repository root.
 
 ### Python API
 
@@ -41,11 +47,14 @@
 - `cosheaf.core.artifact.Evidence`: Pydantic v2 model for evidence references.
 - `cosheaf.core.artifact.Risk`: Pydantic v2 model for artifact risk metadata.
 - `cosheaf.core.artifact.ReviewRef`: Pydantic v2 model for inline review state.
+- `cosheaf.core.task.AgentTask`: Pydantic v2 model for local task records, re-exported through `cosheaf.agent.task.AgentTask`.
 
 #### Core Enums
 
 - `cosheaf.core.status.ArtifactType`: artifact type enum.
 - `cosheaf.core.status.ArtifactStatus`: artifact lifecycle status enum.
+- `cosheaf.core.task.WorkerType`: protocol worker type enum, re-exported through `cosheaf.agent.task.WorkerType`.
+- `cosheaf.core.task.TaskStatus`: task lifecycle status enum, re-exported through `cosheaf.agent.task.TaskStatus`.
 
 #### Core Helpers
 
@@ -61,8 +70,9 @@
 - `cosheaf.core.status.is_preaccepted_status(status: ArtifactStatus) -> bool`
 - `cosheaf.core.status.is_accepted_status(status: ArtifactStatus) -> bool`
 - `cosheaf.core.status.expected_status_for_path(path: str) -> frozenset[ArtifactStatus]`
+- `cosheaf.core.task.create_task_id(issue_id: str, worker_type: WorkerType | str) -> str`
 
-These helpers are pure path-classification or path-formatting helpers. They do not scan the repository, use SQLite, or run gatekeeper behavior.
+These helpers are pure validation, path-formatting, status-classification, or deterministic ID helpers. They do not scan the repository, use SQLite, or run gatekeeper behavior.
 
 #### Storage Models and Context
 
@@ -77,7 +87,7 @@ These helpers are pure path-classification or path-formatting helpers. They do n
 - `cosheaf.storage.loader.load_yaml_file(context: RepoContext, path: Path) -> LoadedRecord`
 - `cosheaf.storage.loader.load_artifacts(context: RepoContext) -> list[LoadedRecord]`
 
-The loader discovers `.yaml` and `.yml` files under `kb/`, `issues/`, and `examples/`, parses YAML without swallowing parse errors, and returns loaded records in deterministic order by source path then ID.
+The loader discovers `.yaml` and `.yml` files under `kb/`, `issues/`, and `examples/`, parses YAML without swallowing parse errors, and returns loaded records in deterministic order by source path then ID. Loaded models currently include `BaseArtifact`, `IssueRecord`, `ReviewRecord`, and `AgentTask` example records. Runtime task records under `.cosheaf/tasks/` are not part of repository discovery.
 
 #### Storage Writer
 
@@ -168,6 +178,38 @@ Generated context pack files are:
 - `RELEVANT_ARTIFACTS.md`
 - `KNOWN_FAILURES.md`
 - `COMMANDS.md`
+
+#### Agent Tasks
+
+- `cosheaf.agent.task.WorkerType`: protocol worker type enum with values `reasoner`, `verifier`, `counterexampleer`, `construction_searcher`, `formalizer`, `literature_scout`, and `orchestrator`.
+- `cosheaf.agent.task.TaskStatus`: task status enum with values `open`, `in_progress`, `blocked`, `completed`, `failed`, and `cancelled`.
+- `cosheaf.agent.task.AgentTask`: Pydantic v2 model for local task records with fields `task_id`, `issue_id`, `worker_type`, `status`, `input_context`, `budget`, `expected_outputs`, `created_at`, and `updated_at`.
+- `cosheaf.agent.task.create_task_id(issue_id: str, worker_type: WorkerType | str) -> str`: deterministic default task ID helper. It returns `task.<issue-id>.<worker-type-slug>`, with underscores in worker type values rendered as hyphens.
+- `cosheaf.agent.worker_contract.WorkerOutputKind`: output kind enum with values `artifact`, `review`, `evidence`, and `report`.
+- `cosheaf.agent.worker_contract.WorkerOutput`: Pydantic v2 model for one repository-local output reference.
+- `cosheaf.agent.worker_contract.WorkerOutputBundle`: Pydantic v2 model for a local worker output bundle manifest.
+- `cosheaf.agent.worker_contract.OutputBundleError`: expected worker output bundle validation error.
+- `cosheaf.agent.worker_contract.validate_output_bundle(context: RepoContext, bundle_path: str | Path, *, task: AgentTask | None = None) -> WorkerOutputBundle`: validates a local bundle manifest and referenced output paths without merging accepted knowledge.
+- `cosheaf.agent.orchestrator_stub.OrchestratorStub`: local filesystem task harness stub. It creates, lists, loads, and completes task records without LLM calls, network calls, concrete worker execution, or accepted knowledge merges.
+- `cosheaf.agent.orchestrator_stub.TaskHarnessError`: expected task harness error.
+- `cosheaf.agent.orchestrator_stub.AcceptedKnowledgeMergeProhibitedError`: raised when a caller asks the stub to merge accepted knowledge.
+- `cosheaf.agent.orchestrator_stub.TaskCompletionResult`: completed task, validated bundle, and task path.
+
+Task records are written under:
+
+- `.cosheaf/tasks/<task-id>.yaml`
+
+Worker output bundles may be passed as a YAML file path or as a directory
+containing `bundle.yaml`. Bundle manifests use:
+
+- `schema_version`
+- `task_id`
+- `worker_type`
+- `outputs`
+- `notes`
+
+Artifact and review outputs must point to repository-local YAML records that
+pass the schema gate. Outputs under `kb/accepted/` are rejected.
 
 #### Verification
 
@@ -288,6 +330,14 @@ unavailable or when real Lean verification is still TODO.
 - `make test`: runs `python -m pytest`
 - `make validate`: runs `python -m cosheaf.cli validate`.
 - `make gate`: runs `python -m cosheaf.cli gate`, which defaults to a real gatekeeper run.
+
+### Schemas
+
+- `schemas/artifact.schema.json`: artifact YAML schema.
+- `schemas/issue.schema.json`: issue YAML schema.
+- `schemas/review.schema.json`: review YAML schema.
+- `schemas/verifier.schema.json`: verifier result schema.
+- `schemas/task.schema.json`: agent task YAML schema.
 
 ## Registration Rule
 
