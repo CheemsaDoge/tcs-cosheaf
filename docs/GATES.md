@@ -29,26 +29,39 @@ artifact's configured KB root.
 
 Checks that artifact dependencies are valid, that accepted artifacts do not
 depend on draft artifacts, and that public KB artifacts do not depend on private
-KB artifacts.
+KB artifacts. Dependency references beginning with `external:` are explicit
+external references; they are not required to resolve to local artifacts and do
+not satisfy local accepted-artifact dependencies.
 
 ## Accepted Promotion Requirements
 
 Moving an artifact into `kb/accepted/` is intentionally not a plain file move.
-Accepted promotion must be mediated by the gate/review workflow so the following
-conditions are checked before accepted knowledge is created:
+Accepted promotion is mediated by `cosheaf artifact promote <artifact-id>` so
+the following conditions are checked before accepted knowledge is created:
 
-- schema/model validation passes;
+- repository schema/model validation passes;
 - artifact IDs remain globally unique;
-- the target path is under `kb/accepted/` and the artifact status is `accepted`;
-- accepted artifacts do not depend on draft or otherwise pre-accepted
-  artifacts;
-- local evidence paths resolve;
-- relevant verifier and reproducibility gates run without blocking issues;
-- review evidence is present and approved.
+- the target record is a lifecycle artifact under `kb/`;
+- issue, task, and review records are never promoted as lifecycle artifacts;
+- the gatekeeper has no blocking issues;
+- target verifier results do not contain `fail` or `error`;
+- dependency references are either accepted lifecycle artifacts or explicit
+  external references such as `external:<reference>`;
+- `review.state` is `human_reviewed` or `accepted`;
+- the target path is `kb/accepted/<type-dir>/<artifact-id>.yaml` relative to
+  the artifact's KB root;
+- the promoted artifact is written with status `accepted`, a fresh
+  `updated_at`, and deterministic YAML output.
 
-`cosheaf artifact move-status <artifact-id> accepted` currently fails clearly
-instead of moving anything into `kb/accepted/`. This preserves the invariant that
-accepted knowledge is introduced only through an explicit review and gate flow.
+Skipped verifier results are not treated as pass results. They remain recorded
+as skipped/nonblocking gatekeeper evidence; optional formal tools therefore
+stay optional, but skipped output must not be described as a successful
+verification.
+
+Direct accepted creation remains refused by `cosheaf artifact create`.
+`cosheaf artifact move-status <artifact-id> accepted` also fails clearly
+instead of moving anything into `kb/accepted/`. This preserves the invariant
+that accepted knowledge is introduced only through the explicit promotion flow.
 
 ### Evidence Path Gate
 
@@ -207,7 +220,10 @@ checks the current artifact's status/path consistency, validates the repository
 before the move, refuses direct accepted promotion, and writes the moved artifact
 with the deterministic YAML writer. In configured workspaces, artifact creation
 writes to the writable private KB root by default, and status movement refuses
-records loaded from readonly KB roots.
+records loaded from readonly KB roots. `cosheaf artifact promote <artifact-id>`
+performs the accepted-artifact promotion workflow described above, refuses
+records loaded from readonly KB roots, and is the only implemented CLI path for
+moving eligible artifacts into the accepted area of their KB root.
 
 `cosheaf gate run` now runs:
 

@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Workspace KB Layering
+## Current State After Issue 19
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates, artifact lifecycle CLI commands, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
 Branch protection and review expectations are now documented in
 `docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
@@ -35,7 +35,7 @@ The Python scaffold defines a `cosheaf` package, a Typer-based `cosheaf` CLI ent
 
 The filesystem layout now includes accepted and draft knowledge-base directories, refuted and obsolete artifact areas, issue directories, experiment directories, and review directories. The initial schemas live under `schemas/`, and examples live under `examples/`.
 
-The core model layer now defines artifact type and status enums, base artifact data models, artifact ID validation, timestamp validation, risk/evidence/review value objects, pure status/path helper functions, artifact type directory mapping, and deterministic lifecycle artifact path derivation.
+The core model layer now defines artifact type and status enums, base artifact data models, artifact ID and dependency-reference validation, timestamp validation, risk/evidence/review value objects, pure status/path helper functions, artifact type directory mapping, and deterministic lifecycle artifact path derivation. Artifact `depends_on` values may reference local artifact IDs or explicit external references beginning with `external:`.
 
 The configuration layer defines optional `cosheaf.toml` workspace loading. A
 workspace has a name, public/private policy fields, and one or more KB roots,
@@ -50,9 +50,9 @@ repository-relative source paths on loaded records, source KB root metadata,
 deterministic ordering by path then ID, clear load errors, and deterministic
 YAML writing helpers.
 
-The validation CLI implements repository validation for YAML parse/model parse, ID uniqueness across all active roots, status/path consistency relative to each KB root, dependency existence, accepted-artifact-to-draft-artifact dependencies across roots, public-artifact-to-private-artifact dependency violations, and local evidence path existence. Expected validation failures produce concise Rich output and nonzero exit codes without stack traces unless `--debug` is used.
+The validation CLI implements repository validation for YAML parse/model parse, ID uniqueness across all active roots, status/path consistency relative to each KB root, dependency existence, accepted-artifact-to-draft-artifact dependencies across roots, public-artifact-to-private-artifact dependency violations, external dependency references, and local evidence path existence. Expected validation failures produce concise Rich output and nonzero exit codes without stack traces unless `--debug` is used.
 
-The artifact lifecycle CLI now implements `cosheaf artifact create` and `cosheaf artifact move-status`. Artifact creation writes deterministic BaseArtifact YAML records under canonical lifecycle paths, refuses duplicate IDs, refuses direct accepted creation, and validates the new file before reporting success. In configured workspaces, creation writes to the writable private root by default. Status movement loads artifacts by unique ID, requires the current file path to match the current status, refuses readonly KB roots, validates the repository before moving, updates YAML deterministically, moves terminal failure statuses to the active KB root's refuted or obsolete area, and refuses direct accepted promotion until a dedicated review/gate workflow exists.
+The artifact lifecycle CLI now implements `cosheaf artifact create`, `cosheaf artifact move-status`, and `cosheaf artifact promote`. Artifact creation writes deterministic BaseArtifact YAML records under canonical lifecycle paths, refuses duplicate IDs, refuses direct accepted creation, and validates the new file before reporting success. In configured workspaces, creation writes to the writable private root by default. Status movement loads artifacts by unique ID, requires the current file path to match the current status, refuses readonly KB roots, validates the repository before moving, updates YAML deterministically, moves terminal failure statuses to the active KB root's refuted or obsolete area, and refuses direct accepted promotion. Accepted promotion is handled only by `cosheaf artifact promote <artifact-id>`; it validates the repository, runs gatekeeper, refuses blocking gatekeeper issues and target verifier `fail`/`error` results, requires `review.state` to be `human_reviewed` or `accepted`, requires dependencies to be accepted local artifacts or explicit external references, refuses readonly KB roots, updates status to `accepted`, refreshes `updated_at`, and writes deterministic YAML under the accepted area of the artifact's KB root.
 
 The workspace CLI now implements `cosheaf workspace info`, which reports the
 active workspace name, whether the repository is in configured or legacy mode,
@@ -133,6 +133,7 @@ gatekeeper result.
 - Implemented `cosheaf artifact validate <path>` single-file validation CLI.
 - Implemented `cosheaf artifact create` deterministic artifact lifecycle creation CLI.
 - Implemented `cosheaf artifact move-status <artifact-id> <new-status>` safe lifecycle status movement CLI for non-accepted transitions.
+- Implemented `cosheaf artifact promote <artifact-id>` controlled accepted-artifact promotion CLI.
 - Implemented `cosheaf index rebuild` deterministic repository index rebuild CLI.
 - Implemented `cosheaf graph show` dependency graph inspection CLI.
 - Implemented `cosheaf gate run` gatekeeper report CLI.
@@ -215,7 +216,5 @@ gatekeeper result.
 - Real worker execution, LLM calls, and model-provider integration.
 - Task scheduling, retries, cancellation, and dependency management.
 - Automatic merge of task outputs into accepted knowledge.
-- Dedicated accepted-artifact promotion workflow with review approval and full
-  gatekeeper integration.
 - Real SAT, SMT, and Lean solver invocation and result parsing.
 - PR checklist gate beyond a skipped placeholder.

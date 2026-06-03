@@ -17,13 +17,14 @@ from cosheaf.agent.context_pack import (
 from cosheaf.agent.orchestrator_stub import OrchestratorStub, TaskHarnessError
 from cosheaf.agent.task import WorkerType
 from cosheaf.config.workspace import KbRootConfig, WorkspaceConfigError
-from cosheaf.core.artifact import BaseArtifact
+from cosheaf.core.artifact import BaseArtifact, is_external_dependency_ref
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.paths import lifecycle_artifact_path
 from cosheaf.core.status import (
     ArtifactStatus,
     ArtifactType,
     expected_status_for_path,
+    is_preaccepted_status,
 )
 from cosheaf.gates.gatekeeper import (
     GatekeeperRunResult,
@@ -266,6 +267,33 @@ def artifact_move_status(
 
     console.print(
         f"Artifact moved: {artifact_id} | {old_status.value} -> {new_status.value}"
+    )
+    console.print(f"- from: {old_path.as_posix()}")
+    console.print(f"- to: {new_path.as_posix()}")
+
+
+@artifact_app.command("promote")
+def artifact_promote(
+    artifact_id: str = typer.Argument(..., help="Artifact ID to promote."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for accepted promotion.",
+    ),
+) -> None:
+    """Promote an eligible lifecycle artifact into accepted knowledge."""
+    console = Console(width=120, markup=False)
+    try:
+        old_status, old_path, new_path = _promote_artifact(
+            context=RepoContext(repo_root),
+            artifact_id=artifact_id,
+        )
+    except ArtifactLifecycleError as exc:
+        console.print(f"Artifact promote failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    console.print(
+        f"Artifact promoted: {artifact_id} | {old_status.value} -> accepted"
     )
     console.print(f"- from: {old_path.as_posix()}")
     console.print(f"- to: {new_path.as_posix()}")
@@ -594,6 +622,10 @@ class ArtifactLifecycleError(ValueError):
     """Raised for expected artifact lifecycle CLI failures."""
 
 
+PROMOTION_REVIEW_STATES = frozenset({"human_reviewed", "accepted"})
+BLOCKING_VERIFIER_STATUSES = frozenset({"fail", "error"})
+
+
 def _create_artifact_record(
     *,
     context: RepoContext,
@@ -713,6 +745,231 @@ def _move_artifact_status(
     if not report.ok:
         raise ArtifactLifecycleError(_format_report_failures(report))
     return old_status, old_relative_path, new_relative_path
+
+
+def _promote_artifact(
+    *,
+    context: RepoContext,
+    artifact_id: str,
+) -> tuple[ArtifactStatus, Path, Path]:
+    validation_report = validate_repository(context)
+    if not validation_report.ok:
+        raise ArtifactLifecycleError(
+            "repository validation failed before promotion: "
+            f"{_format_report_failures(validation_report)}"
+        )
+
+    records = validation_report.records
+    loaded = _find_unique_promotable_artifact(records, artifact_id)
+    artifact = loaded.record
+    if not isinstance(artifact, BaseArtifact):
+        raise AssertionError("unreachable non-artifact promotion record")
+
+    _ensure_kb_lifecycle_record(loaded)
+    _ensure_current_status_path_consistent(loaded)
+    _ensure_loaded_record_is_writable(loaded)
+    _ensure_preaccepted_for_promotion(artifact)
+
+    gatekeeper_result = run_gatekeeper(context)
+    _ensure_gatekeeper_allows_promotion(gatekeeper_result, artifact_id)
+    _ensure_artifact_reviewed_for_promotion(artifact)
+    _ensure_promotion_dependencies_accepted(records, artifact)
+
+    old_status = artifact.status
+    old_relative_path = loaded.source_path
+    new_relative_path = _workspace_status_move_path(
+        loaded,
+        artifact,
+        ArtifactStatus.ACCEPTED,
+    )
+
+    _write_accepted_promotion(
+        context=context,
+        artifact=artifact,
+        source_relative_path=old_relative_path,
+        target_relative_path=new_relative_path,
+    )
+    return old_status, old_relative_path, new_relative_path
+
+
+def _find_unique_promotable_artifact(
+    records: tuple[LoadedRecord, ...],
+    artifact_id: str,
+) -> LoadedRecord:
+    matches = [record for record in records if record.id == artifact_id]
+    if not matches:
+        raise ArtifactLifecycleError(f"artifact not found: {artifact_id}")
+    if len(matches) > 1:
+        paths = ", ".join(sorted(record.source_path.as_posix() for record in matches))
+        raise ArtifactLifecycleError(f"duplicate artifact id {artifact_id}: {paths}")
+
+    loaded = matches[0]
+    if not isinstance(loaded.record, BaseArtifact):
+        raise ArtifactLifecycleError(
+            f"record is not a promotable lifecycle artifact: {artifact_id}"
+        )
+    try:
+        lifecycle_artifact_path(
+            loaded.record.type,
+            ArtifactStatus.ACCEPTED,
+            loaded.record.id,
+        )
+    except ValueError as exc:
+        raise ArtifactLifecycleError(
+            f"record is not a promotable lifecycle artifact: {artifact_id}"
+        ) from exc
+    return loaded
+
+
+def _ensure_preaccepted_for_promotion(artifact: BaseArtifact) -> None:
+    if artifact.status is ArtifactStatus.ACCEPTED:
+        raise ArtifactLifecycleError(f"artifact is already accepted: {artifact.id}")
+    if not is_preaccepted_status(artifact.status):
+        raise ArtifactLifecycleError(
+            "only pre-accepted lifecycle artifacts may be promoted: "
+            f"{artifact.id} has status {artifact.status.value}"
+        )
+
+
+def _ensure_gatekeeper_allows_promotion(
+    result: GatekeeperRunResult,
+    artifact_id: str,
+) -> None:
+    target_blockers = _target_verifier_blockers(result, artifact_id)
+    if target_blockers:
+        raise ArtifactLifecycleError(
+            "target verifier result blocks promotion: "
+            f"{'; '.join(target_blockers)}"
+        )
+    if result.report.blocking_issues:
+        raise ArtifactLifecycleError(
+            "gatekeeper blocking issues prevent promotion: "
+            f"{_format_gatekeeper_blocking_issues(result)}"
+        )
+
+
+def _target_verifier_blockers(
+    result: GatekeeperRunResult,
+    artifact_id: str,
+) -> list[str]:
+    blockers: list[str] = []
+    for gate in result.report.gates:
+        if gate.gate_id != "G6":
+            continue
+        for detail in gate.details:
+            if detail.get("artifact_id") != artifact_id:
+                continue
+            status = detail.get("status")
+            if status not in BLOCKING_VERIFIER_STATUSES:
+                continue
+            verifier = str(detail.get("verifier", "verifier"))
+            message = str(detail.get("message", "")).strip()
+            rendered = f"{verifier} {status}"
+            if message:
+                rendered = f"{rendered}: {message}"
+            blockers.append(rendered)
+    if blockers:
+        return blockers
+
+    return [
+        issue.message
+        for issue in result.report.blocking_issues
+        if issue.gate_id == "G6" and issue.artifact_id == artifact_id
+    ]
+
+
+def _format_gatekeeper_blocking_issues(result: GatekeeperRunResult) -> str:
+    return "; ".join(
+        f"{issue.gate_id} | {issue.source_path or '-'} | "
+        f"{issue.artifact_id or '-'} | {issue.message}"
+        for issue in result.report.blocking_issues
+    )
+
+
+def _ensure_artifact_reviewed_for_promotion(artifact: BaseArtifact) -> None:
+    if artifact.review.state in PROMOTION_REVIEW_STATES:
+        return
+    raise ArtifactLifecycleError(
+        "review.state must be human_reviewed or accepted before promotion: "
+        f"{artifact.id} has {artifact.review.state}"
+    )
+
+
+def _ensure_promotion_dependencies_accepted(
+    records: tuple[LoadedRecord, ...],
+    artifact: BaseArtifact,
+) -> None:
+    artifacts_by_id = {
+        record.id: record
+        for record in records
+        if isinstance(record.record, BaseArtifact)
+    }
+    for dependency_id in artifact.depends_on:
+        if is_external_dependency_ref(dependency_id):
+            continue
+        dependency = artifacts_by_id.get(dependency_id)
+        if dependency is None or not isinstance(dependency.record, BaseArtifact):
+            raise ArtifactLifecycleError(f"dependency is missing: {dependency_id}")
+        if dependency.record.status is ArtifactStatus.ACCEPTED:
+            continue
+        raise ArtifactLifecycleError(
+            "dependency is not accepted: "
+            f"{dependency_id} has status {dependency.record.status.value} "
+            f"at {dependency.source_path.as_posix()}"
+        )
+
+
+def _write_accepted_promotion(
+    *,
+    context: RepoContext,
+    artifact: BaseArtifact,
+    source_relative_path: Path,
+    target_relative_path: Path,
+) -> None:
+    source_path = context.resolve(source_relative_path)
+    target_path = context.resolve(target_relative_path)
+    if target_path.exists() and source_path != target_path:
+        raise ArtifactLifecycleError(
+            f"target artifact path already exists: {target_relative_path.as_posix()}"
+        )
+
+    original_text = source_path.read_text(encoding="utf-8")
+    updated = artifact.model_copy(
+        update={
+            "status": ArtifactStatus.ACCEPTED,
+            "updated_at": datetime.now(UTC).replace(microsecond=0),
+        }
+    )
+    write_yaml_deterministic(source_path, updated)
+    if source_path != target_path:
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            source_path.rename(target_path)
+        except OSError:
+            source_path.write_text(original_text, encoding="utf-8", newline="\n")
+            raise
+
+    report = validate_artifact_file(context, target_relative_path)
+    if report.ok:
+        return
+
+    _restore_failed_promotion(
+        source_path=source_path,
+        target_path=target_path,
+        original_text=original_text,
+    )
+    raise ArtifactLifecycleError(_format_report_failures(report))
+
+
+def _restore_failed_promotion(
+    *,
+    source_path: Path,
+    target_path: Path,
+    original_text: str,
+) -> None:
+    if source_path != target_path and target_path.exists():
+        target_path.rename(source_path)
+    source_path.write_text(original_text, encoding="utf-8", newline="\n")
 
 
 def _write_status_move(
