@@ -64,6 +64,22 @@ Architecture changes require ADR.
 
 Do not hide verification failures. If an intended command does not exist yet, the task must either implement it or clearly state why it is not available yet.
 
+## Artifact Lifecycle Commands
+
+Use `cosheaf artifact create` for new artifact records instead of hand-writing
+YAML when the artifact is meant to enter the lifecycle tree. The command derives
+the repository path from artifact type, status, and ID, refuses duplicate IDs,
+and validates the new file before reporting success.
+
+Use `cosheaf artifact move-status <artifact-id> <new-status>` for lifecycle
+status movement instead of manual file shuffling. The command checks that the
+current artifact path already matches its current status, validates the
+repository before moving, writes deterministic YAML, and refuses direct moves to
+`accepted`.
+
+Accepted promotion requires a future dedicated review/gate workflow. Until that
+exists, do not move artifacts into `kb/accepted/` manually.
+
 ## Context Packs
 
 Use `cosheaf context build <issue-id>` to generate a bounded task context pack

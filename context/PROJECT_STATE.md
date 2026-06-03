@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Issue 10
+## Current State After Issue 11
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, artifact lifecycle CLI commands, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, GitHub Actions CI, and GitHub collaboration templates.
 
 Branch protection and review expectations are now documented in
 `docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
@@ -13,11 +13,13 @@ The Python scaffold defines a `cosheaf` package, a Typer-based `cosheaf` CLI ent
 
 The filesystem layout now includes accepted and draft knowledge-base directories, refuted and obsolete artifact areas, issue directories, experiment directories, and review directories. The initial schemas live under `schemas/`, and examples live under `examples/`.
 
-The core model layer now defines artifact type and status enums, base artifact data models, artifact ID validation, timestamp validation, risk/evidence/review value objects, and pure status/path helper functions.
+The core model layer now defines artifact type and status enums, base artifact data models, artifact ID validation, timestamp validation, risk/evidence/review value objects, pure status/path helper functions, artifact type directory mapping, and deterministic lifecycle artifact path derivation.
 
 The storage layer defines `RepoContext`, YAML discovery under `kb/`, `issues/`, and `examples/`, typed YAML loading into `BaseArtifact`, `IssueRecord`, or `ReviewRecord`, repository-relative source paths on loaded records, deterministic ordering by path then ID, clear load errors, and deterministic YAML writing helpers.
 
 The validation CLI implements repository validation for YAML parse/model parse, ID uniqueness, status/path consistency, dependency existence, accepted-artifact-to-draft-artifact dependencies, and local evidence path existence. Expected validation failures produce concise Rich output and nonzero exit codes without stack traces unless `--debug` is used.
+
+The artifact lifecycle CLI now implements `cosheaf artifact create` and `cosheaf artifact move-status`. Artifact creation writes deterministic BaseArtifact YAML records under canonical lifecycle paths, refuses duplicate IDs, refuses direct accepted creation, and validates the new file before reporting success. Status movement loads artifacts by unique ID, requires the current file path to match the current status, validates the repository before moving, updates YAML deterministically, moves terminal failure statuses to `kb/refuted/` or `kb/obsolete/`, and refuses direct accepted promotion until a dedicated review/gate workflow exists.
 
 The graph layer builds directed dependency edges from artifact to dependency, detects missing dependencies, detects directed cycles, and reports accepted artifacts depending on draft or otherwise pre-accepted artifacts.
 
@@ -81,6 +83,8 @@ gatekeeper result.
 - Makefile targets for `lint`, `typecheck`, `test`, `validate`, and `gate`.
 - Implemented `cosheaf validate` repository validation CLI.
 - Implemented `cosheaf artifact validate <path>` single-file validation CLI.
+- Implemented `cosheaf artifact create` deterministic artifact lifecycle creation CLI.
+- Implemented `cosheaf artifact move-status <artifact-id> <new-status>` safe lifecycle status movement CLI for non-accepted transitions.
 - Implemented `cosheaf index rebuild` deterministic repository index rebuild CLI.
 - Implemented `cosheaf graph show` dependency graph inspection CLI.
 - Implemented `cosheaf gate run` gatekeeper report CLI.
@@ -95,6 +99,7 @@ gatekeeper result.
 - Artifact status/path helper functions that do not scan the repository.
 - Model tests in `tests/test_artifact_models.py`.
 - Repository path helpers in `cosheaf/core/paths.py`.
+- Artifact type directory and lifecycle path helpers in `cosheaf/core/paths.py`.
 - Filesystem-backed storage context, loader, and writer under `cosheaf/storage/`.
 - Storage loader tests and fixtures in `tests/test_loader.py` and `tests/fixtures/`.
 - Initial validation gates under `cosheaf/gates/`.
@@ -143,5 +148,7 @@ gatekeeper result.
 - Real worker execution, LLM calls, and model-provider integration.
 - Task scheduling, retries, cancellation, and dependency management.
 - Automatic merge of task outputs into accepted knowledge.
+- Dedicated accepted-artifact promotion workflow with review approval and full
+  gatekeeper integration.
 - Real SAT, SMT, and Lean solver invocation and result parsing.
 - PR checklist gate beyond a skipped placeholder.
