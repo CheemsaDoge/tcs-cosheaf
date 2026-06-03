@@ -48,6 +48,8 @@ the following conditions are checked before accepted knowledge is created:
 - dependency references are either accepted lifecycle artifacts or explicit
   external references such as `external:<reference>`;
 - `review.state` is `human_reviewed` or `accepted`;
+- accepted public artifacts require complete structured source metadata when
+  the workspace policy has `accepted_requires_source = true`;
 - the target path is `kb/accepted/<type-dir>/<artifact-id>.yaml` relative to
   the artifact's KB root;
 - the promoted artifact is written with status `accepted`, a fresh
@@ -192,6 +194,37 @@ Required markdown sections are:
 - `Artifact/Schema Changes`
 - `Gatekeeper Result`
 
+### Source Metadata Gate
+
+Checks that accepted artifacts in configured public KB roots carry structured,
+citable source metadata when `accepted_requires_source = true`.
+
+The gate applies only to artifacts that are all of:
+
+- loaded from a configured KB root named `public`;
+- `status: accepted`;
+- evaluated under a configured workspace whose policy enables
+  `accepted_requires_source`.
+
+Draft public artifacts are not blocked solely for missing source metadata.
+Accepted private artifacts are not blocked by this gate unless a later policy
+adds that requirement. Without `cosheaf.toml`, legacy single-root mode has no
+public KB root, so the gate reports `not_applicable` and preserves existing
+single-repository behavior.
+
+Accepted public artifacts must have at least one `sources` entry. Each source
+entry must include:
+
+- `kind`
+- non-empty `title`
+- at least one non-empty `authors` value
+- `year`
+- at least one citation locator: `doi`, `arxiv`, `url`, `theorem_number`, or
+  `page`
+
+External dependency references such as `external:doi/...` are dependency edges,
+not citation metadata, and do not satisfy this gate.
+
 ## Gate Result Semantics
 
 Gate results should distinguish pass, fail, skipped, and not implemented. A skipped result must explain why the gate could not run. A failed result must preserve enough evidence for review.
@@ -256,12 +289,16 @@ moving eligible artifacts into the accepted area of their KB root.
 - G6 verifier gate with the Python checker adapter and optional SAT/SMT/Lean skeleton adapters
 - G7 reproducibility metadata gate
 - G8 PR checklist gate
+- G9 source metadata gate for accepted public artifacts
 
 G7 is reported as `pass` when applicable executable evidence has reproducibility
 metadata, `fail` when required metadata is missing, and `not_applicable` when no
 loaded evidence is executable. G8 is reported as `skipped` when no PR checklist
 source is available, `fail` when an explicit checklist source is missing
-required sections, and `pass` when all required sections are present. G6 is
-reported as skipped when no verifier adapters are applicable. `cosheaf gate`
-with no subcommand also runs the gatekeeper so the existing `make gate` target
-performs real gate enforcement.
+required sections, and `pass` when all required sections are present. G9 is
+reported as `fail` when accepted public artifacts lack complete source metadata,
+`pass` when applicable accepted public artifacts are complete, and
+`not_applicable` for legacy mode, disabled policy, or workspaces with no
+accepted public artifacts. G6 is reported as skipped when no verifier adapters
+are applicable. `cosheaf gate` with no subcommand also runs the gatekeeper so
+the existing `make gate` target performs real gate enforcement.

@@ -59,6 +59,11 @@ When a configured workspace has readonly and writable roots, artifact creation
 writes to the writable private root by default. Status movement refuses to
 modify artifacts loaded from readonly roots.
 
+`cosheaf artifact promote <artifact-id>` also refuses readonly KB roots. If a
+public KB root is writable for maintenance and `[policy] accepted_requires_source`
+is true, promotion refuses public artifacts that do not already carry complete
+structured source metadata.
+
 ## Layering Rules
 
 Loaded records retain their source KB root name, root path, readonly flag, and
@@ -69,6 +74,10 @@ path relative to that root. Validation and gates enforce:
 - Public artifacts must not depend on private artifacts.
 - Accepted artifacts must not depend on draft or pre-accepted artifacts, even
   across KB roots.
+- Accepted artifacts in public KB roots require complete structured source
+  metadata when `accepted_requires_source = true`.
+- Draft public artifacts and accepted private artifacts are not blocked solely
+  for missing source metadata under the current policy.
 - Status/path rules are evaluated relative to each KB root.
 - Readonly roots cannot be modified by lifecycle write commands.
 
@@ -81,3 +90,5 @@ default | kb | readonly=false | priority=0
 ```
 
 This preserves existing single-repository behavior for current users and tests.
+Legacy mode has no configured public KB root, so the accepted-public source
+metadata gate reports `not_applicable`.

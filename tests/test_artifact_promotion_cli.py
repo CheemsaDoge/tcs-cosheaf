@@ -26,7 +26,11 @@ def _read_yaml(path: Path) -> dict[str, Any]:
     return data
 
 
-def _write_workspace_config(repo_root: Path) -> None:
+def _write_workspace_config(
+    repo_root: Path,
+    *,
+    public_readonly: bool = True,
+) -> None:
     repo_root.joinpath("cosheaf.toml").write_text(
         "\n".join(
             [
@@ -36,7 +40,7 @@ def _write_workspace_config(repo_root: Path) -> None:
                 "[[kb]]",
                 'name = "public"',
                 'path = "kb/public"',
-                "readonly = true",
+                f"readonly = {str(public_readonly).lower()}",
                 "priority = 10",
                 "",
                 "[[kb]]",
@@ -64,6 +68,7 @@ def _artifact_data(
     review_state: str = "human_reviewed",
     depends_on: list[str] | None = None,
     evidence: list[dict[str, str]] | None = None,
+    sources: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     return {
         "id": artifact_id,
@@ -79,8 +84,24 @@ def _artifact_data(
         "tags": ["promotion"],
         "statement": "A fixture for accepted promotion.",
         "evidence": evidence or [],
+        "sources": sources or [],
         "review": {"state": review_state, "notes": "Promotion review evidence."},
         "risk": {"level": "low", "notes": "Fixture risk."},
+    }
+
+
+def _source_fixture() -> dict[str, Any]:
+    return {
+        "kind": "paper",
+        "title": "Promotion Source",
+        "authors": ["A. Reviewer"],
+        "year": 2026,
+        "doi": "10.1145/promotion",
+        "arxiv": "",
+        "url": "",
+        "theorem_number": "Claim 1",
+        "page": "3",
+        "notes": "Promotion source fixture.",
     }
 
 
@@ -193,6 +214,7 @@ def test_artifact_promote_moves_reviewed_artifact_to_accepted(
         "tags",
         "statement",
         "evidence",
+        "sources",
         "review",
         "risk",
     ]
@@ -270,6 +292,80 @@ def test_artifact_promote_refuses_readonly_kb_root_in_workspace(
         / "claims"
         / "claim.fixture.public.yaml"
     ).exists()
+
+
+def test_artifact_promote_refuses_public_artifact_without_source_metadata(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path, public_readonly=False)
+    source = _write_yaml(
+        tmp_path,
+        "kb/public/draft/claims/claim.fixture.public.yaml",
+        _artifact_data("claim.fixture.public", status="locally_tested"),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "promote",
+            "claim.fixture.public",
+            "--repo-root",
+            str(tmp_path),
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "accepted public artifact requires source metadata" in result.output
+    assert source.is_file()
+    assert not (
+        tmp_path
+        / "kb"
+        / "public"
+        / "accepted"
+        / "claims"
+        / "claim.fixture.public.yaml"
+    ).exists()
+
+
+def test_artifact_promote_allows_public_artifact_with_source_metadata(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path, public_readonly=False)
+    source = _write_yaml(
+        tmp_path,
+        "kb/public/draft/claims/claim.fixture.public.yaml",
+        _artifact_data(
+            "claim.fixture.public",
+            status="locally_tested",
+            sources=[_source_fixture()],
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "promote",
+            "claim.fixture.public",
+            "--repo-root",
+            str(tmp_path),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    target = (
+        tmp_path
+        / "kb"
+        / "public"
+        / "accepted"
+        / "claims"
+        / "claim.fixture.public.yaml"
+    )
+    assert not source.exists()
+    assert target.is_file()
+    promoted = _read_yaml(target)
+    assert promoted["sources"] == [_source_fixture()]
 
 
 def test_artifact_promote_refuses_when_repository_validation_fails(

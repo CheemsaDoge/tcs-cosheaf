@@ -26,6 +26,10 @@ from cosheaf.gates.schema_gate import (
     load_schema_valid_records,
     sort_failures,
 )
+from cosheaf.gates.source_metadata_gate import (
+    SourceMetadataResult,
+    validate_source_metadata_policy,
+)
 from cosheaf.gates.status_gate import (
     validate_evidence_paths,
     validate_status_paths,
@@ -232,6 +236,7 @@ def run_gatekeeper(
             validate_reproducibility_metadata(records, verification_results)
         ),
         _pr_checklist_gate(context, pr_checklist_path),
+        _source_metadata_gate(validate_source_metadata_policy(context, records)),
     )
 
     blocking_issues = tuple(
@@ -408,6 +413,50 @@ def _pr_checklist_gate(
         summary=(
             "PR checklist includes all "
             f"{len(REQUIRED_PR_CHECKLIST_SECTIONS)} required section(s)."
+        ),
+        details=details,
+    )
+
+
+def _source_metadata_gate(result: SourceMetadataResult) -> GateResult:
+    gate_name = "source metadata gate"
+    details = tuple(check.to_dict() for check in result.checks)
+    if result.failures:
+        issues = tuple(
+            _issue_from_failure("G9", gate_name, failure)
+            for failure in result.failures
+        )
+        return GateResult(
+            gate_id="G9",
+            name=gate_name,
+            status="fail",
+            summary=f"{len(issues)} source metadata issue(s).",
+            blocking_issues=issues,
+            details=details,
+        )
+    if result.policy_reason:
+        return GateResult(
+            gate_id="G9",
+            name=gate_name,
+            status="not_applicable",
+            summary=result.policy_reason,
+            details=details,
+        )
+    if result.applicable_count == 0:
+        return GateResult(
+            gate_id="G9",
+            name=gate_name,
+            status="not_applicable",
+            summary="No accepted public artifacts require source metadata.",
+            details=details,
+        )
+    return GateResult(
+        gate_id="G9",
+        name=gate_name,
+        status="pass",
+        summary=(
+            "Source metadata passed for "
+            f"{result.applicable_count} accepted public artifact(s)."
         ),
         details=details,
     )

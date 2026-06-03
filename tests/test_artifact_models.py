@@ -6,7 +6,13 @@ import pytest
 import yaml  # type: ignore[import-untyped]
 from pydantic import ValidationError
 
-from cosheaf.core.artifact import BaseArtifact, Evidence, ReviewRef, Risk
+from cosheaf.core.artifact import (
+    BaseArtifact,
+    Evidence,
+    ReviewRef,
+    Risk,
+    SourceMetadata,
+)
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.status import (
     ArtifactStatus,
@@ -112,6 +118,63 @@ def test_risk_defaults_work() -> None:
     assert artifact.risk == Risk()
     assert artifact.risk.level == "low"
     assert artifact.risk.notes == ""
+
+
+def test_sources_default_to_empty_list() -> None:
+    artifact = BaseArtifact.model_validate(_valid_artifact_data())
+
+    assert artifact.sources == []
+
+
+def test_source_metadata_parses_and_normalizes_strings() -> None:
+    data = _valid_artifact_data()
+    data["sources"] = [
+        {
+            "kind": "paper",
+            "title": " Complete Graphs ",
+            "authors": [" Example Author ", ""],
+            "year": 2024,
+            "doi": " 10.1145/example ",
+            "arxiv": " 2401.00001 ",
+            "url": " https://example.org/paper ",
+            "theorem_number": " Theorem 2 ",
+            "page": " 7 ",
+            "notes": " Standard reference. ",
+        }
+    ]
+
+    artifact = BaseArtifact.model_validate(data)
+
+    assert artifact.sources == [
+        SourceMetadata(
+            kind="paper",
+            title="Complete Graphs",
+            authors=["Example Author"],
+            year=2024,
+            doi="10.1145/example",
+            arxiv="2401.00001",
+            url="https://example.org/paper",
+            theorem_number="Theorem 2",
+            page="7",
+            notes="Standard reference.",
+        )
+    ]
+
+
+def test_invalid_source_kind_fails() -> None:
+    data = _valid_artifact_data()
+    data["sources"] = [{"kind": "tweet"}]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_invalid_source_year_fails() -> None:
+    data = _valid_artifact_data()
+    data["sources"] = [{"kind": "paper", "year": 0}]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
 
 
 def test_evidence_list_parses() -> None:

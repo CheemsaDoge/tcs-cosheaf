@@ -116,6 +116,59 @@
         }
       }
     },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "paper",
+              "book",
+              "survey",
+              "lecture_note",
+              "website",
+              "internal_note",
+              "other"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "year": {
+            "type": ["integer", "null"],
+            "minimum": 1
+          },
+          "doi": {
+            "type": "string"
+          },
+          "arxiv": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "theorem_number": {
+            "type": "string"
+          },
+          "page": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "review": {
       "type": "object",
       "additionalProperties": false,
