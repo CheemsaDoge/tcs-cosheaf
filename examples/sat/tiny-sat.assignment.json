@@ -1,0 +1,13 @@
+{
+  "assignment": {
+    "1": true,
+    "2": false,
+    "3": true
+  },
+  "expected": {
+    "satisfiable": true,
+    "variables": 3,
+    "clauses": 3,
+    "satisfied_clauses": 3
+  }
+}

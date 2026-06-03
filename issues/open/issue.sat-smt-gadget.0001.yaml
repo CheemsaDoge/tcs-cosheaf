@@ -1,0 +1,31 @@
+id: issue.sat-smt-gadget.0001
+type: issue
+title: Build a tiny SAT/SMT-checkable pilot gadget
+status: open
+created_at: "2026-06-03T00:00:00Z"
+updated_at: "2026-06-03T00:00:00Z"
+authors:
+  - codex
+severity: medium
+description: |
+  Create a small SAT-oriented pilot that demonstrates optional formal-tool
+  integration without claiming a new theorem or requiring a solver dependency.
+
+  - Keep the CNF formula tiny, inspectable, and deterministic.
+  - Store the gadget as a draft construction artifact.
+  - Include DIMACS CNF evidence and a known satisfying assignment.
+  - Attach optional SAT solver evidence that may be skipped when no solver is
+    installed.
+  - Attach Python fallback checker evidence that validates the CNF/assignment
+    locally.
+  - Run `make lint`, `make typecheck`, `make test`, `make validate`,
+    `make gate`, and `cosheaf context build issue.sat-smt-gadget.0001`.
+related_artifacts:
+  - construction.sat-smt-gadget.0001
+tags:
+  - satisfiability
+  - sat
+  - cnf
+  - finite-constraint-system
+  - pilot
+  - python-checker

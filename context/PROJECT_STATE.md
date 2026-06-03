@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Issue 11
+## Current State After Issue 13
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, artifact lifecycle CLI commands, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, artifact lifecycle CLI commands, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
 Branch protection and review expectations are now documented in
 `docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
@@ -59,6 +59,15 @@ matching example artifact, and executable Python-checker evidence. The checker
 verifies vertex count, edge count, sorted degree sequence, connectedness, and
 triangle-freeness. The artifact is not accepted and does not claim a new
 theorem or novelty.
+
+The second SAT/CNF pilot workflow now exists for
+`issue.sat-smt-gadget.0001`. It adds a satisfiability issue, a `locally_tested`
+draft construction artifact for a tiny 3-variable CNF formula, a DIMACS CNF
+example, a known satisfying assignment JSON file, optional `sat` evidence, and
+executable Python-checker fallback evidence. The SAT adapter may report
+`skipped` when no solver is installed; the Python fallback checker verifies the
+CNF and assignment locally. The artifact is not accepted and does not claim a
+new theorem, novelty, or full SAT/SMT solver integration.
 
 GitHub Actions CI is configured to run on pull requests and pushes to `main`
 with Python 3.11. It installs the package with development dependencies and
@@ -137,6 +146,12 @@ gatekeeper result.
 - Toy graph example in `examples/constructions/graph.toy.yaml`.
 - Toy graph Python checker in `experiments/evaluators/check_graph_toy.py`.
 - Toy graph checker tests in `tests/test_graph_toy_pilot.py`.
+- Second SAT/CNF pilot issue in `issues/open/issue.sat-smt-gadget.0001.yaml`.
+- Draft SAT/CNF construction in `kb/draft/constructions/construction.sat-smt-gadget.0001.yaml`.
+- Tiny DIMACS CNF example in `examples/sat/tiny-sat.cnf`.
+- Tiny SAT assignment input in `examples/sat/tiny-sat.assignment.json`.
+- Tiny SAT Python fallback checker in `experiments/evaluators/check_sat_smt_gadget.py`.
+- SAT/CNF pilot checker and optional SAT skipped tests in `tests/test_sat_smt_gadget_pilot.py`.
 - GitHub Actions CI in `.github/workflows/ci.yml`.
 - Feature task, bug task, and research issue forms under `.github/ISSUE_TEMPLATE/`.
 - Pull request template in `.github/pull_request_template.md`.
