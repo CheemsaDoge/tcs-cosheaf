@@ -27,11 +27,13 @@ Completed scaffold pieces include:
 - Branch protection and review policy documentation.
 - First graph-theory pilot workflow with draft artifact evidence and a local
   Python checker.
+- Second SAT/CNF pilot workflow with optional SAT evidence and a Python fallback
+  checker.
 - GitHub Actions CI and collaboration templates.
 
 ## Active Issues
 
-- [#13 Add second pilot: small SAT/SMT-checkable gadget](https://github.com/CheemsaDoge/tcs-cosheaf/issues/13)
+- None in this repository snapshot.
 
 ## Next Named Milestones
 

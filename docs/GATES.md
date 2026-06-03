@@ -106,6 +106,12 @@ Skeleton evidence kinds are:
 - SMT: `smt`, `smt_solver`, `smt_checker`
 - Lean: `lean`, `lean4`, `lean_checker`
 
+The SAT/CNF pilot uses `sat` evidence to exercise this optional-tool path. When
+no SAT solver is available, the SAT adapter returns `skipped`, not `pass`; a
+separate `python_checker` evidence item provides the local fallback check for
+the tiny formula and assignment. This pilot is workflow evidence, not a full
+SAT/SMT theorem-proving integration.
+
 ### Reproducibility Metadata Gate
 
 Checks executable evidence and verifier results for metadata needed to reproduce

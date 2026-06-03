@@ -1,0 +1,62 @@
+id: construction.sat-smt-gadget.0001
+type: construction
+title: Tiny SAT pilot gadget with Python fallback checking
+domain:
+  - satisfiability
+  - finite-constraint-systems
+status: locally_tested
+created_at: "2026-06-03T00:00:00Z"
+updated_at: "2026-06-03T00:00:00Z"
+authors:
+  - codex
+depends_on: []
+supersedes: []
+tags:
+  - sat
+  - cnf
+  - pilot
+  - optional-solver
+  - python-checker
+statement: |
+  This draft construction records a tiny SAT-style finite constraint gadget for
+  exercising the optional SAT verifier path in TCS-Cosheaf. It does not claim a
+  new theorem, novelty, or accepted research result.
+
+  The gadget is a 3-variable CNF formula with 3 clauses:
+
+  - x1 OR x2
+  - NOT x1 OR x3
+  - NOT x2 OR NOT x3
+
+  The recorded satisfying assignment is x1=true, x2=false, x3=true. The Python
+  fallback checker verifies that the DIMACS CNF file and assignment file agree
+  with the expected variable count, clause count, satisfiability flag, and
+  satisfied clause count. The optional SAT solver evidence is intentionally a
+  skeleton-compatible reference; if no SAT solver is installed, the SAT adapter
+  must report `skipped`, not `pass`.
+
+  CHECKER_DATA:
+  cnf_path: examples/sat/tiny-sat.cnf
+  assignment_path: examples/sat/tiny-sat.assignment.json
+  expected:
+    variables: 3
+    clauses: 3
+    satisfiable: true
+    satisfied_clauses: 3
+evidence:
+  - kind: python_checker
+    path: experiments/evaluators/check_sat_smt_gadget.py
+    summary: >
+      Python fallback checker that parses the DIMACS CNF and satisfying
+      assignment, then verifies every clause is satisfied.
+  - kind: sat
+    path: examples/sat/tiny-sat.cnf
+    summary: >
+      Optional SAT solver evidence. The current SAT adapter skeleton returns
+      skipped when a solver is unavailable and does not claim a pass.
+review:
+  state: requested
+  notes: Draft pilot artifact for demonstrating optional SAT/SMT-style evidence.
+risk:
+  level: low
+  notes: Small explicit finite formula with no accepted research claim.

@@ -64,6 +64,8 @@ Implemented:
 - Reproducibility metadata gate for executable evidence verifier results.
 - First graph-theory pilot workflow with draft artifact evidence and a local
   Python checker.
+- Second SAT/CNF pilot workflow with optional SAT evidence, a known satisfying
+  assignment, and a Python fallback checker.
 - GitHub Actions CI with separate `lint`, `typecheck`, `test`, `validate`, and
   `gate` checks.
 
@@ -153,7 +155,7 @@ but not implemented are reported as skipped, not passed.
 The roadmap is tracked in [docs/ROADMAP.md](docs/ROADMAP.md). Current active
 issues include:
 
-- [#13 Add second pilot: small SAT/SMT-checkable gadget](https://github.com/CheemsaDoge/tcs-cosheaf/issues/13)
+- None in this repository snapshot.
 
 ## Non-Goals
 

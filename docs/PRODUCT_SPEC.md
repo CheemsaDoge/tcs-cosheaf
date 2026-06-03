@@ -17,6 +17,8 @@ The MVP includes:
 - verifier adapter interface.
 - Python checker adapter.
 - SAT/SMT/Lean skeleton adapters.
+- small draft pilot artifacts that exercise both Python-checker and optional
+  SAT-style evidence paths.
 - GitHub Actions CI.
 
 ## Explicitly Out of Scope for MVP
@@ -32,6 +34,13 @@ The MVP does not include:
 ## MVP Success Criteria
 
 The MVP should allow a contributor or agent to add typed artifacts, validate them, inspect dependencies, run gates, generate task context, and report verifier results without relying on non-reproducible local state.
+
+The current pilots are intentionally small and draft-only. The graph pilot
+demonstrates local Python-checker evidence over a finite graph. The SAT/CNF
+pilot demonstrates a tiny satisfiable formula, a recorded assignment, optional
+SAT solver evidence that may be skipped, and a Python fallback checker. These
+pilots exercise workflow plumbing; they do not claim new theorems or full
+automated theorem proving.
 
 ## Non-Goals
 
