@@ -7,9 +7,10 @@ issues, and verifier evidence in reviewable repository files.
 
 Current status: **pre-MVP scaffold**. The repository has working Python
 scaffolding, typed artifact models, filesystem loading, validation, dependency
-graph indexing, artifact lifecycle CLI commands, gatekeeper reports, ranked
-context-pack generation, local task harness stubs, verifier adapter skeletons, a
-Python checker adapter, GitHub Actions CI, and collaboration templates. It is
+graph indexing, workspace-aware KB root loading, artifact lifecycle CLI
+commands, gatekeeper reports, ranked context-pack generation, local task
+harness stubs, verifier adapter skeletons, a Python checker adapter, GitHub
+Actions CI, and collaboration templates. It is
 not production software and does not yet provide a web UI, automatic theorem
 proving, full Lean autoformalization, or multi-user permissions.
 
@@ -51,8 +52,11 @@ Implemented:
 - Initial JSON Schemas and example YAML records.
 - Filesystem-backed artifact/issue/review loading and deterministic YAML
   writing.
+- Optional `cosheaf.toml` workspace configuration with multiple KB roots,
+  readonly roots, public/private dependency policy, and legacy fallback.
 - `cosheaf validate`, `cosheaf artifact validate <path>`,
-  `cosheaf artifact create`, and `cosheaf artifact move-status`.
+  `cosheaf artifact create`, `cosheaf artifact move-status`, and
+  `cosheaf workspace info`.
 - Dependency graph inspection and deterministic SQLite/manifest index rebuilds.
 - `cosheaf gate` and `cosheaf gate run` report generation.
 - Ranked issue-scoped context pack generation with
@@ -88,6 +92,8 @@ Planned or incomplete:
 - **Gatekeeper**: Repository checks that turn schema, dependency, evidence,
   verifier, and review invariants into machine-readable and human-readable
   reports.
+- **Workspace**: A `cosheaf.toml` configuration that layers one or more KB roots
+  such as readonly public KB and writable private KB overlay.
 - **Context pack**: A deterministic issue-scoped bundle of ranked repository
   context for Codex or other agents.
 - **Verifier adapter**: A pluggable checker interface that records normalized
@@ -106,6 +112,7 @@ Inspect the CLI:
 ```bash
 cosheaf --help
 cosheaf version
+cosheaf workspace info
 ```
 
 Run repository validation and gatekeeper checks:
@@ -135,6 +142,9 @@ Generate task context for an issue:
 cosheaf context build <issue-id>
 cosheaf context show <issue-id>
 ```
+
+See [Workspace model](docs/WORKSPACE.md) and
+[Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md) for layered KB roots.
 
 ## Development Commands
 
@@ -174,6 +184,8 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Project rules](AGENTS.md)
 - [Product spec](docs/PRODUCT_SPEC.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Workspace model](docs/WORKSPACE.md)
+- [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md)
 - [Gatekeeper and validation gates](docs/GATES.md)
 - [Artifact schema](docs/ARTIFACT_SCHEMA.md)
 - [Codex workflow](docs/CODEX_WORKFLOW.md)

@@ -33,6 +33,7 @@ class _IndexedArtifact:
     path: str
     title: str
     domain: tuple[str, ...]
+    kb_root: str
 
 
 @dataclass(frozen=True)
@@ -84,6 +85,7 @@ def _indexed_artifacts(
                 path=loaded.source_path.as_posix(),
                 title=record.title,
                 domain=tuple(record.domain),
+                kb_root=loaded.kb_root_name or "",
             )
         )
     return tuple(sorted(artifacts, key=lambda artifact: artifact.artifact_id))
@@ -124,7 +126,8 @@ def _write_sqlite(
                 status TEXT NOT NULL,
                 path TEXT NOT NULL,
                 title TEXT NOT NULL,
-                domain TEXT NOT NULL
+                domain TEXT NOT NULL,
+                kb_root TEXT NOT NULL
             )
             """
         )
@@ -139,8 +142,8 @@ def _write_sqlite(
         )
         connection.executemany(
             """
-            INSERT INTO artifacts (id, type, status, path, title, domain)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO artifacts (id, type, status, path, title, domain, kb_root)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             [
                 (
@@ -150,6 +153,7 @@ def _write_sqlite(
                     artifact.path,
                     artifact.title,
                     json.dumps(list(artifact.domain), ensure_ascii=True),
+                    artifact.kb_root,
                 )
                 for artifact in artifacts
             ],
@@ -181,6 +185,7 @@ def _write_manifest(
                 "path": artifact.path,
                 "title": artifact.title,
                 "domain": list(artifact.domain),
+                "kb_root": artifact.kb_root,
             }
             for artifact in artifacts
         ],

@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Issue 13
+## Current State After Workspace KB Layering
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, initial repository validation gates, artifact lifecycle CLI commands, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates, artifact lifecycle CLI commands, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
 Branch protection and review expectations are now documented in
 `docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
@@ -37,15 +37,30 @@ The filesystem layout now includes accepted and draft knowledge-base directories
 
 The core model layer now defines artifact type and status enums, base artifact data models, artifact ID validation, timestamp validation, risk/evidence/review value objects, pure status/path helper functions, artifact type directory mapping, and deterministic lifecycle artifact path derivation.
 
-The storage layer defines `RepoContext`, YAML discovery under `kb/`, `issues/`, and `examples/`, typed YAML loading into `BaseArtifact`, `IssueRecord`, or `ReviewRecord`, repository-relative source paths on loaded records, deterministic ordering by path then ID, clear load errors, and deterministic YAML writing helpers.
+The configuration layer defines optional `cosheaf.toml` workspace loading. A
+workspace has a name, public/private policy fields, and one or more KB roots,
+each with `name`, path, `readonly`, and `priority`. If no `cosheaf.toml` exists,
+TCS-Cosheaf preserves the previous single-repository behavior with one writable
+default KB root at `kb/`.
 
-The validation CLI implements repository validation for YAML parse/model parse, ID uniqueness, status/path consistency, dependency existence, accepted-artifact-to-draft-artifact dependencies, and local evidence path existence. Expected validation failures produce concise Rich output and nonzero exit codes without stack traces unless `--debug` is used.
+The storage layer defines `RepoContext`, workspace-aware YAML discovery under
+configured KB roots plus repository-local `issues/` and `examples/`, typed YAML
+loading into `BaseArtifact`, `IssueRecord`, or `ReviewRecord`,
+repository-relative source paths on loaded records, source KB root metadata,
+deterministic ordering by path then ID, clear load errors, and deterministic
+YAML writing helpers.
 
-The artifact lifecycle CLI now implements `cosheaf artifact create` and `cosheaf artifact move-status`. Artifact creation writes deterministic BaseArtifact YAML records under canonical lifecycle paths, refuses duplicate IDs, refuses direct accepted creation, and validates the new file before reporting success. Status movement loads artifacts by unique ID, requires the current file path to match the current status, validates the repository before moving, updates YAML deterministically, moves terminal failure statuses to `kb/refuted/` or `kb/obsolete/`, and refuses direct accepted promotion until a dedicated review/gate workflow exists.
+The validation CLI implements repository validation for YAML parse/model parse, ID uniqueness across all active roots, status/path consistency relative to each KB root, dependency existence, accepted-artifact-to-draft-artifact dependencies across roots, public-artifact-to-private-artifact dependency violations, and local evidence path existence. Expected validation failures produce concise Rich output and nonzero exit codes without stack traces unless `--debug` is used.
+
+The artifact lifecycle CLI now implements `cosheaf artifact create` and `cosheaf artifact move-status`. Artifact creation writes deterministic BaseArtifact YAML records under canonical lifecycle paths, refuses duplicate IDs, refuses direct accepted creation, and validates the new file before reporting success. In configured workspaces, creation writes to the writable private root by default. Status movement loads artifacts by unique ID, requires the current file path to match the current status, refuses readonly KB roots, validates the repository before moving, updates YAML deterministically, moves terminal failure statuses to the active KB root's refuted or obsolete area, and refuses direct accepted promotion until a dedicated review/gate workflow exists.
+
+The workspace CLI now implements `cosheaf workspace info`, which reports the
+active workspace name, whether the repository is in configured or legacy mode,
+and the configured KB roots with paths, readonly flags, and priorities.
 
 The graph layer builds directed dependency edges from artifact to dependency, detects missing dependencies, detects directed cycles, and reports accepted artifacts depending on draft or otherwise pre-accepted artifacts.
 
-The index rebuild command writes `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json` from scratch. The SQLite index stores artifact ID, type, status, path, title, and domain, plus deterministic dependency rows. The manifest ordering is deterministic and stable across delete-and-rebuild cycles.
+The index rebuild command writes `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json` from scratch. The SQLite index stores artifact ID, type, status, path, title, domain, source KB root, and deterministic dependency rows. The manifest ordering is deterministic and stable across delete-and-rebuild cycles.
 
 The gatekeeper command runs G1-G5 implemented gates, the G6 verifier gate, the
 G7 reproducibility metadata gate, and the G8 PR checklist placeholder gate. It writes JSON and Markdown reports to
@@ -122,6 +137,16 @@ gatekeeper result.
 - Implemented `cosheaf graph show` dependency graph inspection CLI.
 - Implemented `cosheaf gate run` gatekeeper report CLI.
 - Implemented `cosheaf gate` default gatekeeper run for the existing `make gate` target.
+- Implemented optional `cosheaf.toml` workspace configuration with
+  `WorkspaceConfig`, `WorkspacePolicy`, and `KbRootConfig` Pydantic models.
+- Implemented workspace-aware storage discovery across multiple configured KB
+  roots with source-root metadata on loaded records.
+- Implemented public/private dependency validation and accepted-to-draft
+  validation across KB roots.
+- Implemented readonly KB write refusal and writable private-root default for
+  lifecycle artifact creation.
+- Implemented `cosheaf workspace info` to inspect the active workspace and KB
+  roots.
 - Dockerfile for local development.
 - Smoke tests under `tests/`.
 - Repository layout under `kb/`, `issues/`, `experiments/`, and `reviews/`.
@@ -184,6 +209,9 @@ gatekeeper result.
 ## Not Implemented Yet
 
 - SQLite-backed query API beyond deterministic index rebuild output.
+- External public KB repository integration beyond local workspace roots.
+- Full source-metadata gate for accepted public artifacts beyond the documented
+  policy.
 - Real worker execution, LLM calls, and model-provider integration.
 - Task scheduling, retries, cancellation, and dependency management.
 - Automatic merge of task outputs into accepted knowledge.

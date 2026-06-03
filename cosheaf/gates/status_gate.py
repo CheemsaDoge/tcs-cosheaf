@@ -19,7 +19,7 @@ def validate_status_paths(records: tuple[LoadedRecord, ...]) -> list[ValidationF
         record = loaded.record
         if not isinstance(record, BaseArtifact):
             continue
-        allowed = expected_status_for_path(loaded.source_path.as_posix())
+        allowed = expected_status_for_path(_status_path_for_loaded_record(loaded))
         if record.status in allowed:
             continue
         failures.append(
@@ -36,6 +36,13 @@ def validate_status_paths(records: tuple[LoadedRecord, ...]) -> list[ValidationF
         )
 
     return failures
+
+
+def _status_path_for_loaded_record(loaded: LoadedRecord) -> str:
+    if loaded.kb_relative_path is None:
+        return loaded.source_path.as_posix()
+    relative = loaded.kb_relative_path.as_posix()
+    return "kb" if not relative else f"kb/{relative}"
 
 
 def validate_evidence_paths(

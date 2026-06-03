@@ -1,0 +1,19 @@
+[workspace]
+name = "my-tcs-workspace"
+
+[[kb]]
+name = "public"
+path = "kb/public"
+readonly = true
+priority = 10
+
+[[kb]]
+name = "private"
+path = "kb/private"
+readonly = false
+priority = 20
+
+[policy]
+private_can_depend_on_public = true
+public_can_depend_on_private = false
+accepted_requires_source = true

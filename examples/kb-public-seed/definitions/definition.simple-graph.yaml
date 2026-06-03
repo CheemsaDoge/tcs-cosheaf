@@ -1,0 +1,26 @@
+id: definition.simple-graph
+type: definition
+title: Simple graph
+domain:
+- graph-theory
+status: draft
+created_at: 2026-06-03T00:00:00Z
+updated_at: 2026-06-03T00:00:00Z
+authors:
+- TCS-Cosheaf contributors
+depends_on:
+- definition.graph
+supersedes: []
+tags:
+- seed
+statement: A simple graph has no loops and no parallel edges.
+evidence:
+- kind: external
+  path: external:standard-graph-theory-textbook
+  summary: Standard public graph theory terminology.
+review:
+  state: requested
+  notes: Tiny public seed example for workspace documentation.
+risk:
+  level: low
+  notes: Informal seed definition; not accepted knowledge.

@@ -1,0 +1,28 @@
+id: construction.triangle-graph
+type: construction
+title: Triangle graph
+domain:
+- graph-theory
+status: draft
+created_at: 2026-06-03T00:00:00Z
+updated_at: 2026-06-03T00:00:00Z
+authors:
+- TCS-Cosheaf contributors
+depends_on:
+- definition.simple-graph
+- definition.vertex
+- definition.edge
+supersedes: []
+tags:
+- seed
+statement: The triangle graph is the simple graph on three vertices with all three possible edges.
+evidence:
+- kind: external
+  path: external:standard-graph-theory-textbook
+  summary: Standard public graph theory terminology.
+review:
+  state: requested
+  notes: Tiny public seed construction for workspace documentation.
+risk:
+  level: low
+  notes: Informal seed construction; not accepted knowledge.
