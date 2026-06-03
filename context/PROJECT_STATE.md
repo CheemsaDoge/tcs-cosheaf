@@ -9,6 +9,28 @@ Branch protection and review expectations are now documented in
 disallows direct pushes to `main`, and routes all changes through issue,
 branch, pull request, CI/gate checks, review, and merge.
 
+Issue 20 updates the durable agent operating protocol for the planned
+three-repository architecture. `AGENTS.md` and `docs/CODEX_WORKFLOW.md` now
+record that `tcs-cosheaf` is the framework repository, `tcs-kb-public` is the
+public reusable TCS knowledge base, and `tcs-cosheaf-workspace-template` is the
+user-facing workspace template. The documented user model is framework package
+plus readonly public KB plus writable private KB overlay; users should not
+manually merge framework and KB repositories.
+
+The durable workflow rules now require nontrivial Codex work to be issue-driven
+where possible, with one issue, one focused `codex/<task>` branch, one PR, and
+one reviewable increment. They also record repository creation checks through
+`gh --version` and `gh auth status`, local issue-draft fallback behavior when
+remote issue creation is unavailable, and the rule that repository, branch,
+issue, PR, remote push, and check success must never be faked.
+
+The documented workspace layering policy expects future `cosheaf.toml`
+workspaces to support multiple KB roots with public readonly KB and private
+writable overlay semantics. Private artifacts may depend on public artifacts,
+public artifacts must not depend on private artifacts, accepted artifacts must
+not depend on draft artifacts across KB roots, and readonly KB roots must not be
+modified by write commands.
+
 The Python scaffold defines a `cosheaf` package, a Typer-based `cosheaf` CLI entry point, development dependencies, Makefile targets, a Dockerfile for reproducible local development, and smoke tests for import and CLI help/version behavior.
 
 The filesystem layout now includes accepted and draft knowledge-base directories, refuted and obsolete artifact areas, issue directories, experiment directories, and review directories. The initial schemas live under `schemas/`, and examples live under `examples/`.
@@ -83,6 +105,8 @@ gatekeeper result.
 ## Implemented
 
 - Project-wide engineering rules in `AGENTS.md`.
+- Multi-repository workspace and public/private KB operating rules in
+  `AGENTS.md` and `docs/CODEX_WORKFLOW.md`.
 - Pre-MVP overview in `README.md`.
 - Documentation skeleton under `docs/`.
 - Initial ADRs under `docs/ADR/`.

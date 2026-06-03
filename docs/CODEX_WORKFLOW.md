@@ -6,6 +6,27 @@ Codex conversations are not project memory. The repository is project memory.
 
 Durable project decisions, current state, public interfaces, milestones, and workflow rules must be recorded in repository files. Future tasks should not rely on assumptions preserved only in a chat transcript.
 
+## Operating Scope
+
+TCS-Cosheaf is moving toward a three-repository architecture:
+
+- `tcs-cosheaf` is the framework repository for the CLI, schema, artifact
+  models, validation, gatekeeper, verifier adapters, context-pack machinery,
+  workspace configuration support, and workflow rules.
+- `tcs-kb-public` is the public reusable TCS knowledge base for public,
+  citable definitions, known theorems, constructions, reductions,
+  counterexamples, and source metadata.
+- `tcs-cosheaf-workspace-template` is the user-facing workspace template that
+  combines the framework package, readonly public KB, and writable private KB
+  overlay.
+
+Users should not manually merge framework and KB repositories. Workspaces should
+use `cosheaf.toml` to make the framework package, readonly public KB, and
+writable private KB overlay feel like one usable environment. Private artifacts
+may depend on public artifacts; public artifacts must not depend on private
+artifacts. Accepted artifacts must not depend on draft artifacts, even across KB
+roots.
+
 ## Required Reading
 
 Every task must read:
@@ -28,6 +49,17 @@ Pull requests are the review unit for Codex tasks. Each PR should use the
 repository pull request template and explicitly record the summary, changed
 files, tests run, risks, interface changes, documentation changes,
 artifact/schema changes, and gatekeeper result.
+
+Before nontrivial new work, inspect existing issues. If no relevant issue
+exists and GitHub issue creation is available, create a focused issue for the
+work. If GitHub issue creation is unavailable because `gh` is missing,
+unauthenticated, or unauthorized, create a local markdown issue draft under
+`issues/open/`, clearly report that remote issue creation was skipped, and do
+not pretend a GitHub issue was created.
+
+Branches should be named `codex/<task-id-or-short-name>`. Do not push directly
+to `main`. Keep each PR small and reviewable, and do not combine unrelated
+roadmap items into one PR.
 
 Branch protection and review requirements are documented in
 [`docs/REVIEW_POLICY.md`](REVIEW_POLICY.md). Direct pushes to `main` are
@@ -63,6 +95,22 @@ Architecture changes require ADR.
 ## Verification
 
 Do not hide verification failures. If an intended command does not exist yet, the task must either implement it or clearly state why it is not available yet.
+
+Skipped is not pass. Optional external tool absence should produce a skipped
+verifier result, not a core workflow crash. Expected validation failures should
+be cleanly reported; unexpected errors should not be swallowed. Do not weaken
+tests to make them pass, and do not mark placeholder behavior as complete.
+
+## Repository Creation
+
+When a task asks Codex to create repositories, first run `gh --version` and
+`gh auth status`. Create a repository only when GitHub CLI is present,
+authenticated, and authorized. Verify that the remote exists after creation and
+open a PR where possible.
+
+Never fake repository creation, branch creation, issue creation, PR creation,
+remote pushes, or passing checks. If any GitHub step fails, report the exact
+blocker and the closest honest next step.
 
 ## Artifact Lifecycle Commands
 
