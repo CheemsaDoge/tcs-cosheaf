@@ -33,6 +33,7 @@ from cosheaf.gates.gatekeeper import (
     validate_artifact_file,
     validate_repository,
 )
+from cosheaf.gates.source_metadata_gate import missing_required_source_metadata
 from cosheaf.graph.claim_graph import DependencyGraph, build_dependency_graph
 from cosheaf.storage.index import rebuild_index
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
@@ -797,6 +798,7 @@ def _promote_artifact(
     _ensure_gatekeeper_allows_promotion(gatekeeper_result, artifact_id)
     _ensure_artifact_reviewed_for_promotion(artifact)
     _ensure_promotion_dependencies_accepted(records, artifact)
+    _ensure_source_metadata_for_public_promotion(context, loaded, artifact)
 
     old_status = artifact.status
     old_relative_path = loaded.source_path
@@ -940,6 +942,29 @@ def _ensure_promotion_dependencies_accepted(
             f"{dependency_id} has status {dependency.record.status.value} "
             f"at {dependency.source_path.as_posix()}"
         )
+
+
+def _ensure_source_metadata_for_public_promotion(
+    context: RepoContext,
+    loaded: LoadedRecord,
+    artifact: BaseArtifact,
+) -> None:
+    if not context.workspace_config.policy.accepted_requires_source:
+        return
+    if loaded.kb_root_name != "public":
+        return
+    missing = missing_required_source_metadata(artifact)
+    if not missing:
+        return
+    if missing == ("sources",):
+        raise ArtifactLifecycleError(
+            "accepted public artifact requires source metadata before promotion: "
+            f"{artifact.id}"
+        )
+    raise ArtifactLifecycleError(
+        "accepted public artifact has incomplete source metadata before promotion: "
+        + ", ".join(missing)
+    )
 
 
 def _write_accepted_promotion(

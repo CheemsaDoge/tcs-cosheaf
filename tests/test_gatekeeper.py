@@ -19,6 +19,7 @@ def _write_artifact(
     artifact_id: str,
     status: str = "draft",
     depends_on: list[str] | None = None,
+    sources: list[dict[str, Any]] | None = None,
 ) -> None:
     path = repo_root / relative_path
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -36,6 +37,7 @@ def _write_artifact(
         "tags": [],
         "statement": "Test statement.",
         "evidence": [],
+        "sources": sources or [],
         "review": {"state": "requested", "notes": "Test review."},
         "risk": {"level": "low", "notes": "Test risk."},
     }
@@ -81,6 +83,55 @@ def _write_pr_checklist(
     path = repo_root / "PR_BODY.md"
     path.write_text("\n".join(content), encoding="utf-8")
     return path
+
+
+def _write_workspace_config(
+    repo_root: Path,
+    *,
+    accepted_requires_source: bool = True,
+) -> None:
+    repo_root.joinpath("cosheaf.toml").write_text(
+        "\n".join(
+            [
+                "[workspace]",
+                'name = "source-policy-workspace"',
+                "",
+                "[[kb]]",
+                'name = "public"',
+                'path = "kb/public"',
+                "readonly = true",
+                "priority = 10",
+                "",
+                "[[kb]]",
+                'name = "private"',
+                'path = "kb/private"',
+                "readonly = false",
+                "priority = 20",
+                "",
+                "[policy]",
+                "private_can_depend_on_public = true",
+                "public_can_depend_on_private = false",
+                f"accepted_requires_source = {str(accepted_requires_source).lower()}",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def _source_fixture() -> dict[str, Any]:
+    return {
+        "kind": "paper",
+        "title": "A Source-Backed Theorem",
+        "authors": ["A. Author", "B. Author"],
+        "year": 2024,
+        "doi": "10.1145/example",
+        "arxiv": "2401.00001",
+        "url": "https://example.org/source",
+        "theorem_number": "Theorem 1.2",
+        "page": "12",
+        "notes": "Fixture source metadata.",
+    }
 
 
 def test_passing_repo_produces_pass_report(tmp_path: Path) -> None:
@@ -248,5 +299,180 @@ def test_pr_checklist_gate_fails_when_required_sections_missing(
     assert [issue["message"] for issue in g8["blocking_issues"]] == [
         "missing PR checklist section: risks",
         "missing PR checklist section: gatekeeper result",
+    ]
+
+
+def test_source_metadata_gate_passes_for_accepted_public_artifact_with_source(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    _write_artifact(
+        tmp_path,
+        "kb/public/accepted/claims/claim.fixture.public.yaml",
+        artifact_id="claim.fixture.public",
+        status="accepted",
+        sources=[_source_fixture()],
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    report = _load_single_report(tmp_path)
+    g9 = next(gate for gate in report["gates"] if gate["id"] == "G9")
+    assert g9["status"] == "pass"
+    assert g9["details"] == [
+        {
+            "artifact_id": "claim.fixture.public",
+            "source_path": "kb/public/accepted/claims/claim.fixture.public.yaml",
+            "kb_root": "public",
+            "status": "pass",
+            "source_count": 1,
+            "missing_metadata": [],
+        }
+    ]
+
+
+def test_source_metadata_gate_fails_for_accepted_public_artifact_without_source(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    _write_artifact(
+        tmp_path,
+        "kb/public/accepted/claims/claim.fixture.public.yaml",
+        artifact_id="claim.fixture.public",
+        status="accepted",
+        depends_on=["external:doi/10.1145/not-a-source"],
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code != 0
+    report = _load_single_report(tmp_path)
+    g9 = next(gate for gate in report["gates"] if gate["id"] == "G9")
+    assert g9["status"] == "fail"
+    assert g9["blocking_issues"] == [
+        {
+            "gate_id": "G9",
+            "gate_name": "source metadata gate",
+            "source_path": "kb/public/accepted/claims/claim.fixture.public.yaml",
+            "artifact_id": "claim.fixture.public",
+            "message": "accepted public artifact requires source metadata",
+            "severity": "blocking",
+        }
+    ]
+
+
+def test_source_metadata_gate_fails_for_incomplete_accepted_public_source(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    source = _source_fixture()
+    source["title"] = ""
+    _write_artifact(
+        tmp_path,
+        "kb/public/accepted/claims/claim.fixture.public.yaml",
+        artifact_id="claim.fixture.public",
+        status="accepted",
+        sources=[source],
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code != 0
+    report = _load_single_report(tmp_path)
+    g9 = next(gate for gate in report["gates"] if gate["id"] == "G9")
+    assert g9["blocking_issues"][0]["message"] == (
+        "incomplete source metadata: source[0].title"
+    )
+
+
+def test_source_metadata_gate_ignores_draft_public_artifact_without_source(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    _write_artifact(
+        tmp_path,
+        "kb/public/draft/claims/claim.fixture.public.yaml",
+        artifact_id="claim.fixture.public",
+        status="draft",
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    report = _load_single_report(tmp_path)
+    g9 = next(gate for gate in report["gates"] if gate["id"] == "G9")
+    assert g9["status"] == "not_applicable"
+    assert g9["summary"] == "No accepted public artifacts require source metadata."
+
+
+def test_source_metadata_gate_allows_private_accepted_artifact_without_source(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    _write_artifact(
+        tmp_path,
+        "kb/private/accepted/claims/claim.fixture.private.yaml",
+        artifact_id="claim.fixture.private",
+        status="accepted",
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    report = _load_single_report(tmp_path)
+    g9 = next(gate for gate in report["gates"] if gate["id"] == "G9")
+    assert g9["status"] == "not_applicable"
+
+
+def test_source_metadata_gate_preserves_legacy_single_root_behavior(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/claims/claim.fixture.legacy.yaml",
+        artifact_id="claim.fixture.legacy",
+        status="accepted",
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    report = _load_single_report(tmp_path)
+    g9 = next(gate for gate in report["gates"] if gate["id"] == "G9")
+    assert g9["status"] == "not_applicable"
+    assert (
+        "Legacy single-root mode has no public KB root; "
+        "source metadata policy is not enforced."
+    ) == g9["summary"]
+
+
+def test_source_metadata_gate_output_is_deterministic(tmp_path: Path) -> None:
+    _write_workspace_config(tmp_path)
+    _write_artifact(
+        tmp_path,
+        "kb/public/accepted/claims/b.yaml",
+        artifact_id="claim.fixture.b",
+        status="accepted",
+    )
+    _write_artifact(
+        tmp_path,
+        "kb/public/accepted/claims/a.yaml",
+        artifact_id="claim.fixture.a",
+        status="accepted",
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code != 0
+    report = _load_single_report(tmp_path)
+    g9 = next(gate for gate in report["gates"] if gate["id"] == "G9")
+    assert [detail["artifact_id"] for detail in g9["details"]] == [
+        "claim.fixture.a",
+        "claim.fixture.b",
+    ]
+    assert [issue["artifact_id"] for issue in g9["blocking_issues"]] == [
+        "claim.fixture.a",
+        "claim.fixture.b",
     ]
 

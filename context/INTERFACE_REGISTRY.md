@@ -33,7 +33,7 @@
 - `cosheaf artifact create ... --created-at <timestamp>`: sets `created_at` and `updated_at`; defaults to current UTC if omitted.
 - `cosheaf artifact move-status <artifact-id> <new-status>`: moves a unique artifact ID through a non-accepted lifecycle status transition after status/path and repository validation. In configured workspaces, it refuses artifacts loaded from readonly KB roots.
 - `cosheaf artifact move-status <artifact-id> <new-status> --repo-root <path>`: moves the artifact status for an explicit repository root.
-- `cosheaf artifact promote <artifact-id>`: promotes an eligible lifecycle artifact into `kb/accepted/<type-dir>/<artifact-id>.yaml` after repository validation, gatekeeper, target verifier, dependency, and review checks.
+- `cosheaf artifact promote <artifact-id>`: promotes an eligible lifecycle artifact into `kb/accepted/<type-dir>/<artifact-id>.yaml` after repository validation, gatekeeper, target verifier, dependency, review, readonly-root, and accepted-public source metadata checks.
 - `cosheaf artifact promote <artifact-id> --repo-root <path>`: promotes the artifact for an explicit repository root.
 - `cosheaf index rebuild`: rebuilds `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json`.
 - `cosheaf index rebuild --repo-root <path>`: rebuilds index outputs for an explicit repository root.
@@ -100,7 +100,26 @@
 - `cosheaf.core.artifact.Evidence`: Pydantic v2 model for evidence references.
 - `cosheaf.core.artifact.Risk`: Pydantic v2 model for artifact risk metadata.
 - `cosheaf.core.artifact.ReviewRef`: Pydantic v2 model for inline review state.
+- `cosheaf.core.artifact.SourceMetadata`: Pydantic v2 model for structured source/citation metadata.
 - `cosheaf.core.task.AgentTask`: Pydantic v2 model for local task records, re-exported through `cosheaf.agent.task.AgentTask`.
+
+`BaseArtifact` fields include:
+
+- `sources: list[SourceMetadata]`
+
+`SourceMetadata` fields are:
+
+- `kind`: `paper`, `book`, `survey`, `lecture_note`, `website`,
+  `internal_note`, or `other`
+- `title`
+- `authors`
+- `year`
+- `doi`
+- `arxiv`
+- `url`
+- `theorem_number`
+- `page`
+- `notes`
 
 #### Core Enums
 
@@ -216,6 +235,10 @@ depending on draft or otherwise pre-accepted artifacts.
 - `cosheaf.gates.reproducibility_gate.ReproducibilityCheck`: one executable evidence metadata check row.
 - `cosheaf.gates.reproducibility_gate.ReproducibilityMetadataResult`: aggregate reproducibility metadata gate result.
 - `cosheaf.gates.reproducibility_gate.validate_reproducibility_metadata(records: tuple[LoadedRecord, ...], verification_results: tuple[VerificationResult, ...]) -> ReproducibilityMetadataResult`
+- `cosheaf.gates.source_metadata_gate.SourceMetadataCheck`: one accepted public artifact source metadata check row.
+- `cosheaf.gates.source_metadata_gate.SourceMetadataResult`: aggregate source metadata policy gate result.
+- `cosheaf.gates.source_metadata_gate.missing_required_source_metadata(artifact: BaseArtifact) -> tuple[str, ...]`: returns missing required source metadata fields for an artifact.
+- `cosheaf.gates.source_metadata_gate.validate_source_metadata_policy(context: RepoContext, records: tuple[LoadedRecord, ...]) -> SourceMetadataResult`
 - `cosheaf.gates.gatekeeper.ValidationReport`: validation report with loaded records and failures.
 - `cosheaf.gates.gatekeeper.validate_repository(context: RepoContext) -> ValidationReport`
 - `cosheaf.gates.gatekeeper.validate_artifact_file(context: RepoContext, path: Path) -> ValidationReport`
@@ -238,11 +261,24 @@ references beginning with `external:` as explicit external references rather
 than missing local artifacts. `run_gatekeeper` runs G1-G5 validation gates, runs
 the G6 verifier gate through the default verifier registry, runs the G7
 reproducibility metadata gate over executable evidence and verifier results,
-and runs the G8 PR checklist gate. G8 is `skipped` when
+runs the G8 PR checklist gate, and runs the G9 source metadata gate. G8 is `skipped` when
 `pr_checklist_path`/`--pr-checklist` is omitted, `fail` when the explicit local
 markdown checklist is missing required sections, and `pass` when all required
-sections are present. It does not call GitHub or require network access. It
-writes JSON and Markdown reports under `.cosheaf/reports/` by default.
+sections are present. G9 is `fail` when accepted artifacts in configured public
+KB roots are missing complete source metadata while `accepted_requires_source`
+is true, `pass` when applicable accepted public artifacts are complete, and
+`not_applicable` for legacy mode, disabled source policy, or no accepted public
+artifacts. It does not call GitHub or require network access. It writes JSON
+and Markdown reports under `.cosheaf/reports/` by default.
+
+G9 `GateResult.details` entries use:
+
+- `artifact_id`
+- `source_path`
+- `kb_root`
+- `status`
+- `source_count`
+- `missing_metadata`
 
 #### Agent Context Packs
 
@@ -432,6 +468,9 @@ unavailable or when real Lean verification is still TODO.
   `changes_requested`, `human_reviewed`, and `accepted`; accepted promotion
   requires `human_reviewed` or `accepted`. Artifact `depends_on` accepts local
   artifact IDs and explicit external references beginning with `external:`.
+  Artifact `sources` accepts structured source metadata entries with `kind`,
+  `title`, `authors`, `year`, `doi`, `arxiv`, `url`, `theorem_number`, `page`,
+  and `notes`.
 - `schemas/issue.schema.json`: issue YAML schema.
 - `schemas/review.schema.json`: review YAML schema.
 - `schemas/verifier.schema.json`: verifier result schema.
@@ -452,7 +491,7 @@ unavailable or when real Lean verification is still TODO.
 - `[policy] public_can_depend_on_private`: whether public artifacts may depend
   on private artifacts.
 - `[policy] accepted_requires_source`: whether accepted public artifacts require
-  source metadata policy enforcement in future promotion workflows.
+  complete structured source metadata in configured public KB roots.
 
 ## Registration Rule
 

@@ -38,6 +38,56 @@ class ReviewRef(BaseModel):
     notes: str = ""
 
 
+class SourceMetadata(BaseModel):
+    """Structured citation metadata for source-backed artifacts."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    kind: Literal[
+        "paper",
+        "book",
+        "survey",
+        "lecture_note",
+        "website",
+        "internal_note",
+        "other",
+    ]
+    title: str = ""
+    authors: list[str] = Field(default_factory=list)
+    year: int | None = None
+    doi: str = ""
+    arxiv: str = ""
+    url: str = ""
+    theorem_number: str = ""
+    page: str = ""
+    notes: str = ""
+
+    @field_validator(
+        "title",
+        "doi",
+        "arxiv",
+        "url",
+        "theorem_number",
+        "page",
+        "notes",
+    )
+    @classmethod
+    def _strip_strings(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("authors")
+    @classmethod
+    def _strip_authors(cls, values: list[str]) -> list[str]:
+        return [value.strip() for value in values if value.strip()]
+
+    @field_validator("year")
+    @classmethod
+    def _validate_year(cls, value: int | None) -> int | None:
+        if value is not None and value <= 0:
+            raise ValueError("year must be positive")
+        return value
+
+
 class Risk(BaseModel):
     """Risk classification for an artifact."""
 
@@ -65,6 +115,7 @@ class BaseArtifact(BaseModel):
     tags: list[str] = Field(default_factory=list)
     statement: str
     evidence: list[Evidence] = Field(default_factory=list)
+    sources: list[SourceMetadata] = Field(default_factory=list)
     review: ReviewRef = Field(default_factory=ReviewRef)
     risk: Risk = Field(default_factory=Risk)
 

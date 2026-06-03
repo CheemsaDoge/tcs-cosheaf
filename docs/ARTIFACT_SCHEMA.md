@@ -42,8 +42,36 @@ The base artifact schema currently defines these common fields:
 - `tags`
 - `statement`
 - `evidence`
+- `sources`
 - `review`
 - `risk`
+
+## Source Metadata
+
+Artifacts may carry structured source metadata in `sources`. The field is
+optional for draft artifacts and for legacy single-root repositories, but it is
+required by policy for accepted artifacts in configured public KB roots when
+`accepted_requires_source = true`.
+
+Each source entry supports:
+
+- `kind`: `paper`, `book`, `survey`, `lecture_note`, `website`,
+  `internal_note`, or `other`
+- `title`
+- `authors`
+- `year`
+- `doi`
+- `arxiv`
+- `url`
+- `theorem_number`
+- `page`
+- `notes`
+
+For accepted public artifacts, at least one source is required, and each source
+must have a non-empty title, at least one author, a year, and at least one
+citation locator from `doi`, `arxiv`, `url`, `theorem_number`, or `page`.
+External dependency references in `depends_on` are not a substitute for source
+metadata.
 
 ## ID Format
 
@@ -138,12 +166,14 @@ The initial Pydantic v2 model layer lives under `cosheaf/core/`:
 - `cosheaf.core.artifact.BaseArtifact`
 - `cosheaf.core.artifact.Evidence`
 - `cosheaf.core.artifact.ReviewRef`
+- `cosheaf.core.artifact.SourceMetadata`
 - `cosheaf.core.artifact.Risk`
 - `cosheaf.core.status.ArtifactType`
 - `cosheaf.core.status.ArtifactStatus`
 
 The model layer validates artifact IDs, enum values, timezone-aware timestamps,
-dependency references, evidence records, review state, and risk state.
+dependency references, evidence records, source metadata shape, review state,
+and risk state.
 Path/status rules are exposed as pure helper functions; they do not scan the
 repository.
 
@@ -171,4 +201,6 @@ implemented for executable evidence through verifier-result metadata. Direct
 accepted creation and direct `move-status ... accepted` remain blocked. G8 PR
 checklist enforcement can validate a local PR body markdown file through
 `cosheaf gate run --pr-checklist <path>` and remains skipped when no checklist
-source is available.
+source is available. G9 source metadata enforcement checks accepted public
+artifacts in configured workspaces when `accepted_requires_source = true` while
+preserving draft, private, and legacy single-root behavior.

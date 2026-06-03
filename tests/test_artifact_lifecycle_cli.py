@@ -106,6 +106,7 @@ def test_artifact_create_writes_valid_draft_artifact(tmp_path: Path) -> None:
         "tags",
         "statement",
         "evidence",
+        "sources",
         "review",
         "risk",
     ]

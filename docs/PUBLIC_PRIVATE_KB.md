@@ -15,9 +15,20 @@ Public KB rules:
 - No private conjectures.
 - No unpublished research ideas.
 - No LLM-generated accepted artifacts without human review.
-- Accepted public artifacts require source metadata.
+- Accepted public artifacts require structured source metadata when workspace
+  policy has `accepted_requires_source = true`.
 - Draft public artifacts must be clearly marked draft.
 - Do not mass-import papers or large artifact batches without focused review.
+
+Accepted public artifacts must record at least one source in `sources`. Each
+source must have `kind`, non-empty `title`, at least one `authors` value,
+`year`, and at least one locator from `doi`, `arxiv`, `url`,
+`theorem_number`, or `page`. External dependency references such as
+`external:doi/...` are not source metadata.
+
+Draft public artifacts are allowed to omit formal source metadata while they
+remain draft. This keeps exploratory staging possible without weakening the
+accepted public KB policy.
 
 ## Private KB
 
@@ -28,6 +39,8 @@ claims.
 Private KB rules:
 
 - Private artifacts may depend on public artifacts.
+- Private accepted artifacts may omit formal source metadata unless a later
+  workspace policy requires it.
 - Private knowledge must not leak into public KB unless explicitly promoted and
   reviewed.
 - Do not promote private claims to accepted knowledge without review and gates.
