@@ -18,7 +18,6 @@ from cosheaf.agent.orchestrator_stub import OrchestratorStub, TaskHarnessError
 from cosheaf.agent.task import AgentTask
 from cosheaf.agent.worker_contract import OutputBundleError, validate_output_bundle
 from cosheaf.core.ids import validate_artifact_id
-from cosheaf.core.paths import normalize_repo_path
 from cosheaf.storage.repo import RepoContext
 from cosheaf.storage.writer import write_yaml_deterministic
 
@@ -96,6 +95,11 @@ class LocalWorkerRunner:
         cwd_record = _repo_relative_text(self.context, cwd)
         command = list(config.command)
         started_at = _normalize_timestamp(config.started_at or _utc_now())
+        bundle_record_path = (
+            self._resolve_bundle_record_path(config.bundle_path)
+            if config.bundle_path is not None
+            else None
+        )
         run_id = config.run_id or self._next_run_id(started_at)
         run_dir = self.context.resolve(
             Path(".cosheaf") / "tasks" / task.task_id / "runs" / run_id
@@ -137,10 +141,8 @@ class LocalWorkerRunner:
             stderr_text = _process_output_text(completed.stderr)
             status = "completed" if completed.returncode == 0 else "failed"
 
-        bundle_record_path: str | None = None
         bundle_valid: bool | None = None
         if config.bundle_path is not None:
-            bundle_record_path = self._bundle_record_path(config.bundle_path)
             if status == "completed":
                 try:
                     validate_output_bundle(
@@ -204,7 +206,7 @@ class LocalWorkerRunner:
             raise LocalWorkerRunError(f"cwd does not exist: {_display_path(cwd)}")
         return resolved
 
-    def _bundle_record_path(self, bundle_path: str | Path) -> str:
+    def _resolve_bundle_record_path(self, bundle_path: str | Path) -> str:
         path = Path(bundle_path)
         resolved = path.resolve() if path.is_absolute() else self.context.resolve(path)
         if resolved.is_dir():
@@ -212,7 +214,9 @@ class LocalWorkerRunner:
         try:
             relative = resolved.relative_to(self.context.repo_root)
         except ValueError:
-            return normalize_repo_path(bundle_path)
+            raise LocalWorkerRunError(
+                "bundle_path must stay inside repository"
+            ) from None
         return relative.as_posix()
 
     def _next_run_id(self, started_at: datetime) -> str:
