@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Issue 35
+## Current State After Issue 36
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, a read-only SQLite query API over rebuilt index output, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, a minimal optional SAT DIMACS verifier adapter, optional-tool SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, a read-only SQLite query API over rebuilt index output, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS and SMT-LIB verifier adapters, an optional-tool Lean verifier skeleton adapter, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
 Branch protection and review expectations are now documented in
 `docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
@@ -116,9 +116,9 @@ The Python checker adapter runs `kind: python_checker` evidence from the reposit
 
 The SAT adapter now supports a minimal optional DIMACS CNF invocation path. It checks repository-local SAT evidence paths, skips clearly when no supported backend is available, and when a backend is available records command, cwd, timeout, input path, stdout/stderr logs, output paths, backend metadata, exit code, and a normalized `sat`/`unsat`/`unknown` result. The default backend is an optional external command backend for `kissat`; tests can inject a fake backend and CI does not require a SAT solver. SAT skipped results are not pass results.
 
-The SMT and Lean adapters remain optional-tool skeletons. They check for configured solver/tool availability, return `skipped` when the tool is unavailable, and do not add hard dependencies on Lean, Z3, cvc5, Sage, or PySAT. They are registered in the default verifier registry but do not run unless an artifact has matching SMT or Lean evidence.
+The SMT adapter now supports a minimal optional SMT-LIB invocation path. It checks repository-local SMT evidence paths, skips clearly when no supported backend is available, and when a backend is available records command, cwd, timeout, input path, stdout/stderr logs, output paths, backend metadata, exit code, and a normalized `sat`/`unsat`/`unknown` result. The default backend is an optional external command backend for `z3`; tests can inject a fake backend and CI does not require an SMT solver. SMT skipped results are not pass results.
 
-No real SMT or Lean verification execution exists yet. SAT support is still intentionally minimal: it executes DIMACS CNF evidence only when an optional backend is available and is not a full SAT/SMT theorem-proving integration.
+The Lean adapter remains an optional-tool skeleton. It checks for configured Lean availability, returns `skipped` when Lean is unavailable, and does not add a hard dependency on Lean. No real Lean verification execution exists yet. SAT and SMT support are still intentionally minimal: they execute DIMACS CNF or SMT-LIB evidence only when optional backends are available and are not a full SAT/SMT theorem-proving integration.
 
 The reproducibility metadata gate is now implemented. It checks executable
 evidence verifier results for command, working directory, timeout, input paths,
@@ -246,10 +246,11 @@ gatekeeper result.
 - Gatekeeper G7 reproducibility metadata gate execution.
 - Gatekeeper G9 accepted public source metadata gate execution.
 - Minimal optional SAT DIMACS verifier adapter in `cosheaf/verification/sat_adapter.py`.
-- SMT verifier skeleton in `cosheaf/verification/smt_adapter.py`.
+- Minimal optional SMT-LIB verifier adapter in `cosheaf/verification/smt_adapter.py`.
 - Lean verifier skeleton in `cosheaf/verification/lean_adapter.py`.
 - Optional verifier tests in `tests/test_optional_verifier_skeletons.py`.
 - Focused SAT adapter tests in `tests/test_sat_adapter.py`.
+- Focused SMT adapter tests in `tests/test_smt_adapter.py`.
 - First graph-theory pilot issue in `issues/open/issue.graph-toy-search.0001.yaml`.
 - Draft toy graph construction in `kb/draft/constructions/construction.graph-toy.0001.yaml`.
 - Toy graph example in `examples/constructions/graph.toy.yaml`.
@@ -273,4 +274,5 @@ gatekeeper result.
 - Task scheduling, retries, cancellation, and dependency management.
 - Automatic merge of task outputs into accepted knowledge.
 - Full SAT backend coverage beyond the minimal optional DIMACS invocation path.
-- Real SMT and Lean solver invocation and result parsing.
+- Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
+- Real Lean solver invocation and result parsing.

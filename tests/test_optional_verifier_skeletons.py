@@ -77,6 +77,9 @@ def test_sat_adapter_skips_when_solver_is_unavailable(tmp_path: Path) -> None:
 
 
 def test_smt_adapter_skips_when_solver_is_unavailable(tmp_path: Path) -> None:
+    smt_path = tmp_path / "examples" / "formulas" / "a.smt2"
+    smt_path.parent.mkdir(parents=True, exist_ok=True)
+    smt_path.write_text("(check-sat)\n", encoding="utf-8")
     artifact = _artifact_with_evidence("smt", "examples/formulas/a.smt2")
     adapter = SmtAdapter(solver_command="__missing_smt_solver_for_cosheaf__")
 
