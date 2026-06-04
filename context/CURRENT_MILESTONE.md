@@ -2,13 +2,14 @@
 
 ## Milestone
 
-Post-Task-014 MVP scaffold.
+v0.1.0 release candidate cleanup.
 
 ## Goal
 
-Keep the pre-MVP repository scaffold coherent while the implemented storage,
-graph, validation, gatekeeper, verifier, context-pack, and CI surfaces mature
-toward the MVP.
+Clear release-state contradictions before tagging the framework as `v0.1.0`.
+The project remains a pre-MVP scaffold, but its version metadata, license
+metadata, roadmap, release checklist, and durable state docs should describe
+the same implemented surface.
 
 ## Completion Criteria
 
@@ -24,6 +25,8 @@ toward the MVP.
 - Core artifact models and status helpers exist.
 - Filesystem-backed loading, deterministic writing, dependency graph, and
   repository index rebuilds exist.
+- Read-only SQLite query API over rebuilt index output exists for artifact,
+  status, type, domain, dependency, reverse-dependency, and source-root queries.
 - `cosheaf validate` and `cosheaf gate` run implemented local checks; G8 can
   validate explicit PR body markdown files and is skipped when no PR checklist
   source is available.
@@ -32,6 +35,10 @@ toward the MVP.
 - Issue-scoped context pack generation exists.
 - GitHub Actions CI runs `lint`, `typecheck`, `test`, `validate`, and `gate`
   as separate Python 3.11 checks.
+- Project metadata, README license text, and `LICENSE` use Apache-2.0
+  consistently.
+- `RELEASE_CHECKLIST.md` records release readiness, tag, known limitations, and
+  follow-up repository pinning requirements.
 - Project state and interface registry remain mutually consistent.
 
 ## Next Focus
@@ -40,4 +47,6 @@ toward the MVP.
 - Expand SAT backend coverage beyond the minimal optional DIMACS invocation path.
 - Expand SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Lean support beyond the minimal optional plain-file invocation path.
-- SQLite-backed query API beyond rebuild output.
+- Tag `v0.1.0` only after the release-cleanup PR passes CI and human review.
+- Pin public KB and workspace-template CI/docs to `tcs-cosheaf@v0.1.0` only
+  after that tag exists.

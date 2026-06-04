@@ -89,7 +89,9 @@ Future Codex tasks should:
 
 1. Inspect existing GitHub issues when relevant.
 2. Create a GitHub issue for nontrivial new work if one does not already exist.
-3. Create a focused branch named `codex/<task-id-or-short-name>`.
+3. Create a focused branch. Use `codex/<task-id-or-short-name>` by default,
+   unless the issue, maintainer, or release workflow specifies a different
+   human-readable branch name.
 4. Keep each PR small and reviewable.
 5. Include a PR summary, tests run, known limitations, and changed files.
 6. Avoid combining unrelated roadmap items into one PR.
@@ -109,8 +111,10 @@ are relevant to the task.
 Do not push directly to `main`. Every implementation should go through a pull
 request targeting `main`.
 
-Use branches named `codex/<task-id-or-short-name>`. One branch should normally
-serve one issue and one PR.
+Use branches named `codex/<task-id-or-short-name>` by default. If the issue,
+maintainer, or release workflow specifies a different human-readable branch
+name, preserve that exact branch name. One branch should normally serve one
+issue and one PR.
 
 PR requirements:
 

@@ -57,9 +57,11 @@ unauthenticated, or unauthorized, create a local markdown issue draft under
 `issues/open/`, clearly report that remote issue creation was skipped, and do
 not pretend a GitHub issue was created.
 
-Branches should be named `codex/<task-id-or-short-name>`. Do not push directly
-to `main`. Keep each PR small and reviewable, and do not combine unrelated
-roadmap items into one PR.
+Branches should be named `codex/<task-id-or-short-name>` by default. If an
+issue, maintainer, or release workflow specifies a different human-readable
+branch name, preserve that exact branch name. Do not push directly to `main`.
+Keep each PR small and reviewable, and do not combine unrelated roadmap items
+into one PR.
 
 Branch protection and review requirements are documented in
 [`docs/REVIEW_POLICY.md`](REVIEW_POLICY.md). Direct pushes to `main` are

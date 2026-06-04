@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Git-backed research knowledge base and agent harness for theoretical computer science."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = { text = "Apache-2.0" }
 authors = [
   { name = "TCS-Cosheaf contributors" },
 ]

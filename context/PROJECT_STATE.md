@@ -1,8 +1,15 @@
 # Project State
 
-## Current State After Issue 37
+## Current State After P0 Release Cleanup
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, a read-only SQLite query API over rebuilt index output, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, and plain Lean verifier adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in v0.1.0 release-candidate / pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, a read-only SQLite query API over rebuilt index output, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, and plain Lean verifier adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+
+Issue 46 clears the release-accounting contradictions before tagging the
+framework as `v0.1.0`. The Python package version is already `0.1.0`; the
+release tag must wait until the release-cleanup PR passes CI and human review.
+`LICENSE`, README license text, and `pyproject.toml` project metadata now use
+Apache-2.0 consistently. `RELEASE_CHECKLIST.md` records CI, license, docs,
+demo, tag, and known-limitation checks for the framework release.
 
 Branch protection and review expectations are now documented in
 `docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
@@ -38,8 +45,10 @@ is test coverage for existing workspace behavior and does not add public
 interfaces, schema fields, accepted artifacts, or SAT/SMT/Lean execution.
 
 The durable workflow rules now require nontrivial Codex work to be issue-driven
-where possible, with one issue, one focused `codex/<task>` branch, one PR, and
-one reviewable increment. They also record repository creation checks through
+where possible, with one issue, one focused branch, one PR, and one reviewable
+increment. `codex/<task>` is the default branch convention, but issues,
+maintainers, and release workflows may specify a different human-readable branch
+name that must be preserved. The rules also record repository creation checks through
 `gh --version` and `gh auth status`, local issue-draft fallback behavior when
 remote issue creation is unavailable, and the rule that repository, branch,
 issue, PR, remote push, and check success must never be faked.
