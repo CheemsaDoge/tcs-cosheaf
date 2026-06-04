@@ -19,6 +19,13 @@ run`, `cosheaf index rebuild`, and `cosheaf context build
 issue.release-smoke`. Fast unit tests verify the smoke plan and fixture without
 requiring network access.
 
+Issue 51 adds cross-repository integration fixture coverage for the intended
+three-repository model. The tests build local public/private KB roots without
+cloning external repositories and cover private-to-public dependencies, public
+to private dependency rejection, accepted-to-draft dependency rejection,
+readonly public-root write refusal, and deterministic validation/gate behavior
+across workspace roots.
+
 Branch protection and review expectations are now documented in
 `docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
 disallows direct pushes to `main`, and routes all changes through issue,
