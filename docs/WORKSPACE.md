@@ -89,6 +89,33 @@ public KB root is writable for maintenance and `[policy] accepted_requires_sourc
 is true, promotion refuses public artifacts that do not already carry complete
 structured source metadata.
 
+## Querying The SQLite Index
+
+`cosheaf index rebuild` writes `.cosheaf/index.sqlite` from the current YAML
+records. YAML remains the source of truth, so callers should rebuild the index
+after repository changes before using the query API.
+
+Minimal Python usage:
+
+```python
+from cosheaf.storage.index import rebuild_index
+from cosheaf.storage.query import ArtifactIndexQuery
+from cosheaf.storage.repo import RepoContext
+
+context = RepoContext(".")
+rebuild_index(context)
+
+query = ArtifactIndexQuery.from_context(context)
+all_artifacts = query.list_artifacts()
+drafts = query.list_artifacts_by_status("draft")
+graph_artifacts = query.list_artifacts_by_domain("graph-theory")
+deps = query.list_dependencies("claim.example")
+rdeps = query.list_reverse_dependencies("definition.graph")
+```
+
+Each artifact row includes `kb_root`, which is `public`, `private`, `default`,
+or an empty string when the indexed record did not come from a KB root.
+
 ## Layering Rules
 
 Loaded records retain their source KB root name, root path, readonly flag, and

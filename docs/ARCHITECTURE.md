@@ -39,6 +39,12 @@ Index rebuilds load repository YAML records, normalize artifact rows, write
 SQLite from scratch, and emit a deterministic JSON manifest ordered by artifact
 ID and dependency tuple. Artifact rows include the source KB root name.
 
+The SQLite query API is a read-only convenience layer over
+`.cosheaf/index.sqlite`. YAML remains the source of truth; callers should
+rebuild the index after YAML changes before querying. Query results are ordered
+deterministically and expose artifact metadata, domain membership, dependency
+edges, reverse dependency edges, and the indexed source KB root.
+
 ### Graph Layer
 
 Builds a directed artifact dependency graph from `depends_on`. Edge direction is

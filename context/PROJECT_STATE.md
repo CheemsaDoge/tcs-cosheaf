@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Issue 33
+## Current State After Issue 32
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, a read-only SQLite query API over rebuilt index output, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
 Branch protection and review expectations are now documented in
 `docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
@@ -86,7 +86,7 @@ and the configured KB roots with paths, readonly flags, and priorities.
 
 The graph layer builds directed dependency edges from artifact to dependency, detects missing dependencies, detects directed cycles, and reports accepted artifacts depending on draft or otherwise pre-accepted artifacts.
 
-The index rebuild command writes `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json` from scratch. The SQLite index stores artifact ID, type, status, path, title, domain, source KB root, and deterministic dependency rows. The manifest ordering is deterministic and stable across delete-and-rebuild cycles.
+The index rebuild command writes `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json` from scratch. The SQLite index stores artifact ID, type, status, path, title, domain, source KB root, and deterministic dependency rows. The manifest ordering is deterministic and stable across delete-and-rebuild cycles. The SQLite query API reads that rebuilt index without modifying YAML or rebuilding implicitly, and provides deterministic artifact, status, type, domain, dependency, reverse-dependency, and source-KB-root queries.
 
 The gatekeeper command runs G1-G5 implemented gates, the G6 verifier gate, the
 G7 reproducibility metadata gate, the G8 PR checklist gate, and the G9 source
@@ -214,7 +214,9 @@ gatekeeper result.
 - Validation CLI tests in `tests/test_validate_cli.py` and `tests/test_status_path_validation.py`.
 - Dependency graph utilities under `cosheaf/graph/`.
 - Deterministic SQLite and manifest index rebuild in `cosheaf/storage/index.py`.
+- Read-only SQLite query API in `cosheaf/storage/query.py`.
 - Graph and index tests in `tests/test_claim_graph.py` and `tests/test_index_rebuild.py`.
+- Query API tests in `tests/test_index_query.py`.
 - Gatekeeper reports in `cosheaf/gates/gatekeeper.py`.
 - Gatekeeper tests in `tests/test_gatekeeper.py`.
 - Ranked context pack generation in `cosheaf/agent/context_pack.py`.
@@ -259,7 +261,6 @@ gatekeeper result.
 
 ## Not Implemented Yet
 
-- SQLite-backed query API beyond deterministic index rebuild output.
 - External public KB repository integration beyond local workspace roots.
 - Real worker execution, LLM calls, and model-provider integration.
 - Task scheduling, retries, cancellation, and dependency management.
