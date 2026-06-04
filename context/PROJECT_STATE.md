@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Issue 32
+## Current State After Issue 38
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, a read-only SQLite query API over rebuilt index output, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, a read-only SQLite query API over rebuilt index output, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
 Branch protection and review expectations are now documented in
 `docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
@@ -104,7 +104,9 @@ legacy single-root repositories.
 
 The agent harness layer now builds bounded deterministic context packs for issue IDs. Context packs are written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`, `ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and `COMMANDS.md`. Relevant artifacts are selected and ranked from direct issue references, one-hop dependency neighbors, domain matches against issue text/tags, and artifact tag matches against issue tags. Each selected artifact includes explainable reasons. Draft artifacts are visibly labeled, and refuted/obsolete/superseded artifacts appear only when relevant and are marked as known failures rather than current truth.
 
-The agent task harness now defines protocol worker types for `reasoner`, `verifier`, `counterexampleer`, `construction_searcher`, `formalizer`, `literature_scout`, and `orchestrator`. Task records use deterministic default IDs of the form `task.<issue-id>.<worker-type-slug>`, support lifecycle statuses `open`, `in_progress`, `blocked`, `completed`, `failed`, and `cancelled`, and are written under `.cosheaf/tasks/`. The `cosheaf task create`, `cosheaf task list`, and `cosheaf task complete` CLI commands are local filesystem stubs only: they do not call LLMs, do not make network calls, and do not execute concrete worker runtimes.
+The agent task harness now defines protocol worker types for `reasoner`, `verifier`, `counterexampleer`, `construction_searcher`, `formalizer`, `literature_scout`, and `orchestrator`. Task records use deterministic default IDs of the form `task.<issue-id>.<worker-type-slug>`, support lifecycle statuses `open`, `in_progress`, `blocked`, `completed`, `failed`, and `cancelled`, and are written under `.cosheaf/tasks/`. The `cosheaf task create`, `cosheaf task list`, and `cosheaf task complete` CLI commands are local filesystem stubs only: they do not call LLMs, do not make network calls, and do not execute model-provider worker runtimes.
+
+The local worker runner executes explicit repository-local command argv lists for existing task records. `cosheaf task run <task-id> -- <command> [args...]` uses `shell=False`, defaults to the repository root, rejects `--cwd` outside the repository, enforces a timeout, captures stdout/stderr, records return code, and writes run records under `.cosheaf/tasks/<task-id>/runs/<run-id>/` with stdout and stderr stored as separate files. `--bundle <path>` validates an optional worker output bundle without completing the task. `--complete-with-bundle <path>` delegates task completion to the existing orchestrator stub after a successful run and valid bundle. The local runner is not an LLM runtime, does not call hosted APIs or network services, does not merge worker outputs, does not promote artifacts, and does not implement SAT, SMT, or Lean execution.
 
 Worker output bundles are local YAML manifests. `cosheaf task complete` validates the bundle shape, checks that it matches the task, verifies referenced output paths are repository-local, and runs artifact/review YAML outputs through the existing schema gate. Outputs under `kb/accepted/` are rejected, and completion does not merge anything into accepted knowledge.
 
@@ -225,10 +227,11 @@ gatekeeper result.
 - Agent task model in `cosheaf/agent/task.py`.
 - Worker output bundle contract in `cosheaf/agent/worker_contract.py`.
 - Local orchestrator stub in `cosheaf/agent/orchestrator_stub.py`.
-- Task CLI commands `cosheaf task create --issue <issue-id> --worker <worker-type>`, `cosheaf task list`, and `cosheaf task complete <task-id> --bundle <path>`.
+- Local worker command runner in `cosheaf/agent/local_runner.py`.
+- Task CLI commands `cosheaf task create --issue <issue-id> --worker <worker-type>`, `cosheaf task list`, `cosheaf task complete <task-id> --bundle <path>`, and `cosheaf task run <task-id> -- <command> [args...]`.
 - Task JSON Schema in `schemas/task.schema.json`.
 - Task example YAML in `examples/tasks/task.example.yaml`.
-- Task model and CLI tests in `tests/test_task_model.py` and `tests/test_task_cli.py`.
+- Task model, local runner, and CLI tests in `tests/test_task_model.py`, `tests/test_local_worker_runner.py`, and `tests/test_task_cli.py`.
 - Verifier adapter protocol in `cosheaf/verification/base.py`.
 - Normalized verification result model in `cosheaf/verification/result.py`.
 - Instance-local verifier registry in `cosheaf/verification/registry.py`.
@@ -262,7 +265,7 @@ gatekeeper result.
 ## Not Implemented Yet
 
 - External public KB repository integration beyond local workspace roots.
-- Real worker execution, LLM calls, and model-provider integration.
+- Hosted LLM calls and model-provider worker integration.
 - Task scheduling, retries, cancellation, and dependency management.
 - Automatic merge of task outputs into accepted knowledge.
 - Real SAT, SMT, and Lean solver invocation and result parsing.

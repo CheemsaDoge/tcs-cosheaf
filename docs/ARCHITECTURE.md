@@ -74,6 +74,8 @@ Current agent harness outputs are:
 
 - `context/TASKS/<issue-id>/` context packs.
 - `.cosheaf/tasks/<task-id>.yaml` runtime task records.
+- `.cosheaf/tasks/<task-id>/runs/<run-id>/` local worker run records with
+  separate stdout and stderr files.
 
 Context packs use deterministic relevance ranking. The ranking includes direct
 issue artifact references, one-hop dependency neighbors, artifact domains that
@@ -84,10 +86,18 @@ superseded artifacts are included only when relevant and are marked as known
 failures, not current truth.
 
 The task harness defines protocol-level worker types only. Creating, listing,
-or completing tasks does not call LLMs, external services, or concrete worker
-runtimes. The orchestrator stub validates that tasks are issue-scoped, records
-deterministic default task IDs, and can mark a task completed only after a local
-worker output bundle passes the worker contract.
+or completing tasks does not call LLMs or external services. The orchestrator
+stub validates that tasks are issue-scoped, records deterministic default task
+IDs, and can mark a task completed only after a local worker output bundle
+passes the worker contract.
+
+The local worker runner is not an LLM runtime or model-provider integration. It
+executes only an explicit argv command with `shell=False`, defaults to the
+repository root as its working directory, rejects working directories outside
+the repository, enforces a timeout, captures stdout and stderr, and writes a
+deterministic run record under the task's `.cosheaf` run directory. Optional
+bundle handling validates worker output bundles after command execution; it
+does not merge outputs or promote accepted knowledge.
 
 Worker output bundles are local YAML manifests. Artifact and review outputs
 must reference repository-local YAML records that pass the existing schema gate.

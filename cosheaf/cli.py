@@ -14,6 +14,11 @@ from cosheaf.agent.context_pack import (
     build_context_pack,
     show_context_pack,
 )
+from cosheaf.agent.local_runner import (
+    LocalWorkerRunConfig,
+    LocalWorkerRunError,
+    LocalWorkerRunner,
+)
 from cosheaf.agent.orchestrator_stub import OrchestratorStub, TaskHarnessError
 from cosheaf.agent.task import WorkerType
 from cosheaf.config.workspace import KbRootConfig, WorkspaceConfigError
@@ -525,6 +530,88 @@ def task_complete(
     console.print(f"Task completed: {result.task.task_id}")
     console.print(f"- bundle outputs: {len(result.bundle.outputs)}")
     console.print("- accepted knowledge merge: not performed")
+
+
+@task_app.command("run")
+def task_run(
+    task_id: str = typer.Argument(..., help="Task ID to run a local command for."),
+    command: list[str] = typer.Argument(
+        ...,
+        help="Explicit command argv. Separate it from options with '--'.",
+    ),
+    timeout_seconds: int = typer.Option(
+        60,
+        "--timeout-seconds",
+        help="Maximum command runtime in seconds.",
+    ),
+    cwd: Path | None = typer.Option(
+        None,
+        "--cwd",
+        help="Optional repository-local working directory.",
+    ),
+    bundle: Path | None = typer.Option(
+        None,
+        "--bundle",
+        help="Validate a worker output bundle after a successful command.",
+    ),
+    complete_with_bundle: Path | None = typer.Option(
+        None,
+        "--complete-with-bundle",
+        help=(
+            "Validate a worker output bundle after a successful command and "
+            "delegate task completion to the orchestrator stub."
+        ),
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+) -> None:
+    """Run an explicit local command for an existing task."""
+    console = Console(width=120, markup=False)
+    if bundle is not None and complete_with_bundle is not None:
+        console.print("Task run failed: use either --bundle or --complete-with-bundle")
+        raise typer.Exit(code=1)
+
+    bundle_path = complete_with_bundle or bundle
+    try:
+        context = RepoContext(repo_root)
+        result = LocalWorkerRunner(context).run_task(
+            task_id,
+            LocalWorkerRunConfig(
+                command=command,
+                timeout_seconds=timeout_seconds,
+                cwd=cwd,
+                bundle_path=bundle_path,
+            ),
+        )
+    except LocalWorkerRunError as exc:
+        console.print(f"Task run failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    task_completed = False
+    if result.status == "completed" and complete_with_bundle is not None:
+        try:
+            OrchestratorStub(context).complete_task(
+                task_id=task_id,
+                bundle_path=complete_with_bundle,
+            )
+        except TaskHarnessError as exc:
+            console.print(f"Task complete failed: {exc}")
+            raise typer.Exit(code=1) from None
+        task_completed = True
+
+    console.print(f"status: {result.status}")
+    console.print(f"returncode: {result.returncode}")
+    console.print(f"run_directory: {result.run_dir}")
+    if result.bundle_valid is not None:
+        console.print(f"bundle_valid: {str(result.bundle_valid).lower()}")
+    if complete_with_bundle is not None:
+        console.print(f"task_completed: {str(task_completed).lower()}")
+
+    if result.status != "completed":
+        raise typer.Exit(code=1)
 
 
 def _run_validation(
