@@ -26,6 +26,13 @@ to private dependency rejection, accepted-to-draft dependency rejection,
 readonly public-root write refusal, and deterministic validation/gate behavior
 across workspace roots.
 
+Issue 53 extends P1 regression coverage around accepted-knowledge safety gates.
+The added tests cover target verifier `error` results blocking promotion,
+external evidence references bypassing local path checks while missing local
+evidence fails cleanly, machine-readable gate report shape for reviewed draft
+fixtures, and unavailable optional verifier tooling staying `skipped` rather
+than being reported as `pass`.
+
 Branch protection and review expectations are now documented in
 `docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
 disallows direct pushes to `main`, and routes all changes through issue,
