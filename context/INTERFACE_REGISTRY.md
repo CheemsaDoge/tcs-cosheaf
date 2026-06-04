@@ -60,8 +60,8 @@
 - `cosheaf task run <task-id> -- <command> [args...]`: runs an explicit local argv command for an existing task, logs stdout/stderr and run metadata under `.cosheaf/tasks/<task-id>/runs/<run-id>/`, and does not complete the task by default.
 - `cosheaf task run <task-id> --timeout-seconds <seconds> -- <command> [args...]`: enforces a positive command timeout.
 - `cosheaf task run <task-id> --cwd <repo-local-path> -- <command> [args...]`: runs from an optional repository-local working directory. Paths outside the repository are rejected.
-- `cosheaf task run <task-id> --bundle <path> -- <command> [args...]`: validates a worker output bundle after a successful command without completing the task.
-- `cosheaf task run <task-id> --complete-with-bundle <path> -- <command> [args...]`: validates a worker output bundle after a successful command and delegates task completion to the existing orchestrator stub.
+- `cosheaf task run <task-id> --bundle <path> -- <command> [args...]`: requires a repository-local bundle path, validates a worker output bundle after a successful command without completing the task, and accepts either a YAML manifest or a directory containing `bundle.yaml`.
+- `cosheaf task run <task-id> --complete-with-bundle <path> -- <command> [args...]`: requires a repository-local bundle path, validates a worker output bundle after a successful command, accepts either a YAML manifest or a directory containing `bundle.yaml`, and delegates task completion to the existing orchestrator stub.
 - `cosheaf task run <task-id> ... --repo-root <path> -- <command> [args...]`: runs the local worker command for an explicit repository root.
 
 ### Python API
@@ -355,10 +355,10 @@ ranking reasons.
 - `cosheaf.agent.orchestrator_stub.TaskHarnessError`: expected task harness error.
 - `cosheaf.agent.orchestrator_stub.AcceptedKnowledgeMergeProhibitedError`: raised when a caller asks the stub to merge accepted knowledge.
 - `cosheaf.agent.orchestrator_stub.TaskCompletionResult`: completed task, validated bundle, and task path.
-- `cosheaf.agent.local_runner.LocalWorkerRunner`: filesystem-backed local runner for existing task records. It executes explicit command argv lists with `shell=False`, enforces timeouts, captures stdout/stderr, writes deterministic run records, optionally validates worker output bundles, and never merges outputs or promotes accepted knowledge.
+- `cosheaf.agent.local_runner.LocalWorkerRunner`: filesystem-backed local runner for existing task records. It executes explicit command argv lists with `shell=False`, rejects `cwd` and `bundle_path` values outside the repository, enforces timeouts, captures stdout/stderr, writes deterministic run records, optionally validates worker output bundles, and never merges outputs or promotes accepted knowledge.
 - `cosheaf.agent.local_runner.LocalWorkerRunConfig`: dataclass for one run with fields `command`, `timeout_seconds`, `cwd`, `bundle_path`, `run_id`, and `started_at`.
 - `cosheaf.agent.local_runner.LocalWorkerRunResult`: dataclass containing `task`, `run_id`, `status`, `returncode`, `run_dir`, `record_path`, `stdout_path`, `stderr_path`, and `bundle_valid`.
-- `cosheaf.agent.local_runner.LocalWorkerRunError`: expected local runner failure, including missing tasks, invalid argv, invalid timeouts, invalid run IDs, and `cwd` outside the repository.
+- `cosheaf.agent.local_runner.LocalWorkerRunError`: expected local runner failure, including missing tasks, invalid argv, invalid timeouts, invalid run IDs, `cwd` outside the repository, and `bundle_path` outside the repository.
 
 Task records are written under:
 

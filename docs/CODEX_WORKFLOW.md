@@ -164,15 +164,17 @@ commands against existing task records. The local runner is not an LLM runtime,
 does not call hosted model providers, and does not add network service calls.
 It executes the argv list with `shell=False`, enforces a timeout, runs from the
 repository root by default, allows only repository-local `--cwd` values, and
-logs stdout, stderr, return code, command metadata, and optional bundle
-validation status under `.cosheaf/tasks/<task-id>/runs/<run-id>/`.
+rejects bundle paths outside the repository before command execution. It logs
+stdout, stderr, return code, command metadata, and optional bundle validation
+status under `.cosheaf/tasks/<task-id>/runs/<run-id>/`.
 
 Use `--bundle <path>` to validate a worker output bundle after a successful
 command without completing the task. Use `--complete-with-bundle <path>` only
 when the command succeeded and the task should be completed through the existing
-orchestrator stub. Neither mode merges outputs into accepted knowledge or
-promotes artifacts. Accepted knowledge still enters only through review, gates,
-and `cosheaf artifact promote`.
+orchestrator stub. Bundle paths must be repository-local YAML manifests or
+repository-local directories containing `bundle.yaml`. Neither mode merges
+outputs into accepted knowledge or promotes artifacts. Accepted knowledge still
+enters only through review, gates, and `cosheaf artifact promote`.
 
 ## Context Packs
 

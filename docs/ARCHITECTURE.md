@@ -94,15 +94,17 @@ passes the worker contract.
 The local worker runner is not an LLM runtime or model-provider integration. It
 executes only an explicit argv command with `shell=False`, defaults to the
 repository root as its working directory, rejects working directories outside
-the repository, enforces a timeout, captures stdout and stderr, and writes a
+the repository, rejects bundle paths outside the repository before command
+execution, enforces a timeout, captures stdout and stderr, and writes a
 deterministic run record under the task's `.cosheaf` run directory. Optional
 bundle handling validates worker output bundles after command execution; it
 does not merge outputs or promote accepted knowledge.
 
 Worker output bundles are local YAML manifests. Artifact and review outputs
 must reference repository-local YAML records that pass the existing schema gate.
-Bundles must not target `kb/accepted/`, and task completion does not merge
-anything into accepted knowledge.
+Bundle manifests may also be passed as repository-local directories containing
+`bundle.yaml`. Bundles must not target `kb/accepted/`, and task completion does
+not merge anything into accepted knowledge.
 
 ### CLI Layer
 

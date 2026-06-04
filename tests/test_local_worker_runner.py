@@ -238,6 +238,75 @@ def test_valid_optional_bundle_passes_validation(tmp_path: Path) -> None:
     assert record["bundle_valid"] is True
 
 
+def test_valid_optional_bundle_directory_uses_contained_bundle_yaml(
+    tmp_path: Path,
+) -> None:
+    task_id = _create_task(tmp_path)
+    _write_yaml(tmp_path, "kb/draft/claims/output.yaml", _artifact_data())
+    _write_yaml(
+        tmp_path,
+        "outputs/bundle.yaml",
+        {
+            "task_id": task_id,
+            "worker_type": "reasoner",
+            "outputs": [
+                {
+                    "kind": "artifact",
+                    "path": "kb/draft/claims/output.yaml",
+                    "summary": "Draft claim emitted by a worker.",
+                }
+            ],
+        },
+    )
+
+    result = LocalWorkerRunner(RepoContext(tmp_path)).run_task(
+        task_id,
+        LocalWorkerRunConfig(
+            command=[sys.executable, "-c", "print('ok')"],
+            timeout_seconds=10,
+            bundle_path=Path("outputs"),
+            run_id="run.fixture.bundle-dir",
+            started_at=NOW,
+        ),
+    )
+
+    record = yaml.safe_load(result.record_path.read_text(encoding="utf-8"))
+    assert result.status == "completed"
+    assert result.bundle_valid is True
+    assert record["bundle_path"] == "outputs/bundle.yaml"
+    assert record["bundle_valid"] is True
+
+
+def test_external_absolute_bundle_path_is_rejected_before_run_creation(
+    tmp_path: Path,
+) -> None:
+    task_id = _create_task(tmp_path)
+    external_bundle_path = tmp_path.parent / "external-local-runner-bundle.yaml"
+    external_bundle_path.write_text("task_id: external\n", encoding="utf-8")
+
+    with pytest.raises(
+        LocalWorkerRunError,
+        match="bundle_path must stay inside repository",
+    ):
+        LocalWorkerRunner(RepoContext(tmp_path)).run_task(
+            task_id,
+            LocalWorkerRunConfig(
+                command=[
+                    sys.executable,
+                    "-c",
+                    "from pathlib import Path; Path('command-ran').write_text('bad')",
+                ],
+                timeout_seconds=10,
+                bundle_path=external_bundle_path,
+                run_id="run.fixture.external-bundle",
+                started_at=NOW,
+            ),
+        )
+
+    assert not (tmp_path / "command-ran").exists()
+    assert not (tmp_path / ".cosheaf" / "tasks" / task_id / "runs").exists()
+
+
 def test_invalid_bundle_is_reported_without_accepting_run(tmp_path: Path) -> None:
     task_id = _create_task(tmp_path)
     _write_yaml(
