@@ -18,7 +18,7 @@ The MVP includes:
 - Python checker adapter.
 - minimal optional SAT DIMACS adapter.
 - minimal optional SMT-LIB adapter.
-- Lean skeleton adapter.
+- minimal optional Lean plain-file adapter.
 - small draft pilot artifacts that exercise both Python-checker and optional
   SAT-style evidence paths.
 - GitHub Actions CI.

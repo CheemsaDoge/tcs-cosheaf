@@ -97,6 +97,9 @@ def test_smt_adapter_skips_when_solver_is_unavailable(tmp_path: Path) -> None:
 
 
 def test_lean_adapter_skips_when_lean_is_unavailable(tmp_path: Path) -> None:
+    lean_path = tmp_path / "examples" / "lean" / "a.lean"
+    lean_path.parent.mkdir(parents=True, exist_ok=True)
+    lean_path.write_text("theorem a : True := by trivial\n", encoding="utf-8")
     artifact = _artifact_with_evidence("lean", "examples/lean/a.lean")
     adapter = LeanAdapter(lean_command="__missing_lean_for_cosheaf__")
 

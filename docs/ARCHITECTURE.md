@@ -63,7 +63,11 @@ SAT solver binaries optional and recording skipped results when no backend is
 available. The SMT adapter similarly supports a minimal optional SMT-LIB
 invocation path through a supported backend, currently external `z3` when
 available, while keeping solver binaries optional and recording skipped results
-when no backend is available. Lean remains an optional-tool skeleton.
+when no backend is available. The Lean adapter supports a minimal optional plain
+Lean file invocation path through a supported backend, currently external
+`lean` when available, while keeping Lean optional and recording skipped results
+when no backend is available. No verifier adapter performs natural-language
+autoformalization.
 
 ### Gate/Review Layer
 

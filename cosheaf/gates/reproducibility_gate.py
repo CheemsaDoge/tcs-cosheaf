@@ -22,6 +22,7 @@ EXECUTABLE_EVIDENCE_KINDS = frozenset(
         "lean",
         "lean4",
         "lean_checker",
+        "lean_proof",
     }
 )
 
