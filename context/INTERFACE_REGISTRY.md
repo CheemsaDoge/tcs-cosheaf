@@ -424,7 +424,10 @@ pass the schema gate. Outputs under `kb/accepted/` are rejected.
 - `cosheaf.verification.smt_adapter.SmtBackend`: protocol for optional SMT backends.
 - `cosheaf.verification.smt_adapter.ExternalSmtCommandBackend`: optional external-command SMT backend.
 - `cosheaf.verification.smt_adapter.SmtAdapter`: optional minimal SMT-LIB verifier adapter.
-- `cosheaf.verification.lean_adapter.LeanAdapter`: optional Lean skeleton adapter.
+- `cosheaf.verification.lean_adapter.LeanBackendResult`: normalized Lean backend invocation result.
+- `cosheaf.verification.lean_adapter.LeanBackend`: protocol for optional Lean backends.
+- `cosheaf.verification.lean_adapter.ExternalLeanCommandBackend`: optional external-command Lean backend.
+- `cosheaf.verification.lean_adapter.LeanAdapter`: optional minimal Lean verifier adapter.
 
 `VerifierAdapter` requires:
 
@@ -596,12 +599,50 @@ from exact status lines: `sat`, `unsat`, or `unknown`.
 `LeanAdapter` exposes:
 
 - `name = "lean"`
+- `__init__(lean_command: str = "lean", *, backend: LeanBackend | None = None, timeout_seconds: float = 30.0)`
 - `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
 - `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
 
-It recognizes evidence kinds `lean`, `lean4`, and `lean_checker`. It checks the
-configured Lean command, defaults to `lean`, and returns `skipped` when Lean is
-unavailable or when real Lean verification is still TODO.
+It recognizes evidence kinds `lean`, `lean4`, `lean_checker`, and
+`lean_proof`. It first requires the Lean evidence path to resolve inside the
+repository and requires the referenced file to exist. When no backend is
+supplied, it uses `ExternalLeanCommandBackend` with the configured Lean command,
+defaulting to `lean`. If no supported backend is available, the adapter returns
+`skipped`, which is not a pass. If a backend is available, the adapter runs the
+backend from the repository root against the plain Lean file, writes stdout and
+stderr logs under `.cosheaf/logs/`, and returns normalized `pass`, `fail`, or
+`error` results with command, cwd, timeout, input/output paths, backend
+metadata, exit code, and diagnostics. Exit code `0` is `pass`, nonzero exit
+code is `fail`, and timeout or startup errors are `error`. The adapter does not
+autoformalize natural language and does not implement SAT or SMT behavior.
+
+`LeanBackendResult` exposes:
+
+- `exit_code: int | None`
+- `stdout: str`
+- `stderr: str`
+
+`LeanBackend` requires:
+
+- `name: str`
+- `is_available() -> bool`
+- `command(lean_path: Path) -> tuple[str, ...]`
+- `version() -> str | None`
+- `check(lean_path: Path, *, cwd: Path, timeout_seconds: float) -> LeanBackendResult`
+
+`ExternalLeanCommandBackend` exposes:
+
+- `__init__(lean_command: str = "lean")`
+- `name`
+- `lean_command`
+- `is_available() -> bool`
+- `command(lean_path: Path) -> tuple[str, ...]`
+- `version() -> str | None`
+- `check(lean_path: Path, *, cwd: Path, timeout_seconds: float) -> LeanBackendResult`
+
+The external backend detects availability with PATH lookup, obtains version
+metadata from `lean --version` when possible, and runs `lean <file.lean>` with
+the repository root as cwd.
 
 ### Makefile Targets
 

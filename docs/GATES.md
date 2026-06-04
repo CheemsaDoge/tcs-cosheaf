@@ -149,16 +149,29 @@ paths, and result summary. If the artifact statement has a `CHECKER_DATA`
 result matches it, `fail` on mismatch, and `error` for unknown, timeout, missing
 evidence, malformed metadata, or runtime errors.
 
-The Lean verifier adapter remains an optional-tool skeleton. It checks for
-configured tool availability without adding a hard dependency on Lean and
-returns `skipped` when the configured tool is absent or when real Lean
-verification is not implemented.
+The Lean verifier adapter supports a minimal optional plain Lean file
+invocation path. It does not add a hard dependency on Lean, mathlib, or lake.
+The default backend checks for external `lean` through PATH detection; tests may
+inject a fake backend instead of requiring Lean in CI. When matching Lean
+evidence exists but no supported backend is available, the adapter returns a
+`skipped` `VerificationResult`; this is not a pass.
+
+When a Lean backend is available, the adapter verifies that the evidence path is
+repository-local, requires the evidence file to exist before backend skipping,
+runs the backend from the repository root against the `.lean` file using command
+metadata equivalent to `lean <file.lean>`, writes stdout and stderr logs under
+`.cosheaf/logs/`, and records the input path, backend/tool metadata, command,
+working directory, timeout, exit code, stdout/stderr paths, and output paths.
+Exit code `0` reports `pass`, nonzero exit code reports `fail`, and timeout or
+command startup errors report `error`. This path does not inspect theorem
+semantics beyond Lean's own exit code and does not autoformalize natural
+language.
 
 Optional-tool evidence kinds are:
 
 - SAT: `sat`, `sat_solver`, `sat_checker`
 - SMT: `smt`, `smt_solver`, `smt_checker`
-- Lean: `lean`, `lean4`, `lean_checker`
+- Lean: `lean`, `lean4`, `lean_checker`, `lean_proof`
 
 The SAT/CNF pilot uses `sat` evidence to exercise this optional SAT path. When
 no SAT solver is available, the SAT adapter returns `skipped`, not `pass`; when
@@ -170,8 +183,11 @@ SAT/SMT theorem-proving integration.
 
 SMT support remains similarly minimal and optional. It can execute
 repository-local SMT-LIB evidence only when a supported backend is available,
-defaults to optional `z3`, and does not make skipped SMT checks pass. SAT and
-SMT adapters are separate minimal paths; neither implements Lean.
+defaults to optional `z3`, and does not make skipped SMT checks pass. Lean
+support is also minimal and optional: it can execute repository-local plain Lean
+files only when a supported backend is available, defaults to optional `lean`,
+does not make skipped Lean checks pass, and does not implement SAT or SMT. SAT,
+SMT, and Lean adapters remain separate minimal paths.
 
 ### Reproducibility Metadata Gate
 
@@ -183,7 +199,7 @@ The gate is applicable to executable evidence kinds:
 - `python_checker`
 - `sat`, `sat_solver`, `sat_checker`
 - `smt`, `smt_solver`, `smt_checker`
-- `lean`, `lean4`, `lean_checker`
+- `lean`, `lean4`, `lean_checker`, `lean_proof`
 
 For executed verifier results, the gate requires:
 
@@ -328,7 +344,7 @@ moving eligible artifacts into the accepted area of their KB root.
 - G4 dependency gate
 - G5 evidence path gate
 - G6 verifier gate with the Python checker adapter, optional minimal SAT DIMACS
-  adapter, optional minimal SMT-LIB adapter, and optional Lean skeleton adapter
+  adapter, optional minimal SMT-LIB adapter, and optional minimal Lean adapter
 - G7 reproducibility metadata gate
 - G8 PR checklist gate
 - G9 source metadata gate for accepted public artifacts

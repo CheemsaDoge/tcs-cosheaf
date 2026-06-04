@@ -65,7 +65,8 @@ Implemented:
 - Local task harness stubs with `cosheaf task create`, `cosheaf task list`, and
   `cosheaf task complete`.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
-  DIMACS adapter, minimal optional SMT-LIB adapter, and Lean skeleton adapter.
+  DIMACS adapter, minimal optional SMT-LIB adapter, and minimal optional Lean
+  plain-file adapter.
 - Reproducibility metadata gate for executable evidence verifier results.
 - Local PR checklist gate support through `cosheaf gate run --pr-checklist
   <path>`.
@@ -80,7 +81,8 @@ Planned or incomplete:
 
 - Full SAT backend coverage beyond the minimal optional DIMACS invocation path.
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
-- Real Lean solver invocation and result parsing.
+- Full Lean proof-assistant integration beyond the minimal optional plain-file
+  invocation path.
 - SQLite-backed query API beyond rebuild outputs.
 
 ## Core Concepts

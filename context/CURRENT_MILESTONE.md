@@ -28,7 +28,7 @@ toward the MVP.
   validate explicit PR body markdown files and is skipped when no PR checklist
   source is available.
 - Python checker, minimal optional SAT DIMACS verifier, minimal optional
-  SMT-LIB verifier, and optional Lean verifier skeleton adapters exist.
+  SMT-LIB verifier, and minimal optional Lean verifier adapters exist.
 - Issue-scoped context pack generation exists.
 - GitHub Actions CI runs `lint`, `typecheck`, `test`, `validate`, and `gate`
   as separate Python 3.11 checks.
@@ -39,5 +39,5 @@ toward the MVP.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Expand SAT backend coverage beyond the minimal optional DIMACS invocation path.
 - Expand SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
-- Real Lean solver invocation and result parsing.
+- Lean support beyond the minimal optional plain-file invocation path.
 - SQLite-backed query API beyond rebuild output.
