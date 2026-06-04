@@ -34,6 +34,9 @@ and workspace-template repositories, not a production-stability claim.
 
 ## Demo
 
+- [ ] Run `python scripts/release_smoke.py --source
+  git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.0` after the release
+  tag exists.
 - [ ] Run the framework validation and gatekeeper commands against the framework
   repository.
 - [ ] Confirm the workspace-template smoke coverage remains part of the test

@@ -11,6 +11,14 @@ release tag must wait until the release-cleanup PR passes CI and human review.
 Apache-2.0 consistently. `RELEASE_CHECKLIST.md` records CI, license, docs,
 demo, tag, and known-limitation checks for the framework release.
 
+Issue 49 starts P1 testing hardening with a deterministic release smoke helper.
+`scripts/release_smoke.py` creates a clean virtual environment, installs a
+chosen framework source such as the `v0.1.0` tag, writes a tiny local fixture,
+and runs `cosheaf --help`, `cosheaf version`, `cosheaf validate`, `cosheaf gate
+run`, `cosheaf index rebuild`, and `cosheaf context build
+issue.release-smoke`. Fast unit tests verify the smoke plan and fixture without
+requiring network access.
+
 Branch protection and review expectations are now documented in
 `docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
 disallows direct pushes to `main`, and routes all changes through issue,
