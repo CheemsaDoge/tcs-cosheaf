@@ -1,6 +1,6 @@
 # Project State
 
-## Current State After Issue 30
+## Current State After Issue 33
 
 TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
@@ -25,6 +25,17 @@ downstream workspaces should mount public knowledge readonly with private
 knowledge writable, and restate that private artifacts may depend on public
 artifacts while public artifacts must not depend on private artifacts. This is
 documentation-only framework work and does not change code, schemas, or gates.
+
+Issue 33 adds a framework-level integration smoke test for the workspace
+template model. The test builds a representative local workspace-template
+layout in a temporary directory without cloning remote repositories or requiring
+network access. It verifies `cosheaf.toml` public/private KB policy, readonly
+public and writable private root metadata, private-to-public dependencies,
+`cosheaf workspace info`, `cosheaf validate`, `cosheaf gate run`, explicit
+`cosheaf gate run --pr-checklist .github/pull_request_template.md`, and the
+negative rule that public artifacts must not depend on private artifacts. This
+is test coverage for existing workspace behavior and does not add public
+interfaces, schema fields, accepted artifacts, or SAT/SMT/Lean execution.
 
 The durable workflow rules now require nontrivial Codex work to be issue-driven
 where possible, with one issue, one focused `codex/<task>` branch, one PR, and
@@ -183,6 +194,8 @@ gatekeeper result.
   lifecycle artifact creation.
 - Implemented `cosheaf workspace info` to inspect the active workspace and KB
   roots.
+- Added workspace-template integration smoke tests that exercise a representative
+  readonly public KB plus writable private KB fixture without network access.
 - Dockerfile for local development.
 - Smoke tests under `tests/`.
 - Repository layout under `kb/`, `issues/`, `experiments/`, and `reviews/`.
