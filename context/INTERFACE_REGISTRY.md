@@ -420,7 +420,10 @@ pass the schema gate. Outputs under `kb/accepted/` are rejected.
 - `cosheaf.verification.sat_adapter.SatBackend`: protocol for optional SAT backends.
 - `cosheaf.verification.sat_adapter.ExternalSatCommandBackend`: optional external-command SAT backend.
 - `cosheaf.verification.sat_adapter.SatAdapter`: optional minimal SAT DIMACS verifier adapter.
-- `cosheaf.verification.smt_adapter.SmtAdapter`: optional SMT solver skeleton adapter.
+- `cosheaf.verification.smt_adapter.SmtBackendResult`: normalized SMT backend invocation result.
+- `cosheaf.verification.smt_adapter.SmtBackend`: protocol for optional SMT backends.
+- `cosheaf.verification.smt_adapter.ExternalSmtCommandBackend`: optional external-command SMT backend.
+- `cosheaf.verification.smt_adapter.SmtAdapter`: optional minimal SMT-LIB verifier adapter.
 - `cosheaf.verification.lean_adapter.LeanAdapter`: optional Lean skeleton adapter.
 
 `VerifierAdapter` requires:
@@ -544,12 +547,51 @@ containing UNSAT or exit code `20`, and `unknown` otherwise.
 `SmtAdapter` exposes:
 
 - `name = "smt"`
+- `__init__(solver_command: str = "z3", *, backend: SmtBackend | None = None, timeout_seconds: float = 30.0)`
 - `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
 - `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
 
-It recognizes evidence kinds `smt`, `smt_solver`, and `smt_checker`. It checks
-the configured SMT solver command, defaults to `z3`, and returns `skipped` when
-the solver is unavailable or when real SMT verification is still TODO.
+It recognizes evidence kinds `smt`, `smt_solver`, and `smt_checker`. It first
+requires the SMT evidence path to resolve inside the repository. When no
+backend is supplied, it uses `ExternalSmtCommandBackend` with the configured
+solver command, defaulting to `z3`. If no supported backend is available, the
+adapter returns `skipped`, which is not a pass. If a backend is available, the
+adapter runs the backend from the repository root against the SMT-LIB evidence,
+writes stdout and stderr logs under `.cosheaf/logs/`, parses exact
+`sat`/`unsat`/`unknown` status lines, compares against
+`CHECKER_DATA.expected.satisfiable` when present, and returns normalized
+`pass`, `fail`, or `error` results with command, cwd, timeout, input/output
+paths, backend metadata, exit code, and result diagnostics.
+
+`SmtBackendResult` exposes:
+
+- `exit_code: int | None`
+- `stdout: str`
+- `stderr: str`
+- `result: Literal["sat", "unsat", "unknown"]`
+
+`SmtBackend` requires:
+
+- `name: str`
+- `is_available() -> bool`
+- `command(smt_path: Path) -> tuple[str, ...]`
+- `version() -> str | None`
+- `solve(smt_path: Path, *, cwd: Path, timeout_seconds: float) -> SmtBackendResult`
+
+`ExternalSmtCommandBackend` exposes:
+
+- `__init__(solver_command: str = "z3")`
+- `name`
+- `solver_command`
+- `is_available() -> bool`
+- `command(smt_path: Path) -> tuple[str, ...]`
+- `version() -> str | None`
+- `solve(smt_path: Path, *, cwd: Path, timeout_seconds: float) -> SmtBackendResult`
+
+The external backend detects availability with PATH lookup, obtains version
+metadata from `<solver> --version` when possible, runs `z3 -smt2 <file.smt2>`
+style commands with the repository root as cwd, and parses solver output only
+from exact status lines: `sat`, `unsat`, or `unknown`.
 
 `LeanAdapter` exposes:
 

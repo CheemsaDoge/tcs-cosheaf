@@ -17,7 +17,8 @@ The MVP includes:
 - verifier adapter interface.
 - Python checker adapter.
 - minimal optional SAT DIMACS adapter.
-- SMT/Lean skeleton adapters.
+- minimal optional SMT-LIB adapter.
+- Lean skeleton adapter.
 - small draft pilot artifacts that exercise both Python-checker and optional
   SAT-style evidence paths.
 - GitHub Actions CI.
@@ -40,8 +41,11 @@ The current pilots are intentionally small and draft-only. The graph pilot
 demonstrates local Python-checker evidence over a finite graph. The SAT/CNF
 pilot demonstrates a tiny satisfiable formula, a recorded assignment, optional
 SAT solver evidence that may be skipped or executed when a backend is
-available, and a Python fallback checker. These pilots exercise workflow
-plumbing; they do not claim new theorems or full automated theorem proving.
+available, and a Python fallback checker. The SMT adapter can execute tiny
+repository-local SMT-LIB evidence when an optional backend such as `z3` is
+available, and otherwise records skipped rather than pass. These paths exercise
+workflow plumbing; they do not claim new theorems or full automated theorem
+proving.
 
 ## Non-Goals
 

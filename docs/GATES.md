@@ -130,10 +130,29 @@ paths, and result summary. If the artifact statement has a `CHECKER_DATA`
 result matches it, `fail` on mismatch, and `error` for unknown, timeout, missing
 evidence, or runtime errors.
 
-SMT and Lean verifier adapters remain optional-tool skeletons. They check for
-configured tool availability without adding hard dependencies on Lean, Z3, cvc5,
-Sage, or PySAT, and they return `skipped` when the configured tool is absent or
-when real SMT/Lean verification is not implemented.
+The SMT verifier adapter supports a minimal optional SMT-LIB invocation path.
+It does not add a hard dependency on Z3, cvc5, or any external solver binary.
+The default backend checks for the configured external command, currently `z3`,
+through PATH detection; tests may inject a fake backend instead of requiring a
+real solver in CI. When matching SMT evidence exists but no supported backend is
+available, the adapter returns a `skipped` `VerificationResult`; this is not a
+pass.
+
+When an SMT backend is available, the adapter verifies that the evidence path is
+repository-local, runs the backend from the repository root against the SMT-LIB
+file using command metadata equivalent to `z3 -smt2 <file.smt2>`, writes stdout
+and stderr logs under `.cosheaf/logs/`, parses exact `sat`/`unsat`/`unknown`
+solver status lines, and records the input path, backend/tool metadata,
+command, working directory, timeout, exit code, stdout/stderr paths, output
+paths, and result summary. If the artifact statement has a `CHECKER_DATA`
+`expected.satisfiable` value, the adapter reports `pass` only when the solver
+result matches it, `fail` on mismatch, and `error` for unknown, timeout, missing
+evidence, malformed metadata, or runtime errors.
+
+The Lean verifier adapter remains an optional-tool skeleton. It checks for
+configured tool availability without adding a hard dependency on Lean and
+returns `skipped` when the configured tool is absent or when real Lean
+verification is not implemented.
 
 Optional-tool evidence kinds are:
 
@@ -148,6 +167,11 @@ the result with the artifact's expected satisfiability metadata. A separate
 `python_checker` evidence item still provides the local fallback check for the
 tiny formula and assignment. This pilot is workflow evidence, not a full
 SAT/SMT theorem-proving integration.
+
+SMT support remains similarly minimal and optional. It can execute
+repository-local SMT-LIB evidence only when a supported backend is available,
+defaults to optional `z3`, and does not make skipped SMT checks pass. SAT and
+SMT adapters are separate minimal paths; neither implements Lean.
 
 ### Reproducibility Metadata Gate
 
@@ -304,7 +328,7 @@ moving eligible artifacts into the accepted area of their KB root.
 - G4 dependency gate
 - G5 evidence path gate
 - G6 verifier gate with the Python checker adapter, optional minimal SAT DIMACS
-  adapter, and optional SMT/Lean skeleton adapters
+  adapter, optional minimal SMT-LIB adapter, and optional Lean skeleton adapter
 - G7 reproducibility metadata gate
 - G8 PR checklist gate
 - G9 source metadata gate for accepted public artifacts

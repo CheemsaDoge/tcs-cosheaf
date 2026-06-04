@@ -24,7 +24,7 @@ Completed scaffold pieces include:
 - Ranked context pack generation for issue-scoped agent work.
 - Local task, worker contract, and orchestrator stubs.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
-  DIMACS adapter, and SMT/Lean skeleton adapters.
+  DIMACS adapter, minimal optional SMT-LIB adapter, and Lean skeleton adapter.
 - Reproducibility metadata gate for executable evidence verifier results.
 - Branch protection and review policy documentation.
 - First graph-theory pilot workflow with draft artifact evidence and a local
@@ -47,7 +47,7 @@ Completed scaffold pieces include:
 ### Verification Depth
 
 - Expand SAT backend coverage beyond the minimal optional DIMACS invocation path.
-- Implement real SMT solver invocation and result parsing.
+- Expand SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Implement real Lean command invocation and result parsing.
 - Keep all external formal tools optional; unavailable tools must produce
   skipped verifier results.

@@ -60,7 +60,10 @@ results instead of crashing the core system. The Python checker adapter runs
 repository-local checker scripts. The SAT adapter supports a minimal optional
 DIMACS CNF invocation path when a supported backend is available, while keeping
 SAT solver binaries optional and recording skipped results when no backend is
-available. SMT and Lean adapters remain optional-tool skeletons.
+available. The SMT adapter similarly supports a minimal optional SMT-LIB
+invocation path through a supported backend, currently external `z3` when
+available, while keeping solver binaries optional and recording skipped results
+when no backend is available. Lean remains an optional-tool skeleton.
 
 ### Gate/Review Layer
 
