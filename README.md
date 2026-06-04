@@ -9,8 +9,8 @@ Current status: **pre-MVP scaffold**. The repository has working Python
 scaffolding, typed artifact models, filesystem loading, validation, dependency
 graph indexing, workspace-aware KB root loading, artifact lifecycle CLI
 commands, gatekeeper reports, ranked context-pack generation, local task
-harness stubs, verifier adapter skeletons, a Python checker adapter, GitHub
-Actions CI, and collaboration templates. It is
+harness stubs, verifier adapters including a Python checker and minimal
+optional SAT DIMACS path, GitHub Actions CI, and collaboration templates. It is
 not production software and does not yet provide a web UI, automatic theorem
 proving, full Lean autoformalization, or multi-user permissions.
 
@@ -63,8 +63,8 @@ Implemented:
   `cosheaf context build <issue-id>`.
 - Local task harness stubs with `cosheaf task create`, `cosheaf task list`, and
   `cosheaf task complete`.
-- Verifier adapter protocol, Python checker adapter, and SAT/SMT/Lean skeleton
-  adapters.
+- Verifier adapter protocol, Python checker adapter, minimal optional SAT
+  DIMACS adapter, and SMT/Lean skeleton adapters.
 - Reproducibility metadata gate for executable evidence verifier results.
 - Local PR checklist gate support through `cosheaf gate run --pr-checklist
   <path>`.
@@ -77,7 +77,8 @@ Implemented:
 
 Planned or incomplete:
 
-- Real SAT, SMT, and Lean solver invocation and result parsing.
+- Full SAT backend coverage beyond the minimal optional DIMACS invocation path.
+- Real SMT and Lean solver invocation and result parsing.
 - SQLite-backed query API beyond rebuild outputs.
 
 ## Core Concepts

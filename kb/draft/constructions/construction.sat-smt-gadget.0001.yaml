@@ -32,8 +32,8 @@ statement: |
   fallback checker verifies that the DIMACS CNF file and assignment file agree
   with the expected variable count, clause count, satisfiability flag, and
   satisfied clause count. The optional SAT solver evidence is intentionally a
-  skeleton-compatible reference; if no SAT solver is installed, the SAT adapter
-  must report `skipped`, not `pass`.
+  minimal DIMACS reference; if no SAT solver backend is available, the SAT
+  adapter must report `skipped`, not `pass`.
 
   CHECKER_DATA:
   cnf_path: examples/sat/tiny-sat.cnf
@@ -52,8 +52,9 @@ evidence:
   - kind: sat
     path: examples/sat/tiny-sat.cnf
     summary: >
-      Optional SAT solver evidence. The current SAT adapter skeleton returns
-      skipped when a solver is unavailable and does not claim a pass.
+      Optional SAT solver evidence. The SAT adapter returns skipped when a
+      backend is unavailable and can execute this DIMACS CNF when a backend is
+      available.
 review:
   state: requested
   notes: Draft pilot artifact for demonstrating optional SAT/SMT-style evidence.

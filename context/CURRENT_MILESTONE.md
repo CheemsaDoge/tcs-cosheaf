@@ -27,7 +27,8 @@ toward the MVP.
 - `cosheaf validate` and `cosheaf gate` run implemented local checks; G8 can
   validate explicit PR body markdown files and is skipped when no PR checklist
   source is available.
-- Python checker and optional SAT/SMT/Lean verifier skeleton adapters exist.
+- Python checker, minimal optional SAT DIMACS verifier, and optional SMT/Lean
+  verifier skeleton adapters exist.
 - Issue-scoped context pack generation exists.
 - GitHub Actions CI runs `lint`, `typecheck`, `test`, `validate`, and `gate`
   as separate Python 3.11 checks.
@@ -36,5 +37,6 @@ toward the MVP.
 ## Next Focus
 
 - Hosted PR checklist source discovery beyond explicit local markdown files.
-- Real SAT/SMT/Lean solver invocation and result parsing.
+- Expand SAT backend coverage beyond the minimal optional DIMACS invocation path.
+- Real SMT/Lean solver invocation and result parsing.
 - SQLite-backed query API beyond rebuild output.
