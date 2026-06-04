@@ -1,14 +1,15 @@
 # Roadmap
 
-TCS-Cosheaf is pre-MVP. This roadmap is intentionally concrete and tied to
-named milestones or active GitHub issues. It should not be read as a commitment
-to dates, adoption, or production readiness.
+TCS-Cosheaf is preparing a v0.1.0 release candidate while still remaining
+pre-MVP. This roadmap is intentionally concrete and tied to named milestones or
+active GitHub issues. It should not be read as a commitment to dates, adoption,
+or production readiness.
 
-## Current Milestone: Pre-MVP Scaffold Hardening
+## Current Milestone: v0.1.0 Release Candidate Cleanup
 
-Goal: keep the repository-grounded scaffold coherent while validation,
-gatekeeper, verifier, context-pack, and collaboration workflows become reliable
-enough for an end-to-end TCS pilot.
+Goal: clear release-state contradictions so the framework can be reviewed,
+merged, and tagged as `v0.1.0` without stale license, milestone, roadmap, or
+known-limitation text.
 
 Completed scaffold pieces include:
 
@@ -19,6 +20,9 @@ Completed scaffold pieces include:
   transitions.
 - Controlled accepted-artifact promotion workflow.
 - Dependency graph and deterministic index rebuild outputs.
+- Read-only SQLite query API over rebuilt index output, including artifact,
+  status, type, domain, dependency, and reverse-dependency queries through
+  `ArtifactIndexQuery`.
 - Gatekeeper reports with machine-readable JSON and human-readable Markdown.
 - Local G8 PR checklist gate for explicit PR body markdown files.
 - Ranked context pack generation for issue-scoped agent work.
@@ -36,7 +40,9 @@ Completed scaffold pieces include:
 
 ## Active Issues
 
-- None in this repository snapshot.
+Live issue state is tracked in GitHub issues. This roadmap records durable
+direction and named milestones; it should not be used as a manually maintained
+list of currently open issues.
 
 ## Next Named Milestones
 
@@ -55,8 +61,9 @@ Completed scaffold pieces include:
 
 ### Query and Review Ergonomics
 
-- Add a SQLite-backed query API beyond deterministic rebuild outputs.
 - Improve artifact search and graph inspection workflows.
+- Add CLI-facing query ergonomics on top of the existing
+  `ArtifactIndexQuery` Python API if users need non-Python inspection flows.
 
 ## Non-Goals for MVP
 

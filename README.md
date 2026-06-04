@@ -5,15 +5,17 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **pre-MVP scaffold**. The repository has working Python
+Current status: **v0.1.0 release candidate / pre-MVP scaffold**. The repository has working Python
 scaffolding, typed artifact models, filesystem loading, validation, dependency
 graph indexing, workspace-aware KB root loading, artifact lifecycle CLI
 commands, gatekeeper reports, ranked context-pack generation, local task
 harness stubs, verifier adapters including a Python checker, a minimal optional
 SAT DIMACS path, and a minimal optional SMT-LIB path, GitHub Actions CI, and
-collaboration templates. It is
-not production software and does not yet provide a web UI, automatic theorem
-proving, full Lean autoformalization, or multi-user permissions.
+collaboration templates. The Python package metadata is set to `0.1.0`; the
+`v0.1.0` tag should be created only after release cleanup, CI, and human review
+complete. It is not production software and does not yet provide a web UI,
+automatic theorem proving, full Lean autoformalization, or multi-user
+permissions.
 
 ## Problem
 
@@ -59,6 +61,9 @@ Implemented:
   `cosheaf artifact create`, `cosheaf artifact move-status`,
   `cosheaf artifact promote`, and `cosheaf workspace info`.
 - Dependency graph inspection and deterministic SQLite/manifest index rebuilds.
+- Read-only SQLite query API over rebuilt index output through
+  `ArtifactIndexQuery`, including artifact, status, type, domain, dependency,
+  and reverse-dependency queries.
 - `cosheaf gate` and `cosheaf gate run` report generation.
 - Ranked issue-scoped context pack generation with
   `cosheaf context build <issue-id>`.
@@ -83,7 +88,9 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond the minimal optional plain-file
   invocation path.
-- SQLite-backed query API beyond rebuild outputs.
+- Hosted PR checklist source discovery beyond explicit local markdown files.
+- Hosted LLM/model-provider worker execution.
+- External public KB repository integration beyond local workspace roots.
 
 ## Core Concepts
 
@@ -194,10 +201,8 @@ validate a local PR body markdown file.
 
 ## Roadmap
 
-The roadmap is tracked in [docs/ROADMAP.md](docs/ROADMAP.md). Current active
-issues include:
-
-- None in this repository snapshot.
+The roadmap is tracked in [docs/ROADMAP.md](docs/ROADMAP.md). Live issue state
+is tracked in GitHub issues rather than hard-coded in this README.
 
 ## Non-Goals
 
@@ -222,6 +227,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Artifact schema](docs/ARTIFACT_SCHEMA.md)
 - [Codex workflow](docs/CODEX_WORKFLOW.md)
 - [Review policy](docs/REVIEW_POLICY.md)
+- [Release checklist](RELEASE_CHECKLIST.md)
 - [Current milestone](context/CURRENT_MILESTONE.md)
 - [Project state](context/PROJECT_STATE.md)
 - [Public interface registry](context/INTERFACE_REGISTRY.md)
