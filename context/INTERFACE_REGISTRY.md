@@ -208,6 +208,31 @@ The index rebuild writes `.cosheaf/index.sqlite` and
 ID, type, status, path, title, domain, source KB root, and dependency rows. The
 manifest is ordered deterministically by artifact ID and dependency tuple.
 
+#### Storage Query
+
+- `cosheaf.storage.query.ArtifactQueryRow`: immutable row with `id`, `type`,
+  `status`, `path`, `title`, `domain`, and `kb_root`.
+- `cosheaf.storage.query.DependencyQueryRow`: immutable dependency edge row
+  with `source_id` and `target_id`.
+- `cosheaf.storage.query.IndexQueryError`: expected query-layer error.
+- `cosheaf.storage.query.ArtifactIndexQuery(sqlite_path: str | Path)`: read-only
+  SQLite query facade over `.cosheaf/index.sqlite`.
+- `cosheaf.storage.query.ArtifactIndexQuery.from_context(context: RepoContext) -> ArtifactIndexQuery`
+- `cosheaf.storage.query.ArtifactIndexQuery.from_repo_root(repo_root: str | Path) -> ArtifactIndexQuery`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_artifacts() -> tuple[ArtifactQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.get_artifact(artifact_id: str) -> ArtifactQueryRow | None`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_artifacts_by_status(status: ArtifactStatus | str) -> tuple[ArtifactQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_artifacts_by_type(artifact_type: ArtifactType | str) -> tuple[ArtifactQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_artifacts_by_domain(domain: str) -> tuple[ArtifactQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_dependencies(artifact_id: str) -> tuple[DependencyQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_reverse_dependencies(artifact_id: str) -> tuple[DependencyQueryRow, ...]`
+
+The query API reads the deterministic SQLite output produced by
+`rebuild_index`; it does not parse YAML, rebuild indexes implicitly, or modify
+repository files. Result ordering is deterministic. `ArtifactQueryRow.kb_root`
+contains the indexed source KB root, such as `default`, `public`, or `private`,
+and is empty when a row was indexed outside a KB root.
+
 #### Dependency Graph
 
 - `cosheaf.graph.claim_graph.GraphNode`: deterministic artifact graph node.
