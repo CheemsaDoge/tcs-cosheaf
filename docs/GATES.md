@@ -112,24 +112,41 @@ derives the command as:
 Exit code `0` produces `pass`, a nonzero exit code produces `fail`, and timeout
 or missing checker scripts produce `error`.
 
-SAT, SMT, and Lean verifier adapters currently exist as optional-tool
-skeletons. They check for configured solver/tool availability without adding
-hard dependencies on Lean, Z3, cvc5, Sage, or PySAT. When a matching artifact
-evidence entry exists but the configured tool is absent, the adapter returns a
-`skipped` `VerificationResult`; this is not a pass. If the tool is present, the
-adapter still returns `skipped` with a TODO message until real solver invocation
-and result parsing are implemented.
+The SAT verifier adapter supports a minimal optional DIMACS CNF invocation path.
+It does not add a hard dependency on PySAT or any external solver binary. The
+default backend checks for the configured external command, currently `kissat`,
+through PATH detection; tests may inject a fake backend instead of requiring a
+real solver in CI. When matching SAT evidence exists but no supported backend is
+available, the adapter returns a `skipped` `VerificationResult`; this is not a
+pass.
 
-Skeleton evidence kinds are:
+When a SAT backend is available, the adapter verifies that the evidence path is
+repository-local, runs the backend from the repository root against the DIMACS
+CNF file, writes stdout and stderr logs under `.cosheaf/logs/`, parses
+`sat`/`unsat`/`unknown`, and records the input path, backend/tool metadata,
+command, working directory, timeout, exit code, stdout/stderr paths, output
+paths, and result summary. If the artifact statement has a `CHECKER_DATA`
+`expected.satisfiable` value, the adapter reports `pass` only when the solver
+result matches it, `fail` on mismatch, and `error` for unknown, timeout, missing
+evidence, or runtime errors.
+
+SMT and Lean verifier adapters remain optional-tool skeletons. They check for
+configured tool availability without adding hard dependencies on Lean, Z3, cvc5,
+Sage, or PySAT, and they return `skipped` when the configured tool is absent or
+when real SMT/Lean verification is not implemented.
+
+Optional-tool evidence kinds are:
 
 - SAT: `sat`, `sat_solver`, `sat_checker`
 - SMT: `smt`, `smt_solver`, `smt_checker`
 - Lean: `lean`, `lean4`, `lean_checker`
 
-The SAT/CNF pilot uses `sat` evidence to exercise this optional-tool path. When
-no SAT solver is available, the SAT adapter returns `skipped`, not `pass`; a
-separate `python_checker` evidence item provides the local fallback check for
-the tiny formula and assignment. This pilot is workflow evidence, not a full
+The SAT/CNF pilot uses `sat` evidence to exercise this optional SAT path. When
+no SAT solver is available, the SAT adapter returns `skipped`, not `pass`; when
+a backend is available, it can execute the tiny DIMACS CNF evidence and compare
+the result with the artifact's expected satisfiability metadata. A separate
+`python_checker` evidence item still provides the local fallback check for the
+tiny formula and assignment. This pilot is workflow evidence, not a full
 SAT/SMT theorem-proving integration.
 
 ### Reproducibility Metadata Gate
@@ -286,7 +303,8 @@ moving eligible artifacts into the accepted area of their KB root.
 - G3 status/path gate
 - G4 dependency gate
 - G5 evidence path gate
-- G6 verifier gate with the Python checker adapter and optional SAT/SMT/Lean skeleton adapters
+- G6 verifier gate with the Python checker adapter, optional minimal SAT DIMACS
+  adapter, and optional SMT/Lean skeleton adapters
 - G7 reproducibility metadata gate
 - G8 PR checklist gate
 - G9 source metadata gate for accepted public artifacts

@@ -1,8 +1,8 @@
 # Project State
 
-## Current State After Issue 38
+## Current State After Issue 35
 
-TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, a read-only SQLite query API over rebuilt index output, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, optional-tool SAT/SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, a read-only SQLite query API over rebuilt index output, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, a minimal optional SAT DIMACS verifier adapter, optional-tool SMT/Lean verifier skeleton adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
 Branch protection and review expectations are now documented in
 `docs/REVIEW_POLICY.md`. The documented policy requires protected `main`,
@@ -114,9 +114,11 @@ The verification layer now defines the `VerifierAdapter` protocol, normalized `V
 
 The Python checker adapter runs `kind: python_checker` evidence from the repository root, enforces a timeout, writes stdout/stderr logs under `.cosheaf/logs/`, and records command metadata, input/output paths, timeout, tool metadata, and environment notes in `VerificationResult`. The gatekeeper G6 verifier gate now runs the default verifier registry and reports Python checker results. G6 is skipped only when no verifier adapters are applicable.
 
-The SAT, SMT, and Lean adapters are optional-tool skeletons. They check for configured solver/tool availability, return `skipped` when the tool is unavailable, and do not add hard dependencies on Lean, Z3, cvc5, Sage, or PySAT. They are registered in the default verifier registry but do not run unless an artifact has matching SAT, SMT, or Lean evidence.
+The SAT adapter now supports a minimal optional DIMACS CNF invocation path. It checks repository-local SAT evidence paths, skips clearly when no supported backend is available, and when a backend is available records command, cwd, timeout, input path, stdout/stderr logs, output paths, backend metadata, exit code, and a normalized `sat`/`unsat`/`unknown` result. The default backend is an optional external command backend for `kissat`; tests can inject a fake backend and CI does not require a SAT solver. SAT skipped results are not pass results.
 
-No real SAT, SMT, or Lean verification execution exists yet.
+The SMT and Lean adapters remain optional-tool skeletons. They check for configured solver/tool availability, return `skipped` when the tool is unavailable, and do not add hard dependencies on Lean, Z3, cvc5, Sage, or PySAT. They are registered in the default verifier registry but do not run unless an artifact has matching SMT or Lean evidence.
+
+No real SMT or Lean verification execution exists yet. SAT support is still intentionally minimal: it executes DIMACS CNF evidence only when an optional backend is available and is not a full SAT/SMT theorem-proving integration.
 
 The reproducibility metadata gate is now implemented. It checks executable
 evidence verifier results for command, working directory, timeout, input paths,
@@ -145,10 +147,11 @@ The second SAT/CNF pilot workflow now exists for
 `issue.sat-smt-gadget.0001`. It adds a satisfiability issue, a `locally_tested`
 draft construction artifact for a tiny 3-variable CNF formula, a DIMACS CNF
 example, a known satisfying assignment JSON file, optional `sat` evidence, and
-executable Python-checker fallback evidence. The SAT adapter may report
-`skipped` when no solver is installed; the Python fallback checker verifies the
-CNF and assignment locally. The artifact is not accepted and does not claim a
-new theorem, novelty, or full SAT/SMT solver integration.
+executable Python-checker fallback evidence. The SAT adapter reports `skipped`
+when no solver backend is available and can execute the tiny DIMACS CNF when a
+backend is available; the Python fallback checker verifies the CNF and
+assignment locally. The artifact is not accepted and does not claim a new
+theorem, novelty, or full SAT/SMT solver integration.
 
 GitHub Actions CI is configured to run on pull requests and pushes to `main`
 with Python 3.11. It installs the package with development dependencies and
@@ -242,10 +245,11 @@ gatekeeper result.
 - Gatekeeper G6 verifier gate execution for the default Python checker registry.
 - Gatekeeper G7 reproducibility metadata gate execution.
 - Gatekeeper G9 accepted public source metadata gate execution.
-- SAT verifier skeleton in `cosheaf/verification/sat_adapter.py`.
+- Minimal optional SAT DIMACS verifier adapter in `cosheaf/verification/sat_adapter.py`.
 - SMT verifier skeleton in `cosheaf/verification/smt_adapter.py`.
 - Lean verifier skeleton in `cosheaf/verification/lean_adapter.py`.
-- Optional verifier skeleton tests in `tests/test_optional_verifier_skeletons.py`.
+- Optional verifier tests in `tests/test_optional_verifier_skeletons.py`.
+- Focused SAT adapter tests in `tests/test_sat_adapter.py`.
 - First graph-theory pilot issue in `issues/open/issue.graph-toy-search.0001.yaml`.
 - Draft toy graph construction in `kb/draft/constructions/construction.graph-toy.0001.yaml`.
 - Toy graph example in `examples/constructions/graph.toy.yaml`.
@@ -268,4 +272,5 @@ gatekeeper result.
 - Hosted LLM calls and model-provider worker integration.
 - Task scheduling, retries, cancellation, and dependency management.
 - Automatic merge of task outputs into accepted knowledge.
-- Real SAT, SMT, and Lean solver invocation and result parsing.
+- Full SAT backend coverage beyond the minimal optional DIMACS invocation path.
+- Real SMT and Lean solver invocation and result parsing.

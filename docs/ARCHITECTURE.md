@@ -54,7 +54,13 @@ on draft or otherwise pre-accepted artifacts.
 
 ### Verification Layer
 
-Runs verifier adapters and normalizes verifier outcomes. Optional external tools must remain optional; missing tools should produce skipped verifier results instead of crashing the core system.
+Runs verifier adapters and normalizes verifier outcomes. Optional external
+tools must remain optional; missing tools should produce skipped verifier
+results instead of crashing the core system. The Python checker adapter runs
+repository-local checker scripts. The SAT adapter supports a minimal optional
+DIMACS CNF invocation path when a supported backend is available, while keeping
+SAT solver binaries optional and recording skipped results when no backend is
+available. SMT and Lean adapters remain optional-tool skeletons.
 
 ### Gate/Review Layer
 

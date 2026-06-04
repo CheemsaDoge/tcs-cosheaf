@@ -16,7 +16,8 @@ The MVP includes:
 - context pack generator.
 - verifier adapter interface.
 - Python checker adapter.
-- SAT/SMT/Lean skeleton adapters.
+- minimal optional SAT DIMACS adapter.
+- SMT/Lean skeleton adapters.
 - small draft pilot artifacts that exercise both Python-checker and optional
   SAT-style evidence paths.
 - GitHub Actions CI.
@@ -38,9 +39,9 @@ The MVP should allow a contributor or agent to add typed artifacts, validate the
 The current pilots are intentionally small and draft-only. The graph pilot
 demonstrates local Python-checker evidence over a finite graph. The SAT/CNF
 pilot demonstrates a tiny satisfiable formula, a recorded assignment, optional
-SAT solver evidence that may be skipped, and a Python fallback checker. These
-pilots exercise workflow plumbing; they do not claim new theorems or full
-automated theorem proving.
+SAT solver evidence that may be skipped or executed when a backend is
+available, and a Python fallback checker. These pilots exercise workflow
+plumbing; they do not claim new theorems or full automated theorem proving.
 
 ## Non-Goals
 

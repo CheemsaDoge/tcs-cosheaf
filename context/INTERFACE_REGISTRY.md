@@ -416,7 +416,10 @@ pass the schema gate. Outputs under `kb/accepted/` are rejected.
 - `cosheaf.verification.registry.default_verifier_registry() -> VerifierRegistry`
 - `cosheaf.verification.python_checker.PythonCheckerAdapter`: verifier adapter for `kind: python_checker` evidence.
 - `cosheaf.verification.python_checker.PythonCheckerSpec`: normalized Python checker evidence command specification.
-- `cosheaf.verification.sat_adapter.SatAdapter`: optional SAT solver skeleton adapter.
+- `cosheaf.verification.sat_adapter.SatBackendResult`: normalized SAT backend invocation result.
+- `cosheaf.verification.sat_adapter.SatBackend`: protocol for optional SAT backends.
+- `cosheaf.verification.sat_adapter.ExternalSatCommandBackend`: optional external-command SAT backend.
+- `cosheaf.verification.sat_adapter.SatAdapter`: optional minimal SAT DIMACS verifier adapter.
 - `cosheaf.verification.smt_adapter.SmtAdapter`: optional SMT solver skeleton adapter.
 - `cosheaf.verification.lean_adapter.LeanAdapter`: optional Lean skeleton adapter.
 
@@ -491,12 +494,52 @@ timeout or missing checker scripts.
 `SatAdapter` exposes:
 
 - `name = "sat"`
+- `__init__(solver_command: str = "kissat", *, backend: SatBackend | None = None, timeout_seconds: float = 30.0)`
 - `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
 - `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
 
-It recognizes evidence kinds `sat`, `sat_solver`, and `sat_checker`. It checks
-the configured SAT solver command, defaults to `kissat`, and returns `skipped`
-when the solver is unavailable or when real SAT verification is still TODO.
+It recognizes evidence kinds `sat`, `sat_solver`, and `sat_checker`. It first
+requires the SAT evidence path to resolve inside the repository. When no
+backend is supplied, it uses `ExternalSatCommandBackend` with the configured
+solver command, defaulting to `kissat`. If no supported backend is available,
+the adapter returns `skipped`, which is not a pass. If a backend is available,
+the adapter runs the backend from the repository root against the DIMACS CNF
+evidence, writes stdout and stderr logs under `.cosheaf/logs/`, parses
+`sat`/`unsat`/`unknown`, compares against `CHECKER_DATA.expected.satisfiable`
+when present, and returns normalized `pass`, `fail`, or `error` results with
+command, cwd, timeout, input/output paths, backend metadata, exit code, and
+result diagnostics.
+
+`SatBackendResult` exposes:
+
+- `exit_code: int | None`
+- `stdout: str`
+- `stderr: str`
+- `result: Literal["sat", "unsat", "unknown"]`
+
+`SatBackend` requires:
+
+- `name: str`
+- `is_available() -> bool`
+- `command(cnf_path: Path) -> tuple[str, ...]`
+- `version() -> str | None`
+- `solve(cnf_path: Path, *, cwd: Path, timeout_seconds: float) -> SatBackendResult`
+
+`ExternalSatCommandBackend` exposes:
+
+- `__init__(solver_command: str = "kissat")`
+- `name`
+- `solver_command`
+- `is_available() -> bool`
+- `command(cnf_path: Path) -> tuple[str, ...]`
+- `version() -> str | None`
+- `solve(cnf_path: Path, *, cwd: Path, timeout_seconds: float) -> SatBackendResult`
+
+The external backend detects availability with PATH lookup, obtains version
+metadata from `<solver> --version` when possible, runs the solver with the
+repository root as cwd, and parses common SAT solver output or exit codes:
+`sat` from output containing SAT or exit code `10`, `unsat` from output
+containing UNSAT or exit code `20`, and `unknown` otherwise.
 
 `SmtAdapter` exposes:
 
