@@ -169,6 +169,187 @@
         }
       }
     },
+    "formalizations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "system",
+          "library",
+          "library_ref",
+          "import_path",
+          "symbol",
+          "declaration_kind",
+          "status",
+          "check_mode"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|[0-9]+))+$"
+          },
+          "system": {
+            "type": "string",
+            "enum": ["lean4"]
+          },
+          "library": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          },
+          "library_ref": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          },
+          "import_path": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          },
+          "symbol": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          },
+          "declaration_kind": {
+            "type": "string",
+            "enum": [
+              "definition",
+              "theorem",
+              "lemma",
+              "instance",
+              "structure",
+              "other"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["planned", "linked", "checked", "broken", "deprecated"]
+          },
+          "check_mode": {
+            "type": "string",
+            "enum": ["external_library_ref", "local_file"]
+          },
+          "expected_type": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "alignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["none", "requested", "human_reviewed", "rejected"]
+        },
+        "reviewer": {
+          "type": "string"
+        },
+        "reviewed_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "convention_notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "limitations": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": ["human_reviewed", "rejected"]
+              }
+            },
+            "required": ["status"]
+          },
+          "then": {
+            "required": ["reviewer"],
+            "properties": {
+              "reviewer": {
+                "type": "string",
+                "pattern": ".*\\S.*"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "verification_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": [
+            "source_reviewed",
+            "source_reviewed_with_formal_link",
+            "machine_checked",
+            "lean_required"
+          ]
+        },
+        "require_formal_link": {
+          "type": "boolean"
+        },
+        "require_lean_check": {
+          "type": "boolean"
+        },
+        "require_alignment_review": {
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "level": {
+                "const": "source_reviewed_with_formal_link"
+              }
+            },
+            "required": ["level"]
+          },
+          "then": {
+            "required": ["require_formal_link"],
+            "properties": {
+              "require_formal_link": {
+                "const": true
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "level": {
+                "const": "lean_required"
+              }
+            },
+            "required": ["level"]
+          },
+          "then": {
+            "required": ["require_formal_link", "require_lean_check"],
+            "properties": {
+              "require_formal_link": {
+                "const": true
+              },
+              "require_lean_check": {
+                "const": true
+              }
+            }
+          }
+        }
+      ]
+    },
     "review": {
       "type": "object",
       "additionalProperties": false,

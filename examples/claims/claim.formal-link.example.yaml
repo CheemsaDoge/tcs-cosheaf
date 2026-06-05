@@ -1,0 +1,65 @@
+id: claim.example.cslib-formal-link
+type: claim
+title: Example CSLib formal declaration link
+domain:
+  - graph-theory
+  - formalization
+status: draft
+created_at: "2026-06-04T00:00:00Z"
+updated_at: "2026-06-04T00:00:00Z"
+authors:
+  - example-author
+depends_on: []
+supersedes: []
+tags:
+  - complete-graph
+  - cslib
+  - formal-link
+statement: >
+  This draft example records a reference to a fake CSLib Lean declaration for a
+  complete graph edge-count statement. The YAML stores only metadata about the
+  external declaration; it does not copy a Lean proof body and does not claim
+  that the informal statement is automatically aligned with the formal symbol.
+evidence: []
+sources:
+  - kind: website
+    title: CSLib Example Library
+    authors:
+      - CSLib contributors
+    year: 2026
+    url: https://example.invalid/cslib
+    notes: Example source metadata for a documentation-only formal link.
+formalizations:
+  - id: cslib.complete-graph-edge-count
+    system: lean4
+    library: CSLib
+    library_ref: cslib-main
+    import_path: CSLib.Graph.Basic
+    symbol: CSLib.Graph.Basic.example_symbol
+    declaration_kind: theorem
+    status: planned
+    check_mode: external_library_ref
+    expected_type: >
+      Fake Lean type for a complete graph edge-count theorem; this example is
+      not checked against CSLib in CI.
+    notes: Illustrative CSLib symbol only; this PR does not verify that it exists.
+alignment:
+  status: requested
+  reviewer: ""
+  reviewed_at: null
+  convention_notes:
+    - Confirm whether CSLib's complete graph convention matches the informal statement.
+  limitations: >
+    Lean declaration existence alone does not prove that this informal artifact
+    states the same theorem.
+verification_policy:
+  level: source_reviewed_with_formal_link
+  require_formal_link: true
+  require_lean_check: false
+  require_alignment_review: false
+review:
+  state: requested
+  notes: Example formal-link artifact; not accepted knowledge.
+risk:
+  level: medium
+  notes: The external symbol and type are fake and intentionally not checked in CI.

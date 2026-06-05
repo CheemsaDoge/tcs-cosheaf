@@ -2,7 +2,7 @@
 
 ## Current State After P0 Release Cleanup
 
-TCS-Cosheaf is in v0.1.0 release-candidate / pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, a read-only SQLite query API over rebuilt index output, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, and plain Lean verifier adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in v0.1.0 release-candidate / pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata and formalization-link metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds, a read-only SQLite query API over rebuilt index output, gatekeeper report generation, ranked issue-scoped context pack generation, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, and plain Lean verifier adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
 Issue 46 clears the release-accounting contradictions before tagging the
 framework as `v0.1.0`. The Python package version is already `0.1.0`; the
@@ -94,6 +94,18 @@ The filesystem layout now includes accepted and draft knowledge-base directories
 
 The core model layer now defines artifact type and status enums, base artifact data models, artifact ID and dependency-reference validation, timestamp validation, risk/evidence/source/review value objects, pure status/path helper functions, artifact type directory mapping, and deterministic lifecycle artifact path derivation. Artifact `depends_on` values may reference local artifact IDs or explicit external references beginning with `external:`. Artifact `sources` entries record structured citation metadata with kind, title, authors, year, DOI, arXiv, URL, theorem number, page, and notes fields.
 
+The Formal Link Layer now adds optional artifact fields for external formal
+library references. `formalizations` records Lean 4 declaration references with
+library, library reference, import path, symbol, declaration kind, status,
+check mode, expected type, and notes. `alignment` records separate semantic
+alignment review between the informal artifact statement and the formal
+declaration. `verification_policy` records whether a formal link, Lean check,
+or alignment review is expected. These fields are metadata only in this MVP:
+they do not copy Lean proofs, do not add CSLib or mathlib dependencies, do not
+require network access, and do not change accepted promotion semantics. Issue
+#55 does not add formal-link CLI commands, G10 gate enforcement, Lean
+external-library checking, index/query support, or context-pack display.
+
 The configuration layer defines optional `cosheaf.toml` workspace loading. A
 workspace has a name, public/private policy fields, and one or more KB roots,
 each with `name`, path, `readonly`, and `priority`. If no `cosheaf.toml` exists,
@@ -132,6 +144,15 @@ network access. G9 enforces complete structured source metadata for accepted
 artifacts in configured public KB roots when `accepted_requires_source = true`;
 it is not applicable for draft public artifacts, accepted private artifacts, or
 legacy single-root repositories.
+
+Formalization-link fields are currently enforced by schema/model parsing only.
+The gatekeeper does not yet require `formalizations`, does not run external
+library checks for CSLib or mathlib references, and does not treat a Lean pass
+as proof of informal/formal statement alignment. Missing optional Lean tooling
+remains a skipped verifier result, not a pass. G10 Formal Link Gate
+enforcement, public KB planned links, formal-link context-pack display,
+formal-link index/query support, and a future Lean library reference checker
+such as `LeanLibraryRefAdapter` remain future work.
 
 The agent harness layer now builds bounded deterministic context packs for issue IDs. Context packs are written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`, `ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and `COMMANDS.md`. Relevant artifacts are selected and ranked from direct issue references, one-hop dependency neighbors, domain matches against issue text/tags, and artifact tag matches against issue tags. Each selected artifact includes explainable reasons. Draft artifacts are visibly labeled, and refuted/obsolete/superseded artifacts appear only when relevant and are marked as known failures rather than current truth.
 
@@ -200,6 +221,12 @@ runs `make lint`, `make typecheck`, `make test`, `make validate`, and
 `make gate` as separate status checks. The CI workflow does not install
 optional external formal tools.
 
+The formal-link example
+`examples/claims/claim.formal-link.example.yaml` demonstrates source metadata,
+a fake CSLib `lean4` symbol reference, requested alignment review, and
+`source_reviewed_with_formal_link` verification policy without requiring Lean,
+CSLib, mathlib, lake, or network access.
+
 GitHub issue templates now cover feature tasks, bug tasks, and research issues.
 The pull request template requires summary, changed files, tests run, risks,
 interface changes, documentation changes, artifact/schema changes, and the
@@ -250,6 +277,12 @@ gatekeeper result.
 - Schema/example filesystem smoke tests in `tests/test_schema_files_exist.py`.
 - Pydantic v2 core models under `cosheaf/core/`.
 - Structured artifact source metadata model and schema field `sources`.
+- Formal Link Layer artifact metadata with `formalizations`, `alignment`, and
+  `verification_policy`.
+- Formalization-link documentation in `docs/FORMALIZATION_LINKS.md`.
+- Formal Link Layer ADR in `docs/ADR/0005-formal-link-layer.md`.
+- Formal-link example artifact in
+  `examples/claims/claim.formal-link.example.yaml`.
 - Artifact status/path helper functions that do not scan the repository.
 - Model tests in `tests/test_artifact_models.py`.
 - Repository path helpers in `cosheaf/core/paths.py`.
@@ -318,3 +351,12 @@ gatekeeper result.
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond the minimal optional plain-file
   invocation path.
+- External Lean library checking for CSLib/mathlib references recorded in
+  `formalizations`.
+- G10 Formal Link Gate policy enforcement.
+- Context pack display of formalization and alignment metadata.
+- Index/query support for formalization references.
+- Public KB planned formalization links after the schema/model foundation
+  lands.
+- A future Lean library reference checker such as `LeanLibraryRefAdapter`.
+- Automatic informal/formal semantic alignment checking.
