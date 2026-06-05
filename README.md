@@ -5,15 +5,16 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.1.0 release candidate / pre-MVP scaffold**. The repository has working Python
-scaffolding, typed artifact models, filesystem loading, validation, dependency
-graph indexing, workspace-aware KB root loading, artifact lifecycle CLI
-commands, gatekeeper reports, ranked context-pack generation, local task
-harness stubs, verifier adapters including a Python checker, a minimal optional
-SAT DIMACS path, and a minimal optional SMT-LIB path, GitHub Actions CI, and
-collaboration templates. The Python package metadata is set to `0.1.0`; the
-`v0.1.0` tag should be created only after release cleanup, CI, and human review
-complete. It is not production software and does not yet provide a web UI,
+Current status: **v0.1.1 Formal Link Layer support release / pre-MVP
+scaffold**. The repository has working Python scaffolding, typed artifact
+models, filesystem loading, validation, dependency graph indexing,
+workspace-aware KB root loading, artifact lifecycle CLI commands, gatekeeper
+reports including the G10 Formal Link Gate, ranked context-pack generation with
+compact formal-link display, local task harness stubs, verifier adapters
+including a Python checker, a minimal optional SAT DIMACS path, and a minimal
+optional SMT-LIB path, GitHub Actions CI, and collaboration templates. The
+Python package metadata is set to `0.1.1` for the Formal Link Layer support
+release. It is not production software and does not yet provide a web UI,
 automatic theorem proving, full Lean autoformalization, or multi-user
 permissions.
 
@@ -42,9 +43,14 @@ on conversation history.
 - Run gatekeeper checks before accepting behavior or artifact changes.
 - Normalize verifier outputs through optional adapters.
 - Generate ranked bounded context packs for issue-scoped Codex or agent tasks.
+- Record metadata-only references to external formal declarations through the
+  Formal Link Layer without copying Lean proofs.
 
 Optional formal tools stay optional. Missing SAT, SMT, Lean, or similar tools
 must produce skipped verifier results rather than crashing the core system.
+Cosheaf does not replace CSLib, mathlib, or Lean: formal links are metadata
+plus gate, context-pack, index, and query surfaces. External Lean `#check`
+support for CSLib/mathlib references remains future work.
 
 ## Current Status
 
@@ -63,10 +69,17 @@ Implemented:
 - Dependency graph inspection and deterministic SQLite/manifest index rebuilds.
 - Read-only SQLite query API over rebuilt index output through
   `ArtifactIndexQuery`, including artifact, status, type, domain, dependency,
-  and reverse-dependency queries.
+  reverse-dependency, formalization, and formal-policy queries.
 - `cosheaf gate` and `cosheaf gate run` report generation.
 - Ranked issue-scoped context pack generation with
   `cosheaf context build <issue-id>`.
+- Formal Link Layer artifact metadata fields `formalizations`, `alignment`,
+  and `verification_policy`.
+- G10 Formal Link Gate static metadata consistency checks.
+- SQLite `formalizations` and `artifact_formal_policy` index tables plus
+  compact manifest metadata.
+- Context-pack display of formal-link metadata without claiming Lean
+  verification or informal/formal alignment.
 - Local task harness stubs with `cosheaf task create`, `cosheaf task list`, and
   `cosheaf task complete`.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
@@ -91,6 +104,8 @@ Planned or incomplete:
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted LLM/model-provider worker execution.
 - External public KB repository integration beyond local workspace roots.
+- External Lean library reference checking for CSLib/mathlib declarations.
+- Automatic informal/formal semantic alignment checking.
 
 ## Core Concepts
 
@@ -183,6 +198,8 @@ cosheaf context show <issue-id>
 
 See [Workspace model](docs/WORKSPACE.md) and
 [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md) for layered KB roots.
+Downstream repositories should pin to `v0.1.1` before using formalization
+fields in artifact YAML.
 
 ## Development Commands
 
@@ -215,6 +232,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - A multi-user permission system.
 - A replacement for peer review, formal proof assistants, or domain expert
   judgment.
+- A replacement for CSLib, mathlib, Lean, or human semantic alignment review.
 
 ## Key Documentation
 
