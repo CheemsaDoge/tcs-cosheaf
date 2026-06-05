@@ -129,12 +129,41 @@ artifacts, requested alignment review on accepted artifacts, checked external
 library references without verifier evidence linkage, or formal links present
 when policy does not require them.
 
+## Context Packs
+
+Issue-scoped context packs include a compact formal-link summary for relevant
+artifacts when formal metadata is present or policy-relevant. The summary shows
+formal declaration references, alignment status, verification policy, and
+static G10-relevant hints such as required formal links, required Lean checks,
+required alignment review, rejected alignment, or planned formalizations.
+
+This display is metadata-only. It helps agents see the formal-link surface, but
+it does not load gate reports, does not claim the current G10 verdict, and does
+not say that Lean has verified the informal artifact.
+
+## SQLite Index And Query API
+
+`cosheaf index rebuild` writes formal-link metadata into generated index
+outputs:
+
+- `.cosheaf/index.sqlite` table `formalizations`
+- `.cosheaf/index.sqlite` table `artifact_formal_policy`
+- `.cosheaf/artifact_manifest.json` formalization, alignment-status, and
+  verification-policy fields per artifact
+
+The SQLite query API can list formalizations by artifact, library, symbol,
+status, or import path, and can list policy rows requiring formal links, Lean
+checks, or alignment review. The query API is read-only: it reads an existing
+`.cosheaf/index.sqlite` file and does not rebuild indexes implicitly.
+
+These index and query surfaces remain metadata-only. They do not check whether
+CSLib or mathlib symbols exist, do not fetch external libraries, and do not run
+Lean.
+
 ## Future Work
 
 - External Lean library reference checking using `import_path` and `symbol`.
 - Public KB artifacts with planned or reviewed formalization links.
-- Context-pack display of formalization and alignment metadata.
-- Index/query support for formalization references.
 - A future `LeanLibraryRefAdapter` or equivalent checker surface.
 
 ## Current Limitations
@@ -145,7 +174,8 @@ when policy does not require them.
 - No natural-language autoformalization is implemented.
 - No automatic informal/formal alignment proof is implemented.
 - G10 is metadata-only and does not execute Lean.
-- No index/query support is added for formalization metadata.
-- No context-pack display is added for formalization metadata.
+- Index/query support is metadata-only and does not perform Lean or library
+  existence checks.
+- Context-pack display is metadata-only and does not claim Lean verification.
 - No accepted-promotion policy change is added beyond normal gatekeeper
   blocking behavior.

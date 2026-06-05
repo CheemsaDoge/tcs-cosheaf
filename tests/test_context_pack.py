@@ -41,8 +41,11 @@ def _artifact_data(
     domain: list[str] | None = None,
     depends_on: list[str] | None = None,
     tags: list[str] | None = None,
+    formalizations: list[dict[str, Any]] | None = None,
+    alignment: dict[str, Any] | None = None,
+    verification_policy: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    return {
+    data: dict[str, Any] = {
         "id": artifact_id,
         "type": "claim",
         "title": title or f"Claim {artifact_id}",
@@ -58,6 +61,52 @@ def _artifact_data(
         "evidence": [],
         "review": {"state": "requested", "notes": "Fixture review."},
         "risk": {"level": "low", "notes": "Fixture risk."},
+    }
+    if formalizations is not None:
+        data["formalizations"] = formalizations
+    if alignment is not None:
+        data["alignment"] = alignment
+    if verification_policy is not None:
+        data["verification_policy"] = verification_policy
+    return data
+
+
+def _formalization_fixture(
+    *,
+    formalization_id: str = "cslib.fixture.link",
+    library: str = "CSLib",
+    library_ref: str = "cslib-main",
+    import_path: str = "CSLib.Graph.Basic",
+    symbol: str = "CSLib.Graph.Basic.fixture_symbol",
+    status: str = "planned",
+) -> dict[str, Any]:
+    return {
+        "id": formalization_id,
+        "system": "lean4",
+        "library": library,
+        "library_ref": library_ref,
+        "import_path": import_path,
+        "symbol": symbol,
+        "declaration_kind": "theorem",
+        "status": status,
+        "check_mode": "external_library_ref",
+        "expected_type": "Fixture Lean type.",
+        "notes": "Fixture formalization link.",
+    }
+
+
+def _formal_link_policy(
+    *,
+    level: str = "source_reviewed_with_formal_link",
+    require_formal_link: bool = True,
+    require_lean_check: bool = False,
+    require_alignment_review: bool = False,
+) -> dict[str, Any]:
+    return {
+        "level": level,
+        "require_formal_link": require_formal_link,
+        "require_lean_check": require_lean_check,
+        "require_alignment_review": require_alignment_review,
     }
 
 
@@ -356,6 +405,82 @@ def test_accepted_and_draft_labels_are_clear(tmp_path: Path) -> None:
     assert "[DRAFT] claim.fixture.draft | Draft claim | draft" in relevant_md
     assert "claim.fixture.unrelated" not in context_md
     assert "claim.fixture.unrelated" not in relevant_md
+    assert "Formal links:" not in context_md
+    assert "G10-relevant:" not in context_md
+
+
+def test_context_pack_displays_formal_link_metadata_without_lean_claims(
+    tmp_path: Path,
+) -> None:
+    _write_context_docs(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "issues/open/formal-link.yaml",
+        _issue_data(
+            related_artifacts=["claim.fixture.formal-link"],
+            tags=["formal-link"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/draft/claims/formal-link.yaml",
+        _artifact_data(
+            "claim.fixture.formal-link",
+            status="draft",
+            title="Draft formal-link claim",
+            formalizations=[
+                _formalization_fixture(
+                    formalization_id="cslib.fixture.z-link",
+                    symbol="CSLib.Graph.Basic.z_symbol",
+                ),
+                _formalization_fixture(
+                    formalization_id="cslib.fixture.a-link",
+                    symbol="CSLib.Graph.Basic.a_symbol",
+                ),
+            ],
+            alignment={
+                "status": "requested",
+                "reviewer": "",
+                "reviewed_at": None,
+                "convention_notes": ["Check graph conventions."],
+                "limitations": "Fixture alignment is not reviewed.",
+            },
+            verification_policy=_formal_link_policy(),
+        ),
+    )
+
+    first = build_context_pack(RepoContext(tmp_path), "issue.fixture.context")
+    second = build_context_pack(RepoContext(tmp_path), "issue.fixture.context")
+    first_context = (first.task_dir / "CONTEXT.md").read_text(encoding="utf-8")
+    second_context = (second.task_dir / "CONTEXT.md").read_text(encoding="utf-8")
+
+    assert first_context == second_context
+    assert (
+        "[DRAFT] claim.fixture.formal-link | Draft formal-link claim"
+        in first_context
+    )
+    assert "Formal links:" in first_context
+    assert (
+        "CSLib@cslib-main:CSLib.Graph.Basic#CSLib.Graph.Basic.a_symbol "
+        "[theorem, planned, external_library_ref]"
+    ) in first_context
+    assert (
+        "CSLib@cslib-main:CSLib.Graph.Basic#CSLib.Graph.Basic.z_symbol "
+        "[theorem, planned, external_library_ref]"
+    ) in first_context
+    assert first_context.index("CSLib.Graph.Basic.a_symbol") < first_context.index(
+        "CSLib.Graph.Basic.z_symbol"
+    )
+    assert "Alignment: requested; reviewer=-" in first_context
+    assert (
+        "Verification policy: source_reviewed_with_formal_link; "
+        "formal_link=true; lean_check=false; alignment_review=false"
+    ) in first_context
+    assert "G10-relevant: yes; requires formal link; planned formalization" in (
+        first_context
+    )
+    assert "Lean verified" not in first_context
+    assert "G10 formal link gate: pass" not in first_context
 
 
 def test_known_failures_and_commands_are_written(tmp_path: Path) -> None:

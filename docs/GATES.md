@@ -232,6 +232,11 @@ available or no formal link is required, and `checked` external-library
 references that do not yet have verifier-result linkage. The future
 `LeanLibraryRefAdapter` remains future work.
 
+Context-pack display and SQLite/query indexing of formal-link metadata do not
+change G10. They expose the same metadata for handoff and local inspection, but
+they do not run Lean, load gate reports, or turn formal links into verifier
+passes.
+
 ### Reproducibility Metadata Gate
 
 Checks executable evidence and verifier results for metadata needed to reproduce

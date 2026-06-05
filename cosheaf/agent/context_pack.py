@@ -356,24 +356,93 @@ def _artifact_lines(
         return ["- None"]
     lines = []
     for record in records:
-        artifact = _as_artifact(record.record)
-        prefix = _status_prefix(artifact.status)
-        lines.append(
-            f"- {prefix}{artifact.id} | {artifact.title} | "
-            f"{artifact.status.value} | {record.record.source_path.as_posix()} | "
-            f"reasons: {_format_reasons(record.reasons)}"
-        )
+        lines.extend(_artifact_reference_lines(record))
     return lines
 
 
 def _artifact_reference_line(record: RankedArtifact) -> str:
+    return "\n".join(_artifact_reference_lines(record))
+
+
+def _artifact_reference_lines(record: RankedArtifact) -> list[str]:
     artifact = _as_artifact(record.record)
     prefix = _status_prefix(artifact.status)
-    return (
+    lines = [
         f"- {prefix}{artifact.id} | {artifact.title} | "
         f"{artifact.status.value} | {record.record.source_path.as_posix()} | "
         f"reasons: {_format_reasons(record.reasons)}"
+    ]
+    lines.extend(_formal_metadata_lines(artifact))
+    return lines
+
+
+def _formal_metadata_lines(artifact: BaseArtifact) -> list[str]:
+    if not _has_formal_metadata(artifact):
+        return []
+
+    lines: list[str] = []
+    if artifact.formalizations:
+        lines.append("  - Formal links:")
+        for ref in sorted(artifact.formalizations, key=lambda item: item.id):
+            lines.append(
+                f"    - {ref.library}@{ref.library_ref}:"
+                f"{ref.import_path}#{ref.symbol} "
+                f"[{ref.declaration_kind}, {ref.status}, {ref.check_mode}]"
+            )
+    else:
+        lines.append("  - Formal links: none")
+
+    reviewer = artifact.alignment.reviewer or "-"
+    policy = artifact.verification_policy
+    lines.extend(
+        [
+            f"  - Alignment: {artifact.alignment.status}; reviewer={reviewer}",
+            "  - Verification policy: "
+            f"{policy.level}; formal_link={_bool_text(policy.require_formal_link)}; "
+            f"lean_check={_bool_text(policy.require_lean_check)}; "
+            f"alignment_review={_bool_text(policy.require_alignment_review)}",
+            f"  - G10-relevant: yes; {'; '.join(_formal_hints(artifact))}",
+        ]
     )
+    return lines
+
+
+def _has_formal_metadata(artifact: BaseArtifact) -> bool:
+    policy = artifact.verification_policy
+    return any(
+        (
+            artifact.formalizations,
+            artifact.alignment.status != "none",
+            policy.level != "source_reviewed",
+            policy.require_formal_link,
+            policy.require_lean_check,
+            policy.require_alignment_review,
+        )
+    )
+
+
+def _formal_hints(artifact: BaseArtifact) -> list[str]:
+    hints: list[str] = []
+    policy = artifact.verification_policy
+    if policy.require_formal_link:
+        hints.append("requires formal link")
+    if policy.require_lean_check:
+        hints.append("requires Lean check")
+    if policy.require_alignment_review:
+        hints.append("requires alignment review")
+    if artifact.alignment.status == "rejected":
+        hints.append("alignment rejected")
+    if any(ref.status == "planned" for ref in artifact.formalizations):
+        hints.append("planned formalization")
+    if any(ref.status == "broken" for ref in artifact.formalizations):
+        hints.append("broken formalization")
+    if any(ref.status == "deprecated" for ref in artifact.formalizations):
+        hints.append("deprecated formalization")
+    return hints or ["metadata present"]
+
+
+def _bool_text(value: bool) -> str:
+    return str(value).lower()
 
 
 def _status_prefix(status: ArtifactStatus) -> str:

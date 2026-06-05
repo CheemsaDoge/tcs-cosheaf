@@ -270,8 +270,26 @@ behavior.
 
 The index rebuild writes `.cosheaf/index.sqlite` and
 `.cosheaf/artifact_manifest.json` from scratch. The SQLite index stores artifact
-ID, type, status, path, title, domain, source KB root, and dependency rows. The
-manifest is ordered deterministically by artifact ID and dependency tuple.
+ID, type, status, path, title, domain, source KB root, dependency rows,
+formalization rows, and artifact formal-policy rows. The manifest is ordered
+deterministically by artifact ID and dependency tuple.
+
+SQLite tables:
+
+- `artifacts(id, type, status, path, title, domain, kb_root)`
+- `dependencies(source_id, target_id)`
+- `formalizations(artifact_id, formalization_id, system, library, library_ref,
+  import_path, symbol, declaration_kind, status, check_mode, expected_type,
+  notes)`
+- `artifact_formal_policy(artifact_id, alignment_status, alignment_reviewer,
+  verification_level, require_formal_link, require_lean_check,
+  require_alignment_review)`
+
+`formalizations` has a primary key on `(artifact_id, formalization_id)` and
+indexes on `symbol`, `library`, `status`, and `import_path`. The manifest
+includes per-artifact `formalizations`, `alignment_status`, and
+`verification_policy` fields. These are metadata-only generated surfaces; they
+do not run Lean or check external library symbol existence.
 
 #### Storage Query
 
@@ -279,6 +297,14 @@ manifest is ordered deterministically by artifact ID and dependency tuple.
   `status`, `path`, `title`, `domain`, and `kb_root`.
 - `cosheaf.storage.query.DependencyQueryRow`: immutable dependency edge row
   with `source_id` and `target_id`.
+- `cosheaf.storage.query.FormalizationQueryRow`: immutable formalization row
+  with `artifact_id`, `formalization_id`, `system`, `library`, `library_ref`,
+  `import_path`, `symbol`, `declaration_kind`, `status`, `check_mode`,
+  `expected_type`, and `notes`.
+- `cosheaf.storage.query.FormalPolicyQueryRow`: immutable formal policy row
+  with `artifact_id`, `alignment_status`, `alignment_reviewer`,
+  `verification_level`, `require_formal_link`, `require_lean_check`, and
+  `require_alignment_review`.
 - `cosheaf.storage.query.IndexQueryError`: expected query-layer error.
 - `cosheaf.storage.query.ArtifactIndexQuery(sqlite_path: str | Path)`: read-only
   SQLite query facade over `.cosheaf/index.sqlite`.
@@ -291,12 +317,24 @@ manifest is ordered deterministically by artifact ID and dependency tuple.
 - `cosheaf.storage.query.ArtifactIndexQuery.list_artifacts_by_domain(domain: str) -> tuple[ArtifactQueryRow, ...]`
 - `cosheaf.storage.query.ArtifactIndexQuery.list_dependencies(artifact_id: str) -> tuple[DependencyQueryRow, ...]`
 - `cosheaf.storage.query.ArtifactIndexQuery.list_reverse_dependencies(artifact_id: str) -> tuple[DependencyQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_formalizations() -> tuple[FormalizationQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_formalizations_for_artifact(artifact_id: str) -> tuple[FormalizationQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_formalizations_by_library(library: str) -> tuple[FormalizationQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_formalizations_by_symbol(symbol: str) -> tuple[FormalizationQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_formalizations_by_status(status: str) -> tuple[FormalizationQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_formalizations_by_import(import_path: str) -> tuple[FormalizationQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.get_formal_policy(artifact_id: str) -> FormalPolicyQueryRow | None`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_artifacts_requiring_formal_link() -> tuple[FormalPolicyQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_artifacts_requiring_lean_check() -> tuple[FormalPolicyQueryRow, ...]`
+- `cosheaf.storage.query.ArtifactIndexQuery.list_artifacts_requiring_alignment_review() -> tuple[FormalPolicyQueryRow, ...]`
 
 The query API reads the deterministic SQLite output produced by
 `rebuild_index`; it does not parse YAML, rebuild indexes implicitly, or modify
 repository files. Result ordering is deterministic. `ArtifactQueryRow.kb_root`
 contains the indexed source KB root, such as `default`, `public`, or `private`,
-and is empty when a row was indexed outside a KB root.
+and is empty when a row was indexed outside a KB root. Formalization query
+methods are metadata-only and do not execute Lean, fetch external libraries, or
+check CSLib/mathlib symbol existence.
 
 #### Dependency Graph
 
@@ -423,7 +461,20 @@ Generated context pack files are:
 
 `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and the artifact sections inside
 `CONTEXT.md` use lines containing artifact ID, title, status, source path, and
-ranking reasons.
+ranking reasons. When a relevant artifact has formal-link metadata or
+policy-relevant formal settings, the artifact entry also includes compact
+formal-link metadata lines:
+
+- `Formal links:` entries ordered by formalization ID, rendered as
+  `<library>@<library_ref>:<import_path>#<symbol> [<kind>, <status>, <mode>]`
+- `Alignment: <status>; reviewer=<reviewer-or-dash>`
+- `Verification policy: <level>; formal_link=<bool>; lean_check=<bool>;
+  alignment_review=<bool>`
+- `G10-relevant: yes; ...` static hints derived from artifact metadata
+
+These context-pack lines are metadata-only handoff context. They do not load
+gate reports, do not claim the current G10 verdict, and do not claim Lean
+verification.
 
 #### Agent Tasks
 
@@ -752,8 +803,8 @@ the repository root as cwd.
   Artifact `alignment` accepts semantic alignment review metadata. Artifact
   `verification_policy` accepts formal-link, Lean-check, and alignment-review
   policy metadata. Formalization references are separate from `evidence`; this
-  schema change does not add CLI commands, verifier execution, gate
-  enforcement, index/query support, or context-pack display.
+  schema does not add formal-link CLI commands or verifier execution, but G10,
+  context packs, and the deterministic index/query surfaces read this metadata.
 - `schemas/issue.schema.json`: issue YAML schema.
 - `schemas/review.schema.json`: review YAML schema.
 - `schemas/verifier.schema.json`: verifier result schema.
