@@ -20,6 +20,9 @@ def _write_artifact(
     status: str = "draft",
     depends_on: list[str] | None = None,
     sources: list[dict[str, Any]] | None = None,
+    formalizations: list[dict[str, Any]] | None = None,
+    alignment: dict[str, Any] | None = None,
+    verification_policy: dict[str, Any] | None = None,
 ) -> None:
     path = repo_root / relative_path
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -41,6 +44,12 @@ def _write_artifact(
         "review": {"state": "requested", "notes": "Test review."},
         "risk": {"level": "low", "notes": "Test risk."},
     }
+    if formalizations is not None:
+        data["formalizations"] = formalizations
+    if alignment is not None:
+        data["alignment"] = alignment
+    if verification_policy is not None:
+        data["verification_policy"] = verification_policy
     path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 
 
@@ -83,6 +92,25 @@ def _write_pr_checklist(
     path = repo_root / "PR_BODY.md"
     path.write_text("\n".join(content), encoding="utf-8")
     return path
+
+
+def _write_issue_record(repo_root: Path, relative_path: str, issue_id: str) -> None:
+    path = repo_root / relative_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data: dict[str, Any] = {
+        "id": issue_id,
+        "type": "issue",
+        "title": f"Issue {issue_id}",
+        "status": "open",
+        "created_at": "2026-06-01T00:00:00Z",
+        "updated_at": "2026-06-01T00:00:00Z",
+        "authors": ["tester"],
+        "severity": "medium",
+        "description": "Test issue.",
+        "related_artifacts": [],
+        "tags": ["testing"],
+    }
+    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
 
 
 def _write_workspace_config(
@@ -132,6 +160,56 @@ def _source_fixture() -> dict[str, Any]:
         "page": "12",
         "notes": "Fixture source metadata.",
     }
+
+
+def _formalization_fixture(
+    *,
+    formalization_id: str = "cslib.fixture.link",
+    status: str = "planned",
+    check_mode: str = "external_library_ref",
+) -> dict[str, Any]:
+    return {
+        "id": formalization_id,
+        "system": "lean4",
+        "library": "CSLib",
+        "library_ref": "cslib-main",
+        "import_path": "CSLib.Graph.Basic",
+        "symbol": "CSLib.Graph.Basic.fixture_symbol",
+        "declaration_kind": "theorem",
+        "status": status,
+        "check_mode": check_mode,
+        "expected_type": "Fixture Lean type.",
+        "notes": "Static gate test fixture.",
+    }
+
+
+def _formal_link_policy(
+    *,
+    level: str = "source_reviewed_with_formal_link",
+    require_formal_link: bool = True,
+    require_lean_check: bool = False,
+    require_alignment_review: bool = False,
+) -> dict[str, Any]:
+    return {
+        "level": level,
+        "require_formal_link": require_formal_link,
+        "require_lean_check": require_lean_check,
+        "require_alignment_review": require_alignment_review,
+    }
+
+
+def _human_reviewed_alignment() -> dict[str, Any]:
+    return {
+        "status": "human_reviewed",
+        "reviewer": "reviewer@example.org",
+        "reviewed_at": "2026-06-01T00:00:00Z",
+        "convention_notes": ["Fixture conventions match."],
+        "limitations": "",
+    }
+
+
+def _gate_by_id(report: dict[str, Any], gate_id: str) -> dict[str, Any]:
+    return next(gate for gate in report["gates"] if gate["id"] == gate_id)
 
 
 def test_passing_repo_produces_pass_report(tmp_path: Path) -> None:
@@ -475,4 +553,406 @@ def test_source_metadata_gate_output_is_deterministic(tmp_path: Path) -> None:
         "claim.fixture.a",
         "claim.fixture.b",
     ]
+
+
+def test_formal_link_gate_default_artifact_is_not_applicable(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.default-formal-policy",
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    report = _load_single_report(tmp_path)
+    g10 = _gate_by_id(report, "G10")
+    assert g10["status"] == "not_applicable"
+    assert g10["blocking_issues"] == []
+    assert g10["nonblocking_issues"] == []
+
+
+def test_formal_link_gate_ignores_non_artifact_records(tmp_path: Path) -> None:
+    _write_issue_record(
+        tmp_path,
+        "issues/open/issue.fixture.yaml",
+        "issue.fixture.formal-link",
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    report = _load_single_report(tmp_path)
+    g10 = _gate_by_id(report, "G10")
+    assert g10["status"] == "not_applicable"
+    assert g10["details"] == []
+
+
+def test_formal_link_gate_passes_required_planned_link(tmp_path: Path) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.formal-link",
+        formalizations=[_formalization_fixture()],
+        verification_policy=_formal_link_policy(),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    report = _load_single_report(tmp_path)
+    g10 = _gate_by_id(report, "G10")
+    assert g10["status"] == "pass"
+    assert g10["blocking_issues"] == []
+    assert g10["nonblocking_issues"] == []
+    assert g10["details"][0]["artifact_id"] == "claim.fixture.formal-link"
+    assert g10["details"][0]["formalization_count"] == 1
+
+
+def test_formal_link_gate_passes_required_alignment_review(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.reviewed-alignment",
+        formalizations=[_formalization_fixture()],
+        alignment=_human_reviewed_alignment(),
+        verification_policy=_formal_link_policy(require_alignment_review=True),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    g10 = _gate_by_id(_load_single_report(tmp_path), "G10")
+    assert g10["status"] == "pass"
+    assert g10["blocking_issues"] == []
+
+
+def test_formal_link_gate_passes_required_checked_formalization(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.checked-formalization",
+        formalizations=[
+            _formalization_fixture(
+                status="checked",
+                check_mode="local_file",
+            )
+        ],
+        verification_policy=_formal_link_policy(
+            level="machine_checked",
+            require_lean_check=True,
+        ),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    g10 = _gate_by_id(_load_single_report(tmp_path), "G10")
+    assert g10["status"] == "pass"
+    assert g10["blocking_issues"] == []
+
+
+def test_formal_link_gate_fails_required_link_without_formalizations(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.missing-formal-link",
+        verification_policy=_formal_link_policy(),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code != 0
+    assert "Gate verdict: fail" in result.output
+    assert "requires a" in result.output
+    assert "formal link but has no formalizations" in result.output
+    report = _load_single_report(tmp_path)
+    g10 = _gate_by_id(report, "G10")
+    assert g10["status"] == "fail"
+    assert g10["blocking_issues"] == [
+        {
+            "gate_id": "G10",
+            "gate_name": "formal link gate",
+            "source_path": "examples/claims/a.yaml",
+            "artifact_id": "claim.fixture.missing-formal-link",
+            "message": (
+                "verification_policy requires a formal link but has no "
+                "formalizations"
+            ),
+            "severity": "blocking",
+        }
+    ]
+
+
+def test_formal_link_gate_fails_required_alignment_without_human_review(
+    tmp_path: Path,
+) -> None:
+    for alignment_status in ("none", "requested", "rejected"):
+        repo_root = tmp_path / alignment_status
+        alignment: dict[str, Any] = {
+            "status": alignment_status,
+            "reviewer": (
+                "reviewer@example.org"
+                if alignment_status == "rejected"
+                else ""
+            ),
+            "reviewed_at": None,
+            "convention_notes": [],
+            "limitations": "",
+        }
+        _write_artifact(
+            repo_root,
+            "examples/claims/a.yaml",
+            artifact_id=f"claim.fixture.alignment-{alignment_status}",
+            formalizations=[_formalization_fixture()],
+            alignment=alignment,
+            verification_policy=_formal_link_policy(
+                require_alignment_review=True,
+            ),
+        )
+
+        result = runner.invoke(
+            app,
+            ["gate", "run", "--repo-root", str(repo_root)],
+        )
+
+        assert result.exit_code != 0
+        report = _load_single_report(repo_root)
+        g10 = _gate_by_id(report, "G10")
+        assert g10["status"] == "fail"
+        assert g10["blocking_issues"][0]["message"] == (
+            "verification_policy requires alignment review but "
+            f"alignment.status is {alignment_status}"
+        )
+
+
+def test_formal_link_gate_fails_required_lean_check_without_checked_link(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.no-checked-formalization",
+        formalizations=[_formalization_fixture(status="linked")],
+        verification_policy=_formal_link_policy(
+            level="machine_checked",
+            require_lean_check=True,
+        ),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code != 0
+    report = _load_single_report(tmp_path)
+    g10 = _gate_by_id(report, "G10")
+    assert g10["status"] == "fail"
+    assert g10["blocking_issues"][0]["message"] == (
+        "verification_policy requires a Lean check but no formalization is checked"
+    )
+
+
+def test_formal_link_gate_fails_accepted_rejected_alignment(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/claims/claim.fixture.accepted.yaml",
+        artifact_id="claim.fixture.accepted-rejected-alignment",
+        status="accepted",
+        formalizations=[_formalization_fixture()],
+        alignment={
+            "status": "rejected",
+            "reviewer": "reviewer@example.org",
+            "reviewed_at": "2026-06-01T00:00:00Z",
+            "convention_notes": [],
+            "limitations": "Conventions do not match.",
+        },
+        verification_policy=_formal_link_policy(),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code != 0
+    g10 = _gate_by_id(_load_single_report(tmp_path), "G10")
+    assert g10["status"] == "fail"
+    assert g10["blocking_issues"][0]["message"] == (
+        "accepted artifact has rejected formal alignment"
+    )
+
+
+def test_formal_link_gate_fails_accepted_lean_required_without_checked_link(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/claims/claim.fixture.accepted.yaml",
+        artifact_id="claim.fixture.accepted-lean-required",
+        status="accepted",
+        formalizations=[_formalization_fixture(status="linked")],
+        verification_policy=_formal_link_policy(
+            level="lean_required",
+            require_lean_check=True,
+        ),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code != 0
+    g10 = _gate_by_id(_load_single_report(tmp_path), "G10")
+    assert g10["blocking_issues"][0]["message"] == (
+        "verification_policy requires a Lean check but no formalization is checked"
+    )
+
+
+def test_formal_link_gate_warns_for_planned_formalization_on_accepted_artifact(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/claims/claim.fixture.accepted.yaml",
+        artifact_id="claim.fixture.accepted-planned-link",
+        status="accepted",
+        formalizations=[_formalization_fixture(status="planned")],
+        verification_policy=_formal_link_policy(),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    report = _load_single_report(tmp_path)
+    g10 = _gate_by_id(report, "G10")
+    assert g10["status"] == "pass"
+    assert report["verdict"] == "pass"
+    assert g10["nonblocking_issues"][0]["message"] == (
+        "accepted artifact has a planned formalization"
+    )
+
+
+def test_formal_link_gate_fails_when_required_link_is_only_broken(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.only-broken-formal-link",
+        formalizations=[_formalization_fixture(status="broken")],
+        verification_policy=_formal_link_policy(),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code != 0
+    g10 = _gate_by_id(_load_single_report(tmp_path), "G10")
+    assert g10["status"] == "fail"
+    assert g10["blocking_issues"][0]["message"] == (
+        "formalization cslib.fixture.link has status broken"
+    )
+
+
+def test_formal_link_gate_warns_for_broken_link_when_valid_link_exists(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.broken-with-valid-link",
+        formalizations=[
+            _formalization_fixture(
+                formalization_id="cslib.fixture.broken",
+                status="broken",
+            ),
+            _formalization_fixture(
+                formalization_id="cslib.fixture.planned",
+                status="planned",
+            ),
+        ],
+        verification_policy=_formal_link_policy(),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    g10 = _gate_by_id(_load_single_report(tmp_path), "G10")
+    assert g10["status"] == "pass"
+    assert g10["nonblocking_issues"][0]["message"] == (
+        "formalization cslib.fixture.broken has status broken"
+    )
+
+
+def test_formal_link_gate_warns_for_checked_external_library_reference(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.checked-external-link",
+        formalizations=[_formalization_fixture(status="checked")],
+        verification_policy=_formal_link_policy(
+            level="machine_checked",
+            require_lean_check=True,
+        ),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    g10 = _gate_by_id(_load_single_report(tmp_path), "G10")
+    assert g10["status"] == "pass"
+    assert g10["nonblocking_issues"][0]["message"] == (
+        "formalization cslib.fixture.link is checked through "
+        "external_library_ref without verifier evidence linkage"
+    )
+
+
+def test_formal_link_gate_warns_when_link_present_but_policy_not_required(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.unrequired-formal-link",
+        formalizations=[_formalization_fixture()],
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    report = _load_single_report(tmp_path)
+    g10 = _gate_by_id(report, "G10")
+    assert g10["status"] == "pass"
+    assert report["verdict"] == "pass"
+    assert g10["nonblocking_issues"][0]["message"] == (
+        "formalizations are present but verification_policy does not "
+        "require a formal link"
+    )
+
+
+def test_formal_link_gate_reports_are_written_to_json_and_markdown(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.reported-formal-link",
+        formalizations=[_formalization_fixture()],
+        verification_policy=_formal_link_policy(),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    report = _load_single_report(tmp_path)
+    assert _gate_by_id(report, "G10")["name"] == "formal link gate"
+    markdown_report = next((tmp_path / ".cosheaf" / "reports").glob("*.md"))
+    assert "G10 formal link gate: pass" in markdown_report.read_text(
+        encoding="utf-8"
+    )
 

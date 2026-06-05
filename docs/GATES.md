@@ -199,18 +199,38 @@ separate minimal paths.
 ### Formal Link Metadata Gate Boundary
 
 G1 schema/model validation parses optional `formalizations`, `alignment`, and
-`verification_policy` fields. Current gates do not require these fields for
-accepted promotion and do not treat them as proof of informal/formal semantic
+`verification_policy` fields. G10 Formal Link Gate then enforces static
+metadata consistency between those fields. G10 does not treat formal links,
+Lean evidence, or alignment metadata as proof of informal/formal semantic
 alignment.
 
 Alignment review is separate from Lean checking. A formal declaration may exist
 or a local Lean file may pass while the informal artifact still needs human
 review for convention and statement alignment.
 
-G10 Formal Link Gate enforcement is future work. This MVP does not add a
-formal-link gate, does not check external CSLib/mathlib declarations, does not
-add formal-link index/query support, and does not display formal-link metadata
-in context packs.
+G10 is static metadata validation. It does not execute Lean, does not fetch
+external libraries, does not inspect CSLib/mathlib declarations, and does not
+require network access. It enforces policy consistency only:
+
+- `require_formal_link: true` requires at least one `formalizations` entry.
+- `require_alignment_review: true` requires `alignment.status:
+  human_reviewed`.
+- `require_lean_check: true` requires at least one formalization with
+  `status: checked`.
+- `lean_required` policy is expected to require both a formal link and a Lean
+  check; schema/model validation normally catches violations first.
+- `alignment.status: rejected` is blocking when alignment review is required
+  and is always blocking on accepted artifacts.
+- a required formal link whose only formalizations are `broken` or
+  `deprecated` is blocking.
+
+G10 warnings are nonblocking and are not proof failures. Current warnings
+include formal links present when policy does not require them, planned
+formalizations on accepted artifacts, requested alignment review on accepted
+artifacts, `broken` or `deprecated` formalizations when another active link is
+available or no formal link is required, and `checked` external-library
+references that do not yet have verifier-result linkage. The future
+`LeanLibraryRefAdapter` remains future work.
 
 ### Reproducibility Metadata Gate
 
@@ -371,10 +391,13 @@ moving eligible artifacts into the accepted area of their KB root.
 - G7 reproducibility metadata gate
 - G8 PR checklist gate
 - G9 source metadata gate for accepted public artifacts
+- G10 formal link gate for static metadata consistency
 
-Formal-link fields are currently enforced only by G1 schema/model parsing.
-They do not alter G6 verifier execution, G7 reproducibility metadata checks, G9
-source metadata checks, or accepted promotion requirements.
+Formal-link fields are parsed by G1 and checked for policy consistency by G10.
+They do not alter G6 verifier execution, G7 reproducibility metadata checks, or
+G9 source metadata checks. G10 contributes ordinary gatekeeper blocking issues,
+so accepted promotion is blocked only through the existing gatekeeper blocking
+issue mechanism.
 
 G7 is reported as `pass` when applicable executable evidence has reproducibility
 metadata, `fail` when required metadata is missing, and `not_applicable` when no
@@ -385,5 +408,9 @@ reported as `fail` when accepted public artifacts lack complete source metadata,
 `pass` when applicable accepted public artifacts are complete, and
 `not_applicable` for legacy mode, disabled policy, or workspaces with no
 accepted public artifacts. G6 is reported as skipped when no verifier adapters
-are applicable. `cosheaf gate` with no subcommand also runs the gatekeeper so
-the existing `make gate` target performs real gate enforcement.
+are applicable. G10 is reported as `not_applicable` when no artifact has
+formal-link policy metadata to check, `fail` when static policy consistency is
+violated, and `pass` when applicable formal-link metadata has no blocking
+issues; warnings remain nonblocking. `cosheaf gate` with no subcommand also
+runs the gatekeeper so the existing `make gate` target performs real gate
+enforcement.

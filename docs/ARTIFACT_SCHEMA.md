@@ -116,10 +116,13 @@ statuses `human_reviewed` and `rejected` require a non-empty reviewer.
 `verification_policy` records whether the artifact expects a formal link, Lean
 check, or alignment review. Current levels are `source_reviewed`,
 `source_reviewed_with_formal_link`, `machine_checked`, and `lean_required`.
-In this MVP, policy values are recorded and validated but do not change
-accepted promotion semantics. `source_reviewed_with_formal_link` requires
-`require_formal_link: true`; `lean_required` requires both
-`require_formal_link: true` and `require_lean_check: true`.
+Policy values are schema/model validated and G10 statically checks consistency
+between the policy, `formalizations`, and `alignment`. G10 can produce ordinary
+blocking gatekeeper issues, so accepted promotion is affected only through the
+existing rule that blocking gatekeeper issues prevent promotion.
+`source_reviewed_with_formal_link` requires `require_formal_link: true`;
+`lean_required` requires both `require_formal_link: true` and
+`require_lean_check: true`.
 
 ## ID Format
 
@@ -257,9 +260,12 @@ source is available. G9 source metadata enforcement checks accepted public
 artifacts in configured workspaces when `accepted_requires_source = true` while
 preserving draft, private, and legacy single-root behavior.
 
-The Formal Link Layer is implemented as optional schema/model metadata and an
-example artifact. It records Lean-library declaration references without
-adding CSLib/mathlib dependencies, without requiring network access, and
-without changing accepted promotion semantics. It does not add formal-link CLI
-commands, verifier execution, G10 gate enforcement, index/query support, or
-context-pack display for formalization metadata.
+The Formal Link Layer is implemented as optional schema/model metadata, an
+example artifact, and G10 static metadata validation. It records Lean-library
+declaration references without adding CSLib/mathlib dependencies, without
+requiring network access, and without changing accepted promotion semantics
+beyond ordinary gatekeeper blocking behavior. G10 does not execute Lean, does
+not fetch or inspect external Lean libraries, and does not prove
+informal/formal semantic alignment. The implementation does not add
+formal-link CLI commands, verifier execution for external library references,
+index/query support, or context-pack display for formalization metadata.
