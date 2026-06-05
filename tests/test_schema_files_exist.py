@@ -45,6 +45,7 @@ SCHEMA_FILES = [
 EXAMPLE_FILES = [
     "examples/issues/issue.example.yaml",
     "examples/claims/claim.example.yaml",
+    "examples/claims/claim.formal-link.example.yaml",
     "examples/proofs/proof.example.yaml",
     "examples/constructions/graph.example.yaml",
     "examples/constructions/graph.toy.yaml",
@@ -76,6 +77,69 @@ def test_schema_files_exist_and_are_valid_json() -> None:
         assert isinstance(schema.get("properties"), dict)
 
 
+def test_artifact_schema_defines_optional_formal_link_fields() -> None:
+    schema = json.loads(
+        (ROOT / "schemas/artifact.schema.json").read_text(encoding="utf-8")
+    )
+    properties = schema["properties"]
+
+    assert "formalizations" not in schema["required"]
+    assert "alignment" not in schema["required"]
+    assert "verification_policy" not in schema["required"]
+
+    formalization = properties["formalizations"]["items"]
+    assert formalization["additionalProperties"] is False
+    assert formalization["required"] == [
+        "id",
+        "system",
+        "library",
+        "library_ref",
+        "import_path",
+        "symbol",
+        "declaration_kind",
+        "status",
+        "check_mode",
+    ]
+    assert "expected_type" not in formalization["required"]
+    assert "notes" not in formalization["required"]
+    assert formalization["properties"]["system"]["enum"] == ["lean4"]
+    assert formalization["properties"]["status"]["enum"] == [
+        "planned",
+        "linked",
+        "checked",
+        "broken",
+        "deprecated",
+    ]
+    assert formalization["properties"]["check_mode"]["enum"] == [
+        "external_library_ref",
+        "local_file",
+    ]
+
+    alignment = properties["alignment"]
+    assert alignment["additionalProperties"] is False
+    assert alignment["properties"]["status"]["enum"] == [
+        "none",
+        "requested",
+        "human_reviewed",
+        "rejected",
+    ]
+
+    verification_policy = properties["verification_policy"]
+    assert verification_policy["additionalProperties"] is False
+    assert verification_policy["properties"]["level"]["enum"] == [
+        "source_reviewed",
+        "source_reviewed_with_formal_link",
+        "machine_checked",
+        "lean_required",
+    ]
+    assert verification_policy["properties"]["require_formal_link"]["type"] == "boolean"
+    assert verification_policy["properties"]["require_lean_check"]["type"] == "boolean"
+    assert (
+        verification_policy["properties"]["require_alignment_review"]["type"]
+        == "boolean"
+    )
+
+
 def test_example_files_exist_and_are_valid_yaml() -> None:
     for relative_path in EXAMPLE_FILES:
         path = ROOT / relative_path
@@ -91,3 +155,27 @@ def test_example_files_exist_and_are_valid_yaml() -> None:
         assert isinstance(example["id"], str)
         assert isinstance(example["type"], str)
         assert isinstance(example["status"], str)
+
+
+def test_formal_link_example_uses_planned_fake_cslib_reference() -> None:
+    example = _read_yaml(ROOT / "examples/claims/claim.formal-link.example.yaml")
+
+    assert example["status"] == "draft"
+    assert example["evidence"] == []
+    assert example["alignment"]["status"] == "requested"
+    assert (
+        example["verification_policy"]["level"]
+        == "source_reviewed_with_formal_link"
+    )
+    assert example["verification_policy"]["require_formal_link"] is True
+    assert example["verification_policy"]["require_lean_check"] is False
+
+    formalization = example["formalizations"][0]
+    assert formalization["system"] == "lean4"
+    assert formalization["library"] == "CSLib"
+    assert formalization["library_ref"] == "cslib-main"
+    assert formalization["import_path"] == "CSLib.Graph.Basic"
+    assert formalization["symbol"] == "CSLib.Graph.Basic.example_symbol"
+    assert formalization["status"] == "planned"
+    assert formalization["check_mode"] == "external_library_ref"
+    assert "Illustrative CSLib symbol only" in formalization["notes"]

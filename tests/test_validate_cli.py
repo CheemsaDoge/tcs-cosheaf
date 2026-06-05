@@ -6,8 +6,12 @@ import yaml  # type: ignore[import-untyped]
 from typer.testing import CliRunner
 
 from cosheaf.cli import app
+from cosheaf.core.artifact import BaseArtifact
+from cosheaf.storage.loader import load_artifacts
+from cosheaf.storage.repo import RepoContext
 
 runner = CliRunner()
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _write_artifact(
@@ -56,6 +60,24 @@ def test_validate_passes_on_repository_examples() -> None:
     assert result.exit_code == 0
     assert "Validation passed" in result.output
     assert "scaffold-only" not in result.output
+
+
+def test_repository_examples_and_pilots_are_model_valid() -> None:
+    result = runner.invoke(app, ["validate"])
+
+    assert result.exit_code == 0
+    records = load_artifacts(RepoContext(ROOT))
+    by_id = {record.id: record for record in records}
+
+    for artifact_id in (
+        "claim.example.complete-graph-edge-count",
+        "claim.example.cslib-formal-link",
+        "definition.graph",
+        "construction.graph-toy.0001",
+        "construction.sat-smt-gadget.0001",
+    ):
+        assert artifact_id in by_id
+        assert isinstance(by_id[artifact_id].record, BaseArtifact)
 
 
 def test_artifact_validate_passes_for_single_example() -> None:

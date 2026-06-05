@@ -8,7 +8,8 @@ TCS-Cosheaf is organized as a layered system. Each layer should expose narrow in
 
 ### Knowledge Layer
 
-Defines the artifact model, artifact status concepts, artifact type vocabulary, and domain-level invariants.
+Defines the artifact model, artifact status concepts, artifact type vocabulary,
+formalization-link metadata, and domain-level invariants.
 
 ### Configuration Layer
 
@@ -45,6 +46,25 @@ rebuild the index after YAML changes before querying. Query results are ordered
 deterministically and expose artifact metadata, domain membership, dependency
 edges, reverse dependency edges, and the indexed source KB root.
 
+### Formal Link Layer
+
+Records references from artifacts to external formal declarations, currently
+Lean 4 declarations in libraries such as CSLib or mathlib. This layer stores
+library, import-path, symbol, declaration-kind, status, check-mode, expected
+type, and notes metadata under `formalizations`.
+
+Formal links are references, not copied proof bodies. Cosheaf does not replace
+CSLib, mathlib, or other formal libraries, and artifact YAML should not vendor
+Lean proofs. Semantic alignment between an informal artifact statement and a
+formal declaration is recorded separately under `alignment`; a Lean pass does
+not automatically prove informal/formal alignment.
+
+`verification_policy` records whether a formal link, Lean check, or alignment
+review is expected for an artifact. In the current MVP these fields are
+schema/model metadata only and do not change accepted promotion semantics.
+This MVP does not add CLI commands, verifier execution, gate enforcement,
+index/query support, or context-pack display for formalization metadata.
+
 ### Graph Layer
 
 Builds a directed artifact dependency graph from `depends_on`. Edge direction is
@@ -67,11 +87,21 @@ when no backend is available. The Lean adapter supports a minimal optional plain
 Lean file invocation path through a supported backend, currently external
 `lean` when available, while keeping Lean optional and recording skipped results
 when no backend is available. No verifier adapter performs natural-language
-autoformalization.
+autoformalization. The Lean adapter does not fetch or check CSLib/mathlib
+references recorded in `formalizations`.
 
 ### Gate/Review Layer
 
-Combines schema checks, repository invariants, dependency checks, verifier outcomes, reproducibility metadata, and PR checklist checks into gate results.
+Combines schema checks, repository invariants, dependency checks, verifier
+outcomes, reproducibility metadata, source metadata, and PR checklist checks
+into gate results.
+
+Alignment review remains separate from verifier execution. Missing optional
+Lean tooling remains a skipped verifier result, not a pass. The current gate
+layer records formal-link fields through schema/model validation but does not
+yet require formal links, Lean checks, or alignment review for accepted
+promotion. A future G10 Formal Link Gate may enforce formal-link policy after
+the schema/model foundation is stable.
 
 Workspace-aware dependency checks additionally reject public artifacts that
 depend on private artifacts. Status/path checks evaluate artifact lifecycle

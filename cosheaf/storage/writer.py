@@ -8,8 +8,19 @@ from typing import Any
 import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel
 
+from cosheaf.core.artifact import AlignmentReview, BaseArtifact, VerificationPolicy
+
 
 def _to_plain_data(data: Any) -> Any:
+    if isinstance(data, BaseArtifact):
+        dumped = data.model_dump(mode="json")
+        if not data.formalizations:
+            dumped.pop("formalizations", None)
+        if data.alignment == AlignmentReview():
+            dumped.pop("alignment", None)
+        if data.verification_policy == VerificationPolicy():
+            dumped.pop("verification_policy", None)
+        return dumped
     if isinstance(data, BaseModel):
         return data.model_dump(mode="json")
     return data

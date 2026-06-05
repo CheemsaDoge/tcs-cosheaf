@@ -107,11 +107,21 @@
 - `cosheaf.core.artifact.Risk`: Pydantic v2 model for artifact risk metadata.
 - `cosheaf.core.artifact.ReviewRef`: Pydantic v2 model for inline review state.
 - `cosheaf.core.artifact.SourceMetadata`: Pydantic v2 model for structured source/citation metadata.
+- `cosheaf.core.artifact.FormalizationRef`: Pydantic v2 model for one external
+  formal declaration reference.
+- `cosheaf.core.artifact.AlignmentReview`: Pydantic v2 model for semantic
+  alignment review between an informal artifact statement and a formal
+  declaration.
+- `cosheaf.core.artifact.VerificationPolicy`: Pydantic v2 model for
+  per-artifact formal-link, Lean-check, and alignment-review expectations.
 - `cosheaf.core.task.AgentTask`: Pydantic v2 model for local task records, re-exported through `cosheaf.agent.task.AgentTask`.
 
 `BaseArtifact` fields include:
 
 - `sources: list[SourceMetadata]`
+- `formalizations: list[FormalizationRef]`
+- `alignment: AlignmentReview`
+- `verification_policy: VerificationPolicy`
 
 `SourceMetadata` fields are:
 
@@ -126,6 +136,57 @@
 - `theorem_number`
 - `page`
 - `notes`
+
+`FormalizationRef` fields are:
+
+- `id`
+- `system`: currently `lean4`
+- `library`
+- `library_ref`
+- `import_path`
+- `symbol`
+- `declaration_kind`: `definition`, `theorem`, `lemma`, `instance`,
+  `structure`, or `other`
+- `status`: `planned`, `linked`, `checked`, `broken`, or `deprecated`
+- `check_mode`: `external_library_ref` or `local_file`
+- `expected_type`: optional, defaults to an empty string
+- `notes`: optional, defaults to an empty string
+
+Formalization reference IDs use the same dot-separated lowercase slug format
+as artifact IDs. `library`, `library_ref`, `import_path`, and `symbol` are
+required non-empty strings.
+
+`AlignmentReview` fields are:
+
+- `status`: `none`, `requested`, `human_reviewed`, or `rejected`
+- `reviewer`
+- `reviewed_at`
+- `convention_notes`
+- `limitations`
+
+Alignment statuses `human_reviewed` and `rejected` require a non-empty
+`reviewer`. `reviewed_at`, when present, must include timezone information.
+
+`VerificationPolicy` fields are:
+
+- `level`: `source_reviewed`, `source_reviewed_with_formal_link`,
+  `machine_checked`, or `lean_required`
+- `require_formal_link`
+- `require_lean_check`
+- `require_alignment_review`
+
+`source_reviewed_with_formal_link` requires `require_formal_link: true`.
+`lean_required` requires both `require_formal_link: true` and
+`require_lean_check: true`.
+
+Formalization links are metadata references to external declarations. They are
+not copied Lean proof bodies, are not stored in `evidence`, and do not change
+accepted promotion semantics in the MVP.
+
+This PR adds schema/model interfaces only for formal-link metadata. It does
+not add CLI commands, verifier execution, gate enforcement, index/query
+support, or context-pack display for `formalizations`, `alignment`, or
+`verification_policy`.
 
 #### Core Enums
 
@@ -301,6 +362,10 @@ is true, `pass` when applicable accepted public artifacts are complete, and
 `not_applicable` for legacy mode, disabled source policy, or no accepted public
 artifacts. It does not call GitHub or require network access. It writes JSON
 and Markdown reports under `.cosheaf/reports/` by default.
+
+Formal-link fields are currently enforced by G1 schema/model parsing only.
+G6 verifier execution does not inspect CSLib/mathlib references recorded in
+`formalizations`, and alignment review remains separate from Lean checking.
 
 G9 `GateResult.details` entries use:
 
@@ -661,7 +726,14 @@ the repository root as cwd.
   artifact IDs and explicit external references beginning with `external:`.
   Artifact `sources` accepts structured source metadata entries with `kind`,
   `title`, `authors`, `year`, `doi`, `arxiv`, `url`, `theorem_number`, `page`,
-  and `notes`.
+  and `notes`. Artifact `formalizations` accepts strict formal declaration
+  reference entries with `system`, `library`, `import_path`, `symbol`,
+  `declaration_kind`, `status`, `check_mode`, `expected_type`, and `notes`.
+  Artifact `alignment` accepts semantic alignment review metadata. Artifact
+  `verification_policy` accepts formal-link, Lean-check, and alignment-review
+  policy metadata. Formalization references are separate from `evidence`; this
+  schema change does not add CLI commands, verifier execution, gate
+  enforcement, index/query support, or context-pack display.
 - `schemas/issue.schema.json`: issue YAML schema.
 - `schemas/review.schema.json`: review YAML schema.
 - `schemas/verifier.schema.json`: verifier result schema.

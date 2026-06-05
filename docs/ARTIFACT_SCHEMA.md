@@ -43,6 +43,9 @@ The base artifact schema currently defines these common fields:
 - `statement`
 - `evidence`
 - `sources`
+- `formalizations`
+- `alignment`
+- `verification_policy`
 - `review`
 - `risk`
 
@@ -72,6 +75,51 @@ must have a non-empty title, at least one author, a year, and at least one
 citation locator from `doi`, `arxiv`, `url`, `theorem_number`, or `page`.
 External dependency references in `depends_on` are not a substitute for source
 metadata.
+
+## Formalization Links
+
+Artifacts may carry formal declaration references in `formalizations`. These
+references point to external formal libraries such as CSLib or mathlib without
+copying proof bodies into YAML and without making those libraries framework
+dependencies.
+
+Each formalization reference includes:
+
+- `id`
+- `system`: currently `lean4`
+- `library`
+- `library_ref`
+- `import_path`
+- `symbol`
+- `declaration_kind`: `definition`, `theorem`, `lemma`, `instance`,
+  `structure`, or `other`
+- `status`: `planned`, `linked`, `checked`, `broken`, or `deprecated`
+- `check_mode`: `external_library_ref` or `local_file`
+- `expected_type`: optional, defaults to an empty string
+- `notes`: optional, defaults to an empty string
+
+Formalization reference IDs use the same dot-separated lowercase slug format as
+artifact IDs. `library`, `library_ref`, `import_path`, and `symbol` must be
+non-empty after trimming whitespace.
+
+Formal declaration references must not be stored in `evidence`. The `evidence`
+field remains for executable or otherwise evidence-like inputs; formal-library
+references belong in `formalizations`.
+
+`alignment` records semantic review between the informal statement and the
+formal declaration. Lean can check a formal file or declaration, but a Lean
+pass does not automatically prove that the informal artifact statement uses the
+same conventions or states the same theorem. Alignment review is separate from
+Lean checking. `reviewed_at`, when present, must be timezone-aware. Alignment
+statuses `human_reviewed` and `rejected` require a non-empty reviewer.
+
+`verification_policy` records whether the artifact expects a formal link, Lean
+check, or alignment review. Current levels are `source_reviewed`,
+`source_reviewed_with_formal_link`, `machine_checked`, and `lean_required`.
+In this MVP, policy values are recorded and validated but do not change
+accepted promotion semantics. `source_reviewed_with_formal_link` requires
+`require_formal_link: true`; `lean_required` requires both
+`require_formal_link: true` and `require_lean_check: true`.
 
 ## ID Format
 
@@ -167,12 +215,16 @@ The initial Pydantic v2 model layer lives under `cosheaf/core/`:
 - `cosheaf.core.artifact.Evidence`
 - `cosheaf.core.artifact.ReviewRef`
 - `cosheaf.core.artifact.SourceMetadata`
+- `cosheaf.core.artifact.FormalizationRef`
+- `cosheaf.core.artifact.AlignmentReview`
+- `cosheaf.core.artifact.VerificationPolicy`
 - `cosheaf.core.artifact.Risk`
 - `cosheaf.core.status.ArtifactType`
 - `cosheaf.core.status.ArtifactStatus`
 
 The model layer validates artifact IDs, enum values, timezone-aware timestamps,
-dependency references, evidence records, source metadata shape, review state,
+dependency references, evidence records, source metadata shape, formalization
+link shape, alignment review state, verification policy values, review state,
 and risk state.
 Path/status rules are exposed as pure helper functions; they do not scan the
 repository.
@@ -204,3 +256,10 @@ checklist enforcement can validate a local PR body markdown file through
 source is available. G9 source metadata enforcement checks accepted public
 artifacts in configured workspaces when `accepted_requires_source = true` while
 preserving draft, private, and legacy single-root behavior.
+
+The Formal Link Layer is implemented as optional schema/model metadata and an
+example artifact. It records Lean-library declaration references without
+adding CSLib/mathlib dependencies, without requiring network access, and
+without changing accepted promotion semantics. It does not add formal-link CLI
+commands, verifier execution, G10 gate enforcement, index/query support, or
+context-pack display for formalization metadata.

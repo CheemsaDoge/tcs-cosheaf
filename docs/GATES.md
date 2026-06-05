@@ -60,6 +60,11 @@ as skipped/nonblocking gatekeeper evidence; optional formal tools therefore
 stay optional, but skipped output must not be described as a successful
 verification.
 
+Formal declaration references under `formalizations` are schema/model metadata,
+not verifier evidence. They are not stored in `evidence`, do not make Lean run
+automatically, and do not satisfy target verifier checks for accepted
+promotion.
+
 Direct accepted creation remains refused by `cosheaf artifact create`.
 `cosheaf artifact move-status <artifact-id> accepted` also fails clearly
 instead of moving anything into `kb/accepted/`. This preserves the invariant
@@ -165,7 +170,8 @@ working directory, timeout, exit code, stdout/stderr paths, and output paths.
 Exit code `0` reports `pass`, nonzero exit code reports `fail`, and timeout or
 command startup errors report `error`. This path does not inspect theorem
 semantics beyond Lean's own exit code and does not autoformalize natural
-language.
+language. It also does not fetch or check external CSLib/mathlib declarations
+recorded in `formalizations`.
 
 Optional-tool evidence kinds are:
 
@@ -186,8 +192,25 @@ repository-local SMT-LIB evidence only when a supported backend is available,
 defaults to optional `z3`, and does not make skipped SMT checks pass. Lean
 support is also minimal and optional: it can execute repository-local plain Lean
 files only when a supported backend is available, defaults to optional `lean`,
-does not make skipped Lean checks pass, and does not implement SAT or SMT. SAT,
-SMT, and Lean adapters remain separate minimal paths.
+does not make skipped Lean checks pass, does not check external Lean library
+links, and does not implement SAT or SMT. SAT, SMT, and Lean adapters remain
+separate minimal paths.
+
+### Formal Link Metadata Gate Boundary
+
+G1 schema/model validation parses optional `formalizations`, `alignment`, and
+`verification_policy` fields. Current gates do not require these fields for
+accepted promotion and do not treat them as proof of informal/formal semantic
+alignment.
+
+Alignment review is separate from Lean checking. A formal declaration may exist
+or a local Lean file may pass while the informal artifact still needs human
+review for convention and statement alignment.
+
+G10 Formal Link Gate enforcement is future work. This MVP does not add a
+formal-link gate, does not check external CSLib/mathlib declarations, does not
+add formal-link index/query support, and does not display formal-link metadata
+in context packs.
 
 ### Reproducibility Metadata Gate
 
@@ -348,6 +371,10 @@ moving eligible artifacts into the accepted area of their KB root.
 - G7 reproducibility metadata gate
 - G8 PR checklist gate
 - G9 source metadata gate for accepted public artifacts
+
+Formal-link fields are currently enforced only by G1 schema/model parsing.
+They do not alter G6 verifier execution, G7 reproducibility metadata checks, G9
+source metadata checks, or accepted promotion requirements.
 
 G7 is reported as `pass` when applicable executable evidence has reproducibility
 metadata, `fail` when required metadata is missing, and `not_applicable` when no

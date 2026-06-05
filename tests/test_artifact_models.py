@@ -7,11 +7,14 @@ import yaml  # type: ignore[import-untyped]
 from pydantic import ValidationError
 
 from cosheaf.core.artifact import (
+    AlignmentReview,
     BaseArtifact,
     Evidence,
+    FormalizationRef,
     ReviewRef,
     Risk,
     SourceMetadata,
+    VerificationPolicy,
 )
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.status import (
@@ -124,6 +127,352 @@ def test_sources_default_to_empty_list() -> None:
     artifact = BaseArtifact.model_validate(_valid_artifact_data())
 
     assert artifact.sources == []
+
+
+def test_formal_link_defaults_are_backward_compatible() -> None:
+    artifact = BaseArtifact.model_validate(_valid_artifact_data())
+
+    assert artifact.formalizations == []
+    assert artifact.alignment == AlignmentReview()
+    assert artifact.alignment.status == "none"
+    assert artifact.verification_policy == VerificationPolicy()
+    assert artifact.verification_policy.level == "source_reviewed"
+
+
+def test_artifact_with_formalization_link_parses() -> None:
+    data = _valid_artifact_data()
+    data["formalizations"] = [
+        {
+            "id": "cslib.complete-graph-edge-count",
+            "system": "lean4",
+            "library": "CSLib",
+            "library_ref": "CSLib.Graph.Basic",
+            "import_path": "CSLib.Graph.Basic",
+            "symbol": "CSLib.Graph.completeGraph_edgeCount",
+            "declaration_kind": "theorem",
+            "status": "linked",
+            "check_mode": "external_library_ref",
+            "expected_type": "Fake Lean type for documentation-only example.",
+            "notes": "External CSLib declaration reference; no proof copied.",
+        }
+    ]
+    data["alignment"] = {
+        "status": "requested",
+        "reviewer": "",
+        "reviewed_at": None,
+        "convention_notes": [
+            "Confirm K_n convention matches the informal complete graph statement."
+        ],
+        "limitations": "Lean link alone does not prove informal alignment.",
+    }
+    data["verification_policy"] = {
+        "level": "source_reviewed_with_formal_link",
+        "require_formal_link": True,
+        "require_lean_check": False,
+        "require_alignment_review": False,
+    }
+
+    artifact = BaseArtifact.model_validate(data)
+
+    assert artifact.formalizations == [
+        FormalizationRef(
+            id="cslib.complete-graph-edge-count",
+            system="lean4",
+            library="CSLib",
+            library_ref="CSLib.Graph.Basic",
+            import_path="CSLib.Graph.Basic",
+            symbol="CSLib.Graph.completeGraph_edgeCount",
+            declaration_kind="theorem",
+            status="linked",
+            check_mode="external_library_ref",
+            expected_type="Fake Lean type for documentation-only example.",
+            notes="External CSLib declaration reference; no proof copied.",
+        )
+    ]
+    assert artifact.alignment.status == "requested"
+    assert artifact.verification_policy.level == "source_reviewed_with_formal_link"
+    assert artifact.verification_policy.require_formal_link is True
+    assert artifact.verification_policy.require_lean_check is False
+
+
+@pytest.mark.parametrize("missing_field", ["library_ref", "import_path", "symbol"])
+def test_missing_required_formalization_subfield_fails(missing_field: str) -> None:
+    data = _valid_artifact_data()
+    formalization = {
+        "id": "cslib.complete-graph-edge-count",
+        "system": "lean4",
+        "library": "CSLib",
+        "library_ref": "CSLib.Graph.Basic",
+        "import_path": "CSLib.Graph.Basic",
+        "symbol": "CSLib.Graph.completeGraph_edgeCount",
+        "declaration_kind": "theorem",
+        "status": "linked",
+        "check_mode": "external_library_ref",
+        "expected_type": "Fake Lean type.",
+        "notes": "",
+    }
+    formalization.pop(missing_field)
+    data["formalizations"] = [formalization]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+@pytest.mark.parametrize("empty_field", ["library_ref", "import_path", "symbol"])
+def test_empty_required_formalization_subfield_fails(empty_field: str) -> None:
+    data = _valid_artifact_data()
+    formalization = {
+        "id": "cslib.complete-graph-edge-count",
+        "system": "lean4",
+        "library": "CSLib",
+        "library_ref": "CSLib.Graph.Basic",
+        "import_path": "CSLib.Graph.Basic",
+        "symbol": "CSLib.Graph.completeGraph_edgeCount",
+        "declaration_kind": "theorem",
+        "status": "linked",
+        "check_mode": "external_library_ref",
+        "expected_type": "Fake Lean type.",
+        "notes": "",
+    }
+    formalization[empty_field] = " "
+    data["formalizations"] = [formalization]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_invalid_formalization_status_fails() -> None:
+    data = _valid_artifact_data()
+    data["formalizations"] = [
+        {
+            "id": "cslib.complete-graph-edge-count",
+            "system": "lean4",
+            "library": "CSLib",
+            "library_ref": "CSLib.Graph.Basic",
+            "import_path": "CSLib.Graph.Basic",
+            "symbol": "CSLib.Graph.completeGraph_edgeCount",
+            "declaration_kind": "theorem",
+            "status": "proved",
+            "check_mode": "external_library_ref",
+            "expected_type": "Fake Lean type.",
+            "notes": "",
+        }
+    ]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_formalization_expected_type_and_notes_default_to_empty_strings() -> None:
+    data = _valid_artifact_data()
+    data["formalizations"] = [
+        {
+            "id": "cslib.complete-graph-edge-count",
+            "system": "lean4",
+            "library": "CSLib",
+            "library_ref": "CSLib.Graph.Basic",
+            "import_path": "CSLib.Graph.Basic",
+            "symbol": "CSLib.Graph.completeGraph_edgeCount",
+            "declaration_kind": "theorem",
+            "status": "planned",
+            "check_mode": "external_library_ref",
+        }
+    ]
+
+    artifact = BaseArtifact.model_validate(data)
+
+    assert artifact.formalizations[0].expected_type == ""
+    assert artifact.formalizations[0].notes == ""
+
+
+def test_artifact_with_alignment_review_parses() -> None:
+    data = _valid_artifact_data()
+    data["alignment"] = {
+        "status": "human_reviewed",
+        "reviewer": " reviewer@example.org ",
+        "reviewed_at": "2026-06-04T00:00:00Z",
+        "convention_notes": [" finite simple graphs ", ""],
+        "limitations": " None known. ",
+    }
+
+    artifact = BaseArtifact.model_validate(data)
+
+    assert artifact.alignment.status == "human_reviewed"
+    assert artifact.alignment.reviewer == "reviewer@example.org"
+    assert artifact.alignment.reviewed_at == datetime(2026, 6, 4, tzinfo=UTC)
+    assert artifact.alignment.convention_notes == ["finite simple graphs"]
+    assert artifact.alignment.limitations == "None known."
+
+
+def test_artifact_with_verification_policy_parses() -> None:
+    data = _valid_artifact_data()
+    data["verification_policy"] = {
+        "level": "source_reviewed_with_formal_link",
+        "require_formal_link": True,
+        "require_lean_check": False,
+        "require_alignment_review": True,
+    }
+
+    artifact = BaseArtifact.model_validate(data)
+
+    assert artifact.verification_policy.level == "source_reviewed_with_formal_link"
+    assert artifact.verification_policy.require_formal_link is True
+    assert artifact.verification_policy.require_lean_check is False
+    assert artifact.verification_policy.require_alignment_review is True
+
+
+def test_invalid_formalization_id_fails() -> None:
+    data = _valid_artifact_data()
+    data["formalizations"] = [
+        {
+            "id": "CSLib.bad_id",
+            "system": "lean4",
+            "library": "CSLib",
+            "library_ref": "CSLib.Graph.Basic",
+            "import_path": "CSLib.Graph.Basic",
+            "symbol": "CSLib.Graph.completeGraph_edgeCount",
+            "declaration_kind": "theorem",
+            "status": "planned",
+            "check_mode": "external_library_ref",
+        }
+    ]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_invalid_formalization_declaration_kind_fails() -> None:
+    data = _valid_artifact_data()
+    data["formalizations"] = [
+        {
+            "id": "cslib.complete-graph-edge-count",
+            "system": "lean4",
+            "library": "CSLib",
+            "library_ref": "CSLib.Graph.Basic",
+            "import_path": "CSLib.Graph.Basic",
+            "symbol": "CSLib.Graph.completeGraph_edgeCount",
+            "declaration_kind": "axiom",
+            "status": "planned",
+            "check_mode": "external_library_ref",
+        }
+    ]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_invalid_formalization_check_mode_fails() -> None:
+    data = _valid_artifact_data()
+    data["formalizations"] = [
+        {
+            "id": "cslib.complete-graph-edge-count",
+            "system": "lean4",
+            "library": "CSLib",
+            "library_ref": "CSLib.Graph.Basic",
+            "import_path": "CSLib.Graph.Basic",
+            "symbol": "CSLib.Graph.completeGraph_edgeCount",
+            "declaration_kind": "theorem",
+            "status": "planned",
+            "check_mode": "lake_project",
+        }
+    ]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_invalid_verification_policy_level_fails() -> None:
+    data = _valid_artifact_data()
+    data["verification_policy"] = {
+        "level": "fully_autoformalized",
+        "require_formal_link": False,
+        "require_lean_check": False,
+        "require_alignment_review": False,
+    }
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_source_reviewed_with_formal_link_requires_formal_link() -> None:
+    data = _valid_artifact_data()
+    data["verification_policy"] = {
+        "level": "source_reviewed_with_formal_link",
+        "require_formal_link": False,
+        "require_lean_check": False,
+        "require_alignment_review": False,
+    }
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_lean_required_policy_requires_formal_link_and_lean_check() -> None:
+    data = _valid_artifact_data()
+    data["verification_policy"] = {
+        "level": "lean_required",
+        "require_formal_link": True,
+        "require_lean_check": False,
+        "require_alignment_review": False,
+    }
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_lean_required_policy_requires_formal_link() -> None:
+    data = _valid_artifact_data()
+    data["verification_policy"] = {
+        "level": "lean_required",
+        "require_formal_link": False,
+        "require_lean_check": True,
+        "require_alignment_review": False,
+    }
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_alignment_human_reviewed_requires_reviewer() -> None:
+    data = _valid_artifact_data()
+    data["alignment"] = {
+        "status": "human_reviewed",
+        "reviewer": " ",
+        "reviewed_at": "2026-06-04T00:00:00Z",
+        "convention_notes": [],
+        "limitations": "",
+    }
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_alignment_rejected_requires_reviewer() -> None:
+    data = _valid_artifact_data()
+    data["alignment"] = {
+        "status": "rejected",
+        "reviewer": "",
+        "reviewed_at": "2026-06-04T00:00:00Z",
+        "convention_notes": [],
+        "limitations": "Convention mismatch.",
+    }
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_alignment_naive_reviewed_at_fails() -> None:
+    data = _valid_artifact_data()
+    data["alignment"] = {
+        "status": "requested",
+        "reviewer": "",
+        "reviewed_at": "2026-06-04T00:00:00",
+        "convention_notes": [],
+        "limitations": "",
+    }
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
 
 
 def test_source_metadata_parses_and_normalizes_strings() -> None:

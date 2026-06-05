@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.status import ArtifactStatus, ArtifactType
@@ -88,6 +88,128 @@ class SourceMetadata(BaseModel):
         return value
 
 
+class FormalizationRef(BaseModel):
+    """Reference to an external formal library declaration."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    id: str = Field(min_length=1)
+    system: Literal["lean4"]
+    library: str = Field(min_length=1)
+    library_ref: str = Field(min_length=1)
+    import_path: str = Field(min_length=1)
+    symbol: str = Field(min_length=1)
+    declaration_kind: Literal[
+        "definition",
+        "theorem",
+        "lemma",
+        "instance",
+        "structure",
+        "other",
+    ]
+    status: Literal["planned", "linked", "checked", "broken", "deprecated"]
+    check_mode: Literal["external_library_ref", "local_file"]
+    expected_type: str = ""
+    notes: str = ""
+
+    @field_validator(
+        "id",
+        "library",
+        "library_ref",
+        "import_path",
+        "symbol",
+        "expected_type",
+        "notes",
+    )
+    @classmethod
+    def _strip_strings(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("id", "library", "library_ref", "import_path", "symbol")
+    @classmethod
+    def _validate_required_strings(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("formalization reference field must not be empty")
+        return stripped
+
+    @field_validator("id")
+    @classmethod
+    def _validate_id(cls, value: str) -> str:
+        return validate_artifact_id(value)
+
+
+class AlignmentReview(BaseModel):
+    """Semantic alignment review between informal and formal statements."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    status: Literal["none", "requested", "human_reviewed", "rejected"] = "none"
+    reviewer: str = ""
+    reviewed_at: datetime | None = None
+    convention_notes: list[str] = Field(default_factory=list)
+    limitations: str = ""
+
+    @field_validator("reviewer", "limitations")
+    @classmethod
+    def _strip_strings(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("convention_notes")
+    @classmethod
+    def _strip_convention_notes(cls, values: list[str]) -> list[str]:
+        return [value.strip() for value in values if value.strip()]
+
+    @field_validator("reviewed_at")
+    @classmethod
+    def _validate_review_timestamp(cls, value: datetime | None) -> datetime | None:
+        if value is not None and (value.tzinfo is None or value.utcoffset() is None):
+            raise ValueError("reviewed_at must include timezone information")
+        return value
+
+    @model_validator(mode="after")
+    def _validate_reviewer_for_completed_review(self) -> AlignmentReview:
+        if self.status in {"human_reviewed", "rejected"} and not self.reviewer:
+            raise ValueError(
+                "reviewer must be non-empty when alignment status is "
+                "human_reviewed or rejected"
+            )
+        return self
+
+
+class VerificationPolicy(BaseModel):
+    """Per-artifact verification policy for formal links and alignment review."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    level: Literal[
+        "source_reviewed",
+        "source_reviewed_with_formal_link",
+        "machine_checked",
+        "lean_required",
+    ] = "source_reviewed"
+    require_formal_link: bool = False
+    require_lean_check: bool = False
+    require_alignment_review: bool = False
+
+    @model_validator(mode="after")
+    def _validate_policy_consistency(self) -> VerificationPolicy:
+        if (
+            self.level == "source_reviewed_with_formal_link"
+            and not self.require_formal_link
+        ):
+            raise ValueError(
+                "source_reviewed_with_formal_link policy must require a formal link"
+            )
+        if self.level == "lean_required" and not self.require_formal_link:
+            raise ValueError("lean_required policy must require a formal link")
+        if self.level == "lean_required" and not self.require_lean_check:
+            raise ValueError(
+                "lean_required policy must require a Lean check"
+            )
+        return self
+
+
 class Risk(BaseModel):
     """Risk classification for an artifact."""
 
@@ -116,6 +238,11 @@ class BaseArtifact(BaseModel):
     statement: str
     evidence: list[Evidence] = Field(default_factory=list)
     sources: list[SourceMetadata] = Field(default_factory=list)
+    formalizations: list[FormalizationRef] = Field(default_factory=list)
+    alignment: AlignmentReview = Field(default_factory=AlignmentReview)
+    verification_policy: VerificationPolicy = Field(
+        default_factory=VerificationPolicy
+    )
     review: ReviewRef = Field(default_factory=ReviewRef)
     risk: Risk = Field(default_factory=Risk)
 
