@@ -1,8 +1,19 @@
 # Project State
 
-## Current State After P0 Release Cleanup
+## Current State After v0.1.1 Formal Link Layer Support
 
-TCS-Cosheaf is in v0.1.0 release-candidate / pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata and formalization-link metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds including formal-link metadata, a read-only SQLite query API over rebuilt index output including formalization queries, gatekeeper report generation, ranked issue-scoped context pack generation including compact formal-link display, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, and plain Lean verifier adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in v0.1.1 Formal Link Layer support / pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata and formalization-link metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds including formal-link metadata, a read-only SQLite query API over rebuilt index output including formalization queries, gatekeeper report generation including G10 Formal Link Gate output, ranked issue-scoped context pack generation including compact formal-link display, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, and plain Lean verifier adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+
+Issue 61 prepares the `v0.1.1` release after Formal Link Layer metadata, G10
+static metadata validation, context-pack display, deterministic
+SQLite/manifest indexing, and read-only query API support have landed. The
+Python package version is `0.1.1`. The release boundary is metadata-only:
+Cosheaf does not replace CSLib or mathlib, does not copy Lean proof bodies,
+does not run external Lean library checks, does not add Lean, lake, mathlib, or
+CSLib dependencies, does not fetch external libraries, and does not change
+accepted-promotion semantics beyond ordinary gatekeeper blocking behavior.
+Downstream repositories should pin to `v0.1.1` before using formalization
+fields.
 
 Issue 46 clears the release-accounting contradictions before tagging the
 framework as `v0.1.0`. The Python package version is already `0.1.0`; the
@@ -103,11 +114,12 @@ declaration. `verification_policy` records whether a formal link, Lean check,
 or alignment review is expected. These fields are metadata only in this MVP:
 they do not copy Lean proofs, do not add CSLib or mathlib dependencies, do not
 require network access, and do not change accepted promotion semantics beyond
-ordinary gatekeeper blocking behavior. Issue #57 adds G10 Formal Link Gate as
+ordinary gatekeeper blocking behavior. Issue #57 added G10 Formal Link Gate as
 static metadata validation over `verification_policy`, `formalizations`, and
-`alignment` without running Lean. Issue #59 surfaces the same formal-link
+`alignment` without running Lean. Issue #59 surfaced the same formal-link
 metadata in context packs and deterministic SQLite/query outputs without
-changing G10 behavior.
+changing G10 behavior. External Lean `#check` support for CSLib/mathlib
+declaration references remains future work.
 
 The configuration layer defines optional `cosheaf.toml` workspace loading. A
 workspace has a name, public/private policy fields, and one or more KB roots,
@@ -160,8 +172,8 @@ evidence linkage, remain nonblocking and are not proof failures. G10 does not
 run external library checks for CSLib or mathlib references, does not execute
 Lean, and does not treat a Lean pass as proof of informal/formal statement
 alignment. Missing optional Lean tooling remains a skipped verifier result, not
-a pass. Public KB planned links and a future Lean library reference checker
-such as `LeanLibraryRefAdapter` remain future work.
+a pass. A future Lean library reference checker such as
+`LeanLibraryRefAdapter` remains future work.
 
 The agent harness layer now builds bounded deterministic context packs for issue IDs. Context packs are written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`, `ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and `COMMANDS.md`. Relevant artifacts are selected and ranked from direct issue references, one-hop dependency neighbors, domain matches against issue text/tags, and artifact tag matches against issue tags. Each selected artifact includes explainable reasons. Draft artifacts are visibly labeled, and refuted/obsolete/superseded artifacts appear only when relevant and are marked as known failures rather than current truth. When relevant artifacts carry formal-link metadata or policy-relevant formal settings, context packs show compact formalization, alignment, verification-policy, and G10-relevant hint lines without loading gate reports or claiming Lean verification.
 
@@ -371,7 +383,5 @@ gatekeeper result.
   invocation path.
 - External Lean library checking for CSLib/mathlib references recorded in
   `formalizations`.
-- Public KB planned formalization links after a framework release carrying the
-  formal-link metadata, gate, context, and query surfaces.
 - A future Lean library reference checker such as `LeanLibraryRefAdapter`.
 - Automatic informal/formal semantic alignment checking.

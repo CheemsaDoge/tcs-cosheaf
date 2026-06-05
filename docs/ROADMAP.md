@@ -1,15 +1,15 @@
 # Roadmap
 
-TCS-Cosheaf is preparing a v0.1.0 release candidate while still remaining
-pre-MVP. This roadmap is intentionally concrete and tied to named milestones or
-active GitHub issues. It should not be read as a commitment to dates, adoption,
-or production readiness.
+TCS-Cosheaf is preparing a v0.1.1 Formal Link Layer support release while
+still remaining pre-MVP. This roadmap is intentionally concrete and tied to
+named milestones or active GitHub issues. It should not be read as a commitment
+to dates, adoption, or production readiness.
 
-## Current Milestone: v0.1.0 Release Candidate Cleanup
+## Current Milestone: v0.1.1 Formal Link Layer Support
 
-Goal: clear release-state contradictions so the framework can be reviewed,
-merged, and tagged as `v0.1.0` without stale license, milestone, roadmap, or
-known-limitation text.
+Goal: tag the framework after Formal Link Layer metadata, G10 static metadata
+validation, context-pack display, deterministic index storage, and read-only
+query APIs have landed, while preserving the metadata-only boundary.
 
 Completed scaffold pieces include:
 
@@ -21,11 +21,18 @@ Completed scaffold pieces include:
 - Controlled accepted-artifact promotion workflow.
 - Dependency graph and deterministic index rebuild outputs.
 - Read-only SQLite query API over rebuilt index output, including artifact,
-  status, type, domain, dependency, and reverse-dependency queries through
+  status, type, domain, dependency, reverse-dependency, formalization, and
+  formal-policy queries through
   `ArtifactIndexQuery`.
 - Gatekeeper reports with machine-readable JSON and human-readable Markdown.
 - Local G8 PR checklist gate for explicit PR body markdown files.
 - Ranked context pack generation for issue-scoped agent work.
+- Formal Link Layer artifact fields `formalizations`, `alignment`, and
+  `verification_policy`.
+- G10 Formal Link Gate for static consistency between formal-link metadata,
+  alignment review, and verification policy.
+- Context-pack formal-link display that does not claim Lean verification.
+- Deterministic `formalizations` and `artifact_formal_policy` SQLite tables.
 - Local task, worker contract, and orchestrator stubs.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
   DIMACS adapter, minimal optional SMT-LIB adapter, and minimal optional Lean
@@ -53,6 +60,8 @@ list of currently open issues.
 
 ### Verification Depth
 
+- Add external Lean library reference checking for recorded `import_path` and
+  `symbol` metadata without vendoring CSLib or mathlib.
 - Expand SAT backend coverage beyond the minimal optional DIMACS invocation path.
 - Expand SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Expand Lean support beyond the minimal optional plain-file invocation path.
@@ -71,5 +80,7 @@ list of currently open issues.
 - Model training.
 - Automatic theorem-proving agent.
 - Full Lean autoformalization.
+- CSLib/mathlib replacement or vendoring.
+- Automatic informal/formal semantic alignment checking.
 - Multi-user permission system.
 - Claims about project adoption, production usage, users, stars, or downloads.
