@@ -38,13 +38,17 @@ Current index outputs are:
 
 Index rebuilds load repository YAML records, normalize artifact rows, write
 SQLite from scratch, and emit a deterministic JSON manifest ordered by artifact
-ID and dependency tuple. Artifact rows include the source KB root name.
+ID and dependency tuple. Artifact rows include the source KB root name. Formal
+link metadata is indexed into `formalizations` and `artifact_formal_policy`
+tables and into compact manifest fields.
 
 The SQLite query API is a read-only convenience layer over
 `.cosheaf/index.sqlite`. YAML remains the source of truth; callers should
 rebuild the index after YAML changes before querying. Query results are ordered
 deterministically and expose artifact metadata, domain membership, dependency
-edges, reverse dependency edges, and the indexed source KB root.
+edges, reverse dependency edges, formalization references, formal policy rows,
+and the indexed source KB root. Query methods do not rebuild indexes
+implicitly.
 
 ### Formal Link Layer
 
@@ -63,8 +67,9 @@ not automatically prove informal/formal alignment.
 review is expected for an artifact. G10 Formal Link Gate enforces static
 consistency between `verification_policy`, `formalizations`, and `alignment`.
 This gate does not execute Lean, fetch external libraries, prove
-informal/formal alignment, add index/query support, or display formalization
-metadata in context packs.
+informal/formal alignment, or change accepted-promotion semantics. Formal-link
+context-pack display and SQLite/query support are metadata-only surfaces built
+on the same artifact fields; they do not change G10 behavior.
 
 ### Graph Layer
 
@@ -129,6 +134,12 @@ artifact includes explainable ranking reasons. Accepted artifacts are preferred
 over draft artifacts within the same relevance class. Refuted, obsolete, and
 superseded artifacts are included only when relevant and are marked as known
 failures, not current truth.
+
+When a relevant artifact carries formal-link metadata or policy-relevant formal
+settings, context packs include compact formalization, alignment, verification
+policy, and G10-relevant hint lines. These lines are handoff metadata only:
+they do not load gate reports, do not claim a current G10 verdict, and do not
+claim Lean verification.
 
 The task harness defines protocol-level worker types only. Creating, listing,
 or completing tasks does not call LLMs or external services. The orchestrator

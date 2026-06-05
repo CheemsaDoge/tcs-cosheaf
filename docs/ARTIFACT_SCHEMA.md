@@ -261,11 +261,13 @@ artifacts in configured workspaces when `accepted_requires_source = true` while
 preserving draft, private, and legacy single-root behavior.
 
 The Formal Link Layer is implemented as optional schema/model metadata, an
-example artifact, and G10 static metadata validation. It records Lean-library
+example artifact, G10 static metadata validation, context-pack display, and
+SQLite/query metadata surfaces. It records Lean-library
 declaration references without adding CSLib/mathlib dependencies, without
 requiring network access, and without changing accepted promotion semantics
 beyond ordinary gatekeeper blocking behavior. G10 does not execute Lean, does
 not fetch or inspect external Lean libraries, and does not prove
-informal/formal semantic alignment. The implementation does not add
-formal-link CLI commands, verifier execution for external library references,
-index/query support, or context-pack display for formalization metadata.
+informal/formal semantic alignment. Context packs and query APIs expose the
+same metadata without claiming that Lean verified the informal statement. The
+implementation does not add formal-link CLI commands or verifier execution for
+external library references.
