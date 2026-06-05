@@ -180,13 +180,11 @@ Alignment statuses `human_reviewed` and `rejected` require a non-empty
 `require_lean_check: true`.
 
 Formalization links are metadata references to external declarations. They are
-not copied Lean proof bodies, are not stored in `evidence`, and do not change
-accepted promotion semantics in the MVP.
-
-This PR adds schema/model interfaces only for formal-link metadata. It does
-not add CLI commands, verifier execution, gate enforcement, index/query
-support, or context-pack display for `formalizations`, `alignment`, or
-`verification_policy`.
+not copied Lean proof bodies and are not stored in `evidence`. G10 statically
+checks consistency between `formalizations`, `alignment`, and
+`verification_policy`, but it does not execute Lean, inspect CSLib/mathlib
+libraries, prove informal/formal alignment, or change accepted promotion
+semantics beyond ordinary gatekeeper blocking behavior.
 
 #### Core Enums
 
@@ -331,6 +329,9 @@ depending on draft or otherwise pre-accepted artifacts.
 - `cosheaf.gates.source_metadata_gate.SourceMetadataResult`: aggregate source metadata policy gate result.
 - `cosheaf.gates.source_metadata_gate.missing_required_source_metadata(artifact: BaseArtifact) -> tuple[str, ...]`: returns missing required source metadata fields for an artifact.
 - `cosheaf.gates.source_metadata_gate.validate_source_metadata_policy(context: RepoContext, records: tuple[LoadedRecord, ...]) -> SourceMetadataResult`
+- `cosheaf.gates.formal_link_gate.FormalLinkCheck`: one static formal-link metadata check row.
+- `cosheaf.gates.formal_link_gate.FormalLinkResult`: aggregate formal-link metadata policy gate result.
+- `cosheaf.gates.formal_link_gate.validate_formal_link_policy(records: tuple[LoadedRecord, ...]) -> FormalLinkResult`
 - `cosheaf.gates.gatekeeper.ValidationReport`: validation report with loaded records and failures.
 - `cosheaf.gates.gatekeeper.validate_repository(context: RepoContext) -> ValidationReport`
 - `cosheaf.gates.gatekeeper.validate_artifact_file(context: RepoContext, path: Path) -> ValidationReport`
@@ -353,19 +354,22 @@ references beginning with `external:` as explicit external references rather
 than missing local artifacts. `run_gatekeeper` runs G1-G5 validation gates, runs
 the G6 verifier gate through the default verifier registry, runs the G7
 reproducibility metadata gate over executable evidence and verifier results,
-runs the G8 PR checklist gate, and runs the G9 source metadata gate. G8 is `skipped` when
+runs the G8 PR checklist gate, runs the G9 source metadata gate, and runs the
+G10 formal link gate. G8 is `skipped` when
 `pr_checklist_path`/`--pr-checklist` is omitted, `fail` when the explicit local
 markdown checklist is missing required sections, and `pass` when all required
 sections are present. G9 is `fail` when accepted artifacts in configured public
 KB roots are missing complete source metadata while `accepted_requires_source`
 is true, `pass` when applicable accepted public artifacts are complete, and
 `not_applicable` for legacy mode, disabled source policy, or no accepted public
-artifacts. It does not call GitHub or require network access. It writes JSON
-and Markdown reports under `.cosheaf/reports/` by default.
-
-Formal-link fields are currently enforced by G1 schema/model parsing only.
-G6 verifier execution does not inspect CSLib/mathlib references recorded in
-`formalizations`, and alignment review remains separate from Lean checking.
+artifacts. G10 is `not_applicable` when no artifact has formal-link policy
+metadata to check, `fail` when static policy consistency is violated, and
+`pass` when applicable formal-link metadata has no blocking issue. G10 warnings
+are emitted as nonblocking issues and are not proof failures. It does not call
+GitHub, require network access, run Lean, fetch external libraries, or inspect
+CSLib/mathlib references recorded in `formalizations`; alignment review remains
+separate from Lean checking. It writes JSON and Markdown reports under
+`.cosheaf/reports/` by default.
 
 G9 `GateResult.details` entries use:
 
@@ -375,6 +379,22 @@ G9 `GateResult.details` entries use:
 - `status`
 - `source_count`
 - `missing_metadata`
+
+G10 `GateResult.details` entries use:
+
+- `artifact_id`
+- `source_path`
+- `artifact_status`
+- `policy_level`
+- `require_formal_link`
+- `require_lean_check`
+- `require_alignment_review`
+- `formalization_count`
+- `checked_formalization_count`
+- `alignment_status`
+- `status`
+- `blocking_messages`
+- `warning_messages`
 
 #### Agent Context Packs
 

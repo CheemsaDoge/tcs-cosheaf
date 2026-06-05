@@ -60,10 +60,11 @@ formal declaration is recorded separately under `alignment`; a Lean pass does
 not automatically prove informal/formal alignment.
 
 `verification_policy` records whether a formal link, Lean check, or alignment
-review is expected for an artifact. In the current MVP these fields are
-schema/model metadata only and do not change accepted promotion semantics.
-This MVP does not add CLI commands, verifier execution, gate enforcement,
-index/query support, or context-pack display for formalization metadata.
+review is expected for an artifact. G10 Formal Link Gate enforces static
+consistency between `verification_policy`, `formalizations`, and `alignment`.
+This gate does not execute Lean, fetch external libraries, prove
+informal/formal alignment, add index/query support, or display formalization
+metadata in context packs.
 
 ### Graph Layer
 
@@ -97,11 +98,12 @@ outcomes, reproducibility metadata, source metadata, and PR checklist checks
 into gate results.
 
 Alignment review remains separate from verifier execution. Missing optional
-Lean tooling remains a skipped verifier result, not a pass. The current gate
-layer records formal-link fields through schema/model validation but does not
-yet require formal links, Lean checks, or alignment review for accepted
-promotion. A future G10 Formal Link Gate may enforce formal-link policy after
-the schema/model foundation is stable.
+Lean tooling remains a skipped verifier result, not a pass. The gate layer
+records formal-link fields through schema/model validation and G10 static
+metadata validation. G10 may block ordinary gatekeeper runs when policy
+metadata is inconsistent, which means accepted promotion is blocked through the
+existing gatekeeper blocking-issue mechanism. It does not add a new promotion
+policy path.
 
 Workspace-aware dependency checks additionally reject public artifacts that
 depend on private artifacts. Status/path checks evaluate artifact lifecycle

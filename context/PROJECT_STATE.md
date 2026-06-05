@@ -102,9 +102,11 @@ alignment review between the informal artifact statement and the formal
 declaration. `verification_policy` records whether a formal link, Lean check,
 or alignment review is expected. These fields are metadata only in this MVP:
 they do not copy Lean proofs, do not add CSLib or mathlib dependencies, do not
-require network access, and do not change accepted promotion semantics. Issue
-#55 does not add formal-link CLI commands, G10 gate enforcement, Lean
-external-library checking, index/query support, or context-pack display.
+require network access, and do not change accepted promotion semantics beyond
+ordinary gatekeeper blocking behavior. Issue #55 did not add formal-link CLI
+commands, Lean external-library checking, index/query support, or context-pack
+display. Issue #57 adds G10 Formal Link Gate as static metadata validation over
+`verification_policy`, `formalizations`, and `alignment` without running Lean.
 
 The configuration layer defines optional `cosheaf.toml` workspace loading. A
 workspace has a name, public/private policy fields, and one or more KB roots,
@@ -132,27 +134,34 @@ The graph layer builds directed dependency edges from artifact to dependency, de
 The index rebuild command writes `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json` from scratch. The SQLite index stores artifact ID, type, status, path, title, domain, source KB root, and deterministic dependency rows. The manifest ordering is deterministic and stable across delete-and-rebuild cycles. The SQLite query API reads that rebuilt index without modifying YAML or rebuilding implicitly, and provides deterministic artifact, status, type, domain, dependency, reverse-dependency, and source-KB-root queries.
 
 The gatekeeper command runs G1-G5 implemented gates, the G6 verifier gate, the
-G7 reproducibility metadata gate, the G8 PR checklist gate, and the G9 source
-metadata gate. It writes JSON and Markdown reports to `.cosheaf/reports/` by
-default, can persist copies under `reviews/gatekeeper/` with
-`--persist-review`, and exits nonzero when blocking issues exist. G7 reports
-`pass`, `fail`, or `not_applicable` depending on executable evidence metadata.
-G8 is a local filesystem-only gate: it reports `skipped` when no PR checklist
-source is provided, and `cosheaf gate run --pr-checklist <path>` checks a local
-markdown PR body for the required checklist sections without GitHub API or
-network access. G9 enforces complete structured source metadata for accepted
-artifacts in configured public KB roots when `accepted_requires_source = true`;
-it is not applicable for draft public artifacts, accepted private artifacts, or
-legacy single-root repositories.
+G7 reproducibility metadata gate, the G8 PR checklist gate, the G9 source
+metadata gate, and the G10 formal link gate. It writes JSON and Markdown
+reports to `.cosheaf/reports/` by default, can persist copies under
+`reviews/gatekeeper/` with `--persist-review`, and exits nonzero when blocking
+issues exist. G7 reports `pass`, `fail`, or `not_applicable` depending on
+executable evidence metadata. G8 is a local filesystem-only gate: it reports
+`skipped` when no PR checklist source is provided, and
+`cosheaf gate run --pr-checklist <path>` checks a local markdown PR body for
+the required checklist sections without GitHub API or network access. G9
+enforces complete structured source metadata for accepted artifacts in
+configured public KB roots when `accepted_requires_source = true`; it is not
+applicable for draft public artifacts, accepted private artifacts, or legacy
+single-root repositories.
 
-Formalization-link fields are currently enforced by schema/model parsing only.
-The gatekeeper does not yet require `formalizations`, does not run external
-library checks for CSLib or mathlib references, and does not treat a Lean pass
-as proof of informal/formal statement alignment. Missing optional Lean tooling
-remains a skipped verifier result, not a pass. G10 Formal Link Gate
-enforcement, public KB planned links, formal-link context-pack display,
-formal-link index/query support, and a future Lean library reference checker
-such as `LeanLibraryRefAdapter` remain future work.
+G10 statically checks consistency between `verification_policy`,
+`formalizations`, and `alignment`. It blocks artifacts whose policy requires a
+formal link, Lean check, or alignment review when the corresponding metadata is
+missing or not human-reviewed. It also blocks rejected alignment on accepted
+artifacts and required formal-link policies whose only formalizations are
+`broken` or `deprecated`. Warning-only states, such as planned links on
+accepted artifacts or checked external-library references without verifier
+evidence linkage, remain nonblocking and are not proof failures. G10 does not
+run external library checks for CSLib or mathlib references, does not execute
+Lean, and does not treat a Lean pass as proof of informal/formal statement
+alignment. Missing optional Lean tooling remains a skipped verifier result, not
+a pass. Public KB planned links, formal-link context-pack display, formal-link
+index/query support, and a future Lean library reference checker such as
+`LeanLibraryRefAdapter` remain future work.
 
 The agent harness layer now builds bounded deterministic context packs for issue IDs. Context packs are written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`, `ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and `COMMANDS.md`. Relevant artifacts are selected and ranked from direct issue references, one-hop dependency neighbors, domain matches against issue text/tags, and artifact tag matches against issue tags. Each selected artifact includes explainable reasons. Draft artifacts are visibly labeled, and refuted/obsolete/superseded artifacts appear only when relevant and are marked as known failures rather than current truth.
 
@@ -281,6 +290,7 @@ gatekeeper result.
   `verification_policy`.
 - Formalization-link documentation in `docs/FORMALIZATION_LINKS.md`.
 - Formal Link Layer ADR in `docs/ADR/0005-formal-link-layer.md`.
+- G10 Formal Link Gate ADR in `docs/ADR/0006-g10-formal-link-gate.md`.
 - Formal-link example artifact in
   `examples/claims/claim.formal-link.example.yaml`.
 - Artifact status/path helper functions that do not scan the repository.
@@ -319,6 +329,7 @@ gatekeeper result.
 - Gatekeeper G6 verifier gate execution for the default Python checker registry.
 - Gatekeeper G7 reproducibility metadata gate execution.
 - Gatekeeper G9 accepted public source metadata gate execution.
+- Gatekeeper G10 formal link static metadata gate execution.
 - Minimal optional SAT DIMACS verifier adapter in `cosheaf/verification/sat_adapter.py`.
 - Minimal optional SMT-LIB verifier adapter in `cosheaf/verification/smt_adapter.py`.
 - Minimal optional Lean verifier adapter in `cosheaf/verification/lean_adapter.py`.
@@ -353,7 +364,6 @@ gatekeeper result.
   invocation path.
 - External Lean library checking for CSLib/mathlib references recorded in
   `formalizations`.
-- G10 Formal Link Gate policy enforcement.
 - Context pack display of formalization and alignment metadata.
 - Index/query support for formalization references.
 - Public KB planned formalization links after the schema/model foundation

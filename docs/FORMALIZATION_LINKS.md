@@ -83,8 +83,11 @@ The boolean fields `require_formal_link`, `require_lean_check`, and
 `lean_required` requires both `require_formal_link: true` and
 `require_lean_check: true`.
 
-In this MVP, these policy values are recorded and schema-validated, but they do
-not change accepted promotion semantics.
+These policy values are schema-validated and are also checked by G10 Formal
+Link Gate for static metadata consistency. G10 contributes ordinary gatekeeper
+blocking issues when required formal links, Lean checks, or alignment reviews
+are missing. It does not change accepted promotion policy beyond the existing
+rule that blocking gatekeeper issues prevent promotion.
 
 ## Relationship To Evidence
 
@@ -106,12 +109,28 @@ When optional Lean tooling is unavailable, Lean verification remains
 successful formal check.
 
 The Formal Link Layer does not make the Lean adapter check external library
-references in this PR. It records links so future tooling and review workflows
-have a stable metadata surface.
+references. It records links so future tooling and review workflows have a
+stable metadata surface.
+
+## G10 Formal Link Gate
+
+G10 is a static metadata gate over `formalizations`, `alignment`, and
+`verification_policy`. It does not execute Lean, install CSLib or mathlib,
+fetch external libraries, or require network access.
+
+G10 blocks artifacts whose policy requires a formal link, Lean check, or
+alignment review when the corresponding metadata is absent or not reviewed. It
+also blocks accepted artifacts with rejected alignment and required formal-link
+policies whose only formalizations are `broken` or `deprecated`.
+
+G10 warnings are nonblocking and are not proof failures. Warnings highlight
+metadata that needs attention, such as planned formalizations on accepted
+artifacts, requested alignment review on accepted artifacts, checked external
+library references without verifier evidence linkage, or formal links present
+when policy does not require them.
 
 ## Future Work
 
-- G10 Formal Link Gate policy enforcement.
 - External Lean library reference checking using `import_path` and `symbol`.
 - Public KB artifacts with planned or reviewed formalization links.
 - Context-pack display of formalization and alignment metadata.
@@ -125,7 +144,8 @@ have a stable metadata surface.
 - No external Lean library checkout is inspected.
 - No natural-language autoformalization is implemented.
 - No automatic informal/formal alignment proof is implemented.
-- No G10 Formal Link Gate is implemented.
+- G10 is metadata-only and does not execute Lean.
 - No index/query support is added for formalization metadata.
 - No context-pack display is added for formalization metadata.
-- No accepted-promotion semantics change in this MVP.
+- No accepted-promotion policy change is added beyond normal gatekeeper
+  blocking behavior.

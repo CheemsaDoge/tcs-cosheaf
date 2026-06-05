@@ -16,6 +16,10 @@ from cosheaf.gates.dependency_gate import (
     validate_dependencies,
     validate_id_uniqueness,
 )
+from cosheaf.gates.formal_link_gate import (
+    FormalLinkResult,
+    validate_formal_link_policy,
+)
 from cosheaf.gates.reproducibility_gate import (
     ReproducibilityMetadataResult,
     validate_reproducibility_metadata,
@@ -237,6 +241,7 @@ def run_gatekeeper(
         ),
         _pr_checklist_gate(context, pr_checklist_path),
         _source_metadata_gate(validate_source_metadata_policy(context, records)),
+        _formal_link_gate(validate_formal_link_policy(records)),
     )
 
     blocking_issues = tuple(
@@ -462,6 +467,53 @@ def _source_metadata_gate(result: SourceMetadataResult) -> GateResult:
     )
 
 
+def _formal_link_gate(result: FormalLinkResult) -> GateResult:
+    gate_name = "formal link gate"
+    details = tuple(check.to_dict() for check in result.checks)
+    blocking_issues = tuple(
+        _issue_from_failure("G10", gate_name, failure)
+        for failure in result.failures
+    )
+    nonblocking_issues = tuple(
+        _nonblocking_issue_from_failure("G10", gate_name, warning)
+        for warning in result.warnings
+    )
+    if blocking_issues:
+        return GateResult(
+            gate_id="G10",
+            name=gate_name,
+            status="fail",
+            summary=f"{len(blocking_issues)} formal-link policy issue(s).",
+            blocking_issues=blocking_issues,
+            nonblocking_issues=nonblocking_issues,
+            details=details,
+        )
+    if result.applicable_count == 0:
+        return GateResult(
+            gate_id="G10",
+            name=gate_name,
+            status="not_applicable",
+            summary="No formal-link policy metadata requires G10 checks.",
+            details=details,
+        )
+    warning_suffix = (
+        f" with {len(nonblocking_issues)} warning(s)"
+        if nonblocking_issues
+        else ""
+    )
+    return GateResult(
+        gate_id="G10",
+        name=gate_name,
+        status="pass",
+        summary=(
+            "Formal-link metadata passed for "
+            f"{result.applicable_count} artifact(s){warning_suffix}."
+        ),
+        nonblocking_issues=nonblocking_issues,
+        details=details,
+    )
+
+
 def _resolve_pr_checklist_path(context: RepoContext, path: Path) -> Path:
     if path.is_absolute():
         return path.resolve()
@@ -645,6 +697,21 @@ def _issue_from_failure(
         artifact_id=failure.artifact_id,
         message=failure.message,
         severity="blocking",
+    )
+
+
+def _nonblocking_issue_from_failure(
+    gate_id: str,
+    gate_name: str,
+    failure: ValidationFailure,
+) -> GateIssue:
+    return GateIssue(
+        gate_id=gate_id,
+        gate_name=gate_name,
+        source_path=failure.source_path,
+        artifact_id=failure.artifact_id,
+        message=failure.message,
+        severity="nonblocking",
     )
 
 
