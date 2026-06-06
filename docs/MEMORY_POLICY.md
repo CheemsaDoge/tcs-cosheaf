@@ -1,8 +1,10 @@
 # Memory Policy
 
-This document defines the Phase 3 memory and retrieval policy before librarian
-code is implemented. It is a design contract for upcoming small PRs, not a
-claim that the full librarian runtime already exists.
+This document defines the Phase 3 memory and retrieval policy before the full
+librarian runtime is implemented. The core request/result/card data transfer
+models now exist under `cosheaf.memory`, but they are model contracts only.
+They are not a claim that retrieval, ranking execution, sidecar writers, or a
+worker runtime already exists.
 
 The policy is deterministic-first. The librarian may retrieve, rank, summarize,
 and audit existing repository records. It must not create new claims, modify
@@ -73,13 +75,14 @@ Artifact cards are compact retrieval units. They are the default librarian
 output and the default context-pack v2 input. Cards should be enough for
 triage, ranking, and routing without dumping full artifacts into a prompt.
 
-Proposed card fields:
+The Pydantic model for this contract is `cosheaf.memory.ArtifactCard`.
+Card fields are:
 
 ```yaml
 id: string
 path: string
 root_scope: public | private | workspace | framework
-type: definition | theorem | claim | proof | construction | algorithm | reduction | counterexample | experiment | review | issue | source_note
+type: definition | theorem | claim | conjecture | proof | proof_attempt | construction | algorithm | reduction | counterexample | experiment | review | verifier | issue | source_note
 status: raw | draft | locally_tested | adversarially_tested | machine_checked | human_reviewed | accepted | refuted | obsolete | superseded
 title: string
 summary: string
@@ -103,8 +106,9 @@ statement, review state, status, verifier state, or accepted state.
 
 ## Retrieval Request Schema
 
-The initial retrieval request is a deterministic local data structure. Future
-implementations should use Pydantic models and JSON/YAML serialization.
+The initial retrieval request is a deterministic local data structure. The
+Pydantic model for this contract is `cosheaf.memory.RetrievalRequest`, with
+JSON serialization available through Pydantic and the model `to_json()` helper.
 
 ```yaml
 schema_version: 1
@@ -142,7 +146,9 @@ Defaults must be conservative:
 ## Retrieval Result Schema
 
 Retrieval results are ordered card lists with score explanations and audit
-metadata.
+metadata. The Pydantic models for this contract are
+`cosheaf.memory.RetrievalResult`, `RetrievedArtifactCard`, `ScoreBreakdown`,
+`FullArtifactPull`, `RetrievalExclusion`, and `RetrievalAudit`.
 
 ```yaml
 schema_version: 1
@@ -357,7 +363,7 @@ and explicit promotion.
 Phase 3 should proceed in small PRs:
 
 1. Define Pydantic models for artifact cards, retrieval requests, retrieval
-   results, score breakdowns, and audits.
+   results, score breakdowns, and audits. Done as model-only API groundwork.
 2. Build cards deterministically from current artifact/index metadata.
 3. Add lexical/FTS retrieval before optional embeddings.
 4. Add memory graph and deterministic PageRank.
