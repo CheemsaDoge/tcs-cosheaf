@@ -2,10 +2,11 @@
 
 This document defines the Phase 3 memory and retrieval policy before the full
 librarian runtime is implemented. The core request/result/card data transfer
-models, deterministic artifact-card builder, and bounded local text search now
-exist under `cosheaf.memory`, but they remain local metadata surfaces. They are
-not a claim that embedding retrieval, graph ranking execution, sidecar writers,
-or a worker runtime already exists.
+models, deterministic artifact-card builder, bounded local text search,
+rebuildable memory graph sidecar, and global PageRank now exist under
+`cosheaf.memory`, but they remain local metadata surfaces. They are not a claim
+that embedding retrieval, personalized PageRank, context-pack v2 integration,
+hosted LLM workers, or a worker runtime already exists.
 
 The policy is deterministic-first. The librarian may retrieve, rank, summarize,
 and audit existing repository records. It must not create new claims, modify
@@ -238,17 +239,30 @@ Interpretation:
 Implementations must emit score breakdowns. Exact constants can change only
 through a focused PR that updates this document and relevant tests.
 
-The current `cosheaf memory search` MVP populates only the implemented
+The current `cosheaf memory search` MVP populates only the implemented search
 components of this formula: `RetrievalHybrid` from SQLite FTS/BM25 or lexical
-card matching, and `QualityPrior` from existing card trust metadata.
-Personalized PageRank, Global PageRank, Freshness, and Penalty remain zero
-until later Phase 3 tasks implement their underlying signals.
+card matching, and `QualityPrior` from existing card trust metadata. The
+separate `cosheaf memory graph pagerank` command now computes deterministic
+`GlobalPageRank` rows from a rebuilt memory graph sidecar, but search does not
+yet blend those rows into retrieval scores. Personalized PageRank, Freshness,
+and Penalty remain zero in search output until later Phase 3 tasks implement
+their underlying signals.
 
 ## Memory Graph
 
 The memory graph is a deterministic graph over repository and sidecar records.
 It extends the current dependency graph with review, source, verifier, and run
 signals.
+
+`cosheaf memory graph build` rebuilds `.cosheaf/memory/graph_snapshot.json`
+from current repository YAML plus optional local sidecar signals such as gate
+reports and task run records. The sidecar includes deterministic node and edge
+rows, a graph fingerprint, and warnings that the graph is not source of truth
+and formal links remain metadata unless checked by a real checker.
+
+`cosheaf memory graph pagerank` reads the existing graph sidecar and computes a
+deterministic weighted PageRank. It does not rebuild the graph implicitly; if
+the sidecar is missing, users must run `cosheaf memory graph build` first.
 
 Node kinds:
 
@@ -297,7 +311,7 @@ cannot promote an artifact, replace review, or override validation and gates.
 Memory sidecars must live under `.cosheaf/memory/` unless a later ADR changes
 the location.
 
-Allowed proposed sidecars:
+Allowed sidecars:
 
 ```text
 .cosheaf/memory/weights.sqlite
@@ -317,6 +331,8 @@ Rules:
 - Cache corruption must not break core validation or gate behavior.
 - Vector indexes, if added later, must have a manifest that records source
   fingerprints and rebuild inputs.
+- `.cosheaf/memory/graph_snapshot.json` is implemented as a deterministic
+  rebuildable view. It must not be edited as a durable fact.
 
 ## Public/Private Filtering
 
@@ -395,7 +411,8 @@ Phase 3 should proceed in small PRs:
 3. Add lexical/FTS retrieval before optional embeddings. Initial
    `cosheaf memory search` CLI is implemented over artifact cards with SQLite
    FTS5/BM25 when available and deterministic lexical fallback.
-4. Add memory graph and deterministic PageRank.
+4. Add memory graph and deterministic PageRank. Implemented as
+   `cosheaf memory graph build` and `cosheaf memory graph pagerank`.
 5. Add issue-conditioned Personalized PageRank.
 6. Integrate cards into context-pack v2 with bounded full-artifact pulls.
 

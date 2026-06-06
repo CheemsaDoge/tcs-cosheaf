@@ -42,10 +42,15 @@ from cosheaf.gates.gatekeeper import (
 from cosheaf.gates.source_metadata_gate import missing_required_source_metadata
 from cosheaf.graph.claim_graph import DependencyGraph, build_dependency_graph
 from cosheaf.memory import (
+    MEMORY_GRAPH_SIDECAR,
     ArtifactCardStatus,
     MemoryCardError,
+    MemoryGraphError,
     MemorySearchError,
     build_artifact_cards,
+    build_memory_graph,
+    compute_global_pagerank,
+    load_memory_graph_snapshot,
     search_artifact_cards,
 )
 from cosheaf.storage.index import rebuild_index
@@ -97,6 +102,11 @@ memory_app = typer.Typer(
     help="Deterministic memory/card commands.",
     no_args_is_help=True,
 )
+memory_graph_app = typer.Typer(
+    add_completion=False,
+    help="Deterministic memory graph commands.",
+    no_args_is_help=True,
+)
 app.add_typer(artifact_app, name="artifact")
 app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
@@ -105,6 +115,7 @@ app.add_typer(context_app, name="context")
 app.add_typer(task_app, name="task")
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(memory_app, name="memory")
+memory_app.add_typer(memory_graph_app, name="graph")
 
 
 @app.command()
@@ -565,6 +576,93 @@ def memory_search(
             f"{card.id} | score={hit.score_breakdown.total:.6f} | "
             f"{card.title} | {card.status.value} | "
             f"{card.root_scope.value} | {card.path}"
+        )
+
+
+@memory_graph_app.command("build")
+def memory_graph_build(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON summary instead of text lines.",
+    ),
+) -> None:
+    """Build the rebuildable memory graph sidecar."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        snapshot = build_memory_graph(context, persist=True)
+    except MemoryGraphError as exc:
+        console.print(f"Memory graph build failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    sidecar = MEMORY_GRAPH_SIDECAR.as_posix()
+    if json_output:
+        typer.echo(
+            json.dumps(
+                {
+                    "schema_version": snapshot.schema_version,
+                    "graph_fingerprint": snapshot.graph_fingerprint,
+                    "node_count": snapshot.node_count,
+                    "edge_count": snapshot.edge_count,
+                    "sidecar_path": sidecar,
+                    "warnings": snapshot.warnings,
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+        )
+        return
+
+    console.print(
+        "Memory graph built: "
+        f"{sidecar} ({snapshot.node_count} node(s), "
+        f"{snapshot.edge_count} edge(s))."
+    )
+    console.print(f"- fingerprint: {snapshot.graph_fingerprint}")
+    for warning in snapshot.warnings:
+        console.print(f"- warning: {warning}")
+
+
+@memory_graph_app.command("pagerank")
+def memory_graph_pagerank(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON PageRank output instead of text lines.",
+    ),
+) -> None:
+    """Compute global PageRank from an existing memory graph sidecar."""
+    console = Console(width=120, markup=False)
+    try:
+        snapshot = load_memory_graph_snapshot(RepoContext(repo_root))
+        result = compute_global_pagerank(snapshot)
+    except MemoryGraphError as exc:
+        console.print(f"Memory graph PageRank failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(result.to_json(), nl=False)
+        return
+
+    if not result.rows:
+        console.print("No memory graph PageRank rows.")
+        return
+
+    for row in result.rows:
+        console.print(
+            f"{row.rank}. {row.node_id} | score={row.score:.12f} | "
+            f"{row.kind} | {row.record_id}"
         )
 
 

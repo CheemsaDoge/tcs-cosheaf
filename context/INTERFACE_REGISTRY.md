@@ -74,6 +74,20 @@
 - `cosheaf memory search <query> --json`: emits a deterministic
   `RetrievalResult` JSON payload with card hits, score breakdowns, and audit
   metadata.
+- `cosheaf memory graph build`: rebuilds
+  `.cosheaf/memory/graph_snapshot.json` from repository YAML plus optional
+  local sidecar signals such as gate reports and task run records.
+- `cosheaf memory graph build --repo-root <path>`: rebuilds the memory graph
+  sidecar for an explicit repository root.
+- `cosheaf memory graph build --json`: emits a deterministic JSON build
+  summary with the graph fingerprint, node count, edge count, sidecar path,
+  and warnings.
+- `cosheaf memory graph pagerank`: computes deterministic weighted global
+  PageRank from an existing `.cosheaf/memory/graph_snapshot.json` sidecar.
+- `cosheaf memory graph pagerank --repo-root <path>`: computes PageRank for an
+  explicit repository root.
+- `cosheaf memory graph pagerank --json`: emits a deterministic
+  `PageRankResult` JSON payload.
 - `cosheaf task create --issue <issue-id> --worker <worker-type>`: creates an open local agent task under `.cosheaf/tasks/` after confirming the issue exists.
 - `cosheaf task create --issue <issue-id> --worker <worker-type> --repo-root <path>`: creates the task for an explicit repository root.
 - `cosheaf task list`: lists local task records in deterministic task ID order.
@@ -227,10 +241,21 @@ semantics beyond ordinary gatekeeper blocking behavior.
   exclusions, and warnings.
 - `cosheaf.memory.RetrievalResult`: Pydantic v2 model for ordered retrieved
   cards, full-artifact pull audit entries, and retrieval audit metadata.
+- `cosheaf.memory.MemoryGraphNode`: Pydantic v2 model for one deterministic
+  memory graph node.
+- `cosheaf.memory.MemoryGraphEdge`: Pydantic v2 model for one weighted memory
+  graph edge.
+- `cosheaf.memory.MemoryGraphSnapshot`: Pydantic v2 model for the rebuildable
+  `.cosheaf/memory/graph_snapshot.json` sidecar.
+- `cosheaf.memory.PageRankRow`: Pydantic v2 model for one global PageRank row.
+- `cosheaf.memory.PageRankResult`: Pydantic v2 model for deterministic
+  weighted global PageRank output.
 - `cosheaf.memory.MemoryCardError`: expected error for card-builder failures,
   such as an unknown issue ID or a repository load failure.
 - `cosheaf.memory.MemorySearchError`: expected error for memory-search
   failures, such as invalid query text or card-builder errors.
+- `cosheaf.memory.MemoryGraphError`: expected error for memory graph build,
+  sidecar read, or PageRank failures.
 
 All memory models are strict (`extra="forbid"`), frozen, preserve enum values as
 enum instances in Python, and expose:
@@ -285,6 +310,43 @@ enum instances in Python, and expose:
 - `full_artifact_pulls`
 - `audit`
 
+`MemoryGraphSnapshot` fields are:
+
+- `schema_version`
+- `generated_at`
+- `graph_fingerprint`
+- `nodes`
+- `edges`
+- `warnings`
+
+`MemoryGraphNode` fields are:
+
+- `node_id`
+- `kind`
+- `record_id`
+- `path`
+- `title`
+- `status`
+- `metadata`
+
+`MemoryGraphEdge` fields are:
+
+- `source`
+- `target`
+- `kind`
+- `weight`
+- `evidence`
+
+`PageRankResult` fields are:
+
+- `schema_version`
+- `algorithm`
+- `damping`
+- `iterations`
+- `graph_fingerprint`
+- `rows`
+- `warnings`
+
 The memory package also exposes:
 
 - `cosheaf.memory.build_artifact_cards(context: RepoContext, *, issue_id: str | None = None, status: ArtifactCardStatus | str | None = None, allowed_scopes: Iterable[MemoryRootScope | str] = DEFAULT_CARD_SCOPES) -> tuple[ArtifactCard, ...]`:
@@ -296,11 +358,26 @@ The memory package also exposes:
 - `cosheaf.memory.search_artifact_cards(context: RepoContext, *, query: str, issue_id: str | None = None, status: ArtifactCardStatus | str | None = None, max_cards: int = 20, allowed_scopes: tuple[MemoryRootScope, ...] | None = None) -> RetrievalResult`:
   searches deterministic artifact cards with SQLite FTS5/BM25 when available
   and deterministic lexical fallback otherwise.
+- `cosheaf.memory.build_memory_graph(context: RepoContext, *, persist: bool = False) -> MemoryGraphSnapshot`:
+  builds the deterministic memory graph from repository YAML plus optional
+  local sidecar signals. With `persist=True`, it writes the rebuildable
+  `.cosheaf/memory/graph_snapshot.json` sidecar.
+- `cosheaf.memory.load_memory_graph_snapshot(context: RepoContext) -> MemoryGraphSnapshot`:
+  loads the existing graph sidecar and fails clearly if users need to run
+  `cosheaf memory graph build` first.
+- `cosheaf.memory.compute_global_pagerank(graph: MemoryGraphSnapshot, *, damping: float = 0.85, max_iterations: int = 50, tolerance: float = 1e-12) -> PageRankResult`:
+  computes deterministic weighted global PageRank rows from the memory graph.
+- `cosheaf.memory.write_memory_graph_snapshot(context: RepoContext, snapshot: MemoryGraphSnapshot) -> Path`:
+  writes the deterministic rebuildable graph sidecar.
+- `cosheaf.memory.MEMORY_GRAPH_SIDECAR`: repository-relative graph sidecar path,
+  `.cosheaf/memory/graph_snapshot.json`.
 
 The card builder and search read existing YAML records through the storage
 loader. Search uses an in-memory SQLite FTS5 table when available and does not
-write `.cosheaf/memory/` sidecars. The memory package does not add embeddings,
-graph ranking, context-pack v2 behavior, hosted LLM workers,
+write `.cosheaf/memory/` sidecars. Memory graph build writes only the
+rebuildable graph snapshot sidecar, and PageRank reads that sidecar without
+implicitly rebuilding it. The memory package does not add embeddings,
+personalized PageRank, context-pack v2 behavior, hosted LLM workers,
 accepted-promotion shortcuts, formal checking, or artifact schema changes. By
 default, configured private KB roots are excluded from `cosheaf memory cards`
 and `cosheaf memory search`; callers must not treat memory output as accepted
