@@ -78,6 +78,35 @@ artifact-to-dependency, for example `claim -> dependency`. The graph layer
 detects missing dependencies, directed cycles, and accepted artifacts that depend
 on draft or otherwise pre-accepted artifacts.
 
+### Memory/Retrieval Layer
+
+The planned memory/retrieval layer provides deterministic librarian behavior
+between storage/index/graph data and context-pack or future orchestrator
+consumers. It is documented in [Memory Policy](MEMORY_POLICY.md).
+
+The default retrieval unit is an artifact card, not a full artifact dump. Cards
+carry compact metadata such as ID, path, root scope, type, status, title,
+summary, domain, dependency IDs, source/review/verifier/formalization states,
+trust score, retrieval score, relevance explanation, risk flags, and whether a
+caller may pull the full artifact.
+
+Retrieval requests are expected to be issue-scoped and bounded. They should
+declare allowed scopes, allowed statuses, seed artifacts, role, maximum card
+count, and maximum full-artifact pulls. Public-only retrieval must exclude
+private records and private-derived summaries. Orchestrator context defaults to
+cards only.
+
+The memory graph extends the dependency graph with review, source,
+formalization, verifier, task-run, worker-bundle, and issue-context signals.
+Graph weights and retrieval caches are sidecars under `.cosheaf/memory/`.
+Sidecars are rebuildable views and must not become artifact truth.
+
+The librarian may build cards, rank/filter them, compute graph weights, produce
+context-pack candidates, and record retrieval audits. It must not create
+claims, edit artifacts, mark review as human-reviewed, run promotion, or treat
+retrieval scores as proof. Accepted knowledge still enters only through
+validation, gates, human review, and explicit promotion.
+
 ### Verification Layer
 
 Runs verifier adapters and normalizes verifier outcomes. Optional external
