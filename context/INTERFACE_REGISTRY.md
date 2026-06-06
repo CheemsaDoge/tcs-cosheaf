@@ -51,6 +51,16 @@
 - `cosheaf context build <issue-id> --repo-root <path>`: builds a context pack for an explicit repository root.
 - `cosheaf context show <issue-id>`: builds the context pack and prints `CONTEXT.md`.
 - `cosheaf context show <issue-id> --repo-root <path>`: shows context for an explicit repository root.
+- `cosheaf memory cards`: builds deterministic artifact cards from existing
+  repository metadata. Default output is compact text lines, not full artifact
+  YAML or statements.
+- `cosheaf memory cards --repo-root <path>`: builds cards for an explicit
+  repository root.
+- `cosheaf memory cards --issue <issue-id>`: limits cards to the issue record's
+  direct `related_artifacts`, after scope/status filters.
+- `cosheaf memory cards --status <status>`: filters cards by artifact-card
+  lifecycle/trust status, such as `accepted` or `draft`.
+- `cosheaf memory cards --json`: emits deterministic JSON card DTOs.
 - `cosheaf task create --issue <issue-id> --worker <worker-type>`: creates an open local agent task under `.cosheaf/tasks/` after confirming the issue exists.
 - `cosheaf task create --issue <issue-id> --worker <worker-type> --repo-root <path>`: creates the task for an explicit repository root.
 - `cosheaf task list`: lists local task records in deterministic task ID order.
@@ -204,6 +214,8 @@ semantics beyond ordinary gatekeeper blocking behavior.
   exclusions, and warnings.
 - `cosheaf.memory.RetrievalResult`: Pydantic v2 model for ordered retrieved
   cards, full-artifact pull audit entries, and retrieval audit metadata.
+- `cosheaf.memory.MemoryCardError`: expected error for card-builder failures,
+  such as an unknown issue ID or a repository load failure.
 
 All memory models are strict (`extra="forbid"`), frozen, preserve enum values as
 enum instances in Python, and expose:
@@ -258,10 +270,21 @@ enum instances in Python, and expose:
 - `full_artifact_pulls`
 - `audit`
 
-The memory model package is model/API groundwork only. It does not add a
-retrieval algorithm, index query behavior, CLI command, sidecar writer,
-context-pack v2 behavior, hosted LLM worker, accepted-promotion shortcut, or
-artifact schema change.
+The memory package also exposes:
+
+- `cosheaf.memory.build_artifact_cards(context: RepoContext, *, issue_id: str | None = None, status: ArtifactCardStatus | str | None = None, allowed_scopes: Iterable[MemoryRootScope | str] = DEFAULT_CARD_SCOPES) -> tuple[ArtifactCard, ...]`:
+  builds deterministic cards from loaded repository YAML metadata.
+- `cosheaf.memory.artifact_card_from_loaded_record(loaded: LoadedRecord) -> ArtifactCard`:
+  builds one card from a loaded lifecycle artifact record.
+- `cosheaf.memory.DEFAULT_CARD_SCOPES`: default public-output scope set,
+  containing `public`, `workspace`, and `framework`, excluding `private`.
+
+The card builder reads existing YAML records through the storage loader. It does
+not add text search, graph ranking, SQLite retrieval, embeddings, sidecar
+writers, context-pack v2 behavior, hosted LLM workers, accepted-promotion
+shortcuts, or artifact schema changes. By default, configured private KB roots
+are excluded from `cosheaf memory cards`; callers must not treat card output as
+accepted knowledge or human review.
 
 #### Core Enums
 

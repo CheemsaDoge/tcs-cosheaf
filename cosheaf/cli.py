@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -40,6 +41,7 @@ from cosheaf.gates.gatekeeper import (
 )
 from cosheaf.gates.source_metadata_gate import missing_required_source_metadata
 from cosheaf.graph.claim_graph import DependencyGraph, build_dependency_graph
+from cosheaf.memory import ArtifactCardStatus, MemoryCardError, build_artifact_cards
 from cosheaf.storage.index import rebuild_index
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
 from cosheaf.storage.repo import RepoContext
@@ -84,6 +86,11 @@ workspace_app = typer.Typer(
     help="Workspace configuration commands.",
     no_args_is_help=True,
 )
+memory_app = typer.Typer(
+    add_completion=False,
+    help="Deterministic memory/card commands.",
+    no_args_is_help=True,
+)
 app.add_typer(artifact_app, name="artifact")
 app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
@@ -91,6 +98,7 @@ app.add_typer(gate_app, name="gate")
 app.add_typer(context_app, name="context")
 app.add_typer(task_app, name="task")
 app.add_typer(workspace_app, name="workspace")
+app.add_typer(memory_app, name="memory")
 
 
 @app.command()
@@ -442,6 +450,62 @@ def context_show(
         raise typer.Exit(code=1) from None
 
     typer.echo(rendered, nl=False)
+
+
+@memory_app.command("cards")
+def memory_cards(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    issue: str | None = typer.Option(
+        None,
+        "--issue",
+        help="Optional issue ID whose direct related artifacts should be shown.",
+    ),
+    status: ArtifactCardStatus | None = typer.Option(
+        None,
+        "--status",
+        help="Optional artifact-card status filter.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """Build compact artifact cards from existing repository metadata."""
+    console = Console(width=120, markup=False)
+    try:
+        cards = build_artifact_cards(
+            RepoContext(repo_root),
+            issue_id=issue,
+            status=status,
+        )
+    except MemoryCardError as exc:
+        console.print(f"Memory cards failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(
+            json.dumps(
+                [card.to_dict() for card in cards],
+                ensure_ascii=True,
+                indent=2,
+            )
+        )
+        return
+
+    if not cards:
+        console.print("No memory cards.")
+        return
+
+    for card in cards:
+        console.print(
+            f"{card.id} | {card.title} | {card.status.value} | "
+            f"{card.root_scope.value} | {card.path}"
+        )
 
 
 @task_app.command("create")
