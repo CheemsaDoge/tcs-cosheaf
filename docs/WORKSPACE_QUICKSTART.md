@@ -93,6 +93,33 @@ private artifact -> public artifact
 Public artifacts must not depend on private artifacts. Accepted artifacts must
 not depend on draft or otherwise pre-accepted artifacts, even across KB roots.
 
+## Framework Ecosystem Smoke
+
+Framework maintainers can run a local, network-free smoke fixture for the
+three-repository model:
+
+```bash
+python scripts/ecosystem_smoke.py --cosheaf cosheaf
+```
+
+The smoke helper writes temporary workspace fixtures with a readonly public KB
+root and writable private KB root, then runs:
+
+```bash
+cosheaf workspace info
+cosheaf validate
+cosheaf gate run
+cosheaf index rebuild
+cosheaf context build issue.ecosystem-smoke.private-context
+```
+
+It also checks expected policy failures: lifecycle writes to a readonly public
+root are refused, public artifacts depending on private artifacts are rejected,
+and accepted artifacts depending on draft artifacts are rejected. These expected
+failures are not passes; the script verifies that the commands fail with the
+intended nonzero exit codes. The helper uses only local fixtures and does not
+clone `tcs-kb-public` or the workspace template.
+
 ## Common Workflow
 
 1. Draft private or experimental material under `kb/private/`.

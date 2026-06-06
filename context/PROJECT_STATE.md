@@ -30,6 +30,20 @@ run`, `cosheaf index rebuild`, and `cosheaf context build
 issue.release-smoke`. Fast unit tests verify the smoke plan and fixture without
 requiring network access.
 
+Issue 65 adds a local ecosystem smoke helper for the intended three-repository
+model. `scripts/ecosystem_smoke.py` writes temporary workspace-like fixtures
+with a readonly public KB root, writable private KB root, accepted public
+artifact, private draft artifact depending on public accepted knowledge, and a
+private issue for context-pack generation. The smoke plan runs `cosheaf
+workspace info`, `cosheaf validate`, `cosheaf gate run`, `cosheaf index
+rebuild`, and `cosheaf context build
+issue.ecosystem-smoke.private-context`. It also verifies expected policy
+failures: lifecycle writes to the readonly public root are refused, public
+artifacts depending on private artifacts are rejected, and accepted artifacts
+depending on draft artifacts are rejected. This smoke uses only local fixtures,
+does not clone remote repositories, does not promote artifacts, and does not
+add Lean, CSLib, mathlib, SAT, SMT, or theorem-proving claims.
+
 Issue 51 adds cross-repository integration fixture coverage for the intended
 three-repository model. The tests build local public/private KB roots without
 cloning external repositories and cover private-to-public dependencies, public
