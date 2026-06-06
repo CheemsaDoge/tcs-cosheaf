@@ -186,12 +186,102 @@ checks consistency between `formalizations`, `alignment`, and
 libraries, prove informal/formal alignment, or change accepted promotion
 semantics beyond ordinary gatekeeper blocking behavior.
 
+#### Memory/Retrieval Models
+
+- `cosheaf.memory.ArtifactCard`: Pydantic v2 model for compact retrieval cards
+  derived from existing repository metadata.
+- `cosheaf.memory.ScoreBreakdown`: Pydantic v2 model for inspectable retrieval
+  score components.
+- `cosheaf.memory.RetrievalRequest`: Pydantic v2 model for bounded local
+  retrieval requests.
+- `cosheaf.memory.RetrievedArtifactCard`: Pydantic v2 model pairing an
+  `ArtifactCard` with a `ScoreBreakdown` and relevance reasons.
+- `cosheaf.memory.FullArtifactPull`: Pydantic v2 audit entry for explicit full
+  artifact pulls beyond card metadata.
+- `cosheaf.memory.RetrievalExclusion`: Pydantic v2 audit entry for records
+  excluded by scope, status, or policy.
+- `cosheaf.memory.RetrievalAudit`: Pydantic v2 model for retrieval filters,
+  exclusions, and warnings.
+- `cosheaf.memory.RetrievalResult`: Pydantic v2 model for ordered retrieved
+  cards, full-artifact pull audit entries, and retrieval audit metadata.
+
+All memory models are strict (`extra="forbid"`), frozen, preserve enum values as
+enum instances in Python, and expose:
+
+- `to_dict() -> dict[str, Any]`: deterministic `model_dump(mode="json")`.
+- `to_json() -> str`: deterministic indented JSON with a trailing newline.
+
+`ArtifactCard` fields are:
+
+- `id`
+- `path`
+- `root_scope`
+- `type`
+- `status`
+- `title`
+- `summary`
+- `domain`
+- `tags`
+- `depends_on`
+- `sources`
+- `review_state`
+- `verifier_state`
+- `formalization_state`
+- `trust_score`
+- `retrieval_score`
+- `why_relevant`
+- `risk_flags`
+- `can_pull_full`
+
+`RetrievalRequest` fields are:
+
+- `schema_version`
+- `query`
+- `issue_id`
+- `seed_artifacts`
+- `pinned_artifacts`
+- `allowed_scopes`
+- `allowed_statuses`
+- `include_refuted`
+- `include_obsolete`
+- `max_cards`
+- `max_full_artifacts`
+- `role`
+
+`RetrievalResult` fields are:
+
+- `schema_version`
+- `request_id`
+- `generated_at`
+- `index_fingerprint`
+- `cards`
+- `full_artifact_pulls`
+- `audit`
+
+The memory model package is model/API groundwork only. It does not add a
+retrieval algorithm, index query behavior, CLI command, sidecar writer,
+context-pack v2 behavior, hosted LLM worker, accepted-promotion shortcut, or
+artifact schema change.
+
 #### Core Enums
 
 - `cosheaf.core.status.ArtifactType`: artifact type enum.
 - `cosheaf.core.status.ArtifactStatus`: artifact lifecycle status enum.
 - `cosheaf.core.task.WorkerType`: protocol worker type enum, re-exported through `cosheaf.agent.task.WorkerType`.
 - `cosheaf.core.task.TaskStatus`: task lifecycle status enum, re-exported through `cosheaf.agent.task.TaskStatus`.
+- `cosheaf.memory.MemoryRootScope`: memory root scope enum with values
+  `public`, `private`, `workspace`, and `framework`.
+- `cosheaf.memory.ArtifactCardType`: artifact-card type enum with values
+  `definition`, `theorem`, `claim`, `conjecture`, `proof`, `proof_attempt`,
+  `construction`, `algorithm`, `reduction`, `counterexample`, `experiment`,
+  `review`, `verifier`, `issue`, and `source_note`.
+- `cosheaf.memory.ArtifactCardStatus`: artifact-card lifecycle/trust status enum
+  with values `raw`, `draft`, `locally_tested`, `adversarially_tested`,
+  `machine_checked`, `human_reviewed`, `accepted`, `refuted`, `obsolete`, and
+  `superseded`.
+- `cosheaf.memory.RetrievalRole`: retrieval caller role enum with values
+  `librarian`, `orchestrator`, `reasoner`, `verifier`, `formalizer`,
+  `literature_scout`, `counterexampleer`, and `construction_searcher`.
 
 #### Core Helpers
 
