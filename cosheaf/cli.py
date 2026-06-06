@@ -41,7 +41,13 @@ from cosheaf.gates.gatekeeper import (
 )
 from cosheaf.gates.source_metadata_gate import missing_required_source_metadata
 from cosheaf.graph.claim_graph import DependencyGraph, build_dependency_graph
-from cosheaf.memory import ArtifactCardStatus, MemoryCardError, build_artifact_cards
+from cosheaf.memory import (
+    ArtifactCardStatus,
+    MemoryCardError,
+    MemorySearchError,
+    build_artifact_cards,
+    search_artifact_cards,
+)
 from cosheaf.storage.index import rebuild_index
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
 from cosheaf.storage.repo import RepoContext
@@ -504,6 +510,60 @@ def memory_cards(
     for card in cards:
         console.print(
             f"{card.id} | {card.title} | {card.status.value} | "
+            f"{card.root_scope.value} | {card.path}"
+        )
+
+
+@memory_app.command("search")
+def memory_search(
+    query: str = typer.Argument(..., help="Search query."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    issue: str | None = typer.Option(
+        None,
+        "--issue",
+        help="Optional issue ID whose direct related artifacts bound search.",
+    ),
+    status: ArtifactCardStatus | None = typer.Option(
+        None,
+        "--status",
+        help="Optional artifact-card status filter.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON retrieval result instead of text lines.",
+    ),
+) -> None:
+    """Search compact artifact cards with deterministic local scoring."""
+    console = Console(width=120, markup=False)
+    try:
+        result = search_artifact_cards(
+            RepoContext(repo_root),
+            query=query,
+            issue_id=issue,
+            status=status,
+        )
+    except MemorySearchError as exc:
+        console.print(f"Memory search failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(result.to_json(), nl=False)
+        return
+
+    if not result.cards:
+        console.print("No memory search results.")
+        return
+
+    for hit in result.cards:
+        card = hit.card
+        console.print(
+            f"{card.id} | score={hit.score_breakdown.total:.6f} | "
+            f"{card.title} | {card.status.value} | "
             f"{card.root_scope.value} | {card.path}"
         )
 
