@@ -81,6 +81,20 @@ are treated as external references and are not required to resolve locally.
 Runs configured verifier adapters and normalizes results. Missing optional
 external tools should produce skipped verifier results, not core system crashes.
 
+#### Verification Capability Matrix
+
+The current verifier surface is intentionally small and optional-tool friendly.
+
+| Backend | Current status | Evidence kinds or metadata | Default external command | CI requirement | Boundary |
+| --- | --- | --- | --- | --- | --- |
+| Python checker | Available | `python_checker` | current Python executable | Available through repo-local scripts when evidence is present | Runs repository-local checker scripts and records normalized verifier results. |
+| SAT | Minimal optional adapter available | `sat`, `sat_solver`, `sat_checker` | `kissat` | No SAT solver required; unavailable solver is `skipped` | Supports repository-local DIMACS CNF evidence, not full SAT theorem-proving integration. |
+| SMT | Minimal optional adapter available | `smt`, `smt_solver`, `smt_checker` | `z3` | No SMT solver required; unavailable solver is `skipped` | Supports repository-local SMT-LIB evidence, not full SMT theorem-proving integration. |
+| Lean plain file | Minimal optional adapter available | `lean`, `lean4`, `lean_checker`, `lean_proof` | `lean` | No Lean installation required; unavailable Lean is `skipped` | Checks repository-local plain `.lean` files only when Lean is available. It does not autoformalize natural language. |
+| External Lean library references | Planned/future | `formalizations` metadata plus G10 static policy fields | None | Not required | Current G10 checks metadata consistency only; it does not fetch CSLib/mathlib or check external symbols. |
+| Coq | Not implemented | None | None | Not required | No current adapter or roadmap item in this repository. |
+| Isabelle | Not implemented | None | None | Not required | No current adapter or roadmap item in this repository. |
+
 The verifier adapter interface is defined by `VerifierAdapter`, with:
 
 - `name: str`

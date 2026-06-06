@@ -29,6 +29,9 @@ private user artifact -> public KB artifact
 Public KB artifacts must not depend on private artifacts. Private overlays may
 depend on public artifacts when `[policy] private_can_depend_on_public = true`.
 
+For a short end-to-end setup guide, see
+[`docs/WORKSPACE_QUICKSTART.md`](WORKSPACE_QUICKSTART.md).
+
 ## Configuration
 
 The current workspace configuration shape is:
@@ -144,3 +147,60 @@ default | kb | readonly=false | priority=0
 This preserves existing single-repository behavior for current users and tests.
 Legacy mode has no configured public KB root, so the accepted-public source
 metadata gate reports `not_applicable`.
+
+## Migrating From Legacy Layout
+
+Legacy repositories usually have a single writable KB root:
+
+```text
+workspace/
+`-- kb/
+```
+
+The recommended workspace layout separates user-private material from readonly
+public knowledge:
+
+```text
+workspace/
+|-- cosheaf.toml
+|-- kb/
+|   `-- private/
+`-- external/
+    `-- tcs-kb-public/
+        `-- kb/
+            `-- public/
+```
+
+Use a configured public root such as:
+
+```toml
+[[kb]]
+name = "public"
+path = "external/tcs-kb-public/kb/public"
+readonly = true
+priority = 10
+
+[[kb]]
+name = "private"
+path = "kb/private"
+readonly = false
+priority = 20
+```
+
+The workspace template's default `kb/public` root is also valid when that path
+is replaced by, or mounted from, the public KB contents.
+
+Migration should preserve artifact meaning and status. Move private drafts,
+conjectures, failed attempts, experiments, and unpublished notes under
+`kb/private/`. Do not copy private material into a public KB root. Reusable
+public artifacts should be proposed to `tcs-kb-public` through a separate
+source-reviewed issue and pull request.
+
+After migration, run:
+
+```bash
+cosheaf workspace info
+cosheaf validate
+cosheaf gate run
+cosheaf index rebuild
+```
