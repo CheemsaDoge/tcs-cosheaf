@@ -43,6 +43,8 @@ on conversation history.
 - Run gatekeeper checks before accepting behavior or artifact changes.
 - Normalize verifier outputs through optional adapters.
 - Generate ranked bounded context packs for issue-scoped Codex or agent tasks.
+- Run explicit local worker commands against issue-scoped tasks and validate
+  structured output bundles without merging accepted knowledge automatically.
 - Record metadata-only references to external formal declarations through the
   Formal Link Layer without copying Lean proofs.
 
@@ -106,6 +108,20 @@ Planned or incomplete:
 - External public KB repository integration beyond local workspace roots.
 - External Lean library reference checking for CSLib/mathlib declarations.
 - Automatic informal/formal semantic alignment checking.
+
+## Worker And Orchestrator Boundary
+
+TCS-Cosheaf includes a lightweight local task-execution layer. Tasks are
+issue-scoped records, context packs provide bounded repository context, and
+local worker runs execute explicit command argv lists with repository-local
+working directories, timeout metadata, stdout, stderr, and return-code records.
+Workers can return structured output bundles that the existing contract
+validates for review.
+
+The current orchestrator is a local filesystem stub. It does not call hosted
+LLMs or model providers, does not run network services, does not merge worker
+outputs, and does not promote accepted knowledge. Accepted knowledge still
+enters through review, gates, and `cosheaf artifact promote`.
 
 ## Core Concepts
 
@@ -196,7 +212,8 @@ cosheaf context build <issue-id>
 cosheaf context show <issue-id>
 ```
 
-See [Workspace model](docs/WORKSPACE.md) and
+See [Workspace quickstart](docs/WORKSPACE_QUICKSTART.md),
+[Workspace model](docs/WORKSPACE.md), and
 [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md) for layered KB roots.
 Downstream repositories should pin to `v0.1.1` before using formalization
 fields in artifact YAML.
@@ -239,9 +256,11 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Project rules](AGENTS.md)
 - [Product spec](docs/PRODUCT_SPEC.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Workspace quickstart](docs/WORKSPACE_QUICKSTART.md)
 - [Workspace model](docs/WORKSPACE.md)
 - [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md)
 - [Gatekeeper and validation gates](docs/GATES.md)
+- [Artifact lifecycle](docs/ARTIFACT_LIFECYCLE.md)
 - [Artifact schema](docs/ARTIFACT_SCHEMA.md)
 - [Codex workflow](docs/CODEX_WORKFLOW.md)
 - [Review policy](docs/REVIEW_POLICY.md)
