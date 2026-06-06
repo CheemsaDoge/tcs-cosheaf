@@ -2,8 +2,9 @@
 
 This document defines the Phase 3 memory and retrieval policy before the full
 librarian runtime is implemented. The core request/result/card data transfer
-models now exist under `cosheaf.memory`, but they are model contracts only.
-They are not a claim that retrieval, ranking execution, sidecar writers, or a
+models and deterministic artifact-card builder now exist under
+`cosheaf.memory`, but they remain bounded local metadata surfaces. They are not
+a claim that text retrieval, graph ranking execution, sidecar writers, or a
 worker runtime already exists.
 
 The policy is deterministic-first. The librarian may retrieve, rank, summarize,
@@ -103,6 +104,14 @@ can_pull_full: boolean
 Card summaries must be derived from existing records or explicitly labeled as
 generated summaries. A generated summary does not change the artifact
 statement, review state, status, verifier state, or accepted state.
+
+`cosheaf memory cards` builds these cards from current repository YAML metadata
+and prints compact card output by default. It does not print full artifact YAML,
+does not print artifact statements, and does not write `.cosheaf/memory/`
+sidecars. The command accepts `--json`, `--status <status>`, and optional
+`--issue <issue-id>` filters. Issue filtering is limited to direct
+`related_artifacts` in the issue record; broader retrieval and ranking are
+future work.
 
 ## Retrieval Request Schema
 
@@ -363,8 +372,9 @@ and explicit promotion.
 Phase 3 should proceed in small PRs:
 
 1. Define Pydantic models for artifact cards, retrieval requests, retrieval
-   results, score breakdowns, and audits. Done as model-only API groundwork.
-2. Build cards deterministically from current artifact/index metadata.
+   results, score breakdowns, and audits. Done as model/API groundwork.
+2. Build cards deterministically from current artifact/index metadata. Initial
+   YAML metadata card builder and `cosheaf memory cards` CLI are implemented.
 3. Add lexical/FTS retrieval before optional embeddings.
 4. Add memory graph and deterministic PageRank.
 5. Add issue-conditioned Personalized PageRank.

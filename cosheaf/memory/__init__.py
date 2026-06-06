@@ -7,6 +7,12 @@ agent runtime behavior.
 
 from __future__ import annotations
 
+from cosheaf.memory.cards import (
+    DEFAULT_CARD_SCOPES,
+    MemoryCardError,
+    artifact_card_from_loaded_record,
+    build_artifact_cards,
+)
 from cosheaf.memory.models import (
     ArtifactCard,
     ArtifactCardStatus,
@@ -23,6 +29,7 @@ from cosheaf.memory.models import (
 )
 
 __all__ = [
+    "DEFAULT_CARD_SCOPES",
     "ArtifactCard",
     "ArtifactCardStatus",
     "ArtifactCardType",
@@ -35,4 +42,7 @@ __all__ = [
     "RetrievalRole",
     "RetrievedArtifactCard",
     "ScoreBreakdown",
+    "MemoryCardError",
+    "artifact_card_from_loaded_record",
+    "build_artifact_cards",
 ]
