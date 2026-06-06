@@ -2,51 +2,50 @@
 
 ## Milestone
 
-v0.1.0 release candidate cleanup.
+Phase 0 three-repository state audit for MVP productization.
 
 ## Goal
 
-Clear release-state contradictions before tagging the framework as `v0.1.0`.
-The project remains a pre-MVP scaffold, but its version metadata, license
-metadata, roadmap, release checklist, and durable state docs should describe
-the same implemented surface.
+Record the actual current state of `tcs-cosheaf`, `tcs-kb-public`, and
+`tcs-cosheaf-workspace-template` before later longplan phases add new
+capabilities. The current task is documentation-only and must not change
+application code, schemas, gate behavior, accepted-promotion semantics, or KB
+artifacts.
+
+## Current Baseline
+
+- Framework package version is `0.1.1`.
+- `tcs-cosheaf` has workspace-aware validation, gatekeeper G1-G10, deterministic
+  index rebuilds, a Python query API, context-pack generation, local task-runner
+  scaffolding, and minimal optional SAT, SMT, and plain Lean verifier adapters.
+- Formal-link metadata is implemented as artifact metadata, G10 static gate
+  checks, context-pack display, and index/query output.
+- External Lean-library `#check` for CSLib/mathlib references is not
+  implemented.
+- Hosted LLM worker execution is not implemented.
+- `tcs-cosheaf-workspace-template` is the user-facing entry point and currently
+  has demo, Makefile, public-KB bootstrap guidance, and CI smoke coverage.
+- `tcs-kb-public` currently has 19 accepted public artifacts. Their
+  formalization references are planned metadata, not Lean-checked results.
 
 ## Completion Criteria
 
-- Project rules are documented.
-- Product scope is documented.
-- Architecture layers and dependency direction are documented.
-- Codex workflow is documented.
-- Initial gates are documented.
-- Planned artifact types are documented.
-- Initial ADRs are recorded.
-- Python package scaffolding and CLI entry points exist.
-- Artifact schemas and example YAML records exist.
-- Core artifact models and status helpers exist.
-- Filesystem-backed loading, deterministic writing, dependency graph, and
-  repository index rebuilds exist.
-- Read-only SQLite query API over rebuilt index output exists for artifact,
-  status, type, domain, dependency, reverse-dependency, and source-root queries.
-- `cosheaf validate` and `cosheaf gate` run implemented local checks; G8 can
-  validate explicit PR body markdown files and is skipped when no PR checklist
-  source is available.
-- Python checker, minimal optional SAT DIMACS verifier, minimal optional
-  SMT-LIB verifier, and minimal optional Lean verifier adapters exist.
-- Issue-scoped context pack generation exists.
-- GitHub Actions CI runs `lint`, `typecheck`, `test`, `validate`, and `gate`
-  as separate Python 3.11 checks.
-- Project metadata, README license text, and `LICENSE` use Apache-2.0
-  consistently.
-- `RELEASE_CHECKLIST.md` records release readiness, tag, known limitations, and
-  follow-up repository pinning requirements.
-- Project state and interface registry remain mutually consistent.
+- `docs/CODEX_STATE_AUDIT.md` exists and answers the Phase 0 Task 0.1 audit
+  questions.
+- `context/PROJECT_STATE.md` points to the audit and remains consistent with
+  the current v0.1.1 framework baseline.
+- This milestone file no longer describes the stale v0.1.0 release-candidate
+  cleanup state.
+- No code, schema, gate, promotion-policy, workflow-behavior, or KB artifact
+  changes are included in this task.
+- Required validation commands are run when available, and unavailable commands
+  are reported honestly.
 
 ## Next Focus
 
-- Hosted PR checklist source discovery beyond explicit local markdown files.
-- Expand SAT backend coverage beyond the minimal optional DIMACS invocation path.
-- Expand SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
-- Lean support beyond the minimal optional plain-file invocation path.
-- Tag `v0.1.0` only after the release-cleanup PR passes CI and human review.
-- Pin public KB and workspace-template CI/docs to `tcs-cosheaf@v0.1.0` only
-  after that tag exists.
+After this audit lands, continue with the next `longplan.md` task. Do not jump
+into implementation phases until the durable in-repository development plan is
+reconciled with this audit and the already-merged workspace-template work.
+
+Maintain the current maintainer override for this run: do not add `codex`
+prefixes to issue names, branch names, or PR titles.

@@ -1,5 +1,19 @@
 # Project State
 
+## Phase 0 State Audit - 2026-06-06
+
+`docs/CODEX_STATE_AUDIT.md` records the current three-repository state before
+later longplan phases proceed. The audit confirms that the framework package is
+`0.1.1`, the workspace template has demo, Makefile, bootstrap, and CI smoke
+coverage, and the public KB currently has 19 accepted public artifacts. All
+accepted public KB formalization references are still `planned` metadata with
+`check_mode: external_library_ref`; no external Lean-library `#check` workflow
+exists yet.
+
+The audit also confirms that `context/CURRENT_MILESTONE.md` was stale relative
+to the current `v0.1.1` and three-repo MVP productization state and has been
+updated as part of the same documentation-only task.
+
 ## Current State After v0.1.1 Formal Link Layer Support
 
 TCS-Cosheaf is in v0.1.1 Formal Link Layer support / pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata and formalization-link metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds including formal-link metadata, a read-only SQLite query API over rebuilt index output including formalization queries, gatekeeper report generation including G10 Formal Link Gate output, ranked issue-scoped context pack generation including compact formal-link display, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, and plain Lean verifier adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
