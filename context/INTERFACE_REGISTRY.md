@@ -61,6 +61,19 @@
 - `cosheaf memory cards --status <status>`: filters cards by artifact-card
   lifecycle/trust status, such as `accepted` or `draft`.
 - `cosheaf memory cards --json`: emits deterministic JSON card DTOs.
+- `cosheaf memory search <query>`: searches deterministic artifact cards with
+  local SQLite FTS5/BM25 when available and deterministic lexical fallback
+  otherwise. Default text output prints compact card lines with total score,
+  not full artifact YAML or statements.
+- `cosheaf memory search <query> --repo-root <path>`: searches cards for an
+  explicit repository root.
+- `cosheaf memory search <query> --issue <issue-id>`: bounds search to the
+  issue record's direct `related_artifacts`, after scope/status filters.
+- `cosheaf memory search <query> --status <status>`: filters search candidates
+  by artifact-card lifecycle/trust status.
+- `cosheaf memory search <query> --json`: emits a deterministic
+  `RetrievalResult` JSON payload with card hits, score breakdowns, and audit
+  metadata.
 - `cosheaf task create --issue <issue-id> --worker <worker-type>`: creates an open local agent task under `.cosheaf/tasks/` after confirming the issue exists.
 - `cosheaf task create --issue <issue-id> --worker <worker-type> --repo-root <path>`: creates the task for an explicit repository root.
 - `cosheaf task list`: lists local task records in deterministic task ID order.
@@ -216,6 +229,8 @@ semantics beyond ordinary gatekeeper blocking behavior.
   cards, full-artifact pull audit entries, and retrieval audit metadata.
 - `cosheaf.memory.MemoryCardError`: expected error for card-builder failures,
   such as an unknown issue ID or a repository load failure.
+- `cosheaf.memory.MemorySearchError`: expected error for memory-search
+  failures, such as invalid query text or card-builder errors.
 
 All memory models are strict (`extra="forbid"`), frozen, preserve enum values as
 enum instances in Python, and expose:
@@ -278,13 +293,18 @@ The memory package also exposes:
   builds one card from a loaded lifecycle artifact record.
 - `cosheaf.memory.DEFAULT_CARD_SCOPES`: default public-output scope set,
   containing `public`, `workspace`, and `framework`, excluding `private`.
+- `cosheaf.memory.search_artifact_cards(context: RepoContext, *, query: str, issue_id: str | None = None, status: ArtifactCardStatus | str | None = None, max_cards: int = 20, allowed_scopes: tuple[MemoryRootScope, ...] | None = None) -> RetrievalResult`:
+  searches deterministic artifact cards with SQLite FTS5/BM25 when available
+  and deterministic lexical fallback otherwise.
 
-The card builder reads existing YAML records through the storage loader. It does
-not add text search, graph ranking, SQLite retrieval, embeddings, sidecar
-writers, context-pack v2 behavior, hosted LLM workers, accepted-promotion
-shortcuts, or artifact schema changes. By default, configured private KB roots
-are excluded from `cosheaf memory cards`; callers must not treat card output as
-accepted knowledge or human review.
+The card builder and search read existing YAML records through the storage
+loader. Search uses an in-memory SQLite FTS5 table when available and does not
+write `.cosheaf/memory/` sidecars. The memory package does not add embeddings,
+graph ranking, context-pack v2 behavior, hosted LLM workers,
+accepted-promotion shortcuts, formal checking, or artifact schema changes. By
+default, configured private KB roots are excluded from `cosheaf memory cards`
+and `cosheaf memory search`; callers must not treat memory output as accepted
+knowledge or human review.
 
 #### Core Enums
 

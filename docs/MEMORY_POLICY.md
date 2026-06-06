@@ -2,10 +2,10 @@
 
 This document defines the Phase 3 memory and retrieval policy before the full
 librarian runtime is implemented. The core request/result/card data transfer
-models and deterministic artifact-card builder now exist under
-`cosheaf.memory`, but they remain bounded local metadata surfaces. They are not
-a claim that text retrieval, graph ranking execution, sidecar writers, or a
-worker runtime already exists.
+models, deterministic artifact-card builder, and bounded local text search now
+exist under `cosheaf.memory`, but they remain local metadata surfaces. They are
+not a claim that embedding retrieval, graph ranking execution, sidecar writers,
+or a worker runtime already exists.
 
 The policy is deterministic-first. The librarian may retrieve, rank, summarize,
 and audit existing repository records. It must not create new claims, modify
@@ -110,8 +110,19 @@ and prints compact card output by default. It does not print full artifact YAML,
 does not print artifact statements, and does not write `.cosheaf/memory/`
 sidecars. The command accepts `--json`, `--status <status>`, and optional
 `--issue <issue-id>` filters. Issue filtering is limited to direct
-`related_artifacts` in the issue record; broader retrieval and ranking are
-future work.
+`related_artifacts` in the issue record; broader graph-conditioned retrieval
+and ranking remain future work.
+
+`cosheaf memory search "query"` searches the same compact cards with
+deterministic local scoring. It uses an in-memory SQLite FTS5/BM25 table when
+available and falls back to deterministic lexical scoring when FTS5 is not
+available. The command accepts `--json`, `--status <status>`, and optional
+`--issue <issue-id>` filters. JSON output is a `RetrievalResult` with
+`RetrievedArtifactCard` entries, score breakdowns, and audit metadata. Text
+output remains card-level and does not print full artifact YAML or statements.
+The command does not write `.cosheaf/memory/` sidecars, does not create
+accepted knowledge, and does not perform embeddings, PageRank, full-artifact
+pulls, hosted LLM calls, or formal checking.
 
 ## Retrieval Request Schema
 
@@ -226,6 +237,12 @@ Interpretation:
 
 Implementations must emit score breakdowns. Exact constants can change only
 through a focused PR that updates this document and relevant tests.
+
+The current `cosheaf memory search` MVP populates only the implemented
+components of this formula: `RetrievalHybrid` from SQLite FTS/BM25 or lexical
+card matching, and `QualityPrior` from existing card trust metadata.
+Personalized PageRank, Global PageRank, Freshness, and Penalty remain zero
+until later Phase 3 tasks implement their underlying signals.
 
 ## Memory Graph
 
@@ -375,7 +392,9 @@ Phase 3 should proceed in small PRs:
    results, score breakdowns, and audits. Done as model/API groundwork.
 2. Build cards deterministically from current artifact/index metadata. Initial
    YAML metadata card builder and `cosheaf memory cards` CLI are implemented.
-3. Add lexical/FTS retrieval before optional embeddings.
+3. Add lexical/FTS retrieval before optional embeddings. Initial
+   `cosheaf memory search` CLI is implemented over artifact cards with SQLite
+   FTS5/BM25 when available and deterministic lexical fallback.
 4. Add memory graph and deterministic PageRank.
 5. Add issue-conditioned Personalized PageRank.
 6. Integrate cards into context-pack v2 with bounded full-artifact pulls.

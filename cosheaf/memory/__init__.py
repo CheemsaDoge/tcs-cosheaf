@@ -1,7 +1,8 @@
-"""Public memory/retrieval model surface.
+"""Public memory/retrieval model and deterministic search surface.
 
-The Phase 3 memory package currently contains typed request/result/card models
-only. It does not implement retrieval, ranking execution, sidecar writers, or
+The Phase 3 memory package contains typed request/result/card models, a
+YAML-metadata card builder, and bounded deterministic text search over cards.
+It does not implement embeddings, graph ranking execution, sidecar writers, or
 agent runtime behavior.
 """
 
@@ -27,6 +28,7 @@ from cosheaf.memory.models import (
     RetrievedArtifactCard,
     ScoreBreakdown,
 )
+from cosheaf.memory.search import MemorySearchError, search_artifact_cards
 
 __all__ = [
     "DEFAULT_CARD_SCOPES",
@@ -43,6 +45,8 @@ __all__ = [
     "RetrievedArtifactCard",
     "ScoreBreakdown",
     "MemoryCardError",
+    "MemorySearchError",
     "artifact_card_from_loaded_record",
     "build_artifact_cards",
+    "search_artifact_cards",
 ]
