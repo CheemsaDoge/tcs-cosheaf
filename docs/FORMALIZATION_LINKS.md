@@ -1,3 +1,5 @@
+[中文版](FORMALIZATION_LINKS.zh-CN.md) | [English](FORMALIZATION_LINKS.md)
+
 # Formalization Links
 
 ## Purpose

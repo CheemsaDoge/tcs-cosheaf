@@ -1,3 +1,5 @@
+[中文版](ARTIFACT_LIFECYCLE.zh-CN.md) | [English](ARTIFACT_LIFECYCLE.md)
+
 # Artifact Lifecycle
 
 This document is a single overview of the artifact lifecycle. It summarizes

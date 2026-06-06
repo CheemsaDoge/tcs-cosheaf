@@ -1,3 +1,5 @@
+[中文版](PUBLIC_PRIVATE_KB.zh-CN.md) | [English](PUBLIC_PRIVATE_KB.md)
+
 # Public And Private KB Policy
 
 TCS-Cosheaf separates reusable public knowledge from user-private research
