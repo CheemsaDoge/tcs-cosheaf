@@ -2,18 +2,22 @@
 
 ## Milestone
 
-Phase 0 Task 0.2: durable development plan.
+Phase 3 Task 3.1: memory policy docs and ADR.
 
 ## Goal
 
-Make the current longplan durable repository memory before later implementation
-phases proceed. This task is documentation-only and must not change application
-code, schemas, gate behavior, accepted-promotion semantics, verifier behavior,
-or KB artifacts.
+Add durable memory-policy documentation before librarian implementation starts.
+This task is documentation-only and must not change application code, schemas,
+gate behavior, accepted-promotion semantics, verifier behavior, or KB
+artifacts.
 
 ## Current Baseline
 
 - Phase 0 Task 0.1 is complete in `docs/CODEX_STATE_AUDIT.md`.
+- Phase 0 Task 0.2 is complete in `docs/CODEX_DEVELOPMENT_PLAN.md` and
+  `docs/ADR/0008-agent-memory-runtime-roadmap.md`.
+- Phase 1 workspace-template reconciliation and Phase 2 public-KB policy
+  groundwork have landed in their respective repositories.
 - Framework package version is `0.1.1`.
 - `tcs-cosheaf` has workspace-aware validation, gatekeeper G1-G10, deterministic
   index rebuilds, a Python query API, context-pack generation, local task-runner
@@ -26,19 +30,19 @@ or KB artifacts.
 - `tcs-cosheaf-workspace-template` is the user-facing entry point and currently
   has demo, Makefile, public-KB bootstrap guidance, onboarding docs, and CI
   smoke coverage.
-- `tcs-kb-public` currently has 19 accepted public artifacts. Their
-  formalization references are planned metadata, not Lean-checked results.
+- `tcs-kb-public` currently has accepted public artifacts whose formalization
+  references remain metadata unless a checker result is explicitly recorded.
 
 ## Completion Criteria
 
-- `docs/CODEX_DEVELOPMENT_PLAN.md` records the three-repo responsibilities,
-  global invariants, phased roadmap, concrete Phase 1 follow-up tasks,
-  explicit non-goals, stop rules, and one task / one branch / one PR rule.
-- `docs/ADR/0008-agent-memory-runtime-roadmap.md` records why deterministic
-  librarian and orchestrator work belongs inside `tcs-cosheaf` rather than a
-  fourth core repository.
-- This milestone file points to the durable plan rather than the completed
-  Task 0.1 audit as the active task.
+- `docs/MEMORY_POLICY.md` records hot/warm/cold memory, artifact cards,
+  retrieval request/result schemas, graph nodes and edges, ranking formula,
+  sidecar files, public/private filtering, the no-whole-repo-dump rule, and
+  librarian authority boundaries.
+- `docs/ADR/0009-librarian-memory-policy.md` records why the librarian starts
+  deterministic-first.
+- `docs/ARCHITECTURE.md` includes the planned Memory/Retrieval Layer without
+  claiming that librarian code already exists.
 - No code, schema, gate, promotion-policy, workflow-behavior, verifier, or KB
   artifact changes are included.
 - Required validation commands are run when available, and unavailable commands
@@ -46,11 +50,10 @@ or KB artifacts.
 
 ## Next Focus
 
-After this documentation-only task lands, continue the longplan from the next
-task. Because the state audit confirms that much of Phase 1 workspace-template
-productization already exists, begin any Phase 1 work with a focused
-reconciliation against the exact longplan requirements instead of duplicating
-already merged template features.
+After this documentation-only task lands, continue Phase 3 with Task 3.2:
+ArtifactCard and related retrieval request/result models. Do not implement
+librarian retrieval, graph ranking, context-pack v2 integration, orchestrator
+runtime, hosted LLM workers, or external Lean-library checking in Task 3.1.
 
 Maintain the current maintainer override for this run: do not add `codex`
 prefixes to issue names, branch names, or PR titles, even when older examples
