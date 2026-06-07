@@ -6,13 +6,28 @@ from dataclasses import dataclass
 from typing import Literal
 
 from cosheaf.core.artifact import BaseArtifact
+from cosheaf.core.formal_library import (
+    FormalLibraryManifest,
+    FormalLibraryManifestError,
+    load_formal_library_manifest,
+)
 from cosheaf.core.status import ArtifactStatus
 from cosheaf.gates.schema_gate import ValidationFailure, sort_failures
 from cosheaf.storage.loader import LoadedRecord
+from cosheaf.storage.repo import RepoContext
+from cosheaf.verification.result import VerificationResult, VerificationStatus
 
 CheckStatus = Literal["pass", "fail", "warning", "not_applicable"]
 
 ACTIVE_FORMALIZATION_STATUSES = frozenset({"planned", "linked", "checked"})
+ALLOWED_FORMALIZATION_STATUSES = frozenset(
+    {"planned", "linked", "checked", "broken", "deprecated"}
+)
+FORMAL_LIBRARY_MANIFEST_PATHS = (
+    "formal-libs/lean-libraries.yaml",
+    "formal-libs/lean-libraries.yml",
+    "formal-libs/lean-libraries.example.yaml",
+)
 
 
 @dataclass(frozen=True)
@@ -28,6 +43,8 @@ class FormalLinkCheck:
     require_alignment_review: bool
     formalization_count: int
     checked_formalization_count: int
+    resolved_library_ref_count: int
+    lean_check_pass_count: int
     alignment_status: str
     status: CheckStatus
     blocking_messages: tuple[str, ...] = ()
@@ -44,11 +61,21 @@ class FormalLinkCheck:
             "require_alignment_review": self.require_alignment_review,
             "formalization_count": self.formalization_count,
             "checked_formalization_count": self.checked_formalization_count,
+            "resolved_library_ref_count": self.resolved_library_ref_count,
+            "lean_check_pass_count": self.lean_check_pass_count,
             "alignment_status": self.alignment_status,
             "status": self.status,
             "blocking_messages": list(self.blocking_messages),
             "warning_messages": list(self.warning_messages),
         }
+
+
+@dataclass(frozen=True)
+class FormalLibraryManifestLookup:
+    """Loaded formal-library manifest, or a blocking manifest lookup issue."""
+
+    manifest: FormalLibraryManifest | None
+    issue: str = ""
 
 
 @dataclass(frozen=True)
@@ -70,18 +97,27 @@ class FormalLinkResult:
 
 def validate_formal_link_policy(
     records: tuple[LoadedRecord, ...],
+    *,
+    context: RepoContext | None = None,
+    verification_results: tuple[VerificationResult, ...] = (),
 ) -> FormalLinkResult:
     """Validate static consistency of formal-link metadata."""
     checks: list[FormalLinkCheck] = []
     failures: list[ValidationFailure] = []
     warnings: list[ValidationFailure] = []
+    manifest_lookup = _load_manifest(context)
 
     for loaded in sorted(records, key=_record_sort_key):
         artifact = loaded.record
         if not isinstance(artifact, BaseArtifact):
             continue
 
-        check = _check_artifact(loaded, artifact)
+        check = _check_artifact(
+            loaded,
+            artifact,
+            manifest_lookup=manifest_lookup,
+            verification_results=verification_results,
+        )
         checks.append(check)
         failures.extend(
             _failures_from_messages(check, check.blocking_messages)
@@ -98,6 +134,9 @@ def validate_formal_link_policy(
 def _check_artifact(
     loaded: LoadedRecord,
     artifact: BaseArtifact,
+    *,
+    manifest_lookup: FormalLibraryManifestLookup,
+    verification_results: tuple[VerificationResult, ...],
 ) -> FormalLinkCheck:
     blocking: list[str] = []
     warnings: list[str] = []
@@ -105,6 +144,8 @@ def _check_artifact(
     alignment = artifact.alignment
     formalizations = artifact.formalizations
     checked_count = sum(1 for ref in formalizations if ref.status == "checked")
+    resolved_library_ref_count = 0
+    lean_check_pass_count = _lean_check_pass_count(artifact, verification_results)
     active_count = sum(
         1 for ref in formalizations if ref.status in ACTIVE_FORMALIZATION_STATUSES
     )
@@ -123,6 +164,12 @@ def _check_artifact(
     if policy.require_lean_check and checked_count == 0:
         blocking.append(
             "verification_policy requires a Lean check but no formalization is checked"
+        )
+
+    if policy.require_lean_check and checked_count > 0 and lean_check_pass_count == 0:
+        blocking.append(
+            "verification_policy requires a Lean check but no Lean verifier "
+            "result passed for a checked formalization"
         )
 
     if policy.level == "lean_required" and not policy.require_formal_link:
@@ -144,7 +191,39 @@ def _check_artifact(
         )
 
     for ref in sorted(formalizations, key=lambda item: item.id):
-        if ref.status == "checked" and ref.check_mode == "external_library_ref":
+        if manifest_lookup.issue:
+            blocking.append(manifest_lookup.issue)
+        if ref.status not in ALLOWED_FORMALIZATION_STATUSES:
+            blocking.append(
+                f"formalization {ref.id} has unsupported status {ref.status}"
+            )
+        if ref.status in {"linked", "checked"}:
+            if not ref.import_path.strip():
+                blocking.append(
+                    f"formalization {ref.id} has empty import_path while "
+                    f"status is {ref.status}"
+                )
+            if not ref.symbol.strip():
+                blocking.append(
+                    f"formalization {ref.id} has empty symbol while "
+                    f"status is {ref.status}"
+                )
+        if manifest_lookup.manifest is not None:
+            try:
+                manifest_lookup.manifest.require_library_ref(ref.library_ref)
+                resolved_library_ref_count += 1
+            except FormalLibraryManifestError:
+                blocking.append(
+                    f"formalization {ref.id} references unknown library_ref: "
+                    f"{ref.library_ref}"
+                )
+        if (
+            ref.status == "checked"
+            and ref.check_mode == "external_library_ref"
+            and not _has_passing_lean_library_ref(
+                artifact, ref.id, verification_results
+            )
+        ):
             warnings.append(
                 f"formalization {ref.id} is checked through external_library_ref "
                 "without verifier evidence linkage"
@@ -178,6 +257,8 @@ def _check_artifact(
         require_alignment_review=policy.require_alignment_review,
         formalization_count=len(formalizations),
         checked_formalization_count=checked_count,
+        resolved_library_ref_count=resolved_library_ref_count,
+        lean_check_pass_count=lean_check_pass_count,
         alignment_status=alignment.status,
         status=status,
         blocking_messages=tuple(sorted(dict.fromkeys(blocking))),
@@ -202,6 +283,86 @@ def _is_applicable(artifact: BaseArtifact) -> bool:
             policy.require_alignment_review,
         )
     )
+
+
+def _load_manifest(context: RepoContext | None) -> FormalLibraryManifestLookup:
+    if context is None:
+        return FormalLibraryManifestLookup(manifest=None)
+    for relative_path in FORMAL_LIBRARY_MANIFEST_PATHS:
+        path = context.resolve(relative_path)
+        if path.is_file():
+            try:
+                return FormalLibraryManifestLookup(
+                    manifest=load_formal_library_manifest(path)
+                )
+            except Exception as exc:
+                return FormalLibraryManifestLookup(
+                    manifest=None,
+                    issue=(
+                        "formal library manifest failed to load from "
+                        f"{relative_path}: {exc}"
+                    ),
+                )
+    expected_paths = ", ".join(FORMAL_LIBRARY_MANIFEST_PATHS)
+    return FormalLibraryManifestLookup(
+        manifest=None,
+        issue=f"formal library manifest not found; expected one of: {expected_paths}",
+    )
+
+
+def _lean_check_pass_count(
+    artifact: BaseArtifact,
+    verification_results: tuple[VerificationResult, ...],
+) -> int:
+    return sum(
+        1
+        for ref in artifact.formalizations
+        if ref.status == "checked"
+        and _has_matching_lean_pass(
+            artifact, ref.id, ref.check_mode, verification_results
+        )
+    )
+
+
+def _has_passing_lean_library_ref(
+    artifact: BaseArtifact,
+    formalization_id: str,
+    verification_results: tuple[VerificationResult, ...],
+) -> bool:
+    label = _formalization_label(formalization_id)
+    return any(
+        result.artifact_id == artifact.id
+        and result.verifier == "lean_library_ref"
+        and result.status is VerificationStatus.PASS
+        and (label in result.evidence_paths or label in result.input_paths)
+        for result in verification_results
+    )
+
+
+def _has_matching_lean_pass(
+    artifact: BaseArtifact,
+    formalization_id: str,
+    check_mode: str,
+    verification_results: tuple[VerificationResult, ...],
+) -> bool:
+    if check_mode == "external_library_ref":
+        return _has_passing_lean_library_ref(
+            artifact,
+            formalization_id,
+            verification_results,
+        )
+    if check_mode == "local_file":
+        return any(
+            result.artifact_id == artifact.id
+            and result.verifier == "lean"
+            and result.status is VerificationStatus.PASS
+            for result in verification_results
+        )
+    return False
+
+
+def _formalization_label(formalization_id: str) -> str:
+    return f"formalization:{formalization_id}"
 
 
 def _failures_from_messages(

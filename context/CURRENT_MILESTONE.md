@@ -2,14 +2,13 @@
 
 ## Milestone
 
-Phase 6 Task 6.2: Lean external library `#check` adapter.
+Phase 6 Task 6.3: Formal Link Gate hardening.
 
 ## Goal
 
-Add an optional external Lean library reference checker that turns linked Lean
-formalization metadata into generated `import`/`#check` verifier runs without
-fetching CSLib/mathlib, requiring Lean in CI, or claiming informal/formal
-semantic alignment.
+Harden G10 Formal Link Gate so checked formal-link metadata cannot be treated
+as a Lean pass without matching verifier evidence, while preserving the
+boundary that G10 does not execute Lean or prove informal/formal alignment.
 
 ## Current Baseline
 
@@ -41,9 +40,9 @@ semantic alignment.
   deterministic index rebuilds, read-only query surfaces, artifact-card
   retrieval, memory graph/PageRank surfaces, context-pack v2, local task-runner
   scaffolding, an orchestrator state-machine contract, and minimal optional
-  SAT, SMT, and plain Lean verifier adapters.
-- Formal-link metadata is implemented as artifact metadata, G10 static gate
-  checks, context-pack display, and index/query output.
+  SAT, SMT, plain Lean, and external Lean library reference verifier adapters.
+- Formal-link metadata is implemented as artifact metadata, G10 gate checks,
+  context-pack display, and index/query output.
 - External Lean-library `#check` for linked Lean formalization references is
   available as an optional verifier adapter. Missing Lean/lake remains
   `skipped`, not `pass`.
@@ -59,25 +58,26 @@ semantic alignment.
 
 ## Completion Criteria
 
-- `cosheaf.verification.lean_external.LeanLibraryRefAdapter` handles linked or
-  checked `external_library_ref` metadata by generating temporary Lean files.
-- The adapter supports `lean <tempfile>` and configured `lake env lean
-  <tempfile>` command shapes.
-- Missing Lean/lake returns `skipped`, not `pass`.
-- Stdout/stderr logs and command metadata are recorded under `.cosheaf/logs/`.
-- Tests use fake backends and do not require real Lean, lake, CSLib, or
-  mathlib.
-- Documentation and `context/INTERFACE_REGISTRY.md` describe the adapter while
-  preserving the boundary that `#check` is symbol/import resolution only.
-- No schema change, G10 semantic change, accepted-promotion policy change,
-  hosted LLM behavior, or KB policy change is introduced.
+- G10 resolves artifact `library_ref` values against a local formal library
+  manifest and blocks missing or unknown manifest references when
+  formalization links are present.
+- G10 requires `import_path` and `symbol` metadata for `linked` and `checked`
+  formalization references.
+- G10 requires a matching Lean verifier `pass` when
+  `verification_policy.require_lean_check` is true; skipped, failed, or errored
+  verifier results are not passes.
+- Planned formalizations remain metadata and are not treated as checked.
+- Alignment review remains separate from Lean checking.
+- No Lean execution is added to G10, no external library fetch is added, and no
+  accepted-promotion policy path is changed beyond ordinary gatekeeper
+  blocking behavior.
 
 ## Next Focus
 
-After Phase 6 Task 6.2 lands, the next fixed-plan item is Phase 6 Task 6.3:
-Formal Link Gate hardening. Do not expand this task into hosted LLM execution,
-agent runtime work, public KB artifact changes, web UI work, or
-accepted-promotion policy changes.
+After Phase 6 Task 6.3 lands, the next fixed-plan item is Phase 6 Task 6.4:
+formal link pilot. Do not expand this task into hosted LLM execution, agent
+runtime work, public KB artifact batches, web UI work, or accepted-promotion
+policy changes.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show

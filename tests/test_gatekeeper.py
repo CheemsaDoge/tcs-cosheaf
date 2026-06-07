@@ -1,15 +1,90 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
 import yaml  # type: ignore[import-untyped]
 from typer.testing import CliRunner
 
+import cosheaf.gates.gatekeeper as gatekeeper_module
 from cosheaf.cli import app
+from cosheaf.core.artifact import BaseArtifact
+from cosheaf.storage.repo import RepoContext
+from cosheaf.verification.lean_external import (
+    LeanLibraryRefAdapter,
+    LeanLibraryRefBackendResult,
+)
+from cosheaf.verification.registry import VerifierRegistry
+from cosheaf.verification.result import VerificationResult, VerificationStatus
 
 runner = CliRunner()
+
+
+class _PassingLeanLibraryRefBackend:
+    name = "fake-lean"
+
+    def is_available(self) -> bool:
+        return True
+
+    def command(self, lean_path: Path) -> tuple[str, ...]:
+        return ("fake-lean", lean_path.as_posix())
+
+    def version(self) -> str:
+        return "fake-lean 1.0"
+
+    def check(
+        self,
+        lean_path: Path,
+        *,
+        cwd: Path,
+        timeout_seconds: float,
+    ) -> LeanLibraryRefBackendResult:
+        return LeanLibraryRefBackendResult(
+            exit_code=0,
+            stdout="fixture : Prop\n",
+            stderr="",
+        )
+
+
+def _passing_lean_library_ref_registry() -> VerifierRegistry:
+    registry = VerifierRegistry()
+    registry.register(
+        LeanLibraryRefAdapter(backend=_PassingLeanLibraryRefBackend())
+    )
+    return registry
+
+
+class _PassingPlainLeanAdapter:
+    name = "lean"
+
+    def can_verify(self, artifact: BaseArtifact, repo: RepoContext) -> bool:
+        return True
+
+    def verify(self, artifact: BaseArtifact, repo: RepoContext) -> VerificationResult:
+        now = datetime.now(UTC)
+        return VerificationResult(
+            verifier=self.name,
+            artifact_id=artifact.id,
+            status=VerificationStatus.PASS,
+            started_at=now,
+            ended_at=now,
+            command=("fake-lean", "fixture.lean"),
+            cwd=str(repo.repo_root),
+            exit_code=0,
+            evidence_paths=("formalization:cslib.fixture.link",),
+            input_paths=("formalization:cslib.fixture.link",),
+            tool_name="fake-lean",
+            tool_version="fake-lean 1.0",
+            message="Plain Lean fixture passed.",
+        )
+
+
+def _passing_plain_lean_registry() -> VerifierRegistry:
+    registry = VerifierRegistry()
+    registry.register(_PassingPlainLeanAdapter())
+    return registry
 
 
 def _write_artifact(
@@ -17,6 +92,7 @@ def _write_artifact(
     relative_path: str,
     *,
     artifact_id: str,
+    artifact_type: str = "claim",
     status: str = "draft",
     depends_on: list[str] | None = None,
     sources: list[dict[str, Any]] | None = None,
@@ -28,7 +104,7 @@ def _write_artifact(
     path.parent.mkdir(parents=True, exist_ok=True)
     data: dict[str, Any] = {
         "id": artifact_id,
-        "type": "claim",
+        "type": artifact_type,
         "title": f"Claim {artifact_id}",
         "domain": ["testing"],
         "status": status,
@@ -51,6 +127,13 @@ def _write_artifact(
     if verification_policy is not None:
         data["verification_policy"] = verification_policy
     path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+
+def _write_yaml(repo_root: Path, relative_path: str, data: dict[str, Any]) -> Path:
+    path = repo_root / relative_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    return path
 
 
 def _load_single_report(repo_root: Path) -> dict[str, Any]:
@@ -144,6 +227,32 @@ def _write_workspace_config(
             ]
         ),
         encoding="utf-8",
+    )
+
+
+def _write_formal_library_manifest(
+    repo_root: Path,
+    *,
+    library_ids: tuple[str, ...] = ("cslib-main", "mathlib-main"),
+) -> None:
+    libraries = []
+    for library_id in library_ids:
+        libraries.append(
+            {
+                "id": library_id,
+                "name": library_id,
+                "system": "lean4",
+                "git": f"https://example.invalid/{library_id}.git",
+                "commit": "0123456789abcdef0123456789abcdef01234567",
+                "lean_version": "lean4-example",
+                "lake_manifest": "lake-manifest.json",
+                "notes": "Fixture manifest entry; metadata only.",
+            }
+        )
+    _write_yaml(
+        repo_root,
+        "formal-libs/lean-libraries.yaml",
+        {"schema_version": 1, "libraries": libraries},
     )
 
 
@@ -591,6 +700,7 @@ def test_formal_link_gate_ignores_non_artifact_records(tmp_path: Path) -> None:
 
 
 def test_formal_link_gate_passes_required_planned_link(tmp_path: Path) -> None:
+    _write_formal_library_manifest(tmp_path)
     _write_artifact(
         tmp_path,
         "examples/claims/a.yaml",
@@ -614,6 +724,7 @@ def test_formal_link_gate_passes_required_planned_link(tmp_path: Path) -> None:
 def test_formal_link_gate_passes_required_alignment_review(
     tmp_path: Path,
 ) -> None:
+    _write_formal_library_manifest(tmp_path)
     _write_artifact(
         tmp_path,
         "examples/claims/a.yaml",
@@ -633,17 +744,19 @@ def test_formal_link_gate_passes_required_alignment_review(
 
 def test_formal_link_gate_passes_required_checked_formalization(
     tmp_path: Path,
+    monkeypatch: Any,
 ) -> None:
+    monkeypatch.setattr(
+        gatekeeper_module,
+        "default_verifier_registry",
+        _passing_lean_library_ref_registry,
+    )
+    _write_formal_library_manifest(tmp_path)
     _write_artifact(
         tmp_path,
         "examples/claims/a.yaml",
         artifact_id="claim.fixture.checked-formalization",
-        formalizations=[
-            _formalization_fixture(
-                status="checked",
-                check_mode="local_file",
-            )
-        ],
+        formalizations=[_formalization_fixture(status="checked")],
         verification_policy=_formal_link_policy(
             level="machine_checked",
             require_lean_check=True,
@@ -653,7 +766,9 @@ def test_formal_link_gate_passes_required_checked_formalization(
     result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
 
     assert result.exit_code == 0, result.output
-    g10 = _gate_by_id(_load_single_report(tmp_path), "G10")
+    report = _load_single_report(tmp_path)
+    assert _gate_by_id(report, "G6")["status"] == "pass"
+    g10 = _gate_by_id(report, "G10")
     assert g10["status"] == "pass"
     assert g10["blocking_issues"] == []
 
@@ -697,6 +812,7 @@ def test_formal_link_gate_fails_required_alignment_without_human_review(
 ) -> None:
     for alignment_status in ("none", "requested", "rejected"):
         repo_root = tmp_path / alignment_status
+        _write_formal_library_manifest(repo_root)
         alignment: dict[str, Any] = {
             "status": alignment_status,
             "reviewer": (
@@ -737,6 +853,7 @@ def test_formal_link_gate_fails_required_alignment_without_human_review(
 def test_formal_link_gate_fails_required_lean_check_without_checked_link(
     tmp_path: Path,
 ) -> None:
+    _write_formal_library_manifest(tmp_path)
     _write_artifact(
         tmp_path,
         "examples/claims/a.yaml",
@@ -762,6 +879,7 @@ def test_formal_link_gate_fails_required_lean_check_without_checked_link(
 def test_formal_link_gate_fails_accepted_rejected_alignment(
     tmp_path: Path,
 ) -> None:
+    _write_formal_library_manifest(tmp_path)
     _write_artifact(
         tmp_path,
         "kb/accepted/claims/claim.fixture.accepted.yaml",
@@ -791,6 +909,7 @@ def test_formal_link_gate_fails_accepted_rejected_alignment(
 def test_formal_link_gate_fails_accepted_lean_required_without_checked_link(
     tmp_path: Path,
 ) -> None:
+    _write_formal_library_manifest(tmp_path)
     _write_artifact(
         tmp_path,
         "kb/accepted/claims/claim.fixture.accepted.yaml",
@@ -815,6 +934,7 @@ def test_formal_link_gate_fails_accepted_lean_required_without_checked_link(
 def test_formal_link_gate_warns_for_planned_formalization_on_accepted_artifact(
     tmp_path: Path,
 ) -> None:
+    _write_formal_library_manifest(tmp_path)
     _write_artifact(
         tmp_path,
         "kb/accepted/claims/claim.fixture.accepted.yaml",
@@ -839,6 +959,7 @@ def test_formal_link_gate_warns_for_planned_formalization_on_accepted_artifact(
 def test_formal_link_gate_fails_when_required_link_is_only_broken(
     tmp_path: Path,
 ) -> None:
+    _write_formal_library_manifest(tmp_path)
     _write_artifact(
         tmp_path,
         "examples/claims/a.yaml",
@@ -860,6 +981,7 @@ def test_formal_link_gate_fails_when_required_link_is_only_broken(
 def test_formal_link_gate_warns_for_broken_link_when_valid_link_exists(
     tmp_path: Path,
 ) -> None:
+    _write_formal_library_manifest(tmp_path)
     _write_artifact(
         tmp_path,
         "examples/claims/a.yaml",
@@ -889,16 +1011,16 @@ def test_formal_link_gate_warns_for_broken_link_when_valid_link_exists(
 
 def test_formal_link_gate_warns_for_checked_external_library_reference(
     tmp_path: Path,
+    monkeypatch: Any,
 ) -> None:
+    monkeypatch.setenv("PATH", "")
+    _write_formal_library_manifest(tmp_path)
     _write_artifact(
         tmp_path,
         "examples/claims/a.yaml",
         artifact_id="claim.fixture.checked-external-link",
         formalizations=[_formalization_fixture(status="checked")],
-        verification_policy=_formal_link_policy(
-            level="machine_checked",
-            require_lean_check=True,
-        ),
+        verification_policy=_formal_link_policy(),
     )
 
     result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
@@ -915,6 +1037,7 @@ def test_formal_link_gate_warns_for_checked_external_library_reference(
 def test_formal_link_gate_warns_when_link_present_but_policy_not_required(
     tmp_path: Path,
 ) -> None:
+    _write_formal_library_manifest(tmp_path)
     _write_artifact(
         tmp_path,
         "examples/claims/a.yaml",
@@ -938,6 +1061,7 @@ def test_formal_link_gate_warns_when_link_present_but_policy_not_required(
 def test_formal_link_gate_reports_are_written_to_json_and_markdown(
     tmp_path: Path,
 ) -> None:
+    _write_formal_library_manifest(tmp_path)
     _write_artifact(
         tmp_path,
         "examples/claims/a.yaml",
@@ -954,5 +1078,135 @@ def test_formal_link_gate_reports_are_written_to_json_and_markdown(
     markdown_report = next((tmp_path / ".cosheaf" / "reports").glob("*.md"))
     assert "G10 formal link gate: pass" in markdown_report.read_text(
         encoding="utf-8"
+    )
+
+
+def test_formal_link_gate_fails_unknown_library_ref(tmp_path: Path) -> None:
+    _write_formal_library_manifest(tmp_path, library_ids=("mathlib-main",))
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.unknown-library-ref",
+        formalizations=[_formalization_fixture()],
+        verification_policy=_formal_link_policy(),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code != 0
+    g10 = _gate_by_id(_load_single_report(tmp_path), "G10")
+    assert g10["status"] == "fail"
+    assert g10["blocking_issues"][0]["message"] == (
+        "formalization cslib.fixture.link references unknown library_ref: "
+        "cslib-main"
+    )
+
+
+def test_formal_link_gate_fails_when_manifest_is_missing(tmp_path: Path) -> None:
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.missing-manifest",
+        formalizations=[_formalization_fixture()],
+        verification_policy=_formal_link_policy(),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code != 0
+    g10 = _gate_by_id(_load_single_report(tmp_path), "G10")
+    assert g10["status"] == "fail"
+    assert g10["blocking_issues"][0]["message"].startswith(
+        "formal library manifest not found"
+    )
+
+
+def test_formal_link_gate_fails_required_external_lean_check_when_skipped(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    monkeypatch.setenv("PATH", "")
+    _write_formal_library_manifest(tmp_path)
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.skipped-external-lean",
+        formalizations=[_formalization_fixture(status="checked")],
+        verification_policy=_formal_link_policy(
+            level="machine_checked",
+            require_lean_check=True,
+        ),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code != 0
+    report = _load_single_report(tmp_path)
+    assert _gate_by_id(report, "G6")["status"] == "skipped"
+    g10 = _gate_by_id(report, "G10")
+    assert g10["status"] == "fail"
+    assert g10["blocking_issues"][0]["message"] == (
+        "verification_policy requires a Lean check but no Lean verifier "
+        "result passed for a checked formalization"
+    )
+
+
+def test_formal_link_gate_fails_external_link_with_only_plain_lean_pass(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    monkeypatch.setattr(
+        gatekeeper_module,
+        "default_verifier_registry",
+        _passing_plain_lean_registry,
+    )
+    _write_formal_library_manifest(tmp_path)
+    _write_artifact(
+        tmp_path,
+        "examples/claims/a.yaml",
+        artifact_id="claim.fixture.external-link-plain-lean-only",
+        formalizations=[_formalization_fixture(status="checked")],
+        verification_policy=_formal_link_policy(
+            level="machine_checked",
+            require_lean_check=True,
+        ),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code != 0
+    report = _load_single_report(tmp_path)
+    assert _gate_by_id(report, "G6")["status"] == "pass"
+    g10 = _gate_by_id(report, "G10")
+    assert g10["status"] == "fail"
+    assert g10["blocking_issues"][0]["message"] == (
+        "verification_policy requires a Lean check but no Lean verifier "
+        "result passed for a checked formalization"
+    )
+
+
+def test_formal_link_gate_fails_accepted_public_theorem_alignment_not_reviewed(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    _write_formal_library_manifest(tmp_path)
+    _write_artifact(
+        tmp_path,
+        "kb/public/accepted/theorems/theorem.fixture.public.yaml",
+        artifact_id="theorem.fixture.public-alignment",
+        artifact_type="theorem",
+        status="accepted",
+        sources=[_source_fixture()],
+        formalizations=[_formalization_fixture()],
+        verification_policy=_formal_link_policy(require_alignment_review=True),
+    )
+
+    result = runner.invoke(app, ["gate", "run", "--repo-root", str(tmp_path)])
+
+    assert result.exit_code != 0
+    g10 = _gate_by_id(_load_single_report(tmp_path), "G10")
+    assert g10["status"] == "fail"
+    assert g10["blocking_issues"][0]["message"] == (
+        "verification_policy requires alignment review but alignment.status is none"
     )
 

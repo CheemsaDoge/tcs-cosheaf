@@ -241,7 +241,13 @@ def run_gatekeeper(
         ),
         _pr_checklist_gate(context, pr_checklist_path),
         _source_metadata_gate(validate_source_metadata_policy(context, records)),
-        _formal_link_gate(validate_formal_link_policy(records)),
+        _formal_link_gate(
+            validate_formal_link_policy(
+                records,
+                context=context,
+                verification_results=verification_results,
+            )
+        ),
     )
 
     blocking_issues = tuple(

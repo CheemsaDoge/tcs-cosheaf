@@ -343,11 +343,12 @@ Alignment statuses `human_reviewed` and `rejected` require a non-empty
 
 Formalization links and formal library manifests are metadata references to
 external declarations and library pins. They are not copied Lean proof bodies
-and are not stored in `evidence`. G10 statically checks consistency between
-`formalizations`, `alignment`, and `verification_policy`, but it does not
-execute Lean, inspect CSLib/mathlib libraries, resolve manifest checkouts,
-prove informal/formal alignment, or change accepted promotion semantics beyond
-ordinary gatekeeper blocking behavior.
+and are not stored in `evidence`. G10 checks consistency between
+`formalizations`, `alignment`, `verification_policy`, local formal library
+manifests, and normalized Lean verifier results when policy requires a Lean
+check. It does not execute Lean, inspect CSLib/mathlib libraries, resolve
+manifest checkouts, prove informal/formal alignment, or change accepted
+promotion semantics beyond ordinary gatekeeper blocking behavior.
 
 #### Memory/Retrieval Models
 
@@ -713,7 +714,7 @@ depending on draft or otherwise pre-accepted artifacts.
 - `cosheaf.gates.source_metadata_gate.validate_source_metadata_policy(context: RepoContext, records: tuple[LoadedRecord, ...]) -> SourceMetadataResult`
 - `cosheaf.gates.formal_link_gate.FormalLinkCheck`: one static formal-link metadata check row.
 - `cosheaf.gates.formal_link_gate.FormalLinkResult`: aggregate formal-link metadata policy gate result.
-- `cosheaf.gates.formal_link_gate.validate_formal_link_policy(records: tuple[LoadedRecord, ...]) -> FormalLinkResult`
+- `cosheaf.gates.formal_link_gate.validate_formal_link_policy(records: tuple[LoadedRecord, ...], *, context: RepoContext | None = None, verification_results: tuple[VerificationResult, ...] = ()) -> FormalLinkResult`
 - `cosheaf.gates.gatekeeper.ValidationReport`: validation report with loaded records and failures.
 - `cosheaf.gates.gatekeeper.validate_repository(context: RepoContext) -> ValidationReport`
 - `cosheaf.gates.gatekeeper.validate_artifact_file(context: RepoContext, path: Path) -> ValidationReport`
@@ -745,11 +746,17 @@ KB roots are missing complete source metadata while `accepted_requires_source`
 is true, `pass` when applicable accepted public artifacts are complete, and
 `not_applicable` for legacy mode, disabled source policy, or no accepted public
 artifacts. G10 is `not_applicable` when no artifact has formal-link policy
-metadata to check, `fail` when static policy consistency is violated, and
-`pass` when applicable formal-link metadata has no blocking issue. G10 warnings
-are emitted as nonblocking issues and are not proof failures. It does not call
-GitHub, require network access, run Lean, fetch external libraries, or inspect
-CSLib/mathlib references recorded in `formalizations`; alignment review remains
+metadata to check, `fail` when policy or verifier-result consistency is
+violated, and `pass` when applicable formal-link metadata has no blocking
+issue. G10 warnings are emitted as nonblocking issues and are not proof
+failures. It does not call GitHub, require network access, run Lean, fetch
+external libraries, or prove CSLib/mathlib semantic alignment. When artifacts
+carry `formalizations`, G10 resolves each `library_ref` against a local formal
+library manifest and blocks missing or unknown manifest references. When
+`require_lean_check` is true, G10 consumes G6 verifier results and requires a
+matching Lean verifier `pass`; `skipped`, `fail`, and `error` are not passes.
+For `check_mode: external_library_ref`, the matching verifier is
+`lean_library_ref` for the same formalization ID. Alignment review remains
 separate from Lean checking. It writes JSON and Markdown reports under
 `.cosheaf/reports/` by default.
 
@@ -773,6 +780,8 @@ G10 `GateResult.details` entries use:
 - `require_alignment_review`
 - `formalization_count`
 - `checked_formalization_count`
+- `resolved_library_ref_count`
+- `lean_check_pass_count`
 - `alignment_status`
 - `status`
 - `blocking_messages`
@@ -825,7 +834,7 @@ settings, the artifact entry also includes compact formal-link metadata lines:
 - `Alignment: <status>; reviewer=<reviewer-or-dash>`
 - `Verification policy: <level>; formal_link=<bool>; lean_check=<bool>;
   alignment_review=<bool>`
-- `G10-relevant: yes; ...` static hints derived from artifact metadata
+- `G10-relevant: yes; ...` policy hints derived from artifact metadata
 
 These context-pack lines are metadata-only handoff context. They do not load
 gate reports, do not claim the current G10 verdict, and do not claim Lean

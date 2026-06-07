@@ -126,10 +126,11 @@ statuses `human_reviewed` and `rejected` require a non-empty reviewer.
 `verification_policy` records whether the artifact expects a formal link, Lean
 check, or alignment review. Current levels are `source_reviewed`,
 `source_reviewed_with_formal_link`, `machine_checked`, and `lean_required`.
-Policy values are schema/model validated and G10 statically checks consistency
-between the policy, `formalizations`, and `alignment`. G10 can produce ordinary
-blocking gatekeeper issues, so accepted promotion is affected only through the
-existing rule that blocking gatekeeper issues prevent promotion.
+Policy values are schema/model validated and G10 checks consistency between the
+policy, `formalizations`, `alignment`, local formal library manifests, and
+normalized verifier results when `require_lean_check: true`. G10 can produce
+ordinary blocking gatekeeper issues, so accepted promotion is affected only
+through the existing rule that blocking gatekeeper issues prevent promotion.
 `source_reviewed_with_formal_link` requires `require_formal_link: true`;
 `lean_required` requires both `require_formal_link: true` and
 `require_lean_check: true`.
@@ -274,13 +275,14 @@ artifacts in configured workspaces when `accepted_requires_source = true` while
 preserving draft, private, and legacy single-root behavior.
 
 The Formal Link Layer is implemented as optional schema/model metadata, an
-example artifact, G10 static metadata validation, context-pack display,
-SQLite/query metadata surfaces, and an optional external Lean library reference
-checker. It records Lean-library declaration references plus optional formal
-library manifest metadata without adding CSLib/mathlib dependencies, without
-requiring network access, and without changing accepted promotion semantics
-beyond ordinary gatekeeper blocking behavior. G10 does not execute Lean, does
-not fetch or inspect external Lean libraries, and does not prove
+example artifact, G10 metadata and verifier-result consistency validation,
+context-pack display, SQLite/query metadata surfaces, and an optional external
+Lean library reference checker. It records Lean-library declaration references
+plus optional formal library manifest metadata without adding CSLib/mathlib
+dependencies, without requiring network access, and without changing accepted
+promotion semantics beyond ordinary gatekeeper blocking behavior. G10 does not
+execute Lean, does not fetch or inspect external Lean libraries, and does not
+prove
 informal/formal semantic alignment. Context packs and query APIs expose the
 same metadata without claiming that Lean verified the informal statement. The
 optional external reference checker can generate a temporary Lean file with

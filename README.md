@@ -82,7 +82,7 @@ Implemented:
   `cosheaf context build <issue-id>`.
 - Formal Link Layer artifact metadata fields `formalizations`, `alignment`,
   and `verification_policy`.
-- G10 Formal Link Gate static metadata consistency checks.
+- G10 Formal Link Gate metadata and verifier-result consistency checks.
 - SQLite `formalizations` and `artifact_formal_policy` index tables plus
   compact manifest metadata.
 - Context-pack display of formal-link metadata without claiming Lean
