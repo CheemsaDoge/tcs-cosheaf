@@ -1038,6 +1038,16 @@ accepted knowledge.
 - `cosheaf.verification.lean_adapter.LeanBackend`: protocol for optional Lean backends.
 - `cosheaf.verification.lean_adapter.ExternalLeanCommandBackend`: optional external-command Lean backend.
 - `cosheaf.verification.lean_adapter.LeanAdapter`: optional minimal Lean verifier adapter.
+- `cosheaf.verification.lean_external.LeanLibraryRefSpec`: normalized external
+  Lean library formalization reference to check.
+- `cosheaf.verification.lean_external.LeanLibraryRefBackendResult`: normalized
+  external Lean library reference backend invocation result.
+- `cosheaf.verification.lean_external.LeanLibraryRefBackend`: protocol for
+  optional external Lean library reference backends.
+- `cosheaf.verification.lean_external.ExternalLeanLibraryRefBackend`: optional
+  external-command backend for generated Lean `import`/`#check` files.
+- `cosheaf.verification.lean_external.LeanLibraryRefAdapter`: optional
+  external Lean library reference verifier adapter.
 
 `VerifierAdapter` requires:
 
@@ -1090,8 +1100,8 @@ Registry ordering is deterministic by adapter name. Duplicate adapter names
 raise `VerifierRegistryError`.
 
 The default verifier registry currently registers `LeanAdapter`,
-`PythonCheckerAdapter`, `SatAdapter`, and `SmtAdapter`. Registry ordering is
-deterministic by adapter name.
+`LeanLibraryRefAdapter`, `PythonCheckerAdapter`, `SatAdapter`, and `SmtAdapter`.
+Registry ordering is deterministic by adapter name.
 
 `PythonCheckerAdapter` exposes:
 
@@ -1253,6 +1263,72 @@ autoformalize natural language and does not implement SAT or SMT behavior.
 The external backend detects availability with PATH lookup, obtains version
 metadata from `lean --version` when possible, and runs `lean <file.lean>` with
 the repository root as cwd.
+
+`LeanLibraryRefAdapter` exposes:
+
+- `name = "lean_library_ref"`
+- `__init__(lean_command: str = "lean", *, lake_command: str = "lake", use_lake: bool = False, backend: LeanLibraryRefBackend | None = None, cwd: str | Path | None = None, timeout_seconds: float = 30.0)`
+- `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
+- `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
+
+It recognizes artifact `formalizations` entries with `system: lean4`,
+`check_mode: external_library_ref`, and `status: linked` or `checked`. Planned
+formalizations are skipped by default and are not treated as checked. When a
+checkable formalization exists, the adapter generates a temporary Lean file
+outside the repository with:
+
+```lean
+import <import_path>
+#check <symbol>
+```
+
+When no backend is supplied, it uses `ExternalLeanLibraryRefBackend` with the
+configured Lean command, defaulting to `lean`; `use_lake=True` switches command
+metadata and execution to `lake env lean <tempfile>`. If the selected backend
+is unavailable, the adapter returns `skipped`, which is not a pass. If a backend
+is available, it runs the generated file, writes stdout and stderr logs under
+`.cosheaf/logs/`, and returns normalized `pass`, `fail`, or `error` results
+with command, cwd, timeout, formalization input label, output paths, backend
+metadata, exit code, and diagnostics. Exit code `0` is `pass`, nonzero exit
+code is `fail`, and timeout or startup errors are `error`.
+
+The external reference adapter does not fetch CSLib, mathlib, or any other
+library; does not manage lake checkouts; does not autoformalize natural
+language; does not update `formalizations[].status`; and does not prove
+informal/formal semantic alignment. Under the current one-result verifier
+adapter contract, one `verify(...)` call checks the first applicable
+formalization for an artifact.
+
+`LeanLibraryRefBackendResult` exposes:
+
+- `exit_code: int | None`
+- `stdout: str`
+- `stderr: str`
+
+`LeanLibraryRefBackend` requires:
+
+- `name: str`
+- `is_available() -> bool`
+- `command(lean_path: Path) -> tuple[str, ...]`
+- `version() -> str | None`
+- `check(lean_path: Path, *, cwd: Path, timeout_seconds: float) -> LeanLibraryRefBackendResult`
+
+`ExternalLeanLibraryRefBackend` exposes:
+
+- `__init__(lean_command: str = "lean", *, lake_command: str = "lake", use_lake: bool = False)`
+- `name`
+- `lean_command`
+- `lake_command`
+- `use_lake`
+- `is_available() -> bool`
+- `command(lean_path: Path) -> tuple[str, ...]`
+- `version() -> str | None`
+- `check(lean_path: Path, *, cwd: Path, timeout_seconds: float) -> LeanLibraryRefBackendResult`
+
+The external backend detects availability with PATH lookup for the selected
+command, obtains version metadata from `<command> --version` when possible, and
+runs either `lean <tempfile>` or `lake env lean <tempfile>` with the configured
+working directory.
 
 ### Makefile Targets
 

@@ -86,9 +86,12 @@ not automatically prove informal/formal alignment.
 review is expected for an artifact. G10 Formal Link Gate enforces static
 consistency between `verification_policy`, `formalizations`, and `alignment`.
 This gate does not execute Lean, fetch external libraries, prove
-informal/formal alignment, or change accepted-promotion semantics. Formal-link
-context-pack display and SQLite/query support are metadata-only surfaces built
-on the same artifact fields; they do not change G10 behavior.
+informal/formal alignment, or change accepted-promotion semantics. The optional
+external Lean library reference checker lives in the Verification Layer and can
+turn linked formalization metadata into `import`/`#check` verifier results when
+Lean or lake is available. Formal-link context-pack display and SQLite/query
+support are metadata-only surfaces built on the same artifact fields; they do
+not change G10 behavior.
 
 ### Graph Layer
 
@@ -144,9 +147,14 @@ available, while keeping solver binaries optional and recording skipped results
 when no backend is available. The Lean adapter supports a minimal optional plain
 Lean file invocation path through a supported backend, currently external
 `lean` when available, while keeping Lean optional and recording skipped results
-when no backend is available. No verifier adapter performs natural-language
-autoformalization. The Lean adapter does not fetch or check CSLib/mathlib
-references recorded in `formalizations`.
+when no backend is available. The external Lean library reference adapter
+supports a minimal optional generated-file path for linked Lean formalization
+metadata: it writes a temporary file containing `import <import_path>` and
+`#check <symbol>`, then runs `lean` or configured `lake env lean` when
+available. It records skipped when Lean/lake is unavailable and does not fetch
+CSLib/mathlib or manage external library checkouts. No verifier adapter
+performs natural-language autoformalization, and no Lean verifier result proves
+informal/formal semantic alignment.
 
 ### Gate/Review Layer
 

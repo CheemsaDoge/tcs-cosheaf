@@ -2,13 +2,14 @@
 
 ## Milestone
 
-Phase 4 Task 4.6: CodeGraph dev-only impact-analysis integration.
+Phase 6 Task 6.2: Lean external library `#check` adapter.
 
 ## Goal
 
-Add optional developer-only CodeGraph guidance and a safe availability probe
-without making CodeGraph part of runtime, CI, validation, gates, retrieval, or
-promotion.
+Add an optional external Lean library reference checker that turns linked Lean
+formalization metadata into generated `import`/`#check` verifier runs without
+fetching CSLib/mathlib, requiring Lean in CI, or claiming informal/formal
+semantic alignment.
 
 ## Current Baseline
 
@@ -43,8 +44,9 @@ promotion.
   SAT, SMT, and plain Lean verifier adapters.
 - Formal-link metadata is implemented as artifact metadata, G10 static gate
   checks, context-pack display, and index/query output.
-- External Lean-library `#check` for CSLib/mathlib references is not
-  implemented.
+- External Lean-library `#check` for linked Lean formalization references is
+  available as an optional verifier adapter. Missing Lean/lake remains
+  `skipped`, not `pass`.
 - Hosted LLM worker execution is not implemented.
 - MarkItDown, Headroom, CodeGraph, and Understand-Anything are not default
   dependencies.
@@ -57,26 +59,25 @@ promotion.
 
 ## Completion Criteria
 
-- `docs/DEV_TOOLING.md` documents CodeGraph as developer-only, local-only, and
-  optional.
-- `scripts/dev/codegraph_probe.py` probes availability before use and reports
-  `fallback: run_full_verification` when CodeGraph is unavailable.
-- Generated CodeGraph outputs are gitignored under `.codegraph/`,
-  `.cosheaf/dev/codegraph/`, and `codegraph*.db`.
-- CodeGraph output remains sidecar/cache only and must not feed artifact truth,
-  retrieval ranking, context generation, gates, verifier results, review, or
-  promotion.
-- Tests cover unavailable-tool fallback and strict-mode behavior without
-  requiring CodeGraph installation.
-- No runtime dependency, package dependency, CI requirement, schema change,
-  gate change, verifier semantic change, promotion policy change, or KB policy
-  change is introduced.
+- `cosheaf.verification.lean_external.LeanLibraryRefAdapter` handles linked or
+  checked `external_library_ref` metadata by generating temporary Lean files.
+- The adapter supports `lean <tempfile>` and configured `lake env lean
+  <tempfile>` command shapes.
+- Missing Lean/lake returns `skipped`, not `pass`.
+- Stdout/stderr logs and command metadata are recorded under `.cosheaf/logs/`.
+- Tests use fake backends and do not require real Lean, lake, CSLib, or
+  mathlib.
+- Documentation and `context/INTERFACE_REGISTRY.md` describe the adapter while
+  preserving the boundary that `#check` is symbol/import resolution only.
+- No schema change, G10 semantic change, accepted-promotion policy change,
+  hosted LLM behavior, or KB policy change is introduced.
 
 ## Next Focus
 
-After Phase 4 Task 4.6 lands, the next fixed-plan item is Phase 5 Task 5.1:
-provider-neutral model interface. Do not jump ahead into hosted LLM execution,
-external Lean checking, web UI work, or accepted-promotion policy changes.
+After Phase 6 Task 6.2 lands, the next fixed-plan item is Phase 6 Task 6.3:
+Formal Link Gate hardening. Do not expand this task into hosted LLM execution,
+agent runtime work, public KB artifact changes, web UI work, or
+accepted-promotion policy changes.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show
