@@ -200,7 +200,7 @@
           },
           "library_ref": {
             "type": "string",
-            "pattern": ".*\\S.*"
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)*$"
           },
           "import_path": {
             "type": "string",

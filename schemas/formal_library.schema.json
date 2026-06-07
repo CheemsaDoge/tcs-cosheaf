@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/tcs-cosheaf/schemas/formal_library.schema.json",
+  "title": "TCS-Cosheaf formal Lean library manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "libraries"],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "libraries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "system",
+          "git",
+          "commit",
+          "lean_version",
+          "lake_manifest"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)*$"
+          },
+          "name": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          },
+          "system": {
+            "type": "string",
+            "enum": ["lean4"]
+          },
+          "git": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          },
+          "commit": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          },
+          "lean_version": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          },
+          "lake_manifest": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

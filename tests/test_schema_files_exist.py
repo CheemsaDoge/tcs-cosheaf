@@ -42,6 +42,7 @@ SCHEMA_FILES = [
     "schemas/task.schema.json",
     "schemas/orchestrator_run.schema.json",
     "schemas/worker_bundle_v2.schema.json",
+    "schemas/formal_library.schema.json",
 ]
 
 EXAMPLE_FILES = [
@@ -118,6 +119,10 @@ def test_artifact_schema_defines_optional_formal_link_fields() -> None:
         "external_library_ref",
         "local_file",
     ]
+    assert "CSLib.Graph.Basic" not in formalization["properties"]["library_ref"][
+        "pattern"
+    ]
+    assert "[a-z][a-z0-9]*" in formalization["properties"]["library_ref"]["pattern"]
 
     alignment = properties["alignment"]
     assert alignment["additionalProperties"] is False
@@ -142,6 +147,27 @@ def test_artifact_schema_defines_optional_formal_link_fields() -> None:
         verification_policy["properties"]["require_alignment_review"]["type"]
         == "boolean"
     )
+
+
+def test_formal_library_schema_defines_manifest_contract() -> None:
+    schema = json.loads(
+        (ROOT / "schemas/formal_library.schema.json").read_text(encoding="utf-8")
+    )
+
+    assert schema["required"] == ["schema_version", "libraries"]
+    assert schema["properties"]["schema_version"]["const"] == 1
+    library = schema["properties"]["libraries"]["items"]
+    assert library["additionalProperties"] is False
+    assert library["required"] == [
+        "id",
+        "name",
+        "system",
+        "git",
+        "commit",
+        "lean_version",
+        "lake_manifest",
+    ]
+    assert library["properties"]["system"]["enum"] == ["lean4"]
 
 
 def test_example_files_exist_and_are_valid_yaml() -> None:

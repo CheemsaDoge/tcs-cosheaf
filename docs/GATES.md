@@ -65,6 +65,13 @@ not verifier evidence. They are not stored in `evidence`, do not make Lean run
 automatically, and do not satisfy target verifier checks for accepted
 promotion.
 
+Formal library manifest metadata, such as
+`formal-libs/lean-libraries.example.yaml`, pins external library IDs and
+versions for future reference checking. The manifest does not change gate or
+promotion semantics in this phase: no gate fetches external Lean libraries,
+executes `lean` or `lake`, or treats a manifest entry as proof that a symbol
+exists.
+
 Direct accepted creation remains refused by `cosheaf artifact create`.
 `cosheaf artifact move-status <artifact-id> accepted` also fails clearly
 instead of moving anything into `kb/accepted/`. This preserves the invariant
@@ -91,7 +98,7 @@ The current verifier surface is intentionally small and optional-tool friendly.
 | SAT | Minimal optional adapter available | `sat`, `sat_solver`, `sat_checker` | `kissat` | No SAT solver required; unavailable solver is `skipped` | Supports repository-local DIMACS CNF evidence, not full SAT theorem-proving integration. |
 | SMT | Minimal optional adapter available | `smt`, `smt_solver`, `smt_checker` | `z3` | No SMT solver required; unavailable solver is `skipped` | Supports repository-local SMT-LIB evidence, not full SMT theorem-proving integration. |
 | Lean plain file | Minimal optional adapter available | `lean`, `lean4`, `lean_checker`, `lean_proof` | `lean` | No Lean installation required; unavailable Lean is `skipped` | Checks repository-local plain `.lean` files only when Lean is available. It does not autoformalize natural language. |
-| External Lean library references | Planned/future | `formalizations` metadata plus G10 static policy fields | None | Not required | Current G10 checks metadata consistency only; it does not fetch CSLib/mathlib or check external symbols. |
+| External Lean library references | Manifest metadata only; checker planned/future | `formalizations` metadata, formal library manifest metadata, and G10 static policy fields | None | Not required | Current G10 checks metadata consistency only; it does not load a library checkout, fetch CSLib/mathlib, run `#check`, or check external symbols. |
 | Coq | Not implemented | None | None | Not required | No current adapter or roadmap item in this repository. |
 | Isabelle | Not implemented | None | None | Not required | No current adapter or roadmap item in this repository. |
 
@@ -250,6 +257,11 @@ Context-pack display and SQLite/query indexing of formal-link metadata do not
 change G10. They expose the same metadata for handoff and local inspection, but
 they do not run Lean, load gate reports, or turn formal links into verifier
 passes.
+
+Formal library manifests are also metadata-only in this phase. The manifest
+loader can validate manifest shape and help callers check that artifact
+`library_ref` values resolve to manifest IDs, but the gatekeeper does not yet
+perform external Lean library reference checking.
 
 ### Reproducibility Metadata Gate
 
