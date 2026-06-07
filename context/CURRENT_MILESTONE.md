@@ -2,12 +2,12 @@
 
 ## Milestone
 
-Phase 0 Task 0.3: external tool decisions.
+Phase 2 Task 2.3: source ingestion policy for MarkItDown.
 
 ## Goal
 
-Record durable boundaries for MarkItDown, Headroom, CodeGraph, and
-Understand-Anything before any tool adapter, dependency, script, CI path, or
+Define a safe source-ingestion boundary before any MarkItDown adapter,
+dependency, CLI command, script, CI path, schema, gate, verifier, promotion, or
 runtime behavior is added.
 
 ## Current Baseline
@@ -33,31 +33,36 @@ runtime behavior is added.
 - Hosted LLM worker execution is not implemented.
 - MarkItDown, Headroom, CodeGraph, and Understand-Anything are not installed,
   not default dependencies, and not part of runtime behavior.
+- Phase 0 Task 0.3 recorded external-tool boundaries in
+  `docs/EXTERNAL_TOOLS.md` and
+  `docs/ADR/0011-external-tooling-boundaries.md`.
 
 ## Completion Criteria
 
-- `docs/EXTERNAL_TOOLS.md` records per-tool license, install surface, data
-  boundary, default state, allowed outputs, gitignore/cache expectations,
-  fallback behavior, and rollback triggers.
-- `docs/ADR/0011-external-tooling-boundaries.md` records the architectural
+- `docs/SOURCE_INGESTION.md` records source ingestion as staging only, not
+  validation, gatekeeping, verification, human review, accepted knowledge, or
+  promotion evidence.
+- `docs/ADR/0012-source-ingestion-boundary.md` records the architectural
   decision before implementation begins.
-- MarkItDown is documented as opt-in source ingestion only, not gate, review,
-  verifier, promotion, or accepted-knowledge truth.
-- Headroom is documented as Phase 5+ default-off compression experiment only,
-  never canonical retrieval, gate, YAML, audit, accepted-KB, or project-memory
-  input.
-- CodeGraph is documented as optional dev-only code navigation and impact
-  analysis, not runtime or CI truth.
-- Understand-Anything is documented as isolated manual onboarding only, not
-  runtime, default CI, package dependency, retrieval, memory, or KB truth.
-- No adapter code, package dependency, schema, gate, verifier, promotion,
-  public/private KB behavior, or runtime behavior changes in this task.
+- MarkItDown is documented as a future optional local-file converter that must
+  preserve provenance: original path, input hash, converter version, timestamp,
+  options, warnings, output path, and execution metadata where applicable.
+- Converted Markdown may feed source notes, explorer tasks, or draft proposals
+  only.
+- URL, OCR, plugins, LLM vision, and Azure Document Intelligence remain
+  disabled by default.
+- Untrusted input must run through a bounded subprocess or documented sandbox
+  boundary.
+- No adapter code, package dependency, CLI command, script, schema, gate,
+  verifier, promotion, public/private KB behavior, or runtime behavior changes
+  in this task.
 
 ## Next Focus
 
-After Phase 0 Task 0.3 lands, self-audit earlier fixed-plan tasks before
-continuing. The next known gap is Phase 2 source-ingestion policy for
-MarkItDown before any MarkItDown adapter code is added.
+After Phase 2 Task 2.3 lands, the next fixed-plan item is Phase 2 Task 2.4:
+implement the optional local-file MarkItDown source-ingestion adapter. That
+implementation must follow `docs/SOURCE_INGESTION.md` and keep MarkItDown
+optional.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show
