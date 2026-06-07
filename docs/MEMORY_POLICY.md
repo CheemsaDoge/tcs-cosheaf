@@ -117,13 +117,18 @@ and ranking remain future work.
 `cosheaf memory search "query"` searches the same compact cards with
 deterministic local scoring. It uses an in-memory SQLite FTS5/BM25 table when
 available and falls back to deterministic lexical scoring when FTS5 is not
-available. The command accepts `--json`, `--status <status>`, and optional
-`--issue <issue-id>` filters. JSON output is a `RetrievalResult` with
-`RetrievedArtifactCard` entries, score breakdowns, and audit metadata. Text
-output remains card-level and does not print full artifact YAML or statements.
-The command does not write `.cosheaf/memory/` sidecars, does not create
-accepted knowledge, and does not perform embeddings, PageRank, full-artifact
-pulls, hosted LLM calls, or formal checking.
+available. It also builds an in-memory memory graph to blend
+issue-conditioned Personalized PageRank, global PageRank, freshness, quality,
+and penalty signals into the default ranking formula. The command accepts
+`--json`, `--status <status>`, optional `--issue <issue-id>` seeds,
+repeatable `--seed-artifact <artifact-id>`, repeatable
+`--pin-artifact <artifact-id>`, `--include-refuted`, `--include-obsolete`, and
+`--explain`. JSON output is a `RetrievalResult` with `RetrievedArtifactCard`
+entries, score breakdowns, and audit metadata. Text output remains card-level
+and does not print full artifact YAML or statements; `--explain` prints score
+components and relevance reasons. The command does not write
+`.cosheaf/memory/` sidecars, does not create accepted knowledge, and does not
+perform embeddings, full-artifact pulls, hosted LLM calls, or formal checking.
 
 ## Retrieval Request Schema
 
@@ -239,14 +244,25 @@ Interpretation:
 Implementations must emit score breakdowns. Exact constants can change only
 through a focused PR that updates this document and relevant tests.
 
-The current `cosheaf memory search` MVP populates only the implemented search
-components of this formula: `RetrievalHybrid` from SQLite FTS/BM25 or lexical
-card matching, and `QualityPrior` from existing card trust metadata. The
-separate `cosheaf memory graph pagerank` command now computes deterministic
-`GlobalPageRank` rows from a rebuilt memory graph sidecar, but search does not
-yet blend those rows into retrieval scores. Personalized PageRank, Freshness,
-and Penalty remain zero in search output until later Phase 3 tasks implement
-their underlying signals.
+`cosheaf memory search` now populates the implemented components of this
+formula:
+
+- `RetrievalHybrid` from SQLite FTS/BM25 or lexical card matching.
+- `PersonalizedPageRank` from the issue node, issue `related_artifacts`,
+  explicit seed artifacts, pinned artifacts, and recent successful task runs
+  when available.
+- `GlobalPageRank` from the same deterministic memory graph algorithm exposed
+  by `cosheaf memory graph pagerank`.
+- `QualityPrior` from existing card trust metadata.
+- `Freshness` from recent successful task-run context for the current issue.
+- `Penalty` from policy caution signals such as private, draft, refuted,
+  obsolete, superseded, and verifier-failure flags.
+
+The formula weights are configurable through the Python
+`RetrievalScoreWeights` interface. The CLI uses the documented defaults.
+Refuted, obsolete, and superseded artifacts remain excluded unless explicitly
+requested. Including them only makes them visible with a penalty; it does not
+make them accepted, reviewed, or trustworthy.
 
 ## Memory Graph
 
@@ -413,7 +429,9 @@ Phase 3 should proceed in small PRs:
    FTS5/BM25 when available and deterministic lexical fallback.
 4. Add memory graph and deterministic PageRank. Implemented as
    `cosheaf memory graph build` and `cosheaf memory graph pagerank`.
-5. Add issue-conditioned Personalized PageRank.
+5. Add issue-conditioned Personalized PageRank. Implemented in
+   `cosheaf memory search --issue <issue-id> --explain` with explicit seed and
+   pin flags.
 6. Integrate cards into context-pack v2 with bounded full-artifact pulls.
 
 Do not add hosted LLM behavior, agent autonomy, autoformalization, external

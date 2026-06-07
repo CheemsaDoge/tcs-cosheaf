@@ -11,6 +11,8 @@ from typer.testing import CliRunner
 
 import cosheaf.memory.search as memory_search_module
 from cosheaf.cli import app
+from cosheaf.memory import RetrievalScoreWeights, search_artifact_cards
+from cosheaf.storage.repo import RepoContext
 
 runner = CliRunner()
 
@@ -100,6 +102,66 @@ def _write_issue(
                 "description": "Issue for memory search filtering.",
                 "related_artifacts": related_artifacts,
                 "tags": ["memory-search"],
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_task(
+    repo_root: Path,
+    *,
+    task_id: str,
+    issue_id: str,
+) -> None:
+    path = repo_root / "examples" / "tasks" / f"{task_id}.yaml"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "task_id": task_id,
+                "issue_id": issue_id,
+                "worker_type": "reasoner",
+                "status": "completed",
+                "input_context": [f"context/TASKS/{issue_id}/CONTEXT.md"],
+                "budget": {"max_iterations": 1},
+                "expected_outputs": ["worker_notes"],
+                "created_at": "2026-06-01T00:00:00Z",
+                "updated_at": "2026-06-01T00:00:00Z",
+            },
+            sort_keys=False,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_task_run(
+    repo_root: Path,
+    *,
+    task_id: str,
+    run_id: str,
+    status: str = "completed",
+) -> None:
+    run_dir = repo_root / ".cosheaf" / "tasks" / task_id / "runs" / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "run.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 1,
+                "task_id": task_id,
+                "worker_type": "reasoner",
+                "command": ["python", "-c", "print('ok')"],
+                "cwd": ".",
+                "started_at": "2026-06-01T00:00:00Z",
+                "finished_at": "2026-06-01T00:00:00Z",
+                "timeout_seconds": 60,
+                "returncode": 0 if status == "completed" else 1,
+                "stdout_path": "stdout.txt",
+                "stderr_path": "stderr.txt",
+                "bundle_path": None,
+                "bundle_valid": None,
+                "status": status,
             },
             sort_keys=False,
         ),
@@ -278,7 +340,7 @@ def test_memory_search_text_output_is_compact(tmp_path: Path) -> None:
     assert "SECRET FULL STATEMENT" not in result.output
 
 
-def test_memory_search_issue_filter_and_private_default_scope(
+def test_memory_search_issue_ranking_and_private_default_scope(
     tmp_path: Path,
 ) -> None:
     _write_workspace_config(tmp_path)
@@ -334,12 +396,15 @@ def test_memory_search_issue_filter_and_private_default_scope(
 
     assert result.exit_code == 0, result.output
     payload = json.loads(result.output)
-    assert [hit["card"]["id"] for hit in payload["cards"]] == [
-        "definition.fixture.graph"
-    ]
-    assert "definition.fixture.walk" not in result.output
+    ids = [hit["card"]["id"] for hit in payload["cards"]]
+    assert ids[0] == "definition.fixture.graph"
+    assert "definition.fixture.walk" in ids
     assert "claim.fixture.private" not in result.output
     assert payload["audit"]["excluded"] == []
+    assert any(
+        "private scope exclusions" in warning
+        for warning in payload["audit"]["warnings"]
+    )
 
 
 def test_memory_search_json_output_is_deterministic(tmp_path: Path) -> None:
@@ -419,3 +484,493 @@ def test_memory_search_falls_back_when_sqlite_fts_is_unavailable(
         "lexical fallback used" in warning
         for warning in payload["audit"]["warnings"]
     )
+
+
+def test_memory_search_issue_conditioned_pagerank_uses_seed_artifacts(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/definitions/target.yaml",
+        artifact_id="definition.fixture.seed-target",
+        artifact_type="definition",
+        title="Target foundation",
+        status="accepted",
+        domain=["graph-theory"],
+        tags=["target"],
+    )
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/claims/seed.yaml",
+        artifact_id="claim.fixture.seed",
+        title="Seed claim",
+        status="accepted",
+        domain=["graph-theory"],
+        tags=["seed"],
+        depends_on=["definition.fixture.seed-target"],
+    )
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/definitions/unrelated.yaml",
+        artifact_id="definition.fixture.unrelated",
+        artifact_type="definition",
+        title="Target unrelated",
+        status="accepted",
+        domain=["logic"],
+        tags=["target"],
+    )
+    _write_issue(
+        tmp_path,
+        issue_id="issue.fixture.personalized",
+        related_artifacts=["claim.fixture.seed"],
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "memory",
+            "search",
+            "target",
+            "--repo-root",
+            str(tmp_path),
+            "--issue",
+            "issue.fixture.personalized",
+            "--seed-artifact",
+            "claim.fixture.seed",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    ids = [hit["card"]["id"] for hit in payload["cards"]]
+    assert ids.index("definition.fixture.seed-target") < ids.index(
+        "definition.fixture.unrelated"
+    )
+    target = next(
+        hit
+        for hit in payload["cards"]
+        if hit["card"]["id"] == "definition.fixture.seed-target"
+    )
+    unrelated = next(
+        hit
+        for hit in payload["cards"]
+        if hit["card"]["id"] == "definition.fixture.unrelated"
+    )
+    assert target["score_breakdown"]["personalized_pagerank"] > (
+        unrelated["score_breakdown"]["personalized_pagerank"]
+    )
+    assert target["score_breakdown"]["global_pagerank"] > 0
+    assert any(
+        "personalized pagerank" in reason.lower()
+        for reason in target["why_relevant"]
+    )
+
+
+def test_memory_search_pinned_artifact_and_successful_run_influence_ranking(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/definitions/pinned.yaml",
+        artifact_id="definition.fixture.pinned",
+        artifact_type="definition",
+        title="Pinned target",
+        status="accepted",
+        domain=["graph-theory"],
+        tags=["target"],
+    )
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/definitions/recent.yaml",
+        artifact_id="definition.fixture.recent-success",
+        artifact_type="definition",
+        title="Recent target",
+        status="accepted",
+        domain=["graph-theory"],
+        tags=["target"],
+    )
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/definitions/plain.yaml",
+        artifact_id="definition.fixture.plain",
+        artifact_type="definition",
+        title="Plain target",
+        status="accepted",
+        domain=["logic"],
+        tags=["target"],
+    )
+    issue_id = "issue.fixture.personalized-runs"
+    _write_issue(
+        tmp_path,
+        issue_id=issue_id,
+        related_artifacts=["definition.fixture.recent-success"],
+    )
+    task_id = "task.issue.fixture.personalized-runs.reasoner"
+    _write_task(tmp_path, task_id=task_id, issue_id=issue_id)
+    _write_task_run(
+        tmp_path,
+        task_id=task_id,
+        run_id="run.r20260601.t000000z",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "memory",
+            "search",
+            "target",
+            "--repo-root",
+            str(tmp_path),
+            "--issue",
+            issue_id,
+            "--pin-artifact",
+            "definition.fixture.pinned",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    by_id = {hit["card"]["id"]: hit for hit in payload["cards"]}
+    assert by_id["definition.fixture.pinned"]["score_breakdown"][
+        "personalized_pagerank"
+    ] > by_id["definition.fixture.plain"]["score_breakdown"][
+        "personalized_pagerank"
+    ]
+    assert by_id["definition.fixture.recent-success"]["score_breakdown"][
+        "freshness"
+    ] > by_id["definition.fixture.plain"]["score_breakdown"]["freshness"]
+    assert by_id["definition.fixture.recent-success"]["score_breakdown"][
+        "personalized_pagerank"
+    ] > 0
+
+
+def test_memory_search_issue_ranking_keeps_accepted_priority(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/definitions/accepted.yaml",
+        artifact_id="definition.fixture.accepted-priority",
+        artifact_type="definition",
+        title="Priority graph",
+        status="accepted",
+        domain=["graph-theory"],
+        tags=["priority"],
+    )
+    _write_artifact(
+        tmp_path,
+        "kb/draft/claims/draft.yaml",
+        artifact_id="claim.fixture.draft-priority",
+        title="Priority graph",
+        status="draft",
+        domain=["graph-theory"],
+        tags=["priority"],
+    )
+    _write_issue(
+        tmp_path,
+        issue_id="issue.fixture.accepted-priority",
+        related_artifacts=[
+            "definition.fixture.accepted-priority",
+            "claim.fixture.draft-priority",
+        ],
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "memory",
+            "search",
+            "priority graph",
+            "--repo-root",
+            str(tmp_path),
+            "--issue",
+            "issue.fixture.accepted-priority",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["cards"][0]["card"]["id"] == (
+        "definition.fixture.accepted-priority"
+    )
+    assert payload["cards"][0]["score_breakdown"]["quality_prior"] > (
+        payload["cards"][1]["score_breakdown"]["quality_prior"]
+    )
+
+
+def test_memory_search_refuted_artifacts_require_explicit_inclusion(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/claims/refuted.yaml",
+        artifact_id="claim.fixture.refuted-target",
+        title="Refuted target",
+        status="refuted",
+        domain=["graph-theory"],
+        tags=["target"],
+    )
+
+    default_result = runner.invoke(
+        app,
+        [
+            "memory",
+            "search",
+            "refuted target",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    include_result = runner.invoke(
+        app,
+        [
+            "memory",
+            "search",
+            "refuted target",
+            "--repo-root",
+            str(tmp_path),
+            "--include-refuted",
+            "--json",
+        ],
+    )
+
+    assert default_result.exit_code == 0, default_result.output
+    default_payload = json.loads(default_result.output)
+    assert default_payload["cards"] == []
+    assert default_payload["audit"]["excluded"] == [
+        {
+            "artifact_id": "claim.fixture.refuted-target",
+            "reason": (
+                "status excluded: refuted not in "
+                "accepted,human_reviewed,machine_checked,locally_tested"
+            ),
+        }
+    ]
+
+    assert include_result.exit_code == 0, include_result.output
+    include_payload = json.loads(include_result.output)
+    assert [hit["card"]["id"] for hit in include_payload["cards"]] == [
+        "claim.fixture.refuted-target"
+    ]
+    assert include_payload["cards"][0]["score_breakdown"]["penalty"] > 0
+
+
+def test_memory_search_private_seed_cannot_influence_public_default_ranking(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    _write_artifact(
+        tmp_path,
+        "kb/public/accepted/definitions/alpha.yaml",
+        artifact_id="definition.fixture.public-alpha",
+        artifact_type="definition",
+        title="Target policy alpha",
+        status="accepted",
+        domain=["graph-theory"],
+        tags=["target", "policy"],
+    )
+    _write_artifact(
+        tmp_path,
+        "kb/public/accepted/definitions/beta.yaml",
+        artifact_id="definition.fixture.public-beta",
+        artifact_type="definition",
+        title="Target policy beta",
+        status="accepted",
+        domain=["graph-theory"],
+        tags=["target", "policy"],
+    )
+    _write_artifact(
+        tmp_path,
+        "kb/private/draft/claims/private-seed.yaml",
+        artifact_id="claim.fixture.private-seed",
+        title="Private seed",
+        status="draft",
+        domain=["graph-theory"],
+        tags=["private"],
+        depends_on=["definition.fixture.public-beta"],
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "memory",
+            "search",
+            "target policy",
+            "--repo-root",
+            str(tmp_path),
+            "--seed-artifact",
+            "claim.fixture.private-seed",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert [hit["card"]["id"] for hit in payload["cards"]] == [
+        "definition.fixture.public-alpha",
+        "definition.fixture.public-beta",
+    ]
+    assert "claim.fixture.private-seed" not in {
+        hit["card"]["id"] for hit in payload["cards"]
+    }
+    by_id = {hit["card"]["id"]: hit for hit in payload["cards"]}
+    assert by_id["definition.fixture.public-beta"]["score_breakdown"][
+        "personalized_pagerank"
+    ] == 0
+    assert any(
+        "explicit seed artifact ignored because artifact is outside current "
+        "scope/status filters: claim.fixture.private-seed"
+        == warning
+        for warning in payload["audit"]["warnings"]
+    )
+    assert any(
+        "private scope exclusions" in warning
+        for warning in payload["audit"]["warnings"]
+    )
+
+
+def test_memory_search_default_ranking_ignores_unrequested_issue_context(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/definitions/alpha.yaml",
+        artifact_id="definition.fixture.unrequested-alpha",
+        artifact_type="definition",
+        title="Target policy alpha",
+        status="accepted",
+        domain=["graph-theory"],
+        tags=["target", "policy"],
+    )
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/definitions/beta.yaml",
+        artifact_id="definition.fixture.unrequested-beta",
+        artifact_type="definition",
+        title="Target policy beta",
+        status="accepted",
+        domain=["graph-theory"],
+        tags=["target", "policy"],
+    )
+    issue_id = "issue.fixture.unrequested-context"
+    _write_issue(
+        tmp_path,
+        issue_id=issue_id,
+        related_artifacts=["definition.fixture.unrequested-beta"],
+    )
+    task_id = "task.issue.fixture.unrequested-context.reasoner"
+    _write_task(tmp_path, task_id=task_id, issue_id=issue_id)
+    _write_task_run(
+        tmp_path,
+        task_id=task_id,
+        run_id="run.r20260601.t000000z",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "memory",
+            "search",
+            "target policy",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert [hit["card"]["id"] for hit in payload["cards"]] == [
+        "definition.fixture.unrequested-alpha",
+        "definition.fixture.unrequested-beta",
+    ]
+    by_id = {hit["card"]["id"]: hit for hit in payload["cards"]}
+    assert by_id["definition.fixture.unrequested-alpha"]["score_breakdown"][
+        "global_pagerank"
+    ] == by_id["definition.fixture.unrequested-beta"]["score_breakdown"][
+        "global_pagerank"
+    ]
+    assert by_id["definition.fixture.unrequested-beta"]["score_breakdown"][
+        "freshness"
+    ] == 0
+
+
+def test_memory_search_explain_prints_full_score_breakdown(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/definitions/graph.yaml",
+        artifact_id="definition.fixture.graph",
+        artifact_type="definition",
+        title="Graph",
+        status="accepted",
+        domain=["graph-theory"],
+        tags=["graph"],
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "memory",
+            "search",
+            "graph",
+            "--repo-root",
+            str(tmp_path),
+            "--explain",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert "retrieval_hybrid=" in result.output
+    assert "personalized_pagerank=" in result.output
+    assert "global_pagerank=" in result.output
+    assert "quality_prior=" in result.output
+    assert "freshness=" in result.output
+    assert "penalty=" in result.output
+
+
+def test_memory_search_score_formula_is_configurable(tmp_path: Path) -> None:
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/definitions/lexical.yaml",
+        artifact_id="definition.fixture.lexical",
+        artifact_type="definition",
+        title="Target lexical",
+        status="accepted",
+        domain=["logic"],
+        tags=["target"],
+    )
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/definitions/pinned.yaml",
+        artifact_id="definition.fixture.configurable-pinned",
+        artifact_type="definition",
+        title="Pinned seed",
+        status="accepted",
+        domain=["graph-theory"],
+        tags=["seed"],
+    )
+
+    result = search_artifact_cards(
+        RepoContext(tmp_path),
+        query="target",
+        pinned_artifacts=("definition.fixture.configurable-pinned",),
+        score_weights=RetrievalScoreWeights(
+            retrieval_hybrid=0.0,
+            personalized_pagerank=1.0,
+            global_pagerank=0.0,
+            quality_prior=0.0,
+            freshness=0.0,
+        ),
+    )
+
+    assert [hit.card.id for hit in result.cards][:2] == [
+        "definition.fixture.configurable-pinned",
+        "definition.fixture.lexical",
+    ]
+    assert result.cards[0].score_breakdown.personalized_pagerank > 0
