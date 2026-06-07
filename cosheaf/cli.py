@@ -20,6 +20,10 @@ from cosheaf.agent.local_runner import (
     LocalWorkerRunError,
     LocalWorkerRunner,
 )
+from cosheaf.agent.orchestrator_planner import (
+    OrchestratorPlannerError,
+    plan_for_issue,
+)
 from cosheaf.agent.orchestrator_stub import OrchestratorStub, TaskHarnessError
 from cosheaf.agent.task import WorkerType
 from cosheaf.config.workspace import KbRootConfig, WorkspaceConfigError
@@ -94,6 +98,11 @@ task_app = typer.Typer(
     help="Agent task commands.",
     no_args_is_help=True,
 )
+orchestrator_app = typer.Typer(
+    add_completion=False,
+    help="Deterministic local orchestrator commands.",
+    no_args_is_help=True,
+)
 workspace_app = typer.Typer(
     add_completion=False,
     help="Workspace configuration commands.",
@@ -120,6 +129,7 @@ app.add_typer(graph_app, name="graph")
 app.add_typer(gate_app, name="gate")
 app.add_typer(context_app, name="context")
 app.add_typer(task_app, name="task")
+app.add_typer(orchestrator_app, name="orchestrator")
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(ingest_app, name="ingest")
 app.add_typer(memory_app, name="memory")
@@ -817,6 +827,45 @@ def memory_graph_pagerank(
         console.print(
             f"{row.rank}. {row.node_id} | score={row.score:.12f} | "
             f"{row.kind} | {row.record_id}"
+        )
+
+
+@orchestrator_app.command("plan")
+def orchestrator_plan(
+    issue: str = typer.Option(..., "--issue", help="Issue ID to plan for."),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON for the plan.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+) -> None:
+    """Create a deterministic task-DAG plan without executing workers."""
+    console = Console(width=120, markup=False)
+    try:
+        plan = plan_for_issue(RepoContext(repo_root), issue)
+    except OrchestratorPlannerError as exc:
+        console.print(f"Orchestrator plan failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(plan.to_json(), nl=False)
+        return
+
+    console.print(f"Plan: {plan.plan_id}")
+    console.print(f"- issue: {plan.issue_id}")
+    console.print(f"- objective: {plan.objective}")
+    console.print("- execution: not performed")
+    console.print("- accepted knowledge writes: not performed")
+    console.print("Task DAG:")
+    for node in plan.task_dag.nodes:
+        depends_on = ", ".join(node.depends_on) if node.depends_on else "-"
+        console.print(
+            f"- {node.node_id} | {node.worker_type.value} | depends_on={depends_on}"
         )
 
 

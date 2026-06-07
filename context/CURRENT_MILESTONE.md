@@ -2,19 +2,22 @@
 
 ## Milestone
 
-Phase 2 Task 2.4: MarkItDown local source-ingestion adapter.
+Phase 4 Task 4.2: deterministic task-DAG planner stub.
 
 ## Goal
 
-Add an optional local-file MarkItDown adapter for converting repository-local
-source files into staged Markdown with provenance metadata, while preserving
-the source-ingestion boundary.
+Add a deterministic local-only planner that converts an existing issue into a
+small auditable `Plan` / `TaskDAG` without executing workers or changing
+accepted knowledge.
 
 ## Current Baseline
 
 - Phase 0 Task 0.1 is complete in `docs/CODEX_STATE_AUDIT.md`.
 - Phase 0 Task 0.2 is complete in `docs/CODEX_DEVELOPMENT_PLAN.md` and
   `docs/ADR/0008-agent-memory-runtime-roadmap.md`.
+- Phase 2 Task 2.4 MarkItDown local source-ingestion adapter is complete.
+- Phase 2 Task 2.5 added exactly one draft public foundation artifact in
+  `tcs-kb-public`.
 - Phase 3 Task 3.7 context-pack v2 integration is complete.
 - Phase 4 Task 4.1 orchestrator state model is complete in
   `cosheaf.agent.orchestrator_state`,
@@ -42,33 +45,24 @@ the source-ingestion boundary.
 
 ## Completion Criteria
 
-- `cosheaf ingest convert <path>` converts a repository-local source file into
-  staged Markdown and provenance metadata when optional MarkItDown support is
-  installed.
-- `cosheaf ingest convert <path> --metadata-json` emits deterministic
-  provenance JSON.
-- Missing MarkItDown reports unavailable with install guidance and does not
-  affect validation, gates, index rebuilds, context packs, promotion, or
-  default installation.
-- Provenance records the original path, input SHA-256, converter name/version,
-  timestamp, options, warnings, output path, and metadata path.
-- URL, OCR, plugins, LLM vision, and Azure Document Intelligence remain
-  disabled by default.
-- Source and output paths must stay inside the repository, and accepted KB
-  output paths are rejected.
-- Converted Markdown may feed source notes, explorer tasks, or draft proposals
-  only.
-- The adapter does not write artifact YAML, review records, verifier results,
-  accepted knowledge, or promotion evidence.
+- `cosheaf orchestrator plan --issue <issue-id> --json` emits a deterministic
+  `Plan` payload for an existing issue.
+- The plan contains fixed librarian-retrieval, reasoner-draft, verifier-check,
+  and review-request task nodes.
+- Missing issues fail with a clean nonzero CLI error.
+- Planner outputs do not target accepted KB paths.
+- The planner references expected context-pack paths but does not build context
+  packs unless a future task explicitly adds that behavior.
+- The planner does not execute workers, call hosted LLMs, run gates, request
+  review, write accepted knowledge, or promote artifacts.
 - No schema, gate, verifier, promotion, public/private KB, workspace root, or
   default dependency changes in this task.
 
 ## Next Focus
 
-After Phase 2 Task 2.4 lands, the next fixed-plan item is Phase 2 Task 2.5:
-add exactly one small public foundation artifact in `tcs-kb-public`, only if
-reliable source metadata and required review evidence are available. Prefer
-draft status unless accepted-policy evidence is complete.
+After Phase 4 Task 4.2 lands, the next fixed-plan item is Phase 4 Task 4.3:
+reducer and worker bundle v2. Do not jump ahead into hosted LLM execution,
+external Lean checking, web UI work, or accepted-promotion policy changes.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show

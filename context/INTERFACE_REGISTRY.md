@@ -138,6 +138,14 @@
 - `cosheaf task run <task-id> --bundle <path> -- <command> [args...]`: requires a repository-local bundle path, validates a worker output bundle after a successful command without completing the task, and accepts either a YAML manifest or a directory containing `bundle.yaml`.
 - `cosheaf task run <task-id> --complete-with-bundle <path> -- <command> [args...]`: requires a repository-local bundle path, validates a worker output bundle after a successful command, accepts either a YAML manifest or a directory containing `bundle.yaml`, and delegates task completion to the existing orchestrator stub.
 - `cosheaf task run <task-id> ... --repo-root <path> -- <command> [args...]`: runs the local worker command for an explicit repository root.
+- `cosheaf orchestrator plan --issue <issue-id>`: creates a deterministic
+  local-only task-DAG plan for an existing issue and prints a compact text
+  summary. It does not build context packs, execute workers, run gates, request
+  review, write accepted knowledge, or promote artifacts.
+- `cosheaf orchestrator plan --issue <issue-id> --json`: emits the same
+  deterministic `Plan` payload as JSON.
+- `cosheaf orchestrator plan --issue <issue-id> --repo-root <path>`: creates
+  the plan for an explicit repository root.
 
 ### Python API
 
@@ -789,6 +797,8 @@ review, promotion, proof, or public/private policy bypasses.
 - `cosheaf.agent.orchestrator_state.WorkerCall`: strict serializable Pydantic v2 model for worker invocation metadata. It records command, cwd, timestamps, exit code, output log paths, and optional bundle path without executing anything.
 - `cosheaf.agent.orchestrator_state.ReducerResult`: strict serializable Pydantic v2 model for reducer decisions. Its output paths must be repository-local and must not target accepted knowledge.
 - `cosheaf.agent.orchestrator_state.StopCondition`: strict serializable Pydantic v2 model for stop or pause conditions.
+- `cosheaf.agent.orchestrator_planner.plan_for_issue(context: RepoContext, issue_id: str) -> Plan`: deterministic local-only planner stub. It loads an existing issue and returns a `Plan` with librarian-retrieval, reasoner-draft, verifier-check, and review-request task nodes. It does not write files or execute workers.
+- `cosheaf.agent.orchestrator_planner.OrchestratorPlannerError`: expected planner failure, including missing issue records and repository load failures.
 - `cosheaf.agent.worker_contract.WorkerOutputKind`: output kind enum with values `artifact`, `review`, `evidence`, and `report`.
 - `cosheaf.agent.worker_contract.WorkerOutput`: Pydantic v2 model for one repository-local output reference.
 - `cosheaf.agent.worker_contract.WorkerOutputBundle`: Pydantic v2 model for a local worker output bundle manifest.

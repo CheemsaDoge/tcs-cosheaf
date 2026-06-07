@@ -218,6 +218,14 @@ states, state transitions, task-DAG dependencies, and repository-local paths,
 but they do not execute workers, call hosted LLMs, run gates, request human
 review, merge outputs, or promote accepted knowledge.
 
+The deterministic planner stub in `cosheaf.agent.orchestrator_planner` converts
+an existing issue into a small `Plan` / `TaskDAG` through
+`cosheaf orchestrator plan --issue <issue-id> --json`. The plan contains fixed
+librarian-retrieval, reasoner-draft, verifier-check, and review-request nodes.
+It references the expected context-pack location, but it does not build context
+packs, write plan files, dispatch workers, run verifier adapters, call model
+providers, request human review, or create accepted knowledge.
+
 The local worker runner is not an LLM runtime or model-provider integration. It
 executes only an explicit argv command with `shell=False`, defaults to the
 repository root as its working directory, rejects working directories outside
