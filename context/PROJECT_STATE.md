@@ -7,8 +7,9 @@ later longplan phases proceed. The audit confirms that the framework package is
 `0.1.1`, the workspace template has demo, Makefile, bootstrap, and CI smoke
 coverage, and the public KB currently has 19 accepted public artifacts. All
 accepted public KB formalization references are still `planned` metadata with
-`check_mode: external_library_ref`; no external Lean-library `#check` workflow
-exists yet.
+`check_mode: external_library_ref`; the framework now has an optional
+external-library `#check` adapter, but planned links remain metadata unless a
+checker actually runs.
 
 The audit also confirms that `context/CURRENT_MILESTONE.md` was stale relative
 to the current `v0.1.1` and three-repo MVP productization state and has been
@@ -16,15 +17,15 @@ updated as part of the same documentation-only task.
 
 ## Current State After v0.1.1 Formal Link Layer Support
 
-TCS-Cosheaf is in v0.1.1 Formal Link Layer support / pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata and formalization-link metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds including formal-link metadata, a read-only SQLite query API over rebuilt index output including formalization queries, gatekeeper report generation including G10 Formal Link Gate output, ranked issue-scoped context pack generation including compact formal-link display, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, and plain Lean verifier adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in v0.1.1 Formal Link Layer support / pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata and formalization-link metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds including formal-link metadata, a read-only SQLite query API over rebuilt index output including formalization queries, gatekeeper report generation including G10 Formal Link Gate output, ranked issue-scoped context pack generation including compact formal-link display, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, plain Lean, and external Lean library reference verifier adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
 Issue 61 prepares the `v0.1.1` release after Formal Link Layer metadata, G10
 static metadata validation, context-pack display, deterministic
 SQLite/manifest indexing, and read-only query API support have landed. The
-Python package version is `0.1.1`. The release boundary is metadata-only:
-Cosheaf does not replace CSLib or mathlib, does not copy Lean proof bodies,
-does not run external Lean library checks, does not add Lean, lake, mathlib, or
-CSLib dependencies, does not fetch external libraries, and does not change
+Python package version is `0.1.1`. That release boundary was metadata-only:
+Cosheaf did not replace CSLib or mathlib, did not copy Lean proof bodies, did
+not run external Lean library checks, did not add Lean, lake, mathlib, or CSLib
+dependencies, did not fetch external libraries, and did not change
 accepted-promotion semantics beyond ordinary gatekeeper blocking behavior.
 Downstream repositories should pin to `v0.1.1` before using formalization
 fields.
@@ -147,7 +148,9 @@ static metadata validation over `verification_policy`, `formalizations`, and
 `alignment` without running Lean. Issue #59 surfaced the same formal-link
 metadata in context packs and deterministic SQLite/query outputs without
 changing G10 behavior. External Lean `#check` support for CSLib/mathlib
-declaration references remains future work.
+declaration references is now available through an optional verifier adapter,
+but only for linked or checked formalization metadata and only when Lean or lake
+is available.
 
 The configuration layer defines optional `cosheaf.toml` workspace loading. A
 workspace has a name, public/private policy fields, and one or more KB roots,
@@ -200,8 +203,8 @@ evidence linkage, remain nonblocking and are not proof failures. G10 does not
 run external library checks for CSLib or mathlib references, does not execute
 Lean, and does not treat a Lean pass as proof of informal/formal statement
 alignment. Missing optional Lean tooling remains a skipped verifier result, not
-a pass. A future Lean library reference checker such as
-`LeanLibraryRefAdapter` remains future work.
+a pass. External `#check` output for linked formalization metadata is handled
+by the G6 `lean_library_ref` verifier adapter, not by G10.
 
 Issue 85 integrates context-pack v2 with the local librarian retrieval surface.
 The agent harness layer now builds bounded deterministic context packs for
@@ -251,6 +254,17 @@ pass results. The adapter does not autoformalize natural language and does not
 implement SAT or SMT behavior. SAT and SMT support are still intentionally
 minimal: they execute DIMACS CNF or SMT-LIB evidence only when optional
 backends are available and are not a full SAT/SMT theorem-proving integration.
+
+The external Lean library reference adapter now supports optional
+formalization-metadata checks. `LeanLibraryRefAdapter` recognizes Lean 4
+formalizations with `check_mode: external_library_ref` and `status: linked` or
+`checked`, generates a temporary Lean file containing `import <import_path>` and
+`#check <symbol>`, and runs either `lean <tempfile>` or configured
+`lake env lean <tempfile>`. Missing Lean/lake returns `skipped`, nonzero Lean
+exit returns `fail`, and timeout/startup failures return `error`. The adapter
+writes stdout/stderr logs under `.cosheaf/logs/`, records command metadata, and
+does not fetch CSLib/mathlib, update formalization status automatically, or
+prove informal/formal semantic alignment.
 
 The reproducibility metadata gate is now implemented. It checks executable
 evidence verifier results for command, working directory, timeout, input paths,
@@ -405,7 +419,11 @@ gatekeeper result.
 - Minimal optional SAT DIMACS verifier adapter in `cosheaf/verification/sat_adapter.py`.
 - Minimal optional SMT-LIB verifier adapter in `cosheaf/verification/smt_adapter.py`.
 - Minimal optional Lean verifier adapter in `cosheaf/verification/lean_adapter.py`.
+- Optional external Lean library reference verifier adapter in
+  `cosheaf/verification/lean_external.py`.
 - Optional verifier tests in `tests/test_optional_verifier_skeletons.py`.
+- External Lean library reference adapter tests in
+  `tests/test_lean_external_adapter.py`.
 - Focused SAT adapter tests in `tests/test_sat_adapter.py`.
 - Focused SMT adapter tests in `tests/test_smt_adapter.py`.
 - First graph-theory pilot issue in `issues/open/issue.graph-toy-search.0001.yaml`.
@@ -434,7 +452,4 @@ gatekeeper result.
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond the minimal optional plain-file
   invocation path.
-- External Lean library checking for CSLib/mathlib references recorded in
-  `formalizations`.
-- A future Lean library reference checker such as `LeanLibraryRefAdapter`.
 - Automatic informal/formal semantic alignment checking.

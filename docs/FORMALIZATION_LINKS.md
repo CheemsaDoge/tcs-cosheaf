@@ -75,8 +75,9 @@ The manifest is metadata. Loading or validating it does not fetch CSLib,
 mathlib, or any other library; it does not run `lean`, `lake`, or `#check`;
 and it does not prove that an artifact statement is aligned with a formal
 declaration. Artifact `library_ref` values can be checked against a manifest by
-using the core helper API, but this phase does not add a gate, verifier adapter,
-or CLI command that performs external Lean library checking.
+using the core helper API. The optional external Lean library reference checker
+uses artifact formalization metadata; it still does not fetch, pin, or build
+external library checkouts automatically.
 
 ## Alignment Review
 
@@ -107,8 +108,8 @@ The `verification_policy` object records current expectations:
 - `source_reviewed_with_formal_link`: the artifact should carry a formal link,
   but the link is not necessarily checked in CI.
 - `machine_checked`: executable evidence or verifier output is expected.
-- `lean_required`: a future policy level for artifacts that require Lean
-  checking.
+- `lean_required`: a policy level for artifacts that require Lean checking
+  metadata.
 
 The boolean fields `require_formal_link`, `require_lean_check`, and
 `require_alignment_review` state the per-artifact expectation explicitly.
@@ -141,15 +142,53 @@ When optional Lean tooling is unavailable, Lean verification remains
 `skipped`, not `pass`. Skipped verifier output must not be used to claim a
 successful formal check.
 
-The Formal Link Layer does not make the Lean adapter check external library
-references. It records links so future tooling and review workflows have a
-stable metadata surface.
+The Formal Link Layer does not make the plain-file Lean adapter check external
+library references. It records links so separate verifier tooling and review
+workflows have a stable metadata surface.
+
+## External Lean Library Reference Checker
+
+The optional `LeanLibraryRefAdapter` checks linked external Lean references
+recorded in `formalizations`. It is separate from the plain-file `LeanAdapter`.
+
+The adapter considers only formalization entries with:
+
+- `system: lean4`
+- `check_mode: external_library_ref`
+- `status: linked` or `status: checked`
+
+Planned formalizations are skipped by default. For a checkable entry, the
+adapter creates a temporary Lean file outside the repository:
+
+```lean
+import <import_path>
+#check <symbol>
+```
+
+It then runs either `lean <tempfile>` or, when configured, `lake env lean
+<tempfile>`. The temporary file is removed after the run. Stdout and stderr are
+captured under `.cosheaf/logs/`, and the normalized verifier result records the
+command, cwd, timeout, exit code, tool metadata, input label, and log paths.
+
+Missing Lean or lake returns `skipped`, not `pass`. A nonzero process exit is
+`fail`; timeout or command startup failure is `error`. A `pass` means only that
+Lean resolved the generated import and `#check` command in the configured
+environment. It does not prove that the informal artifact statement is
+semantically aligned with the formal declaration.
+
+The checker does not fetch CSLib, mathlib, or any other library. It does not
+update formalization status automatically and does not make existing public KB
+artifacts require Lean in CI. Under the current one-result verifier adapter
+contract, one `verify(...)` call checks the first applicable formalization for
+an artifact.
 
 ## G10 Formal Link Gate
 
 G10 is a static metadata gate over `formalizations`, `alignment`, and
 `verification_policy`. It does not execute Lean, install CSLib or mathlib,
-fetch external libraries, or require network access.
+fetch external libraries, or require network access. External `#check` results,
+when produced by the optional verifier adapter, are G6 verifier evidence; they
+do not change G10 into a Lean execution gate.
 
 G10 blocks artifacts whose policy requires a formal link, Lean check, or
 alignment review when the corresponding metadata is absent or not reviewed. It
@@ -191,24 +230,27 @@ checks, or alignment review. The query API is read-only: it reads an existing
 
 These index and query surfaces remain metadata-only. They do not check whether
 CSLib or mathlib symbols exist, do not fetch external libraries, and do not run
-Lean.
+Lean. Run the optional verifier adapter separately when a symbol-resolution
+check is needed.
 
 ## Future Work
 
-- External Lean library reference checking using `import_path` and `symbol`.
 - Public KB artifacts with planned or reviewed formalization links.
-- A future `LeanLibraryRefAdapter` or equivalent checker surface.
+- CLI ergonomics for requesting external Lean reference checks directly.
+- Multi-link reporting when an artifact carries more than one checkable
+  formalization.
 
 ## Current Limitations
 
 - No CSLib or mathlib dependency is added.
 - No network access is required or used.
-- No external Lean library checkout is inspected.
+- No external Lean library checkout is fetched or managed automatically.
 - No natural-language autoformalization is implemented.
 - No automatic informal/formal alignment proof is implemented.
 - G10 is metadata-only and does not execute Lean.
 - Index/query support is metadata-only and does not perform Lean or library
   existence checks.
 - Context-pack display is metadata-only and does not claim Lean verification.
+- External `#check` pass means import and symbol resolution only.
 - No accepted-promotion policy change is added beyond normal gatekeeper
   blocking behavior.

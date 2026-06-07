@@ -107,8 +107,10 @@ Manifest IDs are pinned in formal library manifest files such as
 `schemas/formal_library.schema.json`.
 
 Formal library manifests are metadata for external-library references. They do
-not fetch CSLib/mathlib, run Lean or lake, check symbol existence, or prove
-informal/formal semantic alignment.
+not fetch CSLib/mathlib, run Lean or lake by themselves, check symbol
+existence, or prove informal/formal semantic alignment. Optional verifier
+adapters may use formalization metadata to run separate checks when explicitly
+applicable.
 
 Formal declaration references must not be stored in `evidence`. The `evidence`
 field remains for executable or otherwise evidence-like inputs; formal-library
@@ -272,14 +274,16 @@ artifacts in configured workspaces when `accepted_requires_source = true` while
 preserving draft, private, and legacy single-root behavior.
 
 The Formal Link Layer is implemented as optional schema/model metadata, an
-example artifact, G10 static metadata validation, context-pack display, and
-SQLite/query metadata surfaces. It records Lean-library
-declaration references plus optional formal library manifest metadata without
-adding CSLib/mathlib dependencies, without requiring network access, and
-without changing accepted promotion semantics beyond ordinary gatekeeper
-blocking behavior. G10 does not execute Lean, does not fetch or inspect
-external Lean libraries, and does not prove informal/formal semantic
-alignment. Context packs and query APIs expose the same metadata without
-claiming that Lean verified the informal statement. The implementation does
-not add formal-link CLI commands or verifier execution for external library
-references.
+example artifact, G10 static metadata validation, context-pack display,
+SQLite/query metadata surfaces, and an optional external Lean library reference
+checker. It records Lean-library declaration references plus optional formal
+library manifest metadata without adding CSLib/mathlib dependencies, without
+requiring network access, and without changing accepted promotion semantics
+beyond ordinary gatekeeper blocking behavior. G10 does not execute Lean, does
+not fetch or inspect external Lean libraries, and does not prove
+informal/formal semantic alignment. Context packs and query APIs expose the
+same metadata without claiming that Lean verified the informal statement. The
+optional external reference checker can generate a temporary Lean file with
+`import <import_path>` and `#check <symbol>` for linked external-library
+references when Lean or lake is available; a pass means only that the import
+and symbol resolved.

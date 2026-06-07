@@ -11,8 +11,10 @@ models, filesystem loading, validation, dependency graph indexing,
 workspace-aware KB root loading, artifact lifecycle CLI commands, gatekeeper
 reports including the G10 Formal Link Gate, ranked context-pack generation with
 compact formal-link display, local task harness stubs, verifier adapters
-including a Python checker, a minimal optional SAT DIMACS path, and a minimal
-optional SMT-LIB path, GitHub Actions CI, and collaboration templates. The
+including a Python checker, a minimal optional SAT DIMACS path, a minimal
+optional SMT-LIB path, a minimal optional plain Lean file path, and an optional
+external Lean library reference `#check` path, GitHub Actions CI, and
+collaboration templates. The
 Python package metadata is set to `0.1.1` for the Formal Link Layer support
 release. It is not production software and does not yet provide a web UI,
 automatic theorem proving, full Lean autoformalization, or multi-user
@@ -51,8 +53,11 @@ on conversation history.
 Optional formal tools stay optional. Missing SAT, SMT, Lean, or similar tools
 must produce skipped verifier results rather than crashing the core system.
 Cosheaf does not replace CSLib, mathlib, or Lean: formal links are metadata
-plus gate, context-pack, index, and query surfaces. External Lean `#check`
-support for CSLib/mathlib references remains future work.
+plus gate, context-pack, index, query, and optional verifier surfaces. The
+external Lean library reference checker can run `import <module>` and
+`#check <symbol>` when Lean or lake is available, but a successful `#check`
+only means the import and symbol resolved. It does not prove informal/formal
+semantic alignment.
 
 ## Current Status
 
@@ -85,8 +90,8 @@ Implemented:
 - Local task harness stubs with `cosheaf task create`, `cosheaf task list`, and
   `cosheaf task complete`.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
-  DIMACS adapter, minimal optional SMT-LIB adapter, and minimal optional Lean
-  plain-file adapter.
+  DIMACS adapter, minimal optional SMT-LIB adapter, minimal optional Lean
+  plain-file adapter, and optional external Lean library reference checker.
 - Reproducibility metadata gate for executable evidence verifier results.
 - Local PR checklist gate support through `cosheaf gate run --pr-checklist
   <path>`.
@@ -101,12 +106,11 @@ Planned or incomplete:
 
 - Full SAT backend coverage beyond the minimal optional DIMACS invocation path.
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
-- Full Lean proof-assistant integration beyond the minimal optional plain-file
-  invocation path.
+- Full Lean proof-assistant integration beyond optional plain-file and external
+  library reference checks.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted LLM/model-provider worker execution.
 - External public KB repository integration beyond local workspace roots.
-- External Lean library reference checking for CSLib/mathlib declarations.
 - Automatic informal/formal semantic alignment checking.
 
 ## Worker And Orchestrator Boundary

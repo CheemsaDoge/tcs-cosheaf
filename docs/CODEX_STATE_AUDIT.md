@@ -173,6 +173,12 @@ There is no `LeanLibraryRefAdapter`, no generated temporary Lean file with
 CSLib/mathlib references. Existing references with
 `check_mode: external_library_ref` are metadata for future checking workflows.
 
+Post-audit note: Phase 6 Task 6.2 adds an optional
+`LeanLibraryRefAdapter` after this 2026-06-06 snapshot. The adapter can check
+linked external references by generating temporary `import`/`#check` Lean files
+when Lean or lake is available. It still does not fetch CSLib/mathlib or prove
+informal/formal semantic alignment.
+
 ### 7. Whether Query API Exists
 
 Yes, a read-only Python query API exists:

@@ -7,7 +7,9 @@ rebuildable memory graph sidecar, global PageRank, issue-conditioned ranking,
 and context-pack v2 integration now exist under local framework surfaces, but
 they remain deterministic metadata and handoff surfaces. They are not a claim
 that embedding retrieval, hosted LLM workers, a worker runtime, automatic
-theorem proving, or external Lean-library checking already exists.
+theorem proving, or any Lean result proves informal/formal alignment. External
+Lean-library `#check` results, when produced by a separate optional verifier,
+remain verifier metadata rather than retrieval truth.
 
 The policy is deterministic-first. The librarian may retrieve, rank, summarize,
 and audit existing repository records. It must not create new claims, modify

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from cosheaf.verification.base import VerifierAdapter
 from cosheaf.verification.lean_adapter import LeanAdapter
+from cosheaf.verification.lean_external import LeanLibraryRefAdapter
 from cosheaf.verification.python_checker import PythonCheckerAdapter
 from cosheaf.verification.sat_adapter import SatAdapter
 from cosheaf.verification.smt_adapter import SmtAdapter
@@ -47,6 +48,7 @@ def default_verifier_registry() -> VerifierRegistry:
     """Return the default verifier registry for gatekeeper runs."""
     registry = VerifierRegistry()
     registry.register(LeanAdapter())
+    registry.register(LeanLibraryRefAdapter())
     registry.register(PythonCheckerAdapter())
     registry.register(SatAdapter())
     registry.register(SmtAdapter())

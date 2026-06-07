@@ -37,6 +37,8 @@ Completed scaffold pieces include:
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
   DIMACS adapter, minimal optional SMT-LIB adapter, and minimal optional Lean
   plain-file adapter.
+- Optional external Lean library reference checker for generated
+  `import`/`#check` symbol-resolution runs.
 - Reproducibility metadata gate for executable evidence verifier results.
 - Branch protection and review policy documentation.
 - First graph-theory pilot workflow with draft artifact evidence and a local
@@ -60,8 +62,8 @@ list of currently open issues.
 
 ### Verification Depth
 
-- Add external Lean library reference checking for recorded `import_path` and
-  `symbol` metadata without vendoring CSLib or mathlib.
+- Improve external Lean library reference checking ergonomics without vendoring
+  CSLib or mathlib.
 - Expand SAT backend coverage beyond the minimal optional DIMACS invocation path.
 - Expand SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Expand Lean support beyond the minimal optional plain-file invocation path.
