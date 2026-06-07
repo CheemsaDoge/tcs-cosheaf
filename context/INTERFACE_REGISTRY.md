@@ -804,6 +804,12 @@ review, promotion, proof, or public/private policy bypasses.
 - `cosheaf.agent.worker_contract.WorkerOutputBundle`: Pydantic v2 model for a local worker output bundle manifest.
 - `cosheaf.agent.worker_contract.OutputBundleError`: expected worker output bundle validation error.
 - `cosheaf.agent.worker_contract.validate_output_bundle(context: RepoContext, bundle_path: str | Path, *, task: AgentTask | None = None) -> WorkerOutputBundle`: validates a local bundle manifest and referenced output paths without merging accepted knowledge.
+- `cosheaf.agent.worker_bundle_v2.WorkerBundleConfidence`: confidence enum with values `low`, `medium`, and `high`.
+- `cosheaf.agent.worker_bundle_v2.ProposedArtifact`: strict Pydantic v2 model for one repository-local proposed artifact path and summary.
+- `cosheaf.agent.worker_bundle_v2.WorkerBundleV2`: strict Pydantic v2 model for Phase 4.3 reducer-oriented worker bundles with fields `bundle_id`, `task_id`, `worker_role`, `created_at`, `summary`, `used_artifacts`, `used_sources`, `claims`, `proposed_artifacts`, `verification_requests`, `failures_or_counterexamples`, `risk_flags`, `next_steps`, and `confidence`.
+- `cosheaf.agent.worker_bundle_v2.WorkerBundleV2Error`: expected worker bundle v2 validation or reducer-boundary failure.
+- `cosheaf.agent.worker_bundle_v2.validate_worker_bundle_v2(context: RepoContext, bundle_path: str | Path) -> WorkerBundleV2`: loads and validates a worker bundle v2 manifest without executing workers, writing files, requesting review, or promoting accepted knowledge. It rejects non-repository-local bundle paths, non-repository-local proposed artifact paths, accepted-KB proposals, schema-invalid existing proposed artifacts, and worker-created `human_reviewed` or `accepted` review states.
+- `cosheaf.agent.worker_bundle_v2.reduce_worker_bundle_v2(context: RepoContext, bundle_path: str | Path, *, reducer_id: str) -> ReducerResult`: validates a worker bundle v2 manifest and returns a deterministic `ReducerResult`, preserving failures, risk flags, and confidence as warnings.
 - `cosheaf.agent.orchestrator_stub.OrchestratorStub`: local filesystem task harness stub. It creates, lists, loads, and completes task records without LLM calls, network calls, concrete worker execution, or accepted knowledge merges.
 - `cosheaf.agent.orchestrator_stub.TaskHarnessError`: expected task harness error.
 - `cosheaf.agent.orchestrator_stub.AcceptedKnowledgeMergeProhibitedError`: raised when a caller asks the stub to merge accepted knowledge.
@@ -876,6 +882,29 @@ containing `bundle.yaml`. Bundle manifests use:
 
 Artifact and review outputs must point to repository-local YAML records that
 pass the schema gate. Outputs under `kb/accepted/` are rejected.
+
+Worker bundle v2 manifests use `schemas/worker_bundle_v2.schema.json` and these
+top-level fields:
+
+- `bundle_id`
+- `task_id`
+- `worker_role`
+- `created_at`
+- `summary`
+- `used_artifacts`
+- `used_sources`
+- `claims`
+- `proposed_artifacts`
+- `verification_requests`
+- `failures_or_counterexamples`
+- `risk_flags`
+- `next_steps`
+- `confidence`
+
+Worker bundle v2 is a reducer-oriented contract only in this phase. It is not
+yet wired into `cosheaf task run` or `cosheaf task complete`, and it does not
+dispatch workers, run gates, request human review, write files, or promote
+accepted knowledge.
 
 #### Verification
 
@@ -1144,6 +1173,14 @@ the repository root as cwd.
 - `schemas/review.schema.json`: review YAML schema.
 - `schemas/verifier.schema.json`: verifier result schema.
 - `schemas/task.schema.json`: agent task YAML schema.
+- `schemas/orchestrator_run.schema.json`: orchestrator run state schema.
+- `schemas/worker_bundle_v2.schema.json`: strict reducer-oriented worker
+  bundle schema. It requires `bundle_id`, `task_id`, `worker_role`,
+  `created_at`, `summary`, `used_artifacts`, `used_sources`, `claims`,
+  `proposed_artifacts`, `verification_requests`,
+  `failures_or_counterexamples`, `risk_flags`, `next_steps`, and
+  `confidence`. It does not authorize accepted writes, review-state changes,
+  worker execution, or promotion.
 
 ### Workspace Config Files
 

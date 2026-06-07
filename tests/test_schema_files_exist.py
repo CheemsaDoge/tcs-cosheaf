@@ -41,6 +41,7 @@ SCHEMA_FILES = [
     "schemas/verifier.schema.json",
     "schemas/task.schema.json",
     "schemas/orchestrator_run.schema.json",
+    "schemas/worker_bundle_v2.schema.json",
 ]
 
 EXAMPLE_FILES = [
@@ -180,3 +181,41 @@ def test_formal_link_example_uses_planned_fake_cslib_reference() -> None:
     assert formalization["status"] == "planned"
     assert formalization["check_mode"] == "external_library_ref"
     assert "Illustrative CSLib symbol only" in formalization["notes"]
+
+
+def test_worker_bundle_v2_schema_is_strict() -> None:
+    schema = json.loads(
+        (ROOT / "schemas/worker_bundle_v2.schema.json").read_text(encoding="utf-8")
+    )
+
+    assert schema["additionalProperties"] is False
+    assert schema["required"] == [
+        "bundle_id",
+        "task_id",
+        "worker_role",
+        "created_at",
+        "summary",
+        "used_artifacts",
+        "used_sources",
+        "claims",
+        "proposed_artifacts",
+        "verification_requests",
+        "failures_or_counterexamples",
+        "risk_flags",
+        "next_steps",
+        "confidence",
+    ]
+    assert schema["properties"]["confidence"]["enum"] == ["low", "medium", "high"]
+    assert schema["properties"]["worker_role"] == {"$ref": "#/$defs/worker_type"}
+    assert schema["$defs"]["worker_type"]["enum"] == [
+        "reasoner",
+        "verifier",
+        "counterexampleer",
+        "construction_searcher",
+        "formalizer",
+        "literature_scout",
+        "orchestrator",
+    ]
+    proposed_artifact = schema["$defs"]["proposed_artifact"]
+    assert proposed_artifact["additionalProperties"] is False
+    assert proposed_artifact["required"] == ["path", "summary"]

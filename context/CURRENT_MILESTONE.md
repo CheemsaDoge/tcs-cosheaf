@@ -2,13 +2,12 @@
 
 ## Milestone
 
-Phase 4 Task 4.2: deterministic task-DAG planner stub.
+Phase 4 Task 4.3: reducer and worker bundle v2.
 
 ## Goal
 
-Add a deterministic local-only planner that converts an existing issue into a
-small auditable `Plan` / `TaskDAG` without executing workers or changing
-accepted knowledge.
+Standardize a strict worker bundle v2 contract and deterministic reducer
+behavior without executing workers or changing accepted knowledge.
 
 ## Current Baseline
 
@@ -23,6 +22,9 @@ accepted knowledge.
   `cosheaf.agent.orchestrator_state`,
   `schemas/orchestrator_run.schema.json`, and
   `docs/ADR/0010-orchestrator-state-machine.md`.
+- Phase 4 Task 4.2 deterministic task-DAG planner stub is complete in
+  `cosheaf.agent.orchestrator_planner` and
+  `cosheaf orchestrator plan --issue <issue-id> --json`.
 - Framework package version is `0.1.1`.
 - `tcs-cosheaf` has workspace-aware validation, gatekeeper G1-G10,
   deterministic index rebuilds, read-only query surfaces, artifact-card
@@ -45,23 +47,27 @@ accepted knowledge.
 
 ## Completion Criteria
 
-- `cosheaf orchestrator plan --issue <issue-id> --json` emits a deterministic
-  `Plan` payload for an existing issue.
-- The plan contains fixed librarian-retrieval, reasoner-draft, verifier-check,
-  and review-request task nodes.
-- Missing issues fail with a clean nonzero CLI error.
-- Planner outputs do not target accepted KB paths.
-- The planner references expected context-pack paths but does not build context
-  packs unless a future task explicitly adds that behavior.
-- The planner does not execute workers, call hosted LLMs, run gates, request
-  review, write accepted knowledge, or promote artifacts.
+- `WorkerBundleV2` is strict and records bundle ID, task ID, worker role,
+  creation time, summary, used artifacts and sources, claims, proposed
+  artifacts, verification requests, failures or counterexamples, risk flags,
+  next steps, and confidence.
+- `schemas/worker_bundle_v2.schema.json` records the same required fields.
+- Worker bundle v2 validation rejects repository-unsafe paths.
+- Worker bundle v2 validation rejects proposed writes to accepted KB paths.
+- Worker bundle v2 validation rejects worker-created `human_reviewed` or
+  `accepted` review states on proposed artifacts.
+- The reducer produces a deterministic `ReducerResult` and preserves failures,
+  risk flags, and confidence as warnings.
+- The v2 reducer does not execute workers, call hosted LLMs, run gates, request
+  review, write files, merge outputs, or promote artifacts.
 - No schema, gate, verifier, promotion, public/private KB, workspace root, or
-  default dependency changes in this task.
+  default dependency changes outside the new worker bundle v2 schema in this
+  task.
 
 ## Next Focus
 
-After Phase 4 Task 4.2 lands, the next fixed-plan item is Phase 4 Task 4.3:
-reducer and worker bundle v2. Do not jump ahead into hosted LLM execution,
+After Phase 4 Task 4.3 lands, the next fixed-plan item is Phase 4 Task 4.4:
+local worker runner integration. Do not jump ahead into hosted LLM execution,
 external Lean checking, web UI work, or accepted-promotion policy changes.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
