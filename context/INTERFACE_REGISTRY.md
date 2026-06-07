@@ -797,6 +797,31 @@ review, promotion, proof, or public/private policy bypasses.
 
 #### Agent Tasks
 
+- `cosheaf.agent.roles.RoleName`: enum for role prompt/context contracts with
+  values `librarian`, `reasoner`, `verifier`, `formalizer`, `explorer`,
+  `counterexampleer`, and `collector`.
+- `cosheaf.agent.roles.RoleOutputSchema`: strict Pydantic v2 model describing
+  required and optional fields expected from one role's worker output.
+- `cosheaf.agent.roles.RoleContextBudget`: strict Pydantic v2 model for
+  bounded role context budgets, including maximum cards, maximum full artifact
+  pulls, maximum prompt characters, and private-context allowance.
+- `cosheaf.agent.roles.RoleToolPolicy`: strict Pydantic v2 model for one
+  role's tool and network policy. Current role contracts keep network access
+  disabled.
+- `cosheaf.agent.roles.RoleContract`: strict Pydantic v2 model for
+  machine-readable role boundaries. It records role-specific prompt text,
+  allowed inputs, forbidden actions, required output schema, context budget,
+  tool policy, stop conditions, risk flags, `provider: fake`, and
+  `hosted_llm_enabled: false`.
+- `cosheaf.agent.roles.REQUIRED_ROLE_NAMES`: deterministic tuple of required
+  role names in contract order.
+- `cosheaf.agent.roles.ROLE_CONTRACTS`: deterministic tuple of the built-in
+  role contracts. The built-in roles do not write accepted knowledge, do not
+  promote artifacts, do not mark human review, and do not enable hosted LLMs.
+- `cosheaf.agent.roles.list_role_contracts() -> tuple[RoleContract, ...]`:
+  returns all built-in role contracts in deterministic order.
+- `cosheaf.agent.roles.get_role_contract(role: RoleName | str) -> RoleContract`:
+  returns one built-in role contract by enum value or role-name string.
 - `cosheaf.agent.model_provider.ModelRequest`: strict Pydantic v2 model for a
   provider-neutral model request. Fields include `provider`, `model`, `prompt`,
   `temperature`, `top_p`, `reasoning_effort`, `max_output_tokens`,
