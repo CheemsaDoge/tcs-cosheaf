@@ -7,12 +7,12 @@ worker output, request human review, or promote accepted knowledge.
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from cosheaf.agent.dry_run_workers import dry_run_worker_command
 from cosheaf.agent.local_runner import (
     LocalWorkerRunConfig,
     LocalWorkerRunError,
@@ -292,67 +292,13 @@ def _default_worker_command(
     proposal_path: str,
     created_at: datetime,
 ) -> list[str]:
-    return [
-        sys.executable,
-        "-c",
-        _DEFAULT_WORKER_SCRIPT,
-        bundle_path.as_posix(),
-        task.task_id,
-        node.worker_type.value,
-        node.node_id,
-        proposal_path,
-        _format_timestamp(created_at),
-    ]
-
-
-_DEFAULT_WORKER_SCRIPT = r"""
-from __future__ import annotations
-
-import sys
-from pathlib import Path
-
-import yaml
-
-bundle_path = Path(sys.argv[1])
-task_id = sys.argv[2]
-worker_role = sys.argv[3]
-node_id = sys.argv[4]
-proposal_path = sys.argv[5]
-created_at = sys.argv[6]
-bundle_path.parent.mkdir(parents=True, exist_ok=True)
-bundle = {
-    "bundle_id": f"bundle.{node_id}",
-    "task_id": task_id,
-    "worker_role": worker_role,
-    "created_at": created_at,
-    "summary": f"Local dry-run worker completed {node_id}.",
-    "used_artifacts": [],
-    "used_sources": [],
-    "claims": [
-        "This is a deterministic dry-run bundle for review workflow testing."
-    ],
-    "proposed_artifacts": [
-        {
-            "path": proposal_path,
-            "summary": "Dry-run proposal path; no artifact is written.",
-        }
-    ],
-    "verification_requests": [
-        "Run validation, gates, and human review before promotion."
-    ],
-    "failures_or_counterexamples": [
-        "No hosted LLM, network call, Lean check, or proof was performed."
-    ],
-    "risk_flags": ["dry_run_only", "needs_human_review"],
-    "next_steps": ["Inspect worker logs and request review if useful."],
-    "confidence": "low",
-}
-bundle_path.write_text(
-    yaml.safe_dump(bundle, sort_keys=False),
-    encoding="utf-8",
-)
-print(f"worker_bundle_v2={bundle_path.as_posix()}")
-"""
+    return dry_run_worker_command(
+        bundle_path=bundle_path,
+        task=task,
+        node=node,
+        proposal_path=proposal_path,
+        created_at=created_at,
+    )
 
 
 def _utc_now() -> datetime:

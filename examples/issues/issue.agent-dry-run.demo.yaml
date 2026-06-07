@@ -1,0 +1,18 @@
+id: issue.agent-dry-run.demo
+type: issue
+title: Demonstrate local agent dry-run workflow
+status: open
+created_at: "2026-06-07T00:00:00Z"
+updated_at: "2026-06-07T00:00:00Z"
+authors:
+  - example-author
+severity: medium
+description: >
+  Demonstrate that local fake reasoner and verifier workers can produce
+  reviewable worker bundle proposals without writing accepted knowledge,
+  requesting human review, running gates, or promoting artifacts.
+related_artifacts:
+  - claim.agent-dry-run.demo
+tags:
+  - agent-dry-run
+  - local-only
