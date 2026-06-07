@@ -797,6 +797,34 @@ review, promotion, proof, or public/private policy bypasses.
 
 #### Agent Tasks
 
+- `cosheaf.agent.model_provider.ModelRequest`: strict Pydantic v2 model for a
+  provider-neutral model request. Fields include `provider`, `model`, `prompt`,
+  `temperature`, `top_p`, `reasoning_effort`, `max_output_tokens`,
+  `tool_policy`, `network_policy`, and `metadata`.
+- `cosheaf.agent.model_provider.ModelResponse`: strict Pydantic v2 model for a
+  provider-neutral model response with `provider`, `model`, `content`,
+  `finish_reason`, negotiated `capability`, warnings, and metadata.
+- `cosheaf.agent.model_provider.ProviderCapability`: strict Pydantic v2 model
+  recording supported and unsupported request parameters for one provider/model
+  pair. Capability negotiation metadata is informational and does not grant
+  review, verifier, gate, or promotion authority.
+- `cosheaf.agent.model_provider.ModelProvider`: protocol for provider-neutral
+  model adapters. Implementations expose `negotiate_capability(...)` and
+  `generate(...)`.
+- `cosheaf.agent.model_provider.FakeModelProvider`: deterministic local fake
+  provider. It performs no network call, imports no hosted-provider SDK, and
+  records unsupported requested parameters instead of crashing.
+- `cosheaf.agent.model_provider.ProviderName`: enum with `fake`, `openai`,
+  `anthropic`, `google`, and `local`. Only the fake provider is implemented in
+  the current framework.
+- `cosheaf.agent.model_provider.ReasoningEffort`: enum with `low`, `medium`,
+  and `high`.
+- `cosheaf.agent.model_provider.ToolPolicy`: enum with `none`, `read_only`,
+  `local_tools`, and `verifier_tools`.
+- `cosheaf.agent.model_provider.NetworkPolicy`: enum with `disabled` and
+  `explicit_allow`.
+- `cosheaf.agent.model_provider.FinishReason`: enum with `stop`, `length`, and
+  `error`.
 - `cosheaf.agent.task.WorkerType`: protocol worker type enum with values `reasoner`, `verifier`, `counterexampleer`, `construction_searcher`, `formalizer`, `literature_scout`, and `orchestrator`.
 - `cosheaf.agent.task.TaskStatus`: task status enum with values `open`, `in_progress`, `blocked`, `completed`, `failed`, and `cancelled`.
 - `cosheaf.agent.task.AgentTask`: Pydantic v2 model for local task records with fields `task_id`, `issue_id`, `worker_type`, `status`, `input_context`, `budget`, `expected_outputs`, `created_at`, and `updated_at`.

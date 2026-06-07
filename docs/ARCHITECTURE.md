@@ -246,6 +246,15 @@ proposal paths remain under `.cosheaf/orchestrator/.../proposals/`. The worker
 does not write proposed artifacts; it only writes the bundle manifest that the
 runner validates and reduces.
 
+The provider-neutral model interface in `cosheaf.agent.model_provider` defines
+request, response, capability-negotiation, and provider protocol DTOs for
+future worker integrations. The only implemented provider is
+`FakeModelProvider`, a deterministic local fake used for tests and disabled
+hosted-runtime paths. Capability negotiation records unsupported requested
+parameters instead of crashing. This interface does not add OpenAI, Anthropic,
+Google, local model, or other hosted-provider SDK dependencies, and it does
+not perform network calls.
+
 The local worker runner is not an LLM runtime or model-provider integration. It
 executes only an explicit argv command with `shell=False`, defaults to the
 repository root as its working directory, rejects working directories outside
