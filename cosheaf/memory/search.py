@@ -28,6 +28,7 @@ from cosheaf.memory.models import (
     RetrievalExclusion,
     RetrievalRequest,
     RetrievalResult,
+    RetrievalRole,
     RetrievedArtifactCard,
     ScoreBreakdown,
 )
@@ -102,6 +103,8 @@ def search_artifact_cards(
     pinned_artifacts: tuple[str, ...] = (),
     include_refuted: bool = False,
     include_obsolete: bool = False,
+    role: RetrievalRole | str = RetrievalRole.LIBRARIAN,
+    max_full_artifacts: int = 0,
     score_weights: RetrievalScoreWeights = RetrievalScoreWeights(),
 ) -> RetrievalResult:
     """Return deterministic artifact-card search results.
@@ -131,6 +134,8 @@ def search_artifact_cards(
             include_refuted=include_refuted,
             include_obsolete=include_obsolete,
             max_cards=max_cards,
+            max_full_artifacts=max_full_artifacts,
+            role=RetrievalRole(role),
         )
         issue_seed_cards = tuple(
             build_artifact_cards(

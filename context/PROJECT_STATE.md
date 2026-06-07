@@ -203,7 +203,24 @@ alignment. Missing optional Lean tooling remains a skipped verifier result, not
 a pass. A future Lean library reference checker such as
 `LeanLibraryRefAdapter` remains future work.
 
-The agent harness layer now builds bounded deterministic context packs for issue IDs. Context packs are written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`, `ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and `COMMANDS.md`. Relevant artifacts are selected and ranked from direct issue references, one-hop dependency neighbors, domain matches against issue text/tags, and artifact tag matches against issue tags. Each selected artifact includes explainable reasons. Draft artifacts are visibly labeled, and refuted/obsolete/superseded artifacts appear only when relevant and are marked as known failures rather than current truth. When relevant artifacts carry formal-link metadata or policy-relevant formal settings, context packs show compact formalization, alignment, verification-policy, and G10-relevant hint lines without loading gate reports or claiming Lean verification.
+Issue 85 integrates context-pack v2 with the local librarian retrieval surface.
+The agent harness layer now builds bounded deterministic context packs for
+issue IDs from compact `ArtifactCard` rows by default. Context packs are
+written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`,
+`ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`,
+`FULL_ARTIFACTS.md`, `RETRIEVAL_AUDIT.json`, and `COMMANDS.md`. The default
+orchestrator role has `max_full_artifacts = 0`, so full artifact YAML is not
+included unless the caller explicitly sets a positive full-artifact budget.
+Retrieved cards are filtered through the existing issue-local relevance rules:
+direct issue references, one-hop dependency neighbors, domain matches against
+issue text/tags, and artifact tag matches against issue tags. Public-only
+context excludes private cards and private artifact IDs from the rendered
+context and retrieval audit. Retrieval scores remain metadata only; they do not
+authorize review, promotion, proof, or public/private policy bypasses. When
+relevant artifacts carry formal-link metadata or policy-relevant formal
+settings, context packs show compact formalization, alignment,
+verification-policy, and G10-relevant hint lines without loading gate reports
+or claiming Lean verification.
 
 The agent task harness now defines protocol worker types for `reasoner`, `verifier`, `counterexampleer`, `construction_searcher`, `formalizer`, `literature_scout`, and `orchestrator`. Task records use deterministic default IDs of the form `task.<issue-id>.<worker-type-slug>`, support lifecycle statuses `open`, `in_progress`, `blocked`, `completed`, `failed`, and `cancelled`, and are written under `.cosheaf/tasks/`. The `cosheaf task create`, `cosheaf task list`, and `cosheaf task complete` CLI commands are local filesystem stubs only: they do not call LLMs, do not make network calls, and do not execute model-provider worker runtimes.
 
@@ -353,10 +370,14 @@ gatekeeper result.
 - Query API tests in `tests/test_index_query.py`.
 - Gatekeeper reports in `cosheaf/gates/gatekeeper.py`.
 - Gatekeeper tests in `tests/test_gatekeeper.py`.
-- Ranked context pack generation in `cosheaf/agent/context_pack.py`.
+- Context-pack v2 generation in `cosheaf/agent/context_pack.py`, using
+  `ArtifactCard` retrieval by default with explicit full-artifact budgets and
+  retrieval audit output.
 - Formal-link metadata display in context packs without Lean verification
   claims.
-- Context pack CLI commands `cosheaf context build <issue-id>` and `cosheaf context show <issue-id>`.
+- Context pack CLI commands `cosheaf context build <issue-id>` and `cosheaf
+  context show <issue-id>`, including `--role`, `--max-cards`,
+  `--max-full-artifacts`, and `--public-only`.
 - Context pack tests in `tests/test_context_pack.py`.
 - Agent task model in `cosheaf/agent/task.py`.
 - Worker output bundle contract in `cosheaf/agent/worker_contract.py`.

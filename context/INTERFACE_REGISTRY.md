@@ -47,10 +47,31 @@
 - `cosheaf gate run --repo-root <path>`: runs the gatekeeper for an explicit repository root.
 - `cosheaf gate run --persist-review`: also persists report copies under `reviews/gatekeeper/`.
 - `cosheaf gate run --pr-checklist <path>`: validates a local PR checklist markdown file through G8 without using GitHub API or network access.
-- `cosheaf context build <issue-id>`: builds a bounded deterministic context pack under `context/TASKS/<issue-id>/`.
-- `cosheaf context build <issue-id> --repo-root <path>`: builds a context pack for an explicit repository root.
-- `cosheaf context show <issue-id>`: builds the context pack and prints `CONTEXT.md`.
-- `cosheaf context show <issue-id> --repo-root <path>`: shows context for an explicit repository root.
+- `cosheaf context build <issue-id>`: builds a bounded deterministic context
+  pack under `context/TASKS/<issue-id>/`.
+- `cosheaf context build <issue-id> --repo-root <path>`: builds a context
+  pack for an explicit repository root.
+- `cosheaf context build <issue-id> --role <role>`: records the retrieval role
+  used for context-pack budgets. The default role is `orchestrator`.
+- `cosheaf context build <issue-id> --max-cards <n>`: bounds card search
+  before issue-local filtering. The default is `20`.
+- `cosheaf context build <issue-id> --max-full-artifacts <n>`: explicitly
+  allows at most `n` full YAML artifact pulls into `FULL_ARTIFACTS.md`. The
+  default is `0`, so default context is cards-only.
+- `cosheaf context build <issue-id> --public-only`: excludes private cards and
+  private artifact IDs from the rendered context and retrieval audit.
+- `cosheaf context show <issue-id>`: builds the context pack and prints
+  `CONTEXT.md`.
+- `cosheaf context show <issue-id> --repo-root <path>`: shows context for an
+  explicit repository root.
+- `cosheaf context show <issue-id> --role <role>`: uses the same retrieval role
+  option as `context build`.
+- `cosheaf context show <issue-id> --max-cards <n>`: uses the same card bound
+  option as `context build`.
+- `cosheaf context show <issue-id> --max-full-artifacts <n>`: uses the same
+  explicit full-artifact budget option as `context build`.
+- `cosheaf context show <issue-id> --public-only`: uses the same private
+  exclusion behavior as `context build`.
 - `cosheaf memory cards`: builds deterministic artifact cards from existing
   repository metadata. Default output is compact text lines, not full artifact
   YAML or statements.
@@ -372,11 +393,12 @@ The memory package also exposes:
   builds one card from a loaded lifecycle artifact record.
 - `cosheaf.memory.DEFAULT_CARD_SCOPES`: default public-output scope set,
   containing `public`, `workspace`, and `framework`, excluding `private`.
-- `cosheaf.memory.search_artifact_cards(context: RepoContext, *, query: str, issue_id: str | None = None, status: ArtifactCardStatus | str | None = None, max_cards: int = 20, allowed_scopes: tuple[MemoryRootScope, ...] | None = None, seed_artifacts: tuple[str, ...] = (), pinned_artifacts: tuple[str, ...] = (), include_refuted: bool = False, include_obsolete: bool = False, score_weights: RetrievalScoreWeights = RetrievalScoreWeights()) -> RetrievalResult`:
+- `cosheaf.memory.search_artifact_cards(context: RepoContext, *, query: str, issue_id: str | None = None, status: ArtifactCardStatus | str | None = None, max_cards: int = 20, allowed_scopes: tuple[MemoryRootScope, ...] | None = None, seed_artifacts: tuple[str, ...] = (), pinned_artifacts: tuple[str, ...] = (), include_refuted: bool = False, include_obsolete: bool = False, role: RetrievalRole | str = RetrievalRole.LIBRARIAN, max_full_artifacts: int = 0, score_weights: RetrievalScoreWeights = RetrievalScoreWeights()) -> RetrievalResult`:
   searches deterministic artifact cards with SQLite FTS5/BM25 when available,
   deterministic lexical fallback otherwise, and in-memory Personalized
-  PageRank/global PageRank/freshness/penalty scoring. It does not write memory
-  sidecars.
+  PageRank/global PageRank/freshness/penalty scoring. It records retrieval
+  role and full-artifact budget metadata in the request but still returns
+  cards by default and does not write memory sidecars.
 - `cosheaf.memory.build_memory_graph(context: RepoContext, *, persist: bool = False) -> MemoryGraphSnapshot`:
   builds the deterministic memory graph from repository YAML plus optional
   local sidecar signals. With `persist=True`, it writes the rebuildable
@@ -396,11 +418,12 @@ loader. Search uses an in-memory SQLite FTS5 table and in-memory memory graph
 ranking when available and does not write `.cosheaf/memory/` sidecars. Memory
 graph build writes only the rebuildable graph snapshot sidecar, and PageRank
 reads that sidecar without implicitly rebuilding it. The memory package does
-not add embeddings, context-pack v2 behavior, hosted LLM workers,
-accepted-promotion shortcuts, formal checking, or artifact schema changes. By
+not add embeddings, hosted LLM workers, accepted-promotion shortcuts, formal
+checking, or artifact schema changes. Context-pack v2 consumes memory search
+cards while preserving bounded output and issue-local relevance filters. By
 default, configured private KB roots are excluded from `cosheaf memory cards`
-and `cosheaf memory search`; callers must not treat memory output as accepted
-knowledge or human review.
+and `cosheaf memory search`; callers must not treat memory output, graph
+scores, or context-pack scores as accepted knowledge or human review.
 
 #### Core Enums
 
@@ -667,18 +690,19 @@ G10 `GateResult.details` entries use:
 
 - `cosheaf.agent.context_pack.ContextPackError`: expected context pack generation error, such as a missing issue ID.
 - `cosheaf.agent.context_pack.ContextPackResult`: written context pack metadata with issue ID, task directory, and file paths.
-- `cosheaf.agent.context_pack.build_context_pack(context: RepoContext, issue_id: str) -> ContextPackResult`
-- `cosheaf.agent.context_pack.show_context_pack(context: RepoContext, issue_id: str) -> str`
+- `cosheaf.agent.context_pack.build_context_pack(context: RepoContext, issue_id: str, *, role: RetrievalRole | str = RetrievalRole.ORCHESTRATOR, max_cards: int = 20, max_full_artifacts: int | None = None, public_only: bool = False) -> ContextPackResult`
+- `cosheaf.agent.context_pack.show_context_pack(context: RepoContext, issue_id: str, *, role: RetrievalRole | str = RetrievalRole.ORCHESTRATOR, max_cards: int = 20, max_full_artifacts: int | None = None, public_only: bool = False) -> str`
 
 Context pack generation loads repository YAML records, finds an issue by ID,
-selects and ranks artifacts from direct `related_artifacts`, one-hop dependency
-neighbors, artifact domains that match issue text or tags, and artifact tags
-that match issue tags. Ranking is deterministic and each listed artifact
-includes explainable `reasons`. Accepted artifacts are preferred over draft
-artifacts within the same relevance class. Draft artifacts are visibly labeled
-as `[DRAFT]`; refuted, obsolete, and superseded artifacts are included only when
-relevant and are labeled with their terminal status. Context pack files are
-written under `context/TASKS/<issue-id>/`.
+retrieves compact `ArtifactCard` rows, and filters those cards through the
+issue-local relevance rules used by the previous context-pack implementation:
+direct `related_artifacts`, one-hop dependency neighbors, artifact domains that
+match issue text or tags, and artifact tags that match issue tags. Ranking is
+deterministic. Accepted artifacts are preferred over draft artifacts within the
+same relevance class. Draft artifacts are visibly labeled as `[DRAFT]`;
+refuted, obsolete, and superseded artifacts are included only when relevant and
+are labeled with their terminal status. Context pack files are written under
+`context/TASKS/<issue-id>/`.
 
 Generated context pack files are:
 
@@ -686,13 +710,23 @@ Generated context pack files are:
 - `ACCEPTANCE.md`
 - `RELEVANT_ARTIFACTS.md`
 - `KNOWN_FAILURES.md`
+- `FULL_ARTIFACTS.md`
+- `RETRIEVAL_AUDIT.json`
 - `COMMANDS.md`
 
 `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and the artifact sections inside
-`CONTEXT.md` use lines containing artifact ID, title, status, source path, and
-ranking reasons. When a relevant artifact has formal-link metadata or
-policy-relevant formal settings, the artifact entry also includes compact
-formal-link metadata lines:
+`CONTEXT.md` use card-level lines containing artifact ID, title, status,
+source path, retrieval score, root scope, and combined issue/retrieval reasons.
+Full artifact YAML is not included in those card sections. The orchestrator
+default is `max_full_artifacts = 0`; full YAML can appear only in
+`FULL_ARTIFACTS.md` when the caller explicitly passes a positive
+`max_full_artifacts` budget. `RETRIEVAL_AUDIT.json` records the request, role,
+card bound, public-only flag, score breakdowns, filters, exclusions, warnings,
+and full-artifact pull audit entries. `public_only=True` excludes private cards
+and private artifact IDs from both rendered context and audit output.
+
+When a relevant artifact has formal-link metadata or policy-relevant formal
+settings, the artifact entry also includes compact formal-link metadata lines:
 
 - `Formal links:` entries ordered by formalization ID, rendered as
   `<library>@<library_ref>:<import_path>#<symbol> [<kind>, <status>, <mode>]`
@@ -703,7 +737,8 @@ formal-link metadata lines:
 
 These context-pack lines are metadata-only handoff context. They do not load
 gate reports, do not claim the current G10 verdict, and do not claim Lean
-verification.
+verification. Retrieval scores are ranking metadata only and do not authorize
+review, promotion, proof, or public/private policy bypasses.
 
 #### Agent Tasks
 

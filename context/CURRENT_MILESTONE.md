@@ -2,14 +2,15 @@
 
 ## Milestone
 
-Phase 3 Task 3.1: memory policy docs and ADR.
+Phase 3 Task 3.7: context pack v2 integration.
 
 ## Goal
 
-Add durable memory-policy documentation before librarian implementation starts.
-This task is documentation-only and must not change application code, schemas,
-gate behavior, accepted-promotion semantics, verifier behavior, or KB
-artifacts.
+Integrate local librarian retrieval into context pack generation while
+preserving bounded, auditable context. The default context handoff should use
+compact `ArtifactCard` rows, keep orchestrator context cards-only by default,
+and require an explicit full-artifact budget before writing full YAML into the
+generated context pack.
 
 ## Current Baseline
 
@@ -19,9 +20,10 @@ artifacts.
 - Phase 1 workspace-template reconciliation and Phase 2 public-KB policy
   groundwork have landed in their respective repositories.
 - Framework package version is `0.1.1`.
-- `tcs-cosheaf` has workspace-aware validation, gatekeeper G1-G10, deterministic
-  index rebuilds, a Python query API, context-pack generation, local task-runner
-  scaffolding, and minimal optional SAT, SMT, and plain Lean verifier adapters.
+- `tcs-cosheaf` has workspace-aware validation, gatekeeper G1-G10,
+  deterministic index rebuilds, a Python query API, artifact-card retrieval,
+  memory graph/PageRank surfaces, local task-runner scaffolding, and minimal
+  optional SAT, SMT, and plain Lean verifier adapters.
 - Formal-link metadata is implemented as artifact metadata, G10 static gate
   checks, context-pack display, and index/query output.
 - External Lean-library `#check` for CSLib/mathlib references is not
@@ -35,25 +37,29 @@ artifacts.
 
 ## Completion Criteria
 
-- `docs/MEMORY_POLICY.md` records hot/warm/cold memory, artifact cards,
-  retrieval request/result schemas, graph nodes and edges, ranking formula,
-  sidecar files, public/private filtering, the no-whole-repo-dump rule, and
-  librarian authority boundaries.
-- `docs/ADR/0009-librarian-memory-policy.md` records why the librarian starts
-  deterministic-first.
-- `docs/ARCHITECTURE.md` includes the planned Memory/Retrieval Layer without
-  claiming that librarian code already exists.
-- No code, schema, gate, promotion-policy, workflow-behavior, verifier, or KB
-  artifact changes are included.
-- Required validation commands are run when available, and unavailable commands
-  are reported honestly.
+- `cosheaf context build` and `cosheaf context show` use `ArtifactCard` rows by
+  default.
+- The default `orchestrator` role has `max_full_artifacts = 0`.
+- Full artifact YAML appears only in `FULL_ARTIFACTS.md` when a caller passes a
+  positive `--max-full-artifacts` budget.
+- Generated context packs include `RETRIEVAL_AUDIT.json` with request, score,
+  exclusion, warning, and full-artifact-pull metadata.
+- Public-only context excludes private cards and private artifact IDs from both
+  rendered context and audit output.
+- Tests cover bounded output, role-specific full-artifact budget behavior, CLI
+  options, and private-leakage prevention.
+- `docs/MEMORY_POLICY.md`, `docs/ARCHITECTURE.md`, and
+  `context/INTERFACE_REGISTRY.md` describe the new context-pack v2 behavior.
+- No hosted LLM runtime, agent autonomy, autoformalization, external
+  Lean-library checking, artifact schema change, gate behavior change, or
+  promotion-policy change is included.
 
 ## Next Focus
 
-After this documentation-only task lands, continue Phase 3 with Task 3.2:
-ArtifactCard and related retrieval request/result models. Do not implement
-librarian retrieval, graph ranking, context-pack v2 integration, orchestrator
-runtime, hosted LLM workers, or external Lean-library checking in Task 3.1.
+After Task 3.7 lands, continue with Phase 4 Task 4.1: orchestrator state model.
+That task should define explicit serializable state models without changing
+runtime behavior, without hosted LLM calls, without auto-promotion, and without
+direct accepted writes.
 
 Maintain the current maintainer override for this run: do not add `codex`
 prefixes to issue names, branch names, or PR titles, even when older examples
