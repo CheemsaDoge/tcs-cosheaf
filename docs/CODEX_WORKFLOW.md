@@ -178,6 +178,21 @@ repository-local directories containing `bundle.yaml`. Neither mode merges
 outputs into accepted knowledge or promotes artifacts. Accepted knowledge still
 enters only through review, gates, and `cosheaf artifact promote`.
 
+## Local Orchestrator Dry-Run
+
+Use `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only` to
+exercise the deterministic issue plan with local fake workers. The default
+dry-run worker writes worker bundle v2 manifests for the reasoner, verifier, and
+orchestrator steps under `.cosheaf/orchestrator/<issue-id>/runs/<run-id>/`.
+Those bundles are review context only. They may name proposal paths under
+`.cosheaf/orchestrator/.../proposals/`, but the dry-run does not write those
+proposal artifacts, does not write `kb/accepted/`, does not create human review
+records, does not run gates, and does not promote artifacts.
+
+Treat the generated verifier bundle as a checklist reminder, not as a verifier
+pass. Real validation, gatekeeper runs, verifier adapters, human review, and
+promotion remain explicit follow-up steps outside the dry-run workflow.
+
 ## Context Packs
 
 Use `cosheaf context build <issue-id>` to generate a bounded task context pack

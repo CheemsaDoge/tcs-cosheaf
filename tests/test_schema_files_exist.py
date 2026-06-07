@@ -46,7 +46,9 @@ SCHEMA_FILES = [
 
 EXAMPLE_FILES = [
     "examples/issues/issue.example.yaml",
+    "examples/issues/issue.agent-dry-run.demo.yaml",
     "examples/claims/claim.example.yaml",
+    "examples/claims/claim.agent-dry-run.demo.yaml",
     "examples/claims/claim.formal-link.example.yaml",
     "examples/proofs/proof.example.yaml",
     "examples/constructions/graph.example.yaml",

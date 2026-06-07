@@ -237,6 +237,15 @@ This is still a dry-run workflow: it does not call hosted LLMs, make network
 calls, run gates, request human review, merge outputs, write accepted
 knowledge, or promote artifacts.
 
+The default local dry-run worker command is implemented by
+`cosheaf.agent.dry_run_workers`. It generates role-aware worker bundle v2
+manifests for the planner's reasoner, verifier, and orchestrator nodes. The
+reasoner output is candidate review context only, the verifier output records
+that no real gate, Lean, SAT, SMT, or promotion result was produced, and all
+proposal paths remain under `.cosheaf/orchestrator/.../proposals/`. The worker
+does not write proposed artifacts; it only writes the bundle manifest that the
+runner validates and reduces.
+
 The local worker runner is not an LLM runtime or model-provider integration. It
 executes only an explicit argv command with `shell=False`, defaults to the
 repository root as its working directory, rejects working directories outside
