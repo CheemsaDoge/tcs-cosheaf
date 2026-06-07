@@ -29,8 +29,8 @@ Each `formalizations` entry records a complete declaration reference:
 - `id`: stable local identifier for the link.
 - `system`: currently `lean4`.
 - `library`: source library name, for example `CSLib` or `mathlib`.
-- `library_ref`: library-level reference such as a module, package, commit, or
-  catalog key.
+- `library_ref`: manifest library ID, for example `cslib-main` or
+  `mathlib-main`.
 - `import_path`: Lean import path.
 - `symbol`: declaration name.
 - `declaration_kind`: `definition`, `theorem`, `lemma`, `instance`,
@@ -42,8 +42,41 @@ Each `formalizations` entry records a complete declaration reference:
 
 YAML stores these references, not Lean proof bodies. A `formalizations` entry
 must not be used as a place to paste library proofs. Link IDs use the same
-dot-separated lowercase slug format as artifact IDs. `library`, `library_ref`,
-`import_path`, and `symbol` must be non-empty after trimming whitespace.
+dot-separated lowercase slug format as artifact IDs. `library_ref` uses the
+formal library manifest ID syntax, which is lowercase slug or dotted lowercase
+slug segments such as `cslib-main` or `lean.mathlib-main`; it is not a Lean
+module path. `library`, `import_path`, and `symbol` must be non-empty after
+trimming whitespace.
+
+## Formal Library Manifest
+
+Formal library manifests pin external Lean library metadata once, so artifacts
+do not repeat repository and commit information in every formalization link.
+The example manifest lives at:
+
+- `formal-libs/lean-libraries.example.yaml`
+
+The manifest schema lives at:
+
+- `schemas/formal_library.schema.json`
+
+Each manifest entry records:
+
+- `id`: stable manifest ID used by `formalizations[].library_ref`.
+- `name`: human-readable library name.
+- `system`: currently `lean4`.
+- `git`: source repository URL for the external library.
+- `commit`: pinned revision.
+- `lean_version`: Lean version associated with the pin.
+- `lake_manifest`: manifest file or fingerprint reference for the pin.
+- `notes`: optional maintainer notes.
+
+The manifest is metadata. Loading or validating it does not fetch CSLib,
+mathlib, or any other library; it does not run `lean`, `lake`, or `#check`;
+and it does not prove that an artifact statement is aligned with a formal
+declaration. Artifact `library_ref` values can be checked against a manifest by
+using the core helper API, but this phase does not add a gate, verifier adapter,
+or CLI command that performs external Lean library checking.
 
 ## Alignment Review
 

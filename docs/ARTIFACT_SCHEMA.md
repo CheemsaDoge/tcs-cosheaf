@@ -99,8 +99,16 @@ Each formalization reference includes:
 - `notes`: optional, defaults to an empty string
 
 Formalization reference IDs use the same dot-separated lowercase slug format as
-artifact IDs. `library`, `library_ref`, `import_path`, and `symbol` must be
-non-empty after trimming whitespace.
+artifact IDs. `library_ref` is a formal library manifest ID such as
+`cslib-main` or `mathlib-main`; it is not a Lean module path. `library`,
+`import_path`, and `symbol` must be non-empty after trimming whitespace.
+Manifest IDs are pinned in formal library manifest files such as
+`formal-libs/lean-libraries.example.yaml`, whose schema is
+`schemas/formal_library.schema.json`.
+
+Formal library manifests are metadata for external-library references. They do
+not fetch CSLib/mathlib, run Lean or lake, check symbol existence, or prove
+informal/formal semantic alignment.
 
 Formal declaration references must not be stored in `evidence`. The `evidence`
 field remains for executable or otherwise evidence-like inputs; formal-library
@@ -209,6 +217,7 @@ The initial JSON Schema files are:
 - `schemas/issue.schema.json`
 - `schemas/review.schema.json`
 - `schemas/verifier.schema.json`
+- `schemas/formal_library.schema.json`
 
 ## Pydantic Models
 
@@ -221,6 +230,8 @@ The initial Pydantic v2 model layer lives under `cosheaf/core/`:
 - `cosheaf.core.artifact.FormalizationRef`
 - `cosheaf.core.artifact.AlignmentReview`
 - `cosheaf.core.artifact.VerificationPolicy`
+- `cosheaf.core.formal_library.FormalLibrary`
+- `cosheaf.core.formal_library.FormalLibraryManifest`
 - `cosheaf.core.artifact.Risk`
 - `cosheaf.core.status.ArtifactType`
 - `cosheaf.core.status.ArtifactStatus`
@@ -263,11 +274,12 @@ preserving draft, private, and legacy single-root behavior.
 The Formal Link Layer is implemented as optional schema/model metadata, an
 example artifact, G10 static metadata validation, context-pack display, and
 SQLite/query metadata surfaces. It records Lean-library
-declaration references without adding CSLib/mathlib dependencies, without
-requiring network access, and without changing accepted promotion semantics
-beyond ordinary gatekeeper blocking behavior. G10 does not execute Lean, does
-not fetch or inspect external Lean libraries, and does not prove
-informal/formal semantic alignment. Context packs and query APIs expose the
-same metadata without claiming that Lean verified the informal statement. The
-implementation does not add formal-link CLI commands or verifier execution for
-external library references.
+declaration references plus optional formal library manifest metadata without
+adding CSLib/mathlib dependencies, without requiring network access, and
+without changing accepted promotion semantics beyond ordinary gatekeeper
+blocking behavior. G10 does not execute Lean, does not fetch or inspect
+external Lean libraries, and does not prove informal/formal semantic
+alignment. Context packs and query APIs expose the same metadata without
+claiming that Lean verified the informal statement. The implementation does
+not add formal-link CLI commands or verifier execution for external library
+references.

@@ -240,6 +240,20 @@ gates, index rebuilds, context packs, promotion, or default installation.
   declaration.
 - `cosheaf.core.artifact.VerificationPolicy`: Pydantic v2 model for
   per-artifact formal-link, Lean-check, and alignment-review expectations.
+- `cosheaf.core.formal_library.FormalLibrary`: Pydantic v2 model for one
+  pinned external Lean library manifest entry.
+- `cosheaf.core.formal_library.FormalLibraryManifest`: Pydantic v2 model for a
+  manifest of external Lean libraries referenced by artifact metadata.
+- `cosheaf.core.formal_library.FormalLibraryManifestError`: expected manifest
+  or library-reference validation error.
+- `cosheaf.core.formal_library.validate_library_ref(value: str) -> str`:
+  validates the manifest library ID syntax used by
+  `formalizations[].library_ref`.
+- `cosheaf.core.formal_library.validate_formalization_library_refs(refs,
+  manifest) -> None`: requires each formalization reference to resolve against
+  a loaded formal library manifest.
+- `cosheaf.core.formal_library.load_formal_library_manifest(path) ->
+  FormalLibraryManifest`: loads a YAML formal library manifest.
 - `cosheaf.core.task.AgentTask`: Pydantic v2 model for local task records, re-exported through `cosheaf.agent.task.AgentTask`.
 
 `BaseArtifact` fields include:
@@ -279,8 +293,30 @@ gates, index rebuilds, context packs, promotion, or default installation.
 - `notes`: optional, defaults to an empty string
 
 Formalization reference IDs use the same dot-separated lowercase slug format
-as artifact IDs. `library`, `library_ref`, `import_path`, and `symbol` are
-required non-empty strings.
+as artifact IDs. `library_ref` is a formal library manifest ID such as
+`cslib-main` or `mathlib-main`; it is not a Lean module path. `library`,
+`import_path`, and `symbol` are required non-empty strings.
+
+`FormalLibrary` fields are:
+
+- `id`: manifest library ID, matching the `library_ref` syntax.
+- `name`
+- `system`: currently `lean4`
+- `git`
+- `commit`
+- `lean_version`
+- `lake_manifest`
+- `notes`
+
+`FormalLibraryManifest` fields are:
+
+- `schema_version`: currently `1`
+- `libraries: list[FormalLibrary]`
+
+`FormalLibraryManifest.library_ids -> tuple[str, ...]` returns manifest IDs in
+manifest order. `FormalLibraryManifest.get_library(library_ref)` returns a
+library entry or `None`. `FormalLibraryManifest.require_library_ref(library_ref)`
+returns the entry or raises `FormalLibraryManifestError`.
 
 `AlignmentReview` fields are:
 
@@ -305,12 +341,13 @@ Alignment statuses `human_reviewed` and `rejected` require a non-empty
 `lean_required` requires both `require_formal_link: true` and
 `require_lean_check: true`.
 
-Formalization links are metadata references to external declarations. They are
-not copied Lean proof bodies and are not stored in `evidence`. G10 statically
-checks consistency between `formalizations`, `alignment`, and
-`verification_policy`, but it does not execute Lean, inspect CSLib/mathlib
-libraries, prove informal/formal alignment, or change accepted promotion
-semantics beyond ordinary gatekeeper blocking behavior.
+Formalization links and formal library manifests are metadata references to
+external declarations and library pins. They are not copied Lean proof bodies
+and are not stored in `evidence`. G10 statically checks consistency between
+`formalizations`, `alignment`, and `verification_policy`, but it does not
+execute Lean, inspect CSLib/mathlib libraries, resolve manifest checkouts,
+prove informal/formal alignment, or change accepted promotion semantics beyond
+ordinary gatekeeper blocking behavior.
 
 #### Memory/Retrieval Models
 
@@ -1235,13 +1272,19 @@ the repository root as cwd.
   Artifact `sources` accepts structured source metadata entries with `kind`,
   `title`, `authors`, `year`, `doi`, `arxiv`, `url`, `theorem_number`, `page`,
   and `notes`. Artifact `formalizations` accepts strict formal declaration
-  reference entries with `system`, `library`, `import_path`, `symbol`,
-  `declaration_kind`, `status`, `check_mode`, `expected_type`, and `notes`.
+  reference entries with `system`, `library`, manifest-ID `library_ref`,
+  `import_path`, `symbol`, `declaration_kind`, `status`, `check_mode`,
+  `expected_type`, and `notes`.
   Artifact `alignment` accepts semantic alignment review metadata. Artifact
   `verification_policy` accepts formal-link, Lean-check, and alignment-review
   policy metadata. Formalization references are separate from `evidence`; this
   schema does not add formal-link CLI commands or verifier execution, but G10,
   context packs, and the deterministic index/query surfaces read this metadata.
+- `schemas/formal_library.schema.json`: formal library manifest schema for
+  pinned external Lean library metadata. It requires `schema_version: 1` and at
+  least one library entry with `id`, `name`, `system`, `git`, `commit`,
+  `lean_version`, and `lake_manifest`; `notes` is optional. This schema is
+  metadata-only and does not imply Lean, lake, CSLib, or mathlib execution.
 - `schemas/issue.schema.json`: issue YAML schema.
 - `schemas/review.schema.json`: review YAML schema.
 - `schemas/verifier.schema.json`: verifier result schema.
@@ -1254,6 +1297,13 @@ the repository root as cwd.
   `failures_or_counterexamples`, `risk_flags`, `next_steps`, and
   `confidence`. It does not authorize accepted writes, review-state changes,
   worker execution, or promotion.
+
+### Formal Library Manifest Files
+
+- `formal-libs/lean-libraries.example.yaml`: example Lean formal library
+  manifest. The example uses placeholder `example.invalid` repositories and
+  illustrative commit/version values. It is a template for pinned metadata,
+  not evidence that CSLib or mathlib was fetched, built, or checked.
 
 ### Workspace Config Files
 

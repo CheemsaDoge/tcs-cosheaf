@@ -7,6 +7,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from cosheaf.core.formal_library import validate_library_ref
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.status import ArtifactStatus, ArtifactType
 
@@ -137,6 +138,11 @@ class FormalizationRef(BaseModel):
     @classmethod
     def _validate_id(cls, value: str) -> str:
         return validate_artifact_id(value)
+
+    @field_validator("library_ref")
+    @classmethod
+    def _validate_library_ref(cls, value: str) -> str:
+        return validate_library_ref(value)
 
 
 class AlignmentReview(BaseModel):
