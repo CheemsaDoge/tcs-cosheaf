@@ -45,6 +45,20 @@ Decision: accept as an opt-in local source-ingestion adapter. MarkItDown may
 convert local source files such as PDFs, Office documents, HTML, CSV, JSON, XML,
 or text into staged Markdown for review.
 
+Implemented surface:
+
+```text
+cosheaf ingest convert <path>
+cosheaf ingest convert <path> --out <dir>
+cosheaf ingest convert <path> --metadata-json
+cosheaf ingest convert <path> --repo-root <path>
+```
+
+The command defaults to `.cosheaf/ingest/` runtime output and writes a Markdown
+file plus deterministic provenance metadata when MarkItDown is installed. If
+MarkItDown is absent, it exits nonzero with install guidance. MarkItDown is not
+a default dependency.
+
 MarkItDown output is source material, not accepted knowledge. Converted
 Markdown may support source notes, private draft proposals, or explorer tasks.
 It must not directly create accepted artifacts, human review records, verifier
@@ -66,12 +80,12 @@ Disallowed behavior:
   default.
 - Copy private material into public KB paths.
 
-Install surface for future work: optional extra only, for example an `ingest`
-extra or documented manual install. The default framework install must continue
-to work without MarkItDown.
+Install surface: documented manual install only for the current MVP, for
+example `pip install markitdown`. The default framework install must continue to
+work without MarkItDown.
 
-Fallback: if MarkItDown is not installed, an explicit ingest command should
-report unavailable/skipped with install guidance. Core validation and gates
+Fallback: if MarkItDown is not installed, the explicit ingest command reports
+unavailable with install guidance and exits nonzero. Core validation and gates
 must continue normally.
 
 Rollback trigger: remove or disable the adapter if it can write accepted KB,

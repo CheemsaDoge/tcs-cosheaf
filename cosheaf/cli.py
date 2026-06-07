@@ -41,6 +41,7 @@ from cosheaf.gates.gatekeeper import (
 )
 from cosheaf.gates.source_metadata_gate import missing_required_source_metadata
 from cosheaf.graph.claim_graph import DependencyGraph, build_dependency_graph
+from cosheaf.ingest import IngestError, MarkItDownIngestAdapter
 from cosheaf.memory import (
     MEMORY_GRAPH_SIDECAR,
     ArtifactCardStatus,
@@ -98,6 +99,11 @@ workspace_app = typer.Typer(
     help="Workspace configuration commands.",
     no_args_is_help=True,
 )
+ingest_app = typer.Typer(
+    add_completion=False,
+    help="Source ingestion commands.",
+    no_args_is_help=True,
+)
 memory_app = typer.Typer(
     add_completion=False,
     help="Deterministic memory/card commands.",
@@ -115,6 +121,7 @@ app.add_typer(gate_app, name="gate")
 app.add_typer(context_app, name="context")
 app.add_typer(task_app, name="task")
 app.add_typer(workspace_app, name="workspace")
+app.add_typer(ingest_app, name="ingest")
 app.add_typer(memory_app, name="memory")
 memory_app.add_typer(memory_graph_app, name="graph")
 
@@ -352,6 +359,52 @@ def index_rebuild(
         f"{result.sqlite_path} and {result.manifest_path} "
         f"({result.artifact_count} artifact(s), {result.edge_count} edge(s))."
     )
+
+
+@ingest_app.command("convert")
+def ingest_convert(
+    path: Path = typer.Argument(..., help="Repository-local source file to convert."),
+    out_dir: Path = typer.Option(
+        Path(".cosheaf/ingest"),
+        "--out",
+        help="Repository-local staging directory for Markdown and metadata output.",
+    ),
+    metadata_json: bool = typer.Option(
+        False,
+        "--metadata-json",
+        help="Emit deterministic provenance metadata JSON.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used to resolve source and output paths.",
+    ),
+) -> None:
+    """Convert a local source file into staged Markdown with provenance."""
+    console = Console(width=120, markup=False)
+    try:
+        result = MarkItDownIngestAdapter().convert(
+            RepoContext(repo_root),
+            path,
+            out_dir=out_dir,
+        )
+    except IngestError as exc:
+        console.print(f"Ingest failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if metadata_json:
+        typer.echo(result.to_json(), nl=False)
+    else:
+        console.print(f"Ingest status: {result.status}")
+        if result.output_path is not None:
+            console.print(f"- output: {result.output_path}")
+        if result.metadata_path is not None:
+            console.print(f"- metadata: {result.metadata_path}")
+        if result.message:
+            console.print(f"- note: {result.message}")
+
+    if result.status == "unavailable":
+        raise typer.Exit(code=1)
 
 
 @graph_app.command("show")

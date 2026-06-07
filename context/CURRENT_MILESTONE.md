@@ -2,13 +2,13 @@
 
 ## Milestone
 
-Phase 2 Task 2.3: source ingestion policy for MarkItDown.
+Phase 2 Task 2.4: MarkItDown local source-ingestion adapter.
 
 ## Goal
 
-Define a safe source-ingestion boundary before any MarkItDown adapter,
-dependency, CLI command, script, CI path, schema, gate, verifier, promotion, or
-runtime behavior is added.
+Add an optional local-file MarkItDown adapter for converting repository-local
+source files into staged Markdown with provenance metadata, while preserving
+the source-ingestion boundary.
 
 ## Current Baseline
 
@@ -31,38 +31,44 @@ runtime behavior is added.
 - External Lean-library `#check` for CSLib/mathlib references is not
   implemented.
 - Hosted LLM worker execution is not implemented.
-- MarkItDown, Headroom, CodeGraph, and Understand-Anything are not installed,
-  not default dependencies, and not part of runtime behavior.
+- MarkItDown, Headroom, CodeGraph, and Understand-Anything are not default
+  dependencies.
 - Phase 0 Task 0.3 recorded external-tool boundaries in
   `docs/EXTERNAL_TOOLS.md` and
   `docs/ADR/0011-external-tooling-boundaries.md`.
+- Phase 2 Task 2.3 recorded the source-ingestion boundary in
+  `docs/SOURCE_INGESTION.md` and
+  `docs/ADR/0012-source-ingestion-boundary.md`.
 
 ## Completion Criteria
 
-- `docs/SOURCE_INGESTION.md` records source ingestion as staging only, not
-  validation, gatekeeping, verification, human review, accepted knowledge, or
-  promotion evidence.
-- `docs/ADR/0012-source-ingestion-boundary.md` records the architectural
-  decision before implementation begins.
-- MarkItDown is documented as a future optional local-file converter that must
-  preserve provenance: original path, input hash, converter version, timestamp,
-  options, warnings, output path, and execution metadata where applicable.
-- Converted Markdown may feed source notes, explorer tasks, or draft proposals
-  only.
+- `cosheaf ingest convert <path>` converts a repository-local source file into
+  staged Markdown and provenance metadata when optional MarkItDown support is
+  installed.
+- `cosheaf ingest convert <path> --metadata-json` emits deterministic
+  provenance JSON.
+- Missing MarkItDown reports unavailable with install guidance and does not
+  affect validation, gates, index rebuilds, context packs, promotion, or
+  default installation.
+- Provenance records the original path, input SHA-256, converter name/version,
+  timestamp, options, warnings, output path, and metadata path.
 - URL, OCR, plugins, LLM vision, and Azure Document Intelligence remain
   disabled by default.
-- Untrusted input must run through a bounded subprocess or documented sandbox
-  boundary.
-- No adapter code, package dependency, CLI command, script, schema, gate,
-  verifier, promotion, public/private KB behavior, or runtime behavior changes
-  in this task.
+- Source and output paths must stay inside the repository, and accepted KB
+  output paths are rejected.
+- Converted Markdown may feed source notes, explorer tasks, or draft proposals
+  only.
+- The adapter does not write artifact YAML, review records, verifier results,
+  accepted knowledge, or promotion evidence.
+- No schema, gate, verifier, promotion, public/private KB, workspace root, or
+  default dependency changes in this task.
 
 ## Next Focus
 
-After Phase 2 Task 2.3 lands, the next fixed-plan item is Phase 2 Task 2.4:
-implement the optional local-file MarkItDown source-ingestion adapter. That
-implementation must follow `docs/SOURCE_INGESTION.md` and keep MarkItDown
-optional.
+After Phase 2 Task 2.4 lands, the next fixed-plan item is Phase 2 Task 2.5:
+add exactly one small public foundation artifact in `tcs-kb-public`, only if
+reliable source metadata and required review evidence are available. Prefer
+draft status unless accepted-policy evidence is complete.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show

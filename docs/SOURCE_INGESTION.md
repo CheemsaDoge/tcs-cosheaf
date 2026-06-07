@@ -25,23 +25,45 @@ An ingestion result may help with steps 1 or 2, but it does not satisfy steps
 
 ## MarkItDown Role
 
-Microsoft MarkItDown may be added later as an optional local-file conversion
-adapter. Its role is to convert local source files, such as PDFs or Office
-documents, into staged Markdown for review.
+Microsoft MarkItDown is exposed through an optional local-file conversion
+adapter. Its role is to convert repository-local source files, such as PDFs or
+Office documents, into staged Markdown for review.
 
-A future MarkItDown adapter must stay optional. The default framework install,
-CI, validation, gates, promotion, index rebuilds, context packs, and verifier
-flows must continue to work when MarkItDown is absent.
+The adapter stays optional. The default framework install, CI, validation,
+gates, promotion, index rebuilds, context packs, and verifier flows continue to
+work when MarkItDown is absent.
+
+## CLI Surface
+
+The MVP command is:
+
+```text
+cosheaf ingest convert <path>
+cosheaf ingest convert <path> --out <dir>
+cosheaf ingest convert <path> --metadata-json
+cosheaf ingest convert <path> --repo-root <path>
+```
+
+By default, converted Markdown and provenance metadata are written under
+`.cosheaf/ingest/`. `--metadata-json` prints the same provenance metadata to
+stdout. If MarkItDown is not installed, the command exits nonzero with install
+guidance; this unavailable result is not a validation, gate, verifier, or
+promotion pass.
+
+This command is for trusted local files already staged in the repository. It
+does not provide a sandbox for hostile documents. Processing untrusted source
+files still requires a future bounded subprocess or documented sandbox
+boundary.
 
 ## Allowed Inputs
 
 The default ingestion surface is repository-local files or explicitly allowed
 local source directories. Remote URL ingestion, plugins, OCR, LLM vision, and
-Azure Document Intelligence are disabled by default and require separate
-future capability flags, tests, audit logging, and review.
+Azure Document Intelligence are disabled by default and require separate future
+capability flags, tests, audit logging, and review.
 
-Untrusted source files must be processed through a bounded subprocess or a
-documented sandbox boundary. A future implementation must record the command,
+The MVP local adapter runs through the optional Python package interface and is
+not a sandbox. A future sandboxed implementation must record the command,
 working directory, timeout, exit code, stdout/stderr logs when applicable, and
 tool version metadata when available.
 
