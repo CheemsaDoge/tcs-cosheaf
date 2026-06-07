@@ -21,6 +21,23 @@ The workspace configuration model contains a workspace name, public/private
 policy fields, and one or more KB roots. Each KB root has a `name`,
 repository-relative `path`, `readonly` flag, and integer `priority`.
 
+### Source Ingestion Layer
+
+Defines the boundary for future local source conversion before source material
+enters artifact or source-note review workflows. The policy is documented in
+[Source Ingestion](SOURCE_INGESTION.md).
+
+This layer is staging only. A future optional MarkItDown adapter may convert
+local source files to Markdown with provenance metadata, but converted output is
+not validation, gatekeeper evidence, verifier evidence, human review, accepted
+artifact truth, or promotion evidence. Converted Markdown may feed source
+notes, explorer tasks, or draft proposals only.
+
+URL, OCR, plugins, LLM vision, and cloud-document capabilities are disabled by
+default for future ingestion work. Missing MarkItDown must not affect core
+validation, gates, index rebuilds, context packs, promotion, tests, or default
+installation.
+
 ### Storage/Index Layer
 
 Loads artifacts from Git-backed paths, builds deterministic indexes, and records repository-local metadata needed by other layers.
