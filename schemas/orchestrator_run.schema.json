@@ -1,0 +1,352 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/orchestrator_run.schema.json",
+  "title": "TCS-Cosheaf Orchestrator Run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "issue_id",
+    "state",
+    "plan",
+    "worker_calls",
+    "reducer_results",
+    "stop_conditions",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "issue_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "created",
+        "planned",
+        "running",
+        "waiting_for_worker",
+        "waiting_for_gate",
+        "waiting_for_review",
+        "blocked",
+        "completed",
+        "failed",
+        "abandoned"
+      ]
+    },
+    "plan": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/plan"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "worker_calls": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/worker_call"
+      }
+    },
+    "reducer_results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reducer_result"
+      }
+    },
+    "stop_conditions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/stop_condition"
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "worker_type": {
+      "type": "string",
+      "enum": [
+        "reasoner",
+        "verifier",
+        "counterexampleer",
+        "construction_searcher",
+        "formalizer",
+        "literature_scout",
+        "orchestrator"
+      ]
+    },
+    "task_node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "node_id",
+        "worker_type",
+        "description",
+        "depends_on",
+        "input_artifacts",
+        "expected_outputs"
+      ],
+      "properties": {
+        "node_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "worker_type": {
+          "$ref": "#/$defs/worker_type"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "input_artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "expected_outputs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "task_dag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nodes"
+      ],
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/task_node"
+          }
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plan_id",
+        "issue_id",
+        "objective",
+        "task_dag",
+        "notes"
+      ],
+      "properties": {
+        "plan_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "issue_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "objective": {
+          "type": "string",
+          "minLength": 1
+        },
+        "task_dag": {
+          "$ref": "#/$defs/task_dag"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "worker_call": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "call_id",
+        "task_node_id",
+        "worker_type",
+        "status",
+        "command",
+        "cwd",
+        "started_at",
+        "completed_at",
+        "exit_code",
+        "stdout_path",
+        "stderr_path",
+        "bundle_path",
+        "notes"
+      ],
+      "properties": {
+        "call_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "task_node_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "worker_type": {
+          "$ref": "#/$defs/worker_type"
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cwd": {
+          "type": "string"
+        },
+        "started_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "completed_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stdout_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stderr_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bundle_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "reducer_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reducer_id",
+        "status",
+        "summary",
+        "output_paths",
+        "warnings"
+      ],
+      "properties": {
+        "reducer_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "output_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "stop_condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "description"
+      ],
+      "properties": {
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

@@ -746,6 +746,14 @@ review, promotion, proof, or public/private policy bypasses.
 - `cosheaf.agent.task.TaskStatus`: task status enum with values `open`, `in_progress`, `blocked`, `completed`, `failed`, and `cancelled`.
 - `cosheaf.agent.task.AgentTask`: Pydantic v2 model for local task records with fields `task_id`, `issue_id`, `worker_type`, `status`, `input_context`, `budget`, `expected_outputs`, `created_at`, and `updated_at`.
 - `cosheaf.agent.task.create_task_id(issue_id: str, worker_type: WorkerType | str) -> str`: deterministic default task ID helper. It returns `task.<issue-id>.<worker-type-slug>`, with underscores in worker type values rendered as hyphens.
+- `cosheaf.agent.orchestrator_state.OrchestratorState`: orchestrator run state enum with values `created`, `planned`, `running`, `waiting_for_worker`, `waiting_for_gate`, `waiting_for_review`, `blocked`, `completed`, `failed`, and `abandoned`.
+- `cosheaf.agent.orchestrator_state.OrchestratorRun`: strict serializable Pydantic v2 model for one orchestrator run record. It exposes `create(...)`, `transition(...)`, `to_dict()`, and `to_json()` helpers and validates the explicit transition graph.
+- `cosheaf.agent.orchestrator_state.Plan`: strict serializable Pydantic v2 model for an auditable orchestrator plan.
+- `cosheaf.agent.orchestrator_state.TaskDAG`: strict serializable Pydantic v2 model for task nodes. It rejects duplicate node IDs, unknown dependencies, and cycles.
+- `cosheaf.agent.orchestrator_state.TaskNode`: strict serializable Pydantic v2 model for one task-DAG node.
+- `cosheaf.agent.orchestrator_state.WorkerCall`: strict serializable Pydantic v2 model for worker invocation metadata. It records command, cwd, timestamps, exit code, output log paths, and optional bundle path without executing anything.
+- `cosheaf.agent.orchestrator_state.ReducerResult`: strict serializable Pydantic v2 model for reducer decisions. Its output paths must be repository-local and must not target accepted knowledge.
+- `cosheaf.agent.orchestrator_state.StopCondition`: strict serializable Pydantic v2 model for stop or pause conditions.
 - `cosheaf.agent.worker_contract.WorkerOutputKind`: output kind enum with values `artifact`, `review`, `evidence`, and `report`.
 - `cosheaf.agent.worker_contract.WorkerOutput`: Pydantic v2 model for one repository-local output reference.
 - `cosheaf.agent.worker_contract.WorkerOutputBundle`: Pydantic v2 model for a local worker output bundle manifest.
@@ -793,6 +801,24 @@ Local worker run status values are:
 - `failed`
 - `timed_out`
 - `bundle_invalid`
+
+Orchestrator run records use `schemas/orchestrator_run.schema.json` and these
+top-level fields:
+
+- `schema_version`
+- `run_id`
+- `issue_id`
+- `state`
+- `plan`
+- `worker_calls`
+- `reducer_results`
+- `stop_conditions`
+- `created_at`
+- `updated_at`
+
+The state model is a pure contract. It does not dispatch workers, run hosted
+models, run gates, request human review, complete tasks, merge worker outputs,
+or promote accepted knowledge.
 
 Worker output bundles may be passed as a YAML file path or as a directory
 containing `bundle.yaml`. Bundle manifests use:
