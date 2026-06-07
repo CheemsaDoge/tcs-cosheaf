@@ -138,7 +138,8 @@ tests, or understand implementation impact, but it is not product runtime.
 Allowed future surfaces:
 
 - `docs/DEV_TOOLING.md` guidance.
-- `scripts/dev/` helpers that clearly skip when CodeGraph is unavailable.
+- `scripts/dev/codegraph_probe.py`, a developer-only availability probe that
+  reports `fallback: run_full_verification` when CodeGraph is unavailable.
 - Optional affected-test hints that fall back to full checks.
 
 Disallowed behavior:
@@ -153,8 +154,8 @@ Install surface for future work: manual developer install or optional dev-tool
 probe only. Generated `.codegraph/` data must be ignored before any helper can
 write it.
 
-Fallback: if unavailable or stale, print skipped for dev helpers and run the
-normal full verification path.
+Fallback: if unavailable or stale, dev helpers print unavailable/skipped status
+and preserve the normal full verification path.
 
 Rollback trigger: remove helper integration if CodeGraph absence breaks CI or
 if generated code graphs become a source of truth.

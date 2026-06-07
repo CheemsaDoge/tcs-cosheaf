@@ -2,13 +2,13 @@
 
 ## Milestone
 
-Phase 4 Task 4.5: agent dry-run workflow.
+Phase 4 Task 4.6: CodeGraph dev-only impact-analysis integration.
 
 ## Goal
 
-Demonstrate an end-to-end local agent dry-run workflow where fake reasoner and
-verifier workers produce worker bundle proposals only, while review, gates, and
-promotion remain separate.
+Add optional developer-only CodeGraph guidance and a safe availability probe
+without making CodeGraph part of runtime, CI, validation, gates, retrieval, or
+promotion.
 
 ## Current Baseline
 
@@ -32,6 +32,9 @@ promotion remain separate.
 - Phase 4 Task 4.4 local worker runner integration is complete in
   `cosheaf.agent.orchestrator_runner` and
   `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only`.
+- Phase 4 Task 4.5 agent dry-run workflow is complete in
+  `cosheaf.agent.dry_run_workers` and
+  `examples/issues/issue.agent-dry-run.demo.yaml`.
 - Framework package version is `0.1.1`.
 - `tcs-cosheaf` has workspace-aware validation, gatekeeper G1-G10,
   deterministic index rebuilds, read-only query surfaces, artifact-card
@@ -54,27 +57,26 @@ promotion remain separate.
 
 ## Completion Criteria
 
-- `examples/issues/issue.agent-dry-run.demo.yaml` and
-  `examples/claims/claim.agent-dry-run.demo.yaml` provide a draft-only demo
-  issue and claim.
-- The default local orchestrator dry-run worker writes role-aware worker bundle
-  v2 manifests for fake reasoner, verifier, and orchestrator steps.
-- Generated bundle proposal paths stay under
-  `.cosheaf/orchestrator/.../proposals/`; the dry-run does not write proposal
-  artifacts or `kb/accepted/` records.
-- The verifier dry-run records that no gate, Lean, SAT, SMT, or promotion
-  result was produced and must not be treated as a verifier pass.
-- Tests cover the end-to-end dry-run workflow and CLI smoke path.
-- No hosted LLM, network, human review request, gate execution, accepted write,
-  promotion, schema change, verifier semantic change, or public/private KB
-  policy change is introduced.
+- `docs/DEV_TOOLING.md` documents CodeGraph as developer-only, local-only, and
+  optional.
+- `scripts/dev/codegraph_probe.py` probes availability before use and reports
+  `fallback: run_full_verification` when CodeGraph is unavailable.
+- Generated CodeGraph outputs are gitignored under `.codegraph/`,
+  `.cosheaf/dev/codegraph/`, and `codegraph*.db`.
+- CodeGraph output remains sidecar/cache only and must not feed artifact truth,
+  retrieval ranking, context generation, gates, verifier results, review, or
+  promotion.
+- Tests cover unavailable-tool fallback and strict-mode behavior without
+  requiring CodeGraph installation.
+- No runtime dependency, package dependency, CI requirement, schema change,
+  gate change, verifier semantic change, promotion policy change, or KB policy
+  change is introduced.
 
 ## Next Focus
 
-After Phase 4 Task 4.5 lands, the next fixed-plan item is Phase 4 Task 4.6:
-CodeGraph dev-only impact-analysis integration. Do not jump ahead into hosted
-LLM execution, external Lean checking, web UI work, or accepted-promotion policy
-changes.
+After Phase 4 Task 4.6 lands, the next fixed-plan item is Phase 5 Task 5.1:
+provider-neutral model interface. Do not jump ahead into hosted LLM execution,
+external Lean checking, web UI work, or accepted-promotion policy changes.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show

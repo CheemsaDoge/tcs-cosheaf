@@ -29,6 +29,11 @@ dist/
 # TCS-Cosheaf runtime outputs
 .cosheaf/
 
+# Optional developer-only CodeGraph outputs
+.codegraph/
+.cosheaf/dev/codegraph/
+codegraph*.db
+
 # OS metadata
 .DS_Store
 Thumbs.db
