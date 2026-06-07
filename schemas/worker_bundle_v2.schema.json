@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/worker_bundle_v2.schema.json",
+  "title": "TCS-Cosheaf Worker Bundle v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "bundle_id",
+    "task_id",
+    "worker_role",
+    "created_at",
+    "summary",
+    "used_artifacts",
+    "used_sources",
+    "claims",
+    "proposed_artifacts",
+    "verification_requests",
+    "failures_or_counterexamples",
+    "risk_flags",
+    "next_steps",
+    "confidence"
+  ],
+  "properties": {
+    "bundle_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "worker_role": {
+      "$ref": "#/$defs/worker_type"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "used_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "used_sources": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "proposed_artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/proposed_artifact"
+      }
+    },
+    "verification_requests": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "failures_or_counterexamples": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "risk_flags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "next_steps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "confidence": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    }
+  },
+  "$defs": {
+    "worker_type": {
+      "type": "string",
+      "enum": [
+        "reasoner",
+        "verifier",
+        "counterexampleer",
+        "construction_searcher",
+        "formalizer",
+        "literature_scout",
+        "orchestrator"
+      ]
+    },
+    "proposed_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "summary"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

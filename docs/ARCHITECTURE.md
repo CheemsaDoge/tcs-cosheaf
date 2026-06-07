@@ -241,6 +241,18 @@ Bundle manifests may also be passed as repository-local directories containing
 `bundle.yaml`. Bundles must not target `kb/accepted/`, and task completion does
 not merge anything into accepted knowledge.
 
+Worker bundle v2 is a stricter Phase 4.3 contract for future reducer-driven
+orchestration. `cosheaf.agent.worker_bundle_v2` records bundle ID, task ID,
+worker role, creation time, summary, used artifacts and sources, claims,
+proposed artifacts, verification requests, failures or counterexamples, risk
+flags, next steps, and confidence. Its reducer validates repository-local
+paths, rejects accepted-KB proposals, rejects worker-created
+`human_reviewed` or `accepted` review states, preserves failures and
+uncertainty as reducer warnings, and returns a deterministic `ReducerResult`.
+It does not replace the existing task-runner v1 bundle path yet, does not
+dispatch workers, does not run gates, does not request review, does not write
+files, and does not promote accepted knowledge.
+
 ### CLI Layer
 
 Provides public commands for validation, gate execution, graph inspection,
