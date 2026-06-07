@@ -23,20 +23,22 @@ repository-relative `path`, `readonly` flag, and integer `priority`.
 
 ### Source Ingestion Layer
 
-Defines the boundary for future local source conversion before source material
-enters artifact or source-note review workflows. The policy is documented in
-[Source Ingestion](SOURCE_INGESTION.md).
+Defines the boundary for local source conversion before source material enters
+artifact or source-note review workflows. The policy is documented in [Source
+Ingestion](SOURCE_INGESTION.md).
 
-This layer is staging only. A future optional MarkItDown adapter may convert
-local source files to Markdown with provenance metadata, but converted output is
-not validation, gatekeeper evidence, verifier evidence, human review, accepted
-artifact truth, or promotion evidence. Converted Markdown may feed source
-notes, explorer tasks, or draft proposals only.
+This layer is staging only. The optional MarkItDown adapter can convert
+repository-local source files to Markdown with provenance metadata through
+`cosheaf ingest convert`, but converted output is not validation, gatekeeper
+evidence, verifier evidence, human review, accepted artifact truth, or
+promotion evidence. Converted Markdown may feed source notes, explorer tasks,
+or draft proposals only.
 
 URL, OCR, plugins, LLM vision, and cloud-document capabilities are disabled by
-default for future ingestion work. Missing MarkItDown must not affect core
-validation, gates, index rebuilds, context packs, promotion, tests, or default
-installation.
+default. The MVP adapter is not a sandbox for hostile documents; untrusted
+source files require a future bounded subprocess or documented sandbox
+boundary. Missing MarkItDown does not affect core validation, gates, index
+rebuilds, context packs, promotion, tests, or default installation.
 
 ### Storage/Index Layer
 

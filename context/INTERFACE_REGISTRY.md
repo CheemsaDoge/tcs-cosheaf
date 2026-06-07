@@ -37,6 +37,10 @@
 - `cosheaf artifact promote <artifact-id> --repo-root <path>`: promotes the artifact for an explicit repository root.
 - `cosheaf index rebuild`: rebuilds `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json`.
 - `cosheaf index rebuild --repo-root <path>`: rebuilds index outputs for an explicit repository root.
+- `cosheaf ingest convert <path>`: converts a repository-local source file into staged Markdown plus provenance metadata under `.cosheaf/ingest/` when optional MarkItDown support is installed.
+- `cosheaf ingest convert <path> --out <dir>`: writes staged Markdown and provenance metadata under an explicit repository-local output directory. Accepted KB paths such as `kb/accepted/` or `kb/public/accepted/` are rejected.
+- `cosheaf ingest convert <path> --metadata-json`: emits deterministic conversion provenance JSON to stdout.
+- `cosheaf ingest convert <path> --repo-root <path>`: resolves the source and output paths against an explicit repository root.
 - `cosheaf graph show`: prints the directed artifact dependency graph.
 - `cosheaf graph show --repo-root <path>`: prints the graph for an explicit repository root.
 - `cosheaf gate`: runs the gatekeeper with default options and writes reports under `.cosheaf/reports/`.
@@ -136,6 +140,37 @@
 - `cosheaf task run <task-id> ... --repo-root <path> -- <command> [args...]`: runs the local worker command for an explicit repository root.
 
 ### Python API
+
+#### Source Ingestion
+
+- `cosheaf.ingest.MarkItDownIngestAdapter`: optional local source-ingestion
+  adapter. It converts repository-local files to staged Markdown and
+  provenance metadata when MarkItDown is installed.
+- `cosheaf.ingest.MarkItDownIngestAdapter.convert(context, source_path, *, out_dir=Path(".cosheaf/ingest"), generated_at=None) -> MarkItDownIngestResult`:
+  converts one source file, rejects remote URL inputs, rejects paths outside
+  the repository, rejects accepted KB output paths, and returns unavailable
+  metadata when MarkItDown is absent.
+- `cosheaf.ingest.MarkItDownIngestResult`: frozen dataclass carrying
+  deterministic provenance metadata for one conversion attempt.
+- `cosheaf.ingest.MarkItDownIngestResult.to_dict() -> dict[str, Any]`: returns
+  JSON-serializable conversion provenance.
+- `cosheaf.ingest.MarkItDownIngestResult.to_json() -> str`: returns
+  deterministic indented JSON with a trailing newline.
+- `cosheaf.ingest.IngestError`: expected error for source-ingestion boundary
+  failures such as nonlocal source paths or accepted KB output paths.
+
+Default MarkItDown ingest options are disabled:
+
+- `allow_remote_urls: false`
+- `allow_plugins: false`
+- `allow_ocr: false`
+- `allow_llm_vision: false`
+- `allow_azure_document_intelligence: false`
+
+The adapter writes staging output only. It does not write artifact YAML,
+review records, verifier results, accepted knowledge, or promotion evidence.
+MarkItDown remains an optional package and is not required for validation,
+gates, index rebuilds, context packs, promotion, or default installation.
 
 #### Workspace Configuration
 
