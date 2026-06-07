@@ -62,15 +62,28 @@
   lifecycle/trust status, such as `accepted` or `draft`.
 - `cosheaf memory cards --json`: emits deterministic JSON card DTOs.
 - `cosheaf memory search <query>`: searches deterministic artifact cards with
-  local SQLite FTS5/BM25 when available and deterministic lexical fallback
-  otherwise. Default text output prints compact card lines with total score,
-  not full artifact YAML or statements.
+  local SQLite FTS5/BM25 when available, deterministic lexical fallback
+  otherwise, and issue-conditioned graph ranking signals. Default text output
+  prints compact card lines with total score, not full artifact YAML or
+  statements.
 - `cosheaf memory search <query> --repo-root <path>`: searches cards for an
   explicit repository root.
-- `cosheaf memory search <query> --issue <issue-id>`: bounds search to the
-  issue record's direct `related_artifacts`, after scope/status filters.
+- `cosheaf memory search <query> --issue <issue-id>`: uses the issue and its
+  direct `related_artifacts` as Personalized PageRank seeds after
+  scope/status filters, without granting accepted-promotion authority.
+- `cosheaf memory search <query> --seed-artifact <artifact-id>`: adds an
+  explicit artifact seed to personalized ranking; repeat for multiple seeds.
+- `cosheaf memory search <query> --pin-artifact <artifact-id>`: adds a
+  stronger pinned artifact seed to personalized ranking; repeat for multiple
+  pins.
 - `cosheaf memory search <query> --status <status>`: filters search candidates
   by artifact-card lifecycle/trust status.
+- `cosheaf memory search <query> --include-refuted`: includes refuted cards
+  with an explicit score penalty.
+- `cosheaf memory search <query> --include-obsolete`: includes obsolete and
+  superseded cards with an explicit score penalty.
+- `cosheaf memory search <query> --explain`: prints score component
+  breakdowns and relevance reasons in text output.
 - `cosheaf memory search <query> --json`: emits a deterministic
   `RetrievalResult` JSON payload with card hits, score breakdowns, and audit
   metadata.
@@ -241,6 +254,10 @@ semantics beyond ordinary gatekeeper blocking behavior.
   exclusions, and warnings.
 - `cosheaf.memory.RetrievalResult`: Pydantic v2 model for ordered retrieved
   cards, full-artifact pull audit entries, and retrieval audit metadata.
+- `cosheaf.memory.RetrievalScoreWeights`: frozen dataclass for configurable
+  retrieval formula weights. Defaults are `0.50` retrieval hybrid, `0.20`
+  personalized PageRank, `0.15` global PageRank, `0.10` quality prior, and
+  `0.05` freshness. Penalty is always subtracted after weighted components.
 - `cosheaf.memory.MemoryGraphNode`: Pydantic v2 model for one deterministic
   memory graph node.
 - `cosheaf.memory.MemoryGraphEdge`: Pydantic v2 model for one weighted memory
@@ -355,9 +372,11 @@ The memory package also exposes:
   builds one card from a loaded lifecycle artifact record.
 - `cosheaf.memory.DEFAULT_CARD_SCOPES`: default public-output scope set,
   containing `public`, `workspace`, and `framework`, excluding `private`.
-- `cosheaf.memory.search_artifact_cards(context: RepoContext, *, query: str, issue_id: str | None = None, status: ArtifactCardStatus | str | None = None, max_cards: int = 20, allowed_scopes: tuple[MemoryRootScope, ...] | None = None) -> RetrievalResult`:
-  searches deterministic artifact cards with SQLite FTS5/BM25 when available
-  and deterministic lexical fallback otherwise.
+- `cosheaf.memory.search_artifact_cards(context: RepoContext, *, query: str, issue_id: str | None = None, status: ArtifactCardStatus | str | None = None, max_cards: int = 20, allowed_scopes: tuple[MemoryRootScope, ...] | None = None, seed_artifacts: tuple[str, ...] = (), pinned_artifacts: tuple[str, ...] = (), include_refuted: bool = False, include_obsolete: bool = False, score_weights: RetrievalScoreWeights = RetrievalScoreWeights()) -> RetrievalResult`:
+  searches deterministic artifact cards with SQLite FTS5/BM25 when available,
+  deterministic lexical fallback otherwise, and in-memory Personalized
+  PageRank/global PageRank/freshness/penalty scoring. It does not write memory
+  sidecars.
 - `cosheaf.memory.build_memory_graph(context: RepoContext, *, persist: bool = False) -> MemoryGraphSnapshot`:
   builds the deterministic memory graph from repository YAML plus optional
   local sidecar signals. With `persist=True`, it writes the rebuildable
@@ -373,11 +392,11 @@ The memory package also exposes:
   `.cosheaf/memory/graph_snapshot.json`.
 
 The card builder and search read existing YAML records through the storage
-loader. Search uses an in-memory SQLite FTS5 table when available and does not
-write `.cosheaf/memory/` sidecars. Memory graph build writes only the
-rebuildable graph snapshot sidecar, and PageRank reads that sidecar without
-implicitly rebuilding it. The memory package does not add embeddings,
-personalized PageRank, context-pack v2 behavior, hosted LLM workers,
+loader. Search uses an in-memory SQLite FTS5 table and in-memory memory graph
+ranking when available and does not write `.cosheaf/memory/` sidecars. Memory
+graph build writes only the rebuildable graph snapshot sidecar, and PageRank
+reads that sidecar without implicitly rebuilding it. The memory package does
+not add embeddings, context-pack v2 behavior, hosted LLM workers,
 accepted-promotion shortcuts, formal checking, or artifact schema changes. By
 default, configured private KB roots are excluded from `cosheaf memory cards`
 and `cosheaf memory search`; callers must not treat memory output as accepted

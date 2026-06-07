@@ -1,10 +1,10 @@
 """Public memory/retrieval model and deterministic graph/search surfaces.
 
 The Phase 3 memory package contains typed request/result/card models, a
-YAML-metadata card builder, and bounded deterministic text search over cards.
-It also exposes a rebuildable memory graph sidecar and deterministic global
-PageRank. It does not implement embeddings, personalized PageRank, hosted LLM
-workers, or agent runtime behavior.
+YAML-metadata card builder, bounded deterministic text search over cards, and
+issue-conditioned graph ranking. It also exposes a rebuildable memory graph
+sidecar and deterministic global PageRank. It does not implement embeddings,
+hosted LLM workers, or agent runtime behavior.
 """
 
 from __future__ import annotations
@@ -42,7 +42,11 @@ from cosheaf.memory.models import (
     RetrievedArtifactCard,
     ScoreBreakdown,
 )
-from cosheaf.memory.search import MemorySearchError, search_artifact_cards
+from cosheaf.memory.search import (
+    MemorySearchError,
+    RetrievalScoreWeights,
+    search_artifact_cards,
+)
 
 __all__ = [
     "DEFAULT_CARD_SCOPES",
@@ -63,6 +67,7 @@ __all__ = [
     "RetrievalRequest",
     "RetrievalResult",
     "RetrievalRole",
+    "RetrievalScoreWeights",
     "RetrievedArtifactCard",
     "ScoreBreakdown",
     "MemoryCardError",

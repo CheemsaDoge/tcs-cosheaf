@@ -536,12 +536,37 @@ def memory_search(
     issue: str | None = typer.Option(
         None,
         "--issue",
-        help="Optional issue ID whose direct related artifacts bound search.",
+        help="Optional issue ID used as a Personalized PageRank seed.",
+    ),
+    seed_artifact: list[str] | None = typer.Option(
+        None,
+        "--seed-artifact",
+        help="Explicit artifact ID to seed personalized ranking. Repeatable.",
+    ),
+    pin_artifact: list[str] | None = typer.Option(
+        None,
+        "--pin-artifact",
+        help="Artifact ID to strongly pin into personalized ranking. Repeatable.",
     ),
     status: ArtifactCardStatus | None = typer.Option(
         None,
         "--status",
         help="Optional artifact-card status filter.",
+    ),
+    include_refuted: bool = typer.Option(
+        False,
+        "--include-refuted",
+        help="Include refuted cards with an explicit score penalty.",
+    ),
+    include_obsolete: bool = typer.Option(
+        False,
+        "--include-obsolete",
+        help="Include obsolete or superseded cards with an explicit score penalty.",
+    ),
+    explain: bool = typer.Option(
+        False,
+        "--explain",
+        help="Print score component breakdowns in text output.",
     ),
     json_output: bool = typer.Option(
         False,
@@ -557,6 +582,10 @@ def memory_search(
             query=query,
             issue_id=issue,
             status=status,
+            seed_artifacts=tuple(seed_artifact or ()),
+            pinned_artifacts=tuple(pin_artifact or ()),
+            include_refuted=include_refuted,
+            include_obsolete=include_obsolete,
         )
     except MemorySearchError as exc:
         console.print(f"Memory search failed: {exc}")
@@ -577,6 +606,19 @@ def memory_search(
             f"{card.title} | {card.status.value} | "
             f"{card.root_scope.value} | {card.path}"
         )
+        if explain:
+            breakdown = hit.score_breakdown
+            console.print(
+                "  breakdown: "
+                f"retrieval_hybrid={breakdown.retrieval_hybrid:.6f} "
+                f"personalized_pagerank={breakdown.personalized_pagerank:.6f} "
+                f"global_pagerank={breakdown.global_pagerank:.6f} "
+                f"quality_prior={breakdown.quality_prior:.6f} "
+                f"freshness={breakdown.freshness:.6f} "
+                f"penalty={breakdown.penalty:.6f}"
+            )
+            for reason in hit.why_relevant:
+                console.print(f"  why: {reason}")
 
 
 @memory_graph_app.command("build")
