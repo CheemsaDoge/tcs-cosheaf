@@ -162,6 +162,29 @@ If runtime files appear outside ignored locations, move the runtime target under
 `.cosheaf/` or document the issue before opening a PR. Do not commit generated
 reports just because a verification command produced them.
 
+## Patch Tool Base Directory
+
+In this Codex environment, `apply_patch` uses the session current working
+directory as its path base, not the `workdir` used by the most recent shell
+command. When the session starts in the parent container `H:\ai4tcs` but the
+active task is inside an isolated worktree such as
+`H:\ai4tcs\tcs-cosheaf-phase4-task-dag-planner-stub`, patch paths must include
+the worktree directory prefix:
+
+```text
+tcs-cosheaf-phase4-task-dag-planner-stub/path/inside/repo.py
+```
+
+Before running tests, confirm new files landed in the intended worktree with:
+
+```powershell
+git status --short
+```
+
+If a file is accidentally created under the parent container, delete only the
+misplaced file you created and re-apply the patch inside the intended worktree
+path. Do not clean broad parent directories or unrelated worktrees.
+
 ## Public KB Review Boundary
 
 For `tcs-kb-public`, CI and gate success are not human review. Public KB policy
