@@ -47,6 +47,7 @@ from cosheaf.memory import (
     MemoryCardError,
     MemoryGraphError,
     MemorySearchError,
+    RetrievalRole,
     build_artifact_cards,
     build_memory_graph,
     compute_global_pagerank,
@@ -435,11 +436,40 @@ def context_build(
         "--repo-root",
         help="Repository root to inspect.",
     ),
+    role: RetrievalRole = typer.Option(
+        RetrievalRole.ORCHESTRATOR,
+        "--role",
+        help="Retrieval role used for context-pack budgets.",
+    ),
+    max_cards: int = typer.Option(
+        20,
+        "--max-cards",
+        min=1,
+        help="Maximum artifact cards to include before issue-local filtering.",
+    ),
+    max_full_artifacts: int = typer.Option(
+        0,
+        "--max-full-artifacts",
+        min=0,
+        help="Explicit full artifact pull budget; defaults to cards only.",
+    ),
+    public_only: bool = typer.Option(
+        False,
+        "--public-only",
+        help="Exclude private cards and private artifact IDs from audit output.",
+    ),
 ) -> None:
     """Build a bounded deterministic context pack for an issue."""
     console = Console(width=120, markup=False)
     try:
-        result = build_context_pack(RepoContext(repo_root), issue_id)
+        result = build_context_pack(
+            RepoContext(repo_root),
+            issue_id,
+            role=role,
+            max_cards=max_cards,
+            max_full_artifacts=max_full_artifacts,
+            public_only=public_only,
+        )
     except ContextPackError as exc:
         console.print(f"Context pack failed: {exc}")
         raise typer.Exit(code=1) from None
@@ -457,11 +487,40 @@ def context_show(
         "--repo-root",
         help="Repository root to inspect.",
     ),
+    role: RetrievalRole = typer.Option(
+        RetrievalRole.ORCHESTRATOR,
+        "--role",
+        help="Retrieval role used for context-pack budgets.",
+    ),
+    max_cards: int = typer.Option(
+        20,
+        "--max-cards",
+        min=1,
+        help="Maximum artifact cards to include before issue-local filtering.",
+    ),
+    max_full_artifacts: int = typer.Option(
+        0,
+        "--max-full-artifacts",
+        min=0,
+        help="Explicit full artifact pull budget; defaults to cards only.",
+    ),
+    public_only: bool = typer.Option(
+        False,
+        "--public-only",
+        help="Exclude private cards and private artifact IDs from audit output.",
+    ),
 ) -> None:
     """Build and print the main context document for an issue."""
     console = Console(width=120, markup=False)
     try:
-        rendered = show_context_pack(RepoContext(repo_root), issue_id)
+        rendered = show_context_pack(
+            RepoContext(repo_root),
+            issue_id,
+            role=role,
+            max_cards=max_cards,
+            max_full_artifacts=max_full_artifacts,
+            public_only=public_only,
+        )
     except ContextPackError as exc:
         console.print(f"Context pack failed: {exc}")
         raise typer.Exit(code=1) from None

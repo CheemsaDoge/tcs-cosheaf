@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,7 @@ from typer.testing import CliRunner
 
 from cosheaf.agent.context_pack import ContextPackError, build_context_pack
 from cosheaf.cli import app
+from cosheaf.memory import RetrievalRole
 from cosheaf.storage.repo import RepoContext
 
 runner = CliRunner()
@@ -41,6 +43,7 @@ def _artifact_data(
     domain: list[str] | None = None,
     depends_on: list[str] | None = None,
     tags: list[str] | None = None,
+    statement: str = "A bounded context-pack fixture.",
     formalizations: list[dict[str, Any]] | None = None,
     alignment: dict[str, Any] | None = None,
     verification_policy: dict[str, Any] | None = None,
@@ -57,7 +60,7 @@ def _artifact_data(
         "depends_on": depends_on or [],
         "supersedes": [],
         "tags": tags or [],
-        "statement": "A bounded context-pack fixture.",
+        "statement": statement,
         "evidence": [],
         "review": {"state": "requested", "notes": "Fixture review."},
         "risk": {"level": "low", "notes": "Fixture risk."},
@@ -177,6 +180,36 @@ def _write_repo(repo_root: Path) -> None:
     )
 
 
+def _write_workspace_config(repo_root: Path) -> None:
+    repo_root.joinpath("cosheaf.toml").write_text(
+        "\n".join(
+            [
+                "[workspace]",
+                'name = "context-pack-workspace"',
+                "",
+                "[[kb]]",
+                'name = "public"',
+                'path = "kb/public"',
+                "readonly = true",
+                "priority = 10",
+                "",
+                "[[kb]]",
+                'name = "private"',
+                'path = "kb/private"',
+                "readonly = false",
+                "priority = 20",
+                "",
+                "[policy]",
+                "private_can_depend_on_public = true",
+                "public_can_depend_on_private = false",
+                "accepted_requires_source = true",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_context_pack_files_created(tmp_path: Path) -> None:
     _write_repo(tmp_path)
 
@@ -190,6 +223,8 @@ def test_context_pack_files_created(tmp_path: Path) -> None:
         "RELEVANT_ARTIFACTS.md",
         "KNOWN_FAILURES.md",
         "COMMANDS.md",
+        "RETRIEVAL_AUDIT.json",
+        "FULL_ARTIFACTS.md",
     }
     assert {path.name for path in result.files} == expected_names
     for path in result.files:
@@ -209,6 +244,169 @@ def test_context_pack_output_is_deterministic(tmp_path: Path) -> None:
     }
 
     assert second_contents == first_contents
+
+
+def test_context_pack_v2_uses_cards_and_audit_by_default(tmp_path: Path) -> None:
+    _write_context_docs(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "issues/open/card-audit.yaml",
+        _issue_data(
+            related_artifacts=["claim.fixture.accepted"],
+            description="Need graph card context.",
+            tags=["graph"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/accepted/claims/accepted.yaml",
+        _artifact_data(
+            "claim.fixture.accepted",
+            status="accepted",
+            title="Accepted card source",
+            domain=["graph-theory"],
+            tags=["graph"],
+            statement="SECRET FULL STATEMENT SHOULD NOT APPEAR BY DEFAULT",
+        ),
+    )
+
+    result = build_context_pack(RepoContext(tmp_path), "issue.fixture.context")
+
+    context_md = (result.task_dir / "CONTEXT.md").read_text(encoding="utf-8")
+    audit = json.loads((result.task_dir / "RETRIEVAL_AUDIT.json").read_text())
+    full_artifacts = (result.task_dir / "FULL_ARTIFACTS.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "## Relevant Artifact Cards" in context_md
+    assert "claim.fixture.accepted | Accepted card source | accepted" in context_md
+    assert "score:" in context_md
+    assert "root_scope=workspace" in context_md
+    assert "SECRET FULL STATEMENT" not in context_md
+    assert "SECRET FULL STATEMENT" not in full_artifacts
+    assert audit["request"]["role"] == "orchestrator"
+    assert audit["request"]["max_full_artifacts"] == 0
+    assert audit["full_artifact_pulls"] == []
+
+
+def test_context_pack_worker_role_can_pull_bounded_full_artifacts(
+    tmp_path: Path,
+) -> None:
+    _write_context_docs(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "issues/open/full-artifact.yaml",
+        _issue_data(
+            related_artifacts=["claim.fixture.full-a", "claim.fixture.full-b"],
+            description="Need graph verifier context.",
+            tags=["graph"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/accepted/claims/full-a.yaml",
+        _artifact_data(
+            "claim.fixture.full-a",
+            status="accepted",
+            title="First full artifact",
+            domain=["graph-theory"],
+            tags=["graph"],
+            statement="SECRET FULL STATEMENT A",
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/accepted/claims/full-b.yaml",
+        _artifact_data(
+            "claim.fixture.full-b",
+            status="accepted",
+            title="Second full artifact",
+            domain=["graph-theory"],
+            tags=["graph"],
+            statement="SECRET FULL STATEMENT B",
+        ),
+    )
+
+    result = build_context_pack(
+        RepoContext(tmp_path),
+        "issue.fixture.context",
+        role=RetrievalRole.VERIFIER,
+        max_full_artifacts=1,
+    )
+
+    full_artifacts = (result.task_dir / "FULL_ARTIFACTS.md").read_text(
+        encoding="utf-8"
+    )
+    audit = json.loads((result.task_dir / "RETRIEVAL_AUDIT.json").read_text())
+
+    assert "SECRET FULL STATEMENT A" in full_artifacts
+    assert "SECRET FULL STATEMENT B" not in full_artifacts
+    assert [pull["artifact_id"] for pull in audit["full_artifact_pulls"]] == [
+        "claim.fixture.full-a"
+    ]
+    assert audit["request"]["role"] == "verifier"
+    assert audit["request"]["max_full_artifacts"] == 1
+
+
+def test_context_pack_public_only_does_not_leak_private_cards(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    _write_context_docs(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "issues/open/private.yaml",
+        _issue_data(
+            related_artifacts=[
+                "definition.fixture.public-graph",
+                "claim.fixture.private-graph",
+            ],
+            description="Need graph context.",
+            tags=["graph"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/public/accepted/definitions/public-graph.yaml",
+        _artifact_data(
+            "definition.fixture.public-graph",
+            status="accepted",
+            title="Public graph definition",
+            domain=["graph-theory"],
+            tags=["graph"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/private/draft/claims/private-graph.yaml",
+        _artifact_data(
+            "claim.fixture.private-graph",
+            status="draft",
+            title="Private graph conjecture",
+            domain=["graph-theory"],
+            tags=["graph", "private"],
+            depends_on=["definition.fixture.public-graph"],
+            statement="PRIVATE FULL STATEMENT SHOULD NOT LEAK",
+        ),
+    )
+
+    result = build_context_pack(
+        RepoContext(tmp_path),
+        "issue.fixture.context",
+        public_only=True,
+    )
+
+    context_md = (result.task_dir / "CONTEXT.md").read_text(encoding="utf-8")
+    audit_text = (result.task_dir / "RETRIEVAL_AUDIT.json").read_text(
+        encoding="utf-8"
+    )
+
+    assert "definition.fixture.public-graph" in context_md
+    assert "claim.fixture.private-graph" not in context_md
+    assert "Private graph conjecture" not in context_md
+    assert "PRIVATE FULL STATEMENT" not in context_md
+    assert "claim.fixture.private-graph" not in audit_text
+    assert "private scope exclusions" in audit_text
 
 
 def test_relevant_artifacts_are_ranked_by_explainable_reasons(
@@ -515,3 +713,54 @@ def test_context_show_prints_context_pack(tmp_path: Path) -> None:
     assert "# Context Pack: issue.fixture.context" in result.output
     assert "claim.fixture.accepted" in result.output
     assert "[DRAFT] claim.fixture.draft" in result.output
+
+
+def test_context_build_cli_accepts_role_and_full_artifact_budget(
+    tmp_path: Path,
+) -> None:
+    _write_context_docs(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "issues/open/cli-full-artifact.yaml",
+        _issue_data(
+            related_artifacts=["claim.fixture.cli-full"],
+            description="Need graph verifier context.",
+            tags=["graph"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/accepted/claims/cli-full.yaml",
+        _artifact_data(
+            "claim.fixture.cli-full",
+            status="accepted",
+            title="CLI full artifact",
+            domain=["graph-theory"],
+            tags=["graph"],
+            statement="SECRET CLI FULL STATEMENT",
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "context",
+            "build",
+            "issue.fixture.context",
+            "--repo-root",
+            str(tmp_path),
+            "--role",
+            "verifier",
+            "--max-full-artifacts",
+            "1",
+        ],
+    )
+
+    task_dir = tmp_path / "context" / "TASKS" / "issue.fixture.context"
+    full_artifacts = (task_dir / "FULL_ARTIFACTS.md").read_text(encoding="utf-8")
+    audit = json.loads((task_dir / "RETRIEVAL_AUDIT.json").read_text())
+
+    assert result.exit_code == 0, result.output
+    assert "SECRET CLI FULL STATEMENT" in full_artifacts
+    assert audit["request"]["role"] == "verifier"
+    assert audit["request"]["max_full_artifacts"] == 1

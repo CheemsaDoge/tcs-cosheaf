@@ -2,17 +2,28 @@
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import shorten
 
 from cosheaf.core.artifact import BaseArtifact
+from cosheaf.core.paths import repo_relative_posix
 from cosheaf.core.status import (
     ArtifactStatus,
     is_accepted_status,
     is_preaccepted_status,
 )
+from cosheaf.memory import (
+    FullArtifactPull,
+    MemoryRootScope,
+    RetrievalResult,
+    RetrievalRole,
+    RetrievedArtifactCard,
+    search_artifact_cards,
+)
+from cosheaf.memory.models import ArtifactCardStatus
 from cosheaf.storage.loader import IssueRecord, LoadedRecord, load_artifacts
 from cosheaf.storage.repo import RepoContext
 
@@ -21,6 +32,8 @@ PACK_FILENAMES = (
     "ACCEPTANCE.md",
     "RELEVANT_ARTIFACTS.md",
     "KNOWN_FAILURES.md",
+    "FULL_ARTIFACTS.md",
+    "RETRIEVAL_AUDIT.json",
     "COMMANDS.md",
 )
 
@@ -38,6 +51,25 @@ KNOWN_FAILURE_STATUSES = frozenset(
         ArtifactStatus.OBSOLETE,
         ArtifactStatus.SUPERSEDED,
     }
+)
+KNOWN_FAILURE_CARD_STATUSES = frozenset(
+    {
+        ArtifactCardStatus.REFUTED,
+        ArtifactCardStatus.OBSOLETE,
+        ArtifactCardStatus.SUPERSEDED,
+    }
+)
+CONTEXT_MAX_CARDS = 20
+ALL_CONTEXT_SCOPES = (
+    MemoryRootScope.PUBLIC,
+    MemoryRootScope.PRIVATE,
+    MemoryRootScope.WORKSPACE,
+    MemoryRootScope.FRAMEWORK,
+)
+PUBLIC_CONTEXT_SCOPES = (
+    MemoryRootScope.PUBLIC,
+    MemoryRootScope.WORKSPACE,
+    MemoryRootScope.FRAMEWORK,
 )
 
 
@@ -62,19 +94,91 @@ class RankedArtifact:
     reasons: tuple[str, ...]
 
 
-def build_context_pack(context: RepoContext, issue_id: str) -> ContextPackResult:
+@dataclass(frozen=True)
+class ContextPackCard:
+    """A retrieved card plus issue-local relevance labels."""
+
+    retrieved: RetrievedArtifactCard
+    reasons: tuple[str, ...]
+
+
+def build_context_pack(
+    context: RepoContext,
+    issue_id: str,
+    *,
+    role: RetrievalRole | str = RetrievalRole.ORCHESTRATOR,
+    max_cards: int = CONTEXT_MAX_CARDS,
+    max_full_artifacts: int | None = None,
+    public_only: bool = False,
+) -> ContextPackResult:
     """Build a deterministic bounded context pack for an issue."""
     records = tuple(load_artifacts(context))
     issue = _find_issue(records, issue_id)
-    artifacts = _select_relevant_artifacts(records, issue)
+    role_value = RetrievalRole(role)
+    full_artifact_budget = _context_full_artifact_budget(
+        role=role_value,
+        max_full_artifacts=max_full_artifacts,
+    )
+    retrieval = _retrieve_context_cards(
+        context,
+        issue,
+        role=role_value,
+        max_cards=max_cards,
+        max_full_artifacts=full_artifact_budget,
+        public_only=public_only,
+    )
+    reasons_by_artifact = _issue_relevance_reasons(records, issue)
+    cards = tuple(
+        ContextPackCard(
+            retrieved=retrieved,
+            reasons=reasons_by_artifact.get(retrieved.card.id, ()),
+        )
+        for retrieved in retrieval.cards
+        if retrieved.card.id in reasons_by_artifact
+    )
+    if len(cards) != len(retrieval.cards):
+        filtered_count = len(retrieval.cards) - len(cards)
+        retrieval = retrieval.model_copy(
+            update={
+                "cards": [card.retrieved for card in cards],
+                "audit": retrieval.audit.model_copy(
+                    update={
+                        "warnings": [
+                            *retrieval.audit.warnings,
+                            "context-pack issue-local relevance filter removed "
+                            f"{filtered_count} retrieval card(s)",
+                        ],
+                    }
+                ),
+            }
+        )
+    artifact_records = _artifact_records_by_id(records)
+    full_artifact_pulls = _pull_full_artifacts(
+        context,
+        _ordered_context_cards(cards),
+        max_full_artifacts=full_artifact_budget,
+    )
+    retrieval = retrieval.model_copy(
+        update={"full_artifact_pulls": list(full_artifact_pulls)}
+    )
     task_dir = context.resolve(Path("context") / "TASKS" / issue_id)
     task_dir.mkdir(parents=True, exist_ok=True)
 
     contents = {
-        "CONTEXT.md": _render_context(context, issue, artifacts),
+        "CONTEXT.md": _render_context(context, issue, cards, artifact_records),
         "ACCEPTANCE.md": _render_acceptance(issue),
-        "RELEVANT_ARTIFACTS.md": _render_relevant_artifacts(artifacts),
-        "KNOWN_FAILURES.md": _render_known_failures(artifacts),
+        "RELEVANT_ARTIFACTS.md": _render_relevant_artifacts(cards, artifact_records),
+        "KNOWN_FAILURES.md": _render_known_failures(cards, artifact_records),
+        "FULL_ARTIFACTS.md": _render_full_artifacts(context, full_artifact_pulls),
+        "RETRIEVAL_AUDIT.json": _render_retrieval_audit(
+            issue=issue,
+            retrieval=retrieval,
+            query=_context_query(issue, include_related_artifacts=not public_only),
+            role=role_value,
+            max_cards=max_cards,
+            max_full_artifacts=full_artifact_budget,
+            public_only=public_only,
+        ),
         "COMMANDS.md": _render_commands(),
     }
     files: list[Path] = []
@@ -90,9 +194,24 @@ def build_context_pack(context: RepoContext, issue_id: str) -> ContextPackResult
     )
 
 
-def show_context_pack(context: RepoContext, issue_id: str) -> str:
+def show_context_pack(
+    context: RepoContext,
+    issue_id: str,
+    *,
+    role: RetrievalRole | str = RetrievalRole.ORCHESTRATOR,
+    max_cards: int = CONTEXT_MAX_CARDS,
+    max_full_artifacts: int | None = None,
+    public_only: bool = False,
+) -> str:
     """Build a context pack if needed and return its main context document."""
-    result = build_context_pack(context, issue_id)
+    result = build_context_pack(
+        context,
+        issue_id,
+        role=role,
+        max_cards=max_cards,
+        max_full_artifacts=max_full_artifacts,
+        public_only=public_only,
+    )
     return (result.task_dir / "CONTEXT.md").read_text(encoding="utf-8")
 
 
@@ -105,6 +224,61 @@ def _find_issue(records: tuple[LoadedRecord, ...], issue_id: str) -> IssueRecord
     if not issues:
         raise ContextPackError(f"issue not found: {issue_id}")
     return sorted(issues, key=lambda issue: issue.id)[0]
+
+
+def _retrieve_context_cards(
+    context: RepoContext,
+    issue: IssueRecord,
+    *,
+    role: RetrievalRole,
+    max_cards: int,
+    max_full_artifacts: int,
+    public_only: bool,
+) -> RetrievalResult:
+    if max_cards <= 0:
+        raise ContextPackError("max_cards must be positive")
+    if max_full_artifacts < 0:
+        raise ContextPackError("max_full_artifacts must be non-negative")
+    try:
+        return search_artifact_cards(
+            context,
+            query=_context_query(issue, include_related_artifacts=not public_only),
+            issue_id=issue.id,
+            max_cards=max_cards,
+            allowed_scopes=PUBLIC_CONTEXT_SCOPES if public_only else ALL_CONTEXT_SCOPES,
+            pinned_artifacts=()
+            if public_only
+            else tuple(issue.related_artifacts),
+            include_refuted=True,
+            include_obsolete=True,
+            role=role,
+            max_full_artifacts=max_full_artifacts,
+        )
+    except ValueError as exc:
+        raise ContextPackError(str(exc)) from exc
+
+
+def _context_query(
+    issue: IssueRecord,
+    *,
+    include_related_artifacts: bool = True,
+) -> str:
+    related = tuple(issue.related_artifacts) if include_related_artifacts else ()
+    parts = [issue.title, issue.description, *issue.tags, *related]
+    query = " ".join(part for part in parts if part.strip()).strip()
+    return query or issue.id
+
+
+def _context_full_artifact_budget(
+    *,
+    role: RetrievalRole,
+    max_full_artifacts: int | None,
+) -> int:
+    if max_full_artifacts is not None:
+        return max_full_artifacts
+    if role is RetrievalRole.ORCHESTRATOR:
+        return 0
+    return 0
 
 
 def _select_relevant_artifacts(
@@ -140,6 +314,14 @@ def _select_relevant_artifacts(
             selected.append(RankedArtifact(record=record, reasons=reasons))
 
     return tuple(sorted(selected, key=_artifact_sort_key))
+
+
+def _issue_relevance_reasons(
+    records: tuple[LoadedRecord, ...],
+    issue: IssueRecord,
+) -> dict[str, tuple[str, ...]]:
+    artifacts = _select_relevant_artifacts(records, issue)
+    return {artifact.record.id: artifact.reasons for artifact in artifacts}
 
 
 def _relevance_reasons(
@@ -232,25 +414,44 @@ def _status_priority(status: ArtifactStatus) -> int:
     return 3
 
 
+def _artifact_records_by_id(
+    records: tuple[LoadedRecord, ...],
+) -> dict[str, LoadedRecord]:
+    artifact_records = [
+        record for record in records if isinstance(record.record, BaseArtifact)
+    ]
+    return {record.id: record for record in artifact_records}
+
+
 def _render_context(
     context: RepoContext,
     issue: IssueRecord,
-    artifacts: tuple[RankedArtifact, ...],
+    cards: tuple[ContextPackCard, ...],
+    artifact_records: dict[str, LoadedRecord],
 ) -> str:
+    ordered_cards = _ordered_context_cards(cards)
     accepted = [
         record
-        for record in artifacts
-        if is_accepted_status(_as_artifact(record.record).status)
+        for record in ordered_cards
+        if record.retrieved.card.status is ArtifactCardStatus.ACCEPTED
     ]
     drafts = [
         record
-        for record in artifacts
-        if is_preaccepted_status(_as_artifact(record.record).status)
+        for record in ordered_cards
+        if record.retrieved.card.status
+        in {
+            ArtifactCardStatus.RAW,
+            ArtifactCardStatus.DRAFT,
+            ArtifactCardStatus.LOCALLY_TESTED,
+            ArtifactCardStatus.ADVERSARIALLY_TESTED,
+            ArtifactCardStatus.MACHINE_CHECKED,
+            ArtifactCardStatus.HUMAN_REVIEWED,
+        }
     ]
     known_failures = [
         record
-        for record in artifacts
-        if _as_artifact(record.record).status in KNOWN_FAILURE_STATUSES
+        for record in ordered_cards
+        if record.retrieved.card.status in KNOWN_FAILURE_CARD_STATUSES
     ]
 
     lines = [
@@ -264,16 +465,30 @@ def _render_context(
         f"- Source: {_issue_source_path(context, issue.id)}",
         f"- Summary: {_one_line(issue.description)}",
         "",
+        "## Relevant Artifact Cards",
+        "",
+        (
+            "Default context uses compact ArtifactCard entries. Full artifact "
+            "YAML is not included unless explicitly pulled."
+        ),
+        "",
         "## Relevant Accepted Artifacts",
         "",
     ]
-    lines.extend(_artifact_lines(accepted))
+    lines.extend(_artifact_lines(accepted, artifact_records))
     lines.extend(["", "## Relevant Draft Artifacts", ""])
-    lines.extend(_artifact_lines(drafts))
+    lines.extend(_artifact_lines(drafts, artifact_records))
     lines.extend(["", "## Relevant Known Failures", ""])
-    lines.extend(_artifact_lines(known_failures))
+    lines.extend(_artifact_lines(known_failures, artifact_records))
     lines.extend(
         [
+            "",
+            "## Retrieval Audit",
+            "",
+            (
+                "See `RETRIEVAL_AUDIT.json` for filters, score metadata, "
+                "exclusions, warnings, and any full artifact pulls."
+            ),
             "",
             "## Current Project State",
             "",
@@ -320,27 +535,114 @@ def _render_acceptance(issue: IssueRecord) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _render_relevant_artifacts(artifacts: tuple[RankedArtifact, ...]) -> str:
-    lines = ["# Relevant Artifacts", ""]
-    if artifacts:
-        lines.extend(_artifact_reference_line(record) for record in artifacts)
+def _render_relevant_artifacts(
+    cards: tuple[ContextPackCard, ...],
+    artifact_records: dict[str, LoadedRecord],
+) -> str:
+    lines = ["# Relevant Artifact Cards", ""]
+    ordered_cards = _ordered_context_cards(cards)
+    if ordered_cards:
+        lines.extend(
+            _artifact_reference_line(record, artifact_records)
+            for record in ordered_cards
+        )
     else:
         lines.append("- None")
     return "\n".join(lines) + "\n"
 
 
-def _render_known_failures(artifacts: tuple[RankedArtifact, ...]) -> str:
+def _render_known_failures(
+    cards: tuple[ContextPackCard, ...],
+    artifact_records: dict[str, LoadedRecord],
+) -> str:
     known_failures = [
         record
-        for record in artifacts
-        if _as_artifact(record.record).status in KNOWN_FAILURE_STATUSES
+        for record in _ordered_context_cards(cards)
+        if record.retrieved.card.status in KNOWN_FAILURE_CARD_STATUSES
     ]
     lines = ["# Known Failures", ""]
     if known_failures:
-        lines.extend(_artifact_reference_line(record) for record in known_failures)
+        lines.extend(
+            _artifact_reference_line(record, artifact_records)
+            for record in known_failures
+        )
     else:
         lines.append("- None")
     return "\n".join(lines) + "\n"
+
+
+def _render_full_artifacts(
+    context: RepoContext,
+    pulls: tuple[FullArtifactPull, ...],
+) -> str:
+    lines = ["# Full Artifacts", ""]
+    if not pulls:
+        lines.append(
+            "No full artifacts pulled. The default context pack is cards-only."
+        )
+        return "\n".join(lines) + "\n"
+
+    for pull in pulls:
+        path = context.resolve(pull.path)
+        lines.extend(
+            [
+                f"## {pull.artifact_id}",
+                "",
+                f"- Source: {pull.path}",
+                f"- Reason: {pull.reason}",
+                "",
+                "```yaml",
+                path.read_text(encoding="utf-8").rstrip(),
+                "```",
+                "",
+            ]
+        )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _render_retrieval_audit(
+    *,
+    issue: IssueRecord,
+    retrieval: RetrievalResult,
+    query: str,
+    role: RetrievalRole,
+    max_cards: int,
+    max_full_artifacts: int,
+    public_only: bool,
+) -> str:
+    payload = {
+        "schema_version": 1,
+        "issue_id": issue.id,
+        "request": {
+            "query": query,
+            "issue_id": issue.id,
+            "role": role.value,
+            "max_cards": max_cards,
+            "max_full_artifacts": max_full_artifacts,
+            "public_only": public_only,
+        },
+        "retrieval": {
+            "request_id": retrieval.request_id,
+            "generated_at": retrieval.generated_at.isoformat(),
+            "index_fingerprint": retrieval.index_fingerprint,
+            "cards": [
+                {
+                    "artifact_id": hit.card.id,
+                    "path": hit.card.path,
+                    "root_scope": hit.card.root_scope.value,
+                    "status": hit.card.status.value,
+                    "score_breakdown": hit.score_breakdown.to_dict(),
+                    "why_relevant": hit.why_relevant,
+                }
+                for hit in retrieval.cards
+            ],
+        },
+        "full_artifact_pulls": [
+            pull.to_dict() for pull in retrieval.full_artifact_pulls
+        ],
+        "audit": retrieval.audit.to_dict(),
+    }
+    return json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n"
 
 
 def _render_commands() -> str:
@@ -350,30 +652,82 @@ def _render_commands() -> str:
 
 
 def _artifact_lines(
-    records: list[RankedArtifact],
+    records: list[ContextPackCard],
+    artifact_records: dict[str, LoadedRecord],
 ) -> list[str]:
     if not records:
         return ["- None"]
     lines = []
     for record in records:
-        lines.extend(_artifact_reference_lines(record))
+        lines.extend(_artifact_reference_lines(record, artifact_records))
     return lines
 
 
-def _artifact_reference_line(record: RankedArtifact) -> str:
-    return "\n".join(_artifact_reference_lines(record))
+def _artifact_reference_line(
+    record: ContextPackCard,
+    artifact_records: dict[str, LoadedRecord],
+) -> str:
+    return "\n".join(_artifact_reference_lines(record, artifact_records))
 
 
-def _artifact_reference_lines(record: RankedArtifact) -> list[str]:
-    artifact = _as_artifact(record.record)
-    prefix = _status_prefix(artifact.status)
+def _artifact_reference_lines(
+    record: ContextPackCard,
+    artifact_records: dict[str, LoadedRecord],
+) -> list[str]:
+    card = record.retrieved.card
+    prefix = _card_status_prefix(card.status)
+    reasons = _combined_reasons(record)
     lines = [
-        f"- {prefix}{artifact.id} | {artifact.title} | "
-        f"{artifact.status.value} | {record.record.source_path.as_posix()} | "
-        f"reasons: {_format_reasons(record.reasons)}"
+        f"- {prefix}{card.id} | {card.title} | "
+        f"{card.status.value} | {card.path} | "
+        f"score: {record.retrieved.score_breakdown.total:.6f} | "
+        f"root_scope={card.root_scope.value} | "
+        f"reasons: {_format_reasons(reasons)}"
     ]
-    lines.extend(_formal_metadata_lines(artifact))
+    loaded = artifact_records.get(card.id)
+    if loaded is not None and isinstance(loaded.record, BaseArtifact):
+        lines.extend(_formal_metadata_lines(loaded.record))
     return lines
+
+
+def _combined_reasons(record: ContextPackCard) -> tuple[str, ...]:
+    reasons = list(record.reasons)
+    reasons.extend(record.retrieved.why_relevant)
+    return tuple(dict.fromkeys(reason for reason in reasons if reason))
+
+
+def _ordered_context_cards(
+    cards: tuple[ContextPackCard, ...],
+) -> tuple[ContextPackCard, ...]:
+    return tuple(sorted(cards, key=_context_card_sort_key))
+
+
+def _context_card_sort_key(record: ContextPackCard) -> tuple[int, int, float, str, str]:
+    card = record.retrieved.card
+    return (
+        _reason_priority(record.reasons or ("tag match",)),
+        _card_status_priority(card.status),
+        -record.retrieved.score_breakdown.total,
+        card.id,
+        card.path,
+    )
+
+
+def _card_status_priority(status: ArtifactCardStatus) -> int:
+    if status is ArtifactCardStatus.ACCEPTED:
+        return 0
+    if status in {
+        ArtifactCardStatus.RAW,
+        ArtifactCardStatus.DRAFT,
+        ArtifactCardStatus.LOCALLY_TESTED,
+        ArtifactCardStatus.ADVERSARIALLY_TESTED,
+        ArtifactCardStatus.MACHINE_CHECKED,
+        ArtifactCardStatus.HUMAN_REVIEWED,
+    }:
+        return 1
+    if status in KNOWN_FAILURE_CARD_STATUSES:
+        return 2
+    return 3
 
 
 def _formal_metadata_lines(artifact: BaseArtifact) -> list[str]:
@@ -449,6 +803,21 @@ def _status_prefix(status: ArtifactStatus) -> str:
     if is_preaccepted_status(status):
         return "[DRAFT] "
     if status in KNOWN_FAILURE_STATUSES:
+        return f"[{status.value.upper()}] "
+    return ""
+
+
+def _card_status_prefix(status: ArtifactCardStatus) -> str:
+    if status in {
+        ArtifactCardStatus.RAW,
+        ArtifactCardStatus.DRAFT,
+        ArtifactCardStatus.LOCALLY_TESTED,
+        ArtifactCardStatus.ADVERSARIALLY_TESTED,
+        ArtifactCardStatus.MACHINE_CHECKED,
+        ArtifactCardStatus.HUMAN_REVIEWED,
+    }:
+        return "[DRAFT] "
+    if status in KNOWN_FAILURE_CARD_STATUSES:
         return f"[{status.value.upper()}] "
     return ""
 
@@ -532,3 +901,33 @@ def _issue_source_path(context: RepoContext, issue_id: str) -> str:
         if isinstance(record.record, IssueRecord) and record.record.id == issue_id:
             return record.source_path.as_posix()
     return "-"
+
+
+def _pull_full_artifacts(
+    context: RepoContext,
+    cards: tuple[ContextPackCard, ...],
+    *,
+    max_full_artifacts: int,
+) -> tuple[FullArtifactPull, ...]:
+    if max_full_artifacts <= 0:
+        return ()
+    pulls: list[FullArtifactPull] = []
+    for record in cards:
+        if len(pulls) >= max_full_artifacts:
+            break
+        card = record.retrieved.card
+        artifact_path = context.resolve(card.path)
+        try:
+            relative_path = repo_relative_posix(context.repo_root, artifact_path)
+        except ValueError:
+            continue
+        if not artifact_path.is_file():
+            continue
+        pulls.append(
+            FullArtifactPull(
+                artifact_id=card.id,
+                path=relative_path,
+                reason="explicit context-pack full-artifact budget",
+            )
+        )
+    return tuple(pulls)

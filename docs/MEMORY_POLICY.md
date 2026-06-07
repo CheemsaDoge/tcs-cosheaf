@@ -3,10 +3,11 @@
 This document defines the Phase 3 memory and retrieval policy before the full
 librarian runtime is implemented. The core request/result/card data transfer
 models, deterministic artifact-card builder, bounded local text search,
-rebuildable memory graph sidecar, and global PageRank now exist under
-`cosheaf.memory`, but they remain local metadata surfaces. They are not a claim
-that embedding retrieval, personalized PageRank, context-pack v2 integration,
-hosted LLM workers, or a worker runtime already exists.
+rebuildable memory graph sidecar, global PageRank, issue-conditioned ranking,
+and context-pack v2 integration now exist under local framework surfaces, but
+they remain deterministic metadata and handoff surfaces. They are not a claim
+that embedding retrieval, hosted LLM workers, a worker runtime, automatic
+theorem proving, or external Lean-library checking already exists.
 
 The policy is deterministic-first. The librarian may retrieve, rank, summarize,
 and audit existing repository records. It must not create new claims, modify
@@ -111,8 +112,9 @@ and prints compact card output by default. It does not print full artifact YAML,
 does not print artifact statements, and does not write `.cosheaf/memory/`
 sidecars. The command accepts `--json`, `--status <status>`, and optional
 `--issue <issue-id>` filters. Issue filtering is limited to direct
-`related_artifacts` in the issue record; broader graph-conditioned retrieval
-and ranking remain future work.
+`related_artifacts` in the issue record. Graph-conditioned ranking is provided
+by `cosheaf memory search` and the context-pack v2 integration rather than the
+card-listing command.
 
 `cosheaf memory search "query"` searches the same compact cards with
 deterministic local scoring. It uses an in-memory SQLite FTS5/BM25 table when
@@ -157,7 +159,7 @@ include_refuted: false
 include_obsolete: false
 max_cards: 20
 max_full_artifacts: 0
-role: librarian | orchestrator | reasoner | verifier | formalizer | literature_scout | counterexampleer
+role: librarian | orchestrator | reasoner | verifier | formalizer | literature_scout | counterexampleer | construction_searcher
 ```
 
 Defaults must be conservative:
@@ -210,6 +212,37 @@ audit:
 The result must make filtering and ranking decisions inspectable. It must not
 silently hide a public/private policy exclusion or make a skipped verifier look
 like a pass.
+
+## Context Pack V2
+
+`cosheaf context build <issue-id>` and `cosheaf context show <issue-id>` now
+use artifact-card retrieval before rendering issue handoff context. The default
+role is `orchestrator`, and the default full-artifact budget is
+`max_full_artifacts: 0`, so the main context remains cards-only unless the
+caller explicitly widens the budget.
+
+Context pack v2 writes the existing handoff files plus:
+
+- `FULL_ARTIFACTS.md`: empty by default except for a statement that no full
+  artifacts were pulled. When `--max-full-artifacts <n>` is greater than zero,
+  this file contains at most `n` explicit full YAML pulls.
+- `RETRIEVAL_AUDIT.json`: deterministic request, retrieval, score, exclusion,
+  warning, and full-artifact-pull metadata.
+
+The CLI accepts:
+
+- `--role <role>` to record the retrieval caller role.
+- `--max-cards <n>` to bound the card search before issue-local filtering.
+- `--max-full-artifacts <n>` to explicitly allow bounded full YAML pulls.
+- `--public-only` to exclude private cards and private artifact IDs from the
+  rendered context and retrieval audit.
+
+Retrieved cards are filtered again through issue-local relevance before they
+are rendered in context packs. This preserves the previous direct-reference,
+dependency-neighbor, domain-match, and tag-match behavior while using the
+librarian score as card metadata. Retrieval scores and graph signals remain
+ranking metadata only; they do not authorize promotion, human review,
+verification claims, or public/private policy bypasses.
 
 ## Ranking Formula
 
@@ -433,6 +466,9 @@ Phase 3 should proceed in small PRs:
    `cosheaf memory search --issue <issue-id> --explain` with explicit seed and
    pin flags.
 6. Integrate cards into context-pack v2 with bounded full-artifact pulls.
+   Implemented in `cosheaf context build` and `cosheaf context show` with
+   cards-only orchestrator defaults, explicit full-artifact budgets,
+   public-only filtering, and `RETRIEVAL_AUDIT.json`.
 
 Do not add hosted LLM behavior, agent autonomy, autoformalization, external
 Lean library checking, or promotion shortcuts in Phase 3 memory-policy work.

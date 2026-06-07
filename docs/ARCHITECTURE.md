@@ -80,9 +80,9 @@ on draft or otherwise pre-accepted artifacts.
 
 ### Memory/Retrieval Layer
 
-The planned memory/retrieval layer provides deterministic librarian behavior
-between storage/index/graph data and context-pack or future orchestrator
-consumers. It is documented in [Memory Policy](MEMORY_POLICY.md).
+The memory/retrieval layer provides deterministic librarian behavior between
+storage/index/graph data and context-pack or future orchestrator consumers. It
+is documented in [Memory Policy](MEMORY_POLICY.md).
 
 The default retrieval unit is an artifact card, not a full artifact dump. Cards
 carry compact metadata such as ID, path, root scope, type, status, title,
@@ -96,10 +96,14 @@ count, and maximum full-artifact pulls. Public-only retrieval must exclude
 private records and private-derived summaries. Orchestrator context defaults to
 cards only.
 
-The memory graph extends the dependency graph with review, source,
-formalization, verifier, task-run, worker-bundle, and issue-context signals.
-Graph weights and retrieval caches are sidecars under `.cosheaf/memory/`.
-Sidecars are rebuildable views and must not become artifact truth.
+The local implementation builds artifact cards, searches them with
+deterministic lexical or SQLite FTS/BM25 matching, blends issue-conditioned
+Personalized PageRank, global PageRank, quality, freshness, and penalty
+signals, and records retrieval audit metadata. The memory graph extends the
+dependency graph with review, source, formalization, verifier, task-run,
+worker-bundle, and issue-context signals. Graph weights and retrieval caches
+are sidecars under `.cosheaf/memory/`. Sidecars are rebuildable views and must
+not become artifact truth.
 
 The librarian may build cards, rank/filter them, compute graph weights, produce
 context-pack candidates, and record retrieval audits. It must not create
@@ -156,13 +160,24 @@ Current agent harness outputs are:
 - `.cosheaf/tasks/<task-id>/runs/<run-id>/` local worker run records with
   separate stdout and stderr files.
 
-Context packs use deterministic relevance ranking. The ranking includes direct
-issue artifact references, one-hop dependency neighbors, artifact domains that
-match issue text or tags, and artifact tags that match issue tags. Each listed
-artifact includes explainable ranking reasons. Accepted artifacts are preferred
-over draft artifacts within the same relevance class. Refuted, obsolete, and
-superseded artifacts are included only when relevant and are marked as known
-failures, not current truth.
+Context packs use deterministic card retrieval and issue-local relevance
+ranking. The generated files are `CONTEXT.md`, `ACCEPTANCE.md`,
+`RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, `FULL_ARTIFACTS.md`,
+`RETRIEVAL_AUDIT.json`, and `COMMANDS.md`. The rendered artifact sections use
+compact `ArtifactCard` rows by default, including score metadata, root scope,
+and relevance reasons. Full artifact YAML is written only to
+`FULL_ARTIFACTS.md` when the caller sets an explicit nonzero
+`--max-full-artifacts` budget. The default orchestrator role uses
+`max_full_artifacts = 0`, so default handoff context is cards-only.
+
+Context-pack relevance still preserves the existing issue-local constraints:
+direct issue artifact references, one-hop dependency neighbors, artifact
+domains that match issue text or tags, and artifact tags that match issue tags.
+Accepted artifacts are preferred over draft artifacts within the same
+relevance class. Refuted, obsolete, and superseded artifacts are included only
+when relevant and are marked as known failures, not current truth. Public-only
+context packs exclude private cards and private artifact IDs from the rendered
+context and retrieval audit.
 
 When a relevant artifact carries formal-link metadata or policy-relevant formal
 settings, context packs include compact formalization, alignment, verification
