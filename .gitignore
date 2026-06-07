@@ -34,6 +34,11 @@ dist/
 .cosheaf/dev/codegraph/
 codegraph*.db
 
+# Optional developer-only Headroom outputs
+.headroom/
+.cosheaf/dev/headroom/
+headroom*.json
+
 # OS metadata
 .DS_Store
 Thumbs.db

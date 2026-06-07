@@ -40,3 +40,46 @@ make test
 make validate
 make gate
 ```
+
+## Headroom
+
+Headroom is scaffolded only as a default-off developer experiment for
+noncanonical text views such as long logs, stdout/stderr sidecars, and temporary
+developer-facing tool-output views. It is not part of runtime, CI, retrieval,
+validation, gates, verifier evidence, review, artifact YAML, accepted KB, or
+promotion.
+
+The repository includes a conservative boundary probe:
+
+```bash
+python scripts/dev/headroom_probe.py --source .cosheaf/logs/example.stdout.txt --json
+python scripts/dev/headroom_probe.py --enable --source .cosheaf/logs/example.stdout.txt --json
+```
+
+Without `--enable`, the probe reports `status: disabled` and exits 0. With
+`--enable`, it first checks that the source path is an approved noncanonical
+input. Missing Headroom reports `status: unavailable`, `fallback:
+use_original_text`, and exits 0 unless `--strict` is set. The current scaffold
+records tool availability and policy metadata only; it does not run an actual
+Headroom compression command.
+
+Allowed source paths are intentionally narrow:
+
+- `.cosheaf/logs/`
+- `.cosheaf/tasks/.../stdout.txt`
+- `.cosheaf/tasks/.../stderr.txt`
+- `.cosheaf/orchestrator/.../stdout.txt`
+- `.cosheaf/orchestrator/.../stderr.txt`
+- `.cosheaf/dev/headroom/`
+
+The probe refuses canonical or governance inputs, including `AGENTS.md`,
+`docs/CODEX_WORKFLOW.md`, ADRs, `kb/`, `reviews/`, `sources/`, schemas,
+artifact YAML, gate reports, retrieval audit files, memory sidecars, and index
+outputs. It never runs a learning/write-back mode, never rewrites the source
+file, and always falls back to the original text.
+
+Generated Headroom files must stay sidecar/cache only. The intended locations
+are `.headroom/` and `.cosheaf/dev/headroom/`, both of which are gitignored.
+Do not commit compressed summaries, learned state, caches, or experiment
+metadata unless a later focused policy explicitly makes a particular artifact
+reviewable.

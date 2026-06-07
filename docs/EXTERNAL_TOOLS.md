@@ -14,7 +14,7 @@ or implementation.
 | Tool | Decision | Default State | Allowed Phase | License |
 | --- | --- | --- | --- | --- |
 | Microsoft MarkItDown | Accepted only as opt-in source ingestion. | Disabled, not installed by default. | Phase 2 source-ingestion adapter. | MIT |
-| Headroom | Deferred to a default-off compression experiment. | Disabled, not installed by default. | Phase 5 or later experiment. | Apache-2.0 |
+| Headroom | Scaffolded as a default-off compression experiment boundary. | Disabled, not installed by default. | Phase 5 developer experiment. | Apache-2.0 |
 | CodeGraph | Accepted as optional developer tooling only. | Not part of runtime or CI requirements. | Developer tooling after boundary docs. | MIT |
 | Understand-Anything | Manual isolated onboarding only. | Not installed, not run by default. | Release/showcase docs or dev tooling docs only. | MIT |
 
@@ -96,16 +96,38 @@ weaken source metadata policy.
 
 Repository: `chopratejas/headroom`
 
-Decision: defer to a Phase 5 or later default-off experiment. Headroom may be
-useful for compressing long logs, tool outputs, temporary RAG chunks, or local
-developer-agent context, but it must not enter canonical retrieval or knowledge
-governance paths.
+Decision: scaffold as a Phase 5 default-off developer experiment boundary.
+Headroom may be useful later for compressing long logs, tool outputs,
+temporary RAG chunks, or local developer-agent context, but it must not enter
+canonical retrieval or knowledge governance paths.
 
-Allowed future surfaces:
+Implemented surface:
+
+```text
+python scripts/dev/headroom_probe.py --source <repo-local-noncanonical-text> --json
+python scripts/dev/headroom_probe.py --enable --source <repo-local-noncanonical-text> --json
+python scripts/dev/headroom_probe.py --enable --strict --source <repo-local-noncanonical-text> --json
+```
+
+The probe is disabled unless `--enable` is provided. When disabled, it records
+`status: disabled`, `fallback: use_original_text`, and exits 0 without looking
+for Headroom. When enabled, it first checks the source path against the
+noncanonical-input allowlist. If the path is refused, it exits nonzero without
+checking or invoking Headroom. If the path is allowed but Headroom is absent,
+it reports `status: unavailable`, `fallback: use_original_text`, and exits 0
+unless `--strict` is provided. When Headroom is present, this scaffold records
+availability and version metadata only; it does not run an actual compression
+subcommand.
+
+Allowed surfaces:
 
 - Local experiments that compare compressed and uncompressed views.
 - CI log summarization only if the original logs remain available.
 - Temporary, explicitly labeled noncanonical summaries.
+- Developer-only probe metadata for `.cosheaf/logs/`,
+  `.cosheaf/tasks/.../stdout.txt`, `.cosheaf/tasks/.../stderr.txt`,
+  `.cosheaf/orchestrator/.../stdout.txt`,
+  `.cosheaf/orchestrator/.../stderr.txt`, and `.cosheaf/dev/headroom/`.
 
 Disallowed behavior:
 
@@ -116,9 +138,12 @@ Disallowed behavior:
 - Run a learning or write-back mode against `AGENTS.md`, `CODEX_WORKFLOW.md`,
   ADRs, artifact YAML, or project memory files.
 - Become a default runtime, CI, or package dependency.
+- Compress or rewrite source notes, review records, formalization metadata,
+  schemas, gate reports, memory sidecars, index outputs, accepted artifacts, or
+  any YAML file.
 
-Install surface for future work: no default install. Any experiment must be
-explicitly enabled and tested with the dependency absent.
+Install surface: no default install. Any experiment must be explicitly enabled
+and tested with the dependency absent.
 
 Fallback: when unavailable, compression experiments skip and the canonical
 uncompressed workflow remains unchanged.
@@ -199,8 +224,11 @@ Expected generated locations include:
 
 - `.cosheaf/ingest/`
 - `.codegraph/`
+- `.headroom/`
+- `.cosheaf/dev/headroom/`
 - `.understand-anything/`
 - `knowledge-graph.json`
+- `headroom*.json`
 - tool-specific cache or dashboard directories
 
 Persisted source notes or curated source metadata may be committed only through
