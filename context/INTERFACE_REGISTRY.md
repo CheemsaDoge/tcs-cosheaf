@@ -146,6 +146,18 @@
   deterministic `Plan` payload as JSON.
 - `cosheaf orchestrator plan --issue <issue-id> --repo-root <path>`: creates
   the plan for an explicit repository root.
+- `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only`: runs a
+  deterministic local-only orchestrator dry-run for an existing issue. It
+  creates issue-scoped local task records for the planned nodes, executes
+  explicit local argv commands through the existing local worker runner,
+  validates worker bundle v2 manifests, reduces them into reducer records,
+  writes an inspectable run record under `.cosheaf/orchestrator/`, and does
+  not call hosted LLMs, use network services, run gates, request human review,
+  write accepted knowledge, or promote artifacts.
+- `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only --timeout-seconds <seconds>`:
+  enforces a positive timeout for each local worker command.
+- `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only --repo-root <path>`:
+  runs the local-only dry-run for an explicit repository root.
 
 ### Python API
 
@@ -810,6 +822,11 @@ review, promotion, proof, or public/private policy bypasses.
 - `cosheaf.agent.worker_bundle_v2.WorkerBundleV2Error`: expected worker bundle v2 validation or reducer-boundary failure.
 - `cosheaf.agent.worker_bundle_v2.validate_worker_bundle_v2(context: RepoContext, bundle_path: str | Path) -> WorkerBundleV2`: loads and validates a worker bundle v2 manifest without executing workers, writing files, requesting review, or promoting accepted knowledge. It rejects non-repository-local bundle paths, non-repository-local proposed artifact paths, accepted-KB proposals, schema-invalid existing proposed artifacts, and worker-created `human_reviewed` or `accepted` review states.
 - `cosheaf.agent.worker_bundle_v2.reduce_worker_bundle_v2(context: RepoContext, bundle_path: str | Path, *, reducer_id: str) -> ReducerResult`: validates a worker bundle v2 manifest and returns a deterministic `ReducerResult`, preserving failures, risk flags, and confidence as warnings.
+- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunConfig`: dataclass for one local-only orchestrator dry-run with fields `issue_id`, `timeout_seconds`, optional `worker_command`, optional `proposal_path`, optional `run_id`, and optional `now`.
+- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunResult`: dataclass containing the final `OrchestratorRun`, run root, and run record path.
+- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunner`: local-only orchestrator runner that converts a deterministic plan into local task records, runs explicit argv commands through `LocalWorkerRunner`, validates worker bundle v2 outputs, reduces them into `ReducerResult` records, and writes the final run record. It does not call hosted LLMs, make network calls, run gates, request human review, write accepted knowledge, or promote artifacts.
+- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunner.run_issue(config: OrchestratorLocalRunConfig) -> OrchestratorLocalRunResult`: runs one issue-scoped local-only dry-run and returns the final persisted run metadata.
+- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunError`: expected local orchestrator run failure, including invalid configuration, missing issue records, duplicate run IDs, and local runner boundary failures.
 - `cosheaf.agent.orchestrator_stub.OrchestratorStub`: local filesystem task harness stub. It creates, lists, loads, and completes task records without LLM calls, network calls, concrete worker execution, or accepted knowledge merges.
 - `cosheaf.agent.orchestrator_stub.TaskHarnessError`: expected task harness error.
 - `cosheaf.agent.orchestrator_stub.AcceptedKnowledgeMergeProhibitedError`: raised when a caller asks the stub to merge accepted knowledge.

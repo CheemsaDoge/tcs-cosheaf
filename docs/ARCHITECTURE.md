@@ -226,6 +226,17 @@ It references the expected context-pack location, but it does not build context
 packs, write plan files, dispatch workers, run verifier adapters, call model
 providers, request human review, or create accepted knowledge.
 
+The local orchestrator runner in `cosheaf.agent.orchestrator_runner` wires that
+plan to the existing local worker runner through
+`cosheaf orchestrator run --issue <issue-id> --dry-run --local-only`. It creates
+issue-scoped local task records for the planned nodes, runs deterministic
+repository-local worker commands with `shell=False`, validates worker bundle v2
+manifests, reduces them into `ReducerResult` records, and writes an inspectable
+run record under `.cosheaf/orchestrator/<issue-id>/runs/<run-id>/run.yaml`.
+This is still a dry-run workflow: it does not call hosted LLMs, make network
+calls, run gates, request human review, merge outputs, write accepted
+knowledge, or promote artifacts.
+
 The local worker runner is not an LLM runtime or model-provider integration. It
 executes only an explicit argv command with `shell=False`, defaults to the
 repository root as its working directory, rejects working directories outside
@@ -249,9 +260,9 @@ flags, next steps, and confidence. Its reducer validates repository-local
 paths, rejects accepted-KB proposals, rejects worker-created
 `human_reviewed` or `accepted` review states, preserves failures and
 uncertainty as reducer warnings, and returns a deterministic `ReducerResult`.
-It does not replace the existing task-runner v1 bundle path yet, does not
-dispatch workers, does not run gates, does not request review, does not write
-files, and does not promote accepted knowledge.
+The local orchestrator runner can now validate and reduce these bundles after
+local dry-run worker commands, but it does not run gates, request review, merge
+outputs, write accepted artifacts, or promote accepted knowledge.
 
 ### CLI Layer
 

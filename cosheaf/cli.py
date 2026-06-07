@@ -24,6 +24,11 @@ from cosheaf.agent.orchestrator_planner import (
     OrchestratorPlannerError,
     plan_for_issue,
 )
+from cosheaf.agent.orchestrator_runner import (
+    OrchestratorLocalRunConfig,
+    OrchestratorLocalRunError,
+    OrchestratorLocalRunner,
+)
 from cosheaf.agent.orchestrator_stub import OrchestratorStub, TaskHarnessError
 from cosheaf.agent.task import WorkerType
 from cosheaf.config.workspace import KbRootConfig, WorkspaceConfigError
@@ -867,6 +872,67 @@ def orchestrator_plan(
         console.print(
             f"- {node.node_id} | {node.worker_type.value} | depends_on={depends_on}"
         )
+
+
+@orchestrator_app.command("run")
+def orchestrator_run(
+    issue: str = typer.Option(..., "--issue", help="Issue ID to run locally."),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Run deterministic dry-run workers only.",
+    ),
+    local_only: bool = typer.Option(
+        False,
+        "--local-only",
+        help="Require local-only execution with no hosted LLM or network.",
+    ),
+    timeout_seconds: int = typer.Option(
+        60,
+        "--timeout-seconds",
+        help="Maximum runtime for each local worker command in seconds.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+) -> None:
+    """Run a deterministic local-only orchestrator dry-run for an issue."""
+    console = Console(width=120, markup=False)
+    if not dry_run:
+        console.print("Orchestrator run failed: --dry-run is required")
+        raise typer.Exit(code=1)
+    if not local_only:
+        console.print("Orchestrator run failed: --local-only is required")
+        raise typer.Exit(code=1)
+
+    try:
+        result = OrchestratorLocalRunner(RepoContext(repo_root)).run_issue(
+            OrchestratorLocalRunConfig(
+                issue_id=issue,
+                timeout_seconds=timeout_seconds,
+            )
+        )
+    except OrchestratorLocalRunError as exc:
+        console.print(f"Orchestrator run failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    console.print(f"Orchestrator run: {result.run.run_id}")
+    console.print(f"- issue: {result.run.issue_id}")
+    console.print(f"- state: {result.run.state.value}")
+    console.print("- local_only: true")
+    console.print("- hosted_llm: not used")
+    console.print("- network: not used")
+    console.print("- accepted_writes: not performed")
+    console.print(f"- run_record: {result.record_path}")
+    console.print(f"- worker_calls: {len(result.run.worker_calls)}")
+    console.print(f"- reducer_results: {len(result.run.reducer_results)}")
+    for stop in result.run.stop_conditions:
+        console.print(f"- stop: {stop.reason} | {stop.description}")
+
+    if result.run.state.value != "completed":
+        raise typer.Exit(code=1)
 
 
 @task_app.command("create")
