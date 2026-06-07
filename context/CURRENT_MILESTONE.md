@@ -2,12 +2,13 @@
 
 ## Milestone
 
-Phase 4 Task 4.3: reducer and worker bundle v2.
+Phase 4 Task 4.4: local worker runner integration.
 
 ## Goal
 
-Standardize a strict worker bundle v2 contract and deterministic reducer
-behavior without executing workers or changing accepted knowledge.
+Integrate deterministic orchestrator plans with the existing local command
+runner while keeping execution local-only, dry-run oriented, and outside the
+accepted-knowledge path.
 
 ## Current Baseline
 
@@ -25,6 +26,9 @@ behavior without executing workers or changing accepted knowledge.
 - Phase 4 Task 4.2 deterministic task-DAG planner stub is complete in
   `cosheaf.agent.orchestrator_planner` and
   `cosheaf orchestrator plan --issue <issue-id> --json`.
+- Phase 4 Task 4.3 reducer and worker bundle v2 is complete in
+  `cosheaf.agent.worker_bundle_v2` and
+  `schemas/worker_bundle_v2.schema.json`.
 - Framework package version is `0.1.1`.
 - `tcs-cosheaf` has workspace-aware validation, gatekeeper G1-G10,
   deterministic index rebuilds, read-only query surfaces, artifact-card
@@ -47,28 +51,26 @@ behavior without executing workers or changing accepted knowledge.
 
 ## Completion Criteria
 
-- `WorkerBundleV2` is strict and records bundle ID, task ID, worker role,
-  creation time, summary, used artifacts and sources, claims, proposed
-  artifacts, verification requests, failures or counterexamples, risk flags,
-  next steps, and confidence.
-- `schemas/worker_bundle_v2.schema.json` records the same required fields.
-- Worker bundle v2 validation rejects repository-unsafe paths.
-- Worker bundle v2 validation rejects proposed writes to accepted KB paths.
-- Worker bundle v2 validation rejects worker-created `human_reviewed` or
-  `accepted` review states on proposed artifacts.
-- The reducer produces a deterministic `ReducerResult` and preserves failures,
-  risk flags, and confidence as warnings.
-- The v2 reducer does not execute workers, call hosted LLMs, run gates, request
-  review, write files, merge outputs, or promote artifacts.
-- No schema, gate, verifier, promotion, public/private KB, workspace root, or
-  default dependency changes outside the new worker bundle v2 schema in this
-  task.
+- `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only` is
+  available as the required local-only CLI surface.
+- The local runner creates issue-scoped task records for planned nodes and runs
+  explicit argv commands through the existing `LocalWorkerRunner`.
+- Worker command execution keeps `shell=False`, repository-local cwd, and a
+  required timeout through the existing local runner boundary.
+- stdout, stderr, command metadata, exit code, bundle path, reducer results,
+  and stop conditions are persisted in inspectable run records.
+- Worker bundle v2 validation and reduction are required before a dry-run is
+  considered completed.
+- Timeout and unsafe proposed accepted-output paths are covered by tests.
+- No hosted LLM, network, gate execution, human review request, accepted write,
+  promotion, schema change, verifier semantic change, or public/private KB
+  policy change is introduced.
 
 ## Next Focus
 
-After Phase 4 Task 4.3 lands, the next fixed-plan item is Phase 4 Task 4.4:
-local worker runner integration. Do not jump ahead into hosted LLM execution,
-external Lean checking, web UI work, or accepted-promotion policy changes.
+After Phase 4 Task 4.4 lands, the next fixed-plan item is Phase 4 Task 4.5:
+agent dry-run workflow. Do not jump ahead into hosted LLM execution, external
+Lean checking, web UI work, or accepted-promotion policy changes.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show
