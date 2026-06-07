@@ -40,6 +40,7 @@ SCHEMA_FILES = [
     "schemas/review.schema.json",
     "schemas/verifier.schema.json",
     "schemas/task.schema.json",
+    "schemas/orchestrator_run.schema.json",
 ]
 
 EXAMPLE_FILES = [

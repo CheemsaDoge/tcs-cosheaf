@@ -191,6 +191,14 @@ stub validates that tasks are issue-scoped, records deterministic default task
 IDs, and can mark a task completed only after a local worker output bundle
 passes the worker contract.
 
+The orchestrator state-machine contract is defined separately from runtime
+execution. `cosheaf.agent.orchestrator_state` contains strict serializable
+models for `OrchestratorRun`, `Plan`, `TaskDAG`, `TaskNode`, `WorkerCall`,
+`ReducerResult`, and `StopCondition`. These models validate explicit run
+states, state transitions, task-DAG dependencies, and repository-local paths,
+but they do not execute workers, call hosted LLMs, run gates, request human
+review, merge outputs, or promote accepted knowledge.
+
 The local worker runner is not an LLM runtime or model-provider integration. It
 executes only an explicit argv command with `shell=False`, defaults to the
 repository root as its working directory, rejects working directories outside
