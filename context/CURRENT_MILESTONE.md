@@ -2,65 +2,63 @@
 
 ## Milestone
 
-Phase 3 Task 3.7: context pack v2 integration.
+Phase 0 Task 0.3: external tool decisions.
 
 ## Goal
 
-Integrate local librarian retrieval into context pack generation while
-preserving bounded, auditable context. The default context handoff should use
-compact `ArtifactCard` rows, keep orchestrator context cards-only by default,
-and require an explicit full-artifact budget before writing full YAML into the
-generated context pack.
+Record durable boundaries for MarkItDown, Headroom, CodeGraph, and
+Understand-Anything before any tool adapter, dependency, script, CI path, or
+runtime behavior is added.
 
 ## Current Baseline
 
 - Phase 0 Task 0.1 is complete in `docs/CODEX_STATE_AUDIT.md`.
 - Phase 0 Task 0.2 is complete in `docs/CODEX_DEVELOPMENT_PLAN.md` and
   `docs/ADR/0008-agent-memory-runtime-roadmap.md`.
-- Phase 1 workspace-template reconciliation and Phase 2 public-KB policy
-  groundwork have landed in their respective repositories.
+- Phase 3 Task 3.7 context-pack v2 integration is complete.
+- Phase 4 Task 4.1 orchestrator state model is complete in
+  `cosheaf.agent.orchestrator_state`,
+  `schemas/orchestrator_run.schema.json`, and
+  `docs/ADR/0010-orchestrator-state-machine.md`.
 - Framework package version is `0.1.1`.
 - `tcs-cosheaf` has workspace-aware validation, gatekeeper G1-G10,
-  deterministic index rebuilds, a Python query API, artifact-card retrieval,
-  memory graph/PageRank surfaces, local task-runner scaffolding, and minimal
-  optional SAT, SMT, and plain Lean verifier adapters.
+  deterministic index rebuilds, read-only query surfaces, artifact-card
+  retrieval, memory graph/PageRank surfaces, context-pack v2, local task-runner
+  scaffolding, an orchestrator state-machine contract, and minimal optional
+  SAT, SMT, and plain Lean verifier adapters.
 - Formal-link metadata is implemented as artifact metadata, G10 static gate
   checks, context-pack display, and index/query output.
 - External Lean-library `#check` for CSLib/mathlib references is not
   implemented.
 - Hosted LLM worker execution is not implemented.
-- `tcs-cosheaf-workspace-template` is the user-facing entry point and currently
-  has demo, Makefile, public-KB bootstrap guidance, onboarding docs, and CI
-  smoke coverage.
-- `tcs-kb-public` currently has accepted public artifacts whose formalization
-  references remain metadata unless a checker result is explicitly recorded.
+- MarkItDown, Headroom, CodeGraph, and Understand-Anything are not installed,
+  not default dependencies, and not part of runtime behavior.
 
 ## Completion Criteria
 
-- `cosheaf context build` and `cosheaf context show` use `ArtifactCard` rows by
-  default.
-- The default `orchestrator` role has `max_full_artifacts = 0`.
-- Full artifact YAML appears only in `FULL_ARTIFACTS.md` when a caller passes a
-  positive `--max-full-artifacts` budget.
-- Generated context packs include `RETRIEVAL_AUDIT.json` with request, score,
-  exclusion, warning, and full-artifact-pull metadata.
-- Public-only context excludes private cards and private artifact IDs from both
-  rendered context and audit output.
-- Tests cover bounded output, role-specific full-artifact budget behavior, CLI
-  options, and private-leakage prevention.
-- `docs/MEMORY_POLICY.md`, `docs/ARCHITECTURE.md`, and
-  `context/INTERFACE_REGISTRY.md` describe the new context-pack v2 behavior.
-- No hosted LLM runtime, agent autonomy, autoformalization, external
-  Lean-library checking, artifact schema change, gate behavior change, or
-  promotion-policy change is included.
+- `docs/EXTERNAL_TOOLS.md` records per-tool license, install surface, data
+  boundary, default state, allowed outputs, gitignore/cache expectations,
+  fallback behavior, and rollback triggers.
+- `docs/ADR/0011-external-tooling-boundaries.md` records the architectural
+  decision before implementation begins.
+- MarkItDown is documented as opt-in source ingestion only, not gate, review,
+  verifier, promotion, or accepted-knowledge truth.
+- Headroom is documented as Phase 5+ default-off compression experiment only,
+  never canonical retrieval, gate, YAML, audit, accepted-KB, or project-memory
+  input.
+- CodeGraph is documented as optional dev-only code navigation and impact
+  analysis, not runtime or CI truth.
+- Understand-Anything is documented as isolated manual onboarding only, not
+  runtime, default CI, package dependency, retrieval, memory, or KB truth.
+- No adapter code, package dependency, schema, gate, verifier, promotion,
+  public/private KB behavior, or runtime behavior changes in this task.
 
 ## Next Focus
 
-After Task 3.7 lands, continue with Phase 4 Task 4.1: orchestrator state model.
-That task should define explicit serializable state models without changing
-runtime behavior, without hosted LLM calls, without auto-promotion, and without
-direct accepted writes.
+After Phase 0 Task 0.3 lands, self-audit earlier fixed-plan tasks before
+continuing. The next known gap is Phase 2 source-ingestion policy for
+MarkItDown before any MarkItDown adapter code is added.
 
-Maintain the current maintainer override for this run: do not add `codex`
-prefixes to issue names, branch names, or PR titles, even when older examples
-show that prefix.
+Maintain the current maintainer override: do not add `codex` prefixes to issue
+names, branch names, or pull request titles, even when older examples show
+that prefix.
