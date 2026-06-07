@@ -31,6 +31,17 @@ If `Get-Command gh -All` and `where.exe gh` show only one GitHub CLI but
 multiple `gh` binaries. Do not delete credentials or log out accounts unless
 the maintainer explicitly asks for that action.
 
+In managed Codex runs, sandboxed GitHub CLI checks can report a stale or
+invalid token even after the maintainer has completed `gh auth login` in the
+real Windows session. Re-check from a shell that can access the Windows keyring
+before treating the token as broken. A valid full-access check looks like:
+
+```powershell
+gh auth status --hostname github.com
+```
+
+and should report the `CheemsaDoge` account as logged in via `keyring`.
+
 `gh auth login -h github.com` is interactive. If it times out or is interrupted,
 it may leave a waiting `gh.exe` process. Before retrying or starting another
 GitHub operation, inspect the residual process and terminate only the command
@@ -48,6 +59,20 @@ status` is invalid, it is still reasonable to try a normal `git push` and report
 the actual result. If the branch is pushed but `gh` remains unusable, use an
 available authenticated GitHub connector or ask the maintainer to reauthenticate
 instead of faking PR creation.
+
+For GitHub CLI or Git network diagnostics on this machine, explicitly set the
+local proxy before blaming credentials or deleting configuration:
+
+```powershell
+$env:HTTP_PROXY='http://127.0.0.1:3067'
+$env:HTTPS_PROXY='http://127.0.0.1:3067'
+$env:http_proxy='http://127.0.0.1:3067'
+$env:https_proxy='http://127.0.0.1:3067'
+```
+
+The proxy setting is a diagnostic and transport setup step only. It does not
+prove that authentication is valid; still run the current `gh auth status`, API,
+or Git command and report the real output.
 
 ## Git Path
 
