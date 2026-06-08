@@ -77,10 +77,46 @@ orchestrator runner still:
 - does not write accepted knowledge
 - does not promote artifacts
 
-## OpenTelemetry
+## Optional OpenTelemetry Adapter
 
-OpenTelemetry is not required for this phase and is disabled by default because
-there is no adapter in this implementation. Any future OpenTelemetry adapter
-must remain optional, must not require an external collector in tests, and must
-not turn export failures into research workflow failures unless a strict mode is
-explicitly enabled.
+Cosheaf includes a small optional OpenTelemetry-style adapter in
+`cosheaf.observability.otel`. It does not import or require the OpenTelemetry
+SDK, does not configure a collector, and does not export anything unless a
+caller explicitly enables telemetry and provides an exporter object.
+
+The adapter exposes:
+
+- `OTelTelemetryConfig(enabled=False, strict=False)`
+- `OTelSpanExporter`
+- `emit_run_log_span(run_log, exporter=..., config=...)`
+- `run_log_span_attributes(run_log)`
+
+Default behavior is disabled:
+
+```python
+result = emit_run_log_span(run_log, exporter=my_exporter)
+assert result.exported is False
+```
+
+Enabled export maps safe run metadata to span attributes such as:
+
+- `cosheaf.run_id`
+- `cosheaf.issue_id`
+- `cosheaf.plan_id`
+- `cosheaf.task_ids`
+- `cosheaf.worker_roles`
+- `cosheaf.retrieved_artifacts`
+- `cosheaf.full_artifact_pulls`
+- `cosheaf.verifier_results`
+- `cosheaf.gate_results`
+- `cosheaf.output_bundle_paths`
+- `cosheaf.status`
+- `cosheaf.stop_reason`
+
+The adapter intentionally does not export worker command argv, stdout, stderr,
+hidden reasoning, or secret values. Export failures are nonfatal by default and
+are returned as `OTelExportResult(error=...)`. Only
+`OTelTelemetryConfig(strict=True)` turns exporter failure into
+`OTelExportError`.
+
+Tests use fake exporters only. No external collector is required.
