@@ -97,6 +97,68 @@ Do not assume the outer `H:\ai4tcs` directory is a repository. It is the
 container for multiple repository worktrees. Run repository commands from the
 specific checkout or worktree path.
 
+## Git Commit Identity
+
+Before creating local commits in this repository family, verify the Git author
+identity. The expected identity is:
+
+```text
+CheemsaDoge <cheemsadoge@gmail.com>
+```
+
+Check both global and repository-local config:
+
+```powershell
+git config --global --get user.name
+git config --global --get user.email
+git config --get user.name
+git config --get user.email
+```
+
+If either config resolves to another name or email, correct it before
+committing:
+
+```powershell
+git config --global user.name "CheemsaDoge"
+git config --global user.email "cheemsadoge@gmail.com"
+git config user.name "CheemsaDoge"
+git config user.email "cheemsadoge@gmail.com"
+```
+
+After committing, inspect the actual commit metadata instead of assuming the
+config was applied:
+
+```powershell
+git show -s --format=fuller HEAD
+```
+
+Do not add `Co-authored-by` trailers unless the maintainer explicitly asks for
+them.
+
+## Default Branch History Cleanup
+
+GitHub contributor cleanup can require history cleanup when the default branch
+contains an unwanted commit author, committer, or commit-message trailer such
+as `Co-authored-by`. A normal revert removes content from the current tree but
+does not remove historical contributor attribution from the default branch.
+
+Use this only when the maintainer explicitly authorizes default-branch history
+rewriting:
+
+1. Record the current `origin/main` commit.
+2. Create a remote backup branch pointing at that exact commit.
+3. Build a replacement history in an isolated worktree.
+4. Verify the replacement tree with the full command ladder.
+5. Confirm `git log --grep <unwanted-name> -i` has no unwanted matches.
+6. Temporarily allow force pushes on `main` only if branch protection blocks the
+   update.
+7. Push with `--force-with-lease=refs/heads/main:<old-main-commit>`.
+8. Immediately restore branch protection.
+9. Re-check `origin/main`, branch protection, and the GitHub contributors API.
+
+Never force-push `main` without a backup branch and an explicit old-commit
+lease.
+
 ## `cosheaf` Command Lookup
 
 The framework package may be installed even when `cosheaf.exe` is not on the
