@@ -460,6 +460,8 @@ def _validate_repo_local_path(value: str, *, allow_dot: bool = False) -> str:
         raise ValueError("path must be repository-local")
 
     parts = PurePosixPath(normalized).parts
+    if ".." in parts:
+        raise ValueError("path must be repository-local")
     if parts and parts[0] == "kb" and "accepted" in parts:
         raise ValueError(
             "orchestrator state must not reference direct accepted knowledge output"
