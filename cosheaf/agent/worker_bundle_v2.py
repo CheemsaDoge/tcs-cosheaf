@@ -252,11 +252,13 @@ def _single_loaded_record(
 def _validate_repo_local_path(value: str) -> str:
     normalized = normalize_repo_path(value)
     is_absolute = Path(value).is_absolute() or PureWindowsPath(value).is_absolute()
+    parts = PurePosixPath(normalized).parts
     if (
         not normalized
         or is_absolute
         or normalized == ".."
         or normalized.startswith("../")
+        or ".." in parts
     ):
         raise ValueError("path must be repository-local")
     _reject_accepted_knowledge_path(normalized)
