@@ -9,7 +9,12 @@ import yaml  # type: ignore[import-untyped]
 from typer.testing import CliRunner
 
 from cosheaf.cli import app
-from cosheaf.evals.retrieval import RetrievalEvalCase, score_retrieval_case
+from cosheaf.evals.retrieval import (
+    DEFAULT_RETRIEVAL_EVAL_CASES,
+    RetrievalEvalCase,
+    load_retrieval_eval_suite,
+    score_retrieval_case,
+)
 from cosheaf.memory import (
     ArtifactCard,
     ArtifactCardStatus,
@@ -22,6 +27,7 @@ from cosheaf.memory import (
 )
 
 runner = CliRunner()
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _artifact_data(
@@ -214,6 +220,28 @@ def test_retrieval_eval_metrics_count_hits_forbidden_and_private_leakage() -> No
     assert scored.returned_artifacts == [
         "claim.fixture.expected",
         "claim.fixture.forbidden",
+    ]
+
+
+def test_default_retrieval_eval_suite_covers_graph_and_sat_pilots() -> None:
+    suite = load_retrieval_eval_suite(ROOT / DEFAULT_RETRIEVAL_EVAL_CASES)
+    cases_by_id = {case.id: case for case in suite.cases}
+
+    assert set(cases_by_id) == {
+        "case.retrieval.graph-toy",
+        "case.retrieval.sat-smt-gadget",
+    }
+    assert cases_by_id[
+        "case.retrieval.graph-toy"
+    ].expected_relevant_artifacts == ["construction.graph-toy.0001"]
+    assert cases_by_id["case.retrieval.graph-toy"].forbidden_artifacts == [
+        "construction.sat-smt-gadget.0001"
+    ]
+    assert cases_by_id[
+        "case.retrieval.sat-smt-gadget"
+    ].expected_relevant_artifacts == ["construction.sat-smt-gadget.0001"]
+    assert cases_by_id["case.retrieval.sat-smt-gadget"].forbidden_artifacts == [
+        "construction.graph-toy.0001"
     ]
 
 
