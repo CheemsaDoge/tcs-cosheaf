@@ -26,6 +26,10 @@ On the current Windows environment, `gh` has normally resolved to:
 C:\Program Files\GitHub CLI\gh.exe
 ```
 
+As of 2026-06-08, `Get-Command gh -All` showed only that executable, and
+`gh auth status --hostname github.com` with the local proxy set reported the
+`CheemsaDoge` account as logged in via `keyring`.
+
 If `Get-Command gh -All` and `where.exe gh` show only one GitHub CLI but
 `gh auth status` reports an invalid token, the problem is authentication, not
 multiple `gh` binaries. Do not delete credentials or log out accounts unless
@@ -126,6 +130,15 @@ cosheaf validate
 
 Do not claim the original `cosheaf ...` command passed if it first failed due
 to PATH. Report both the initial failure and the verified rerun.
+
+As of 2026-06-08, this Scripts directory has been added to the user PATH:
+
+```text
+C:\Users\ywjhn\AppData\Roaming\Python\Python313\Scripts
+```
+
+If a later shell still cannot find `cosheaf`, open a new shell or inspect the
+current process PATH before reinstalling.
 
 ## Windows `make` Lookup
 
