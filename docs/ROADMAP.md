@@ -2,9 +2,8 @@
 
 TCS-Cosheaf is at the published `v0.2.0` local-MVP release baseline after the
 `v0.1.1` Formal Link Layer support baseline. The project is still not
-production-ready.
-This roadmap records durable direction and named milestones; live issue state
-belongs in GitHub issues.
+production-ready. This roadmap records durable direction and named milestones;
+live issue state belongs in GitHub issues.
 
 ## Current Baseline: v0.2.0 Local MVP Release
 
@@ -19,14 +18,40 @@ Completed release work includes:
 - Full framework verification for the tag.
 - Workspace-template install/pin verification against the tag.
 - Public KB validation/gate regression against the tag.
+- A post-`v0.2.0` rollback audit that identified no code or KB revert scope,
+  but did identify local-only roadmap language that needed rewrite.
 
-## Next Focus: Local Orchestrator Hardening
+## Next Focus: v0.2.1 Agent Access
 
-The next implementation work should stay local-only and should not introduce
-hosted providers. Start with a narrow audit or hardening pass over the Phase
-4.1 orchestrator state-model contract and current tests before adding any new
-runtime behavior. The goal is replayable local workflow reliability, not a
-production multi-agent system.
+The next implementation direction is `v0.2.1` Agent Access + Hosted API
+Provider + MCP/Skill.
+
+This does not mean turning the project into a production hosted multi-agent
+platform. It means adding a controlled access layer around the existing
+deterministic substrate:
+
+- MCP becomes the first-class external-agent machine interface.
+- Skill becomes an optional operator guide for tools such as Codex, not a
+  source of truth and not an authority expansion.
+- Hosted model API/provider support becomes scheduled provider-gateway work,
+  implemented behind explicit configuration, consent, policy scope, fake or
+  mocked tests, and no-real-API-in-CI rules.
+- Local-only execution remains the fallback, offline, and CI/testing mode. It
+  is not the permanent product boundary.
+- External agents may orchestrate or perform bounded worker roles through MCP
+  and service-layer interfaces.
+- The internal orchestrator may call hosted API workers only when policy,
+  configuration, consent, and context-sending rules permit.
+- CLI remains the human and CI oracle.
+- Service-layer functions should become the shared implementation boundary for
+  CLI, MCP, internal orchestrator, and provider-backed workers.
+
+Real API calls are supported by design as a planned capability, but they must
+not run in CI. CI and default tests must use fake or mocked providers. Missing
+credentials or unavailable optional tools must be reported as unavailable or
+skipped, never as pass.
+
+ADR 0015 records this direction change.
 
 ## Completed Baseline
 
@@ -65,6 +90,30 @@ Completed framework scaffold pieces include:
 - Graph-theory, SAT/CNF, and formal-link pilot workflows that remain draft or
   example material and do not bypass review or promotion.
 - GitHub Actions CI and collaboration templates.
+
+## Agent Access Boundaries
+
+Agent access must preserve existing governance:
+
+- MCP read-only tools may be default-safe; controlled write tools must be
+  explicit and limited to draft/proposal/bundle surfaces.
+- MCP must not expose arbitrary shell, direct promotion, or accepted-path
+  writes.
+- Skill is an operator manual. It must not widen permissions or become a source
+  of truth.
+- Hosted workers may return worker bundles, typed sub-results, or draft
+  proposals only.
+- External agents must not directly edit accepted paths.
+- Internal orchestration must not bypass reducer, validation, gates, review, or
+  promotion.
+- Provider calls must use explicit policy scope, timeout, cancellation, and
+  audit metadata.
+- Private KB context must not be sent to a provider unless the policy mode and
+  operator consent explicitly allow it.
+- API keys and secrets must not be committed or logged.
+- AI review is not human review.
+- Validation/gate success is not accepted status.
+- Skipped verifier or provider results are not passes.
 
 ## Formal Link Boundary
 
@@ -117,7 +166,7 @@ version without changing the knowledge-governance boundary. The scope is:
 - Local orchestrator state machine: replayable issue-scoped plans, task DAGs,
   reducers, and local dry-run ergonomics without hosted LLM defaults.
 - Fake provider model interface: deterministic provider-neutral tests and
-  capability negotiation before any hosted provider is considered.
+  capability negotiation before hosted providers.
 - Retrieval evaluation harness: regression metrics for relevance, forbidden
   hits, private leakage, and accepted-priority behavior.
 - Optional external Lean `#check` ergonomics only if the current checker remains
@@ -134,6 +183,35 @@ Out of scope for `v0.2.0`:
 - Full CSLib/mathlib ingestion, vendoring, or semantic-alignment automation.
 
 ADR 0014 records this scope decision.
+
+### v0.2.1 Agent Access + Provider Gateway
+
+`v0.2.1` targets the access layer around the existing local-MVP substrate:
+
+- Durable longplan v3 installation as current project memory.
+- Agent-access ADR and threat model.
+- Shared service layer used by CLI, future MCP server, internal orchestrator,
+  and provider-backed workers.
+- Public agent-access schemas for requests, responses, context previews, task
+  creation, bundle validation, and draft writes.
+- Context send policy and provider preview for public/private scope control.
+- MCP server design and read-only MCP tool surface before any write tools.
+- Controlled MCP write tools for draft/proposal/bundle surfaces only.
+- Provider gateway design, fake/mocked test surface, and OpenAI-compatible
+  transport behind explicit opt-in.
+- Hosted worker contracts and execution service that produce validated worker
+  bundles, not accepted knowledge.
+- Skill/operator package that instructs external agents how to use MCP first
+  and CLI as a fallback while preserving repository governance.
+
+Out of scope for `v0.2.1` unless separately approved:
+
+- Default-on hosted API calls.
+- CI that requires network access, API keys, or real provider calls.
+- Direct accepted writes by MCP tools, hosted workers, external agents, or the
+  internal orchestrator.
+- Replacing human review with AI review.
+- Web UI, SaaS behavior, multi-user auth, or production operations.
 
 ### Verification Depth
 
@@ -155,13 +233,17 @@ ADR 0014 records this scope decision.
 - Improve release/demo smoke coverage across all three repositories.
 - Keep README/showcase docs conservative and newcomer-friendly.
 
-## Non-Goals For MVP
+## Non-Goals
 
-- Web UI.
+TCS-Cosheaf does not aim to provide:
+
+- A production hosted multi-agent system by default.
+- A web UI.
 - Model training.
-- Automatic theorem-proving agent.
+- Automatic theorem proving.
 - Full Lean autoformalization.
 - CSLib/mathlib replacement or vendoring.
 - Automatic informal/formal semantic alignment checking.
+- Automatic accepted-artifact promotion.
 - Multi-user permission system.
 - Claims about project adoption, production usage, users, stars, or downloads.
