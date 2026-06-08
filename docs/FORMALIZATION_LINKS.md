@@ -118,10 +118,10 @@ The boolean fields `require_formal_link`, `require_lean_check`, and
 `require_lean_check: true`.
 
 These policy values are schema-validated and are also checked by G10 Formal
-Link Gate for static metadata consistency. G10 contributes ordinary gatekeeper
-blocking issues when required formal links, Lean checks, or alignment reviews
-are missing. It does not change accepted promotion policy beyond the existing
-rule that blocking gatekeeper issues prevent promotion.
+Link Gate for metadata and verifier-result consistency. G10 contributes
+ordinary gatekeeper blocking issues when required formal links, Lean checks, or
+alignment reviews are missing. It does not change accepted promotion policy
+beyond the existing rule that blocking gatekeeper issues prevent promotion.
 
 ## Relationship To Evidence
 
@@ -184,16 +184,25 @@ an artifact.
 
 ## G10 Formal Link Gate
 
-G10 is a static metadata gate over `formalizations`, `alignment`, and
-`verification_policy`. It does not execute Lean, install CSLib or mathlib,
-fetch external libraries, or require network access. External `#check` results,
-when produced by the optional verifier adapter, are G6 verifier evidence; they
-do not change G10 into a Lean execution gate.
+G10 is a metadata and verifier-result consistency gate over `formalizations`,
+`alignment`, `verification_policy`, local formal library manifests, and the
+G6 verifier results produced earlier in the same gatekeeper run. It does not
+execute Lean, install CSLib or mathlib, fetch external libraries, or require
+network access. External `#check` results, when produced by the optional
+verifier adapter, remain G6 verifier evidence; G10 only checks whether that
+evidence is present and passing when policy explicitly requires it.
 
 G10 blocks artifacts whose policy requires a formal link, Lean check, or
 alignment review when the corresponding metadata is absent or not reviewed. It
-also blocks accepted artifacts with rejected alignment and required formal-link
-policies whose only formalizations are `broken` or `deprecated`.
+also blocks unknown `library_ref` manifest references, missing local manifest
+metadata for artifacts that carry formalization links, accepted artifacts with
+rejected alignment, and required formal-link policies whose only
+formalizations are `broken` or `deprecated`. When
+`require_lean_check: true`, `status: checked` is not enough by itself: a
+matching Lean verifier result must have status `pass`. For
+`external_library_ref` links, the matching result must be from
+`lean_library_ref` for the same formalization ID. Skipped, failed, or errored
+verifier results are not passes.
 
 G10 warnings are nonblocking and are not proof failures. Warnings highlight
 metadata that needs attention, such as planned formalizations on accepted
@@ -206,7 +215,7 @@ when policy does not require them.
 Issue-scoped context packs include a compact formal-link summary for relevant
 artifacts when formal metadata is present or policy-relevant. The summary shows
 formal declaration references, alignment status, verification policy, and
-static G10-relevant hints such as required formal links, required Lean checks,
+G10-relevant policy hints such as required formal links, required Lean checks,
 required alignment review, rejected alignment, or planned formalizations.
 
 This display is metadata-only. It helps agents see the formal-link surface, but

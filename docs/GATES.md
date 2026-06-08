@@ -222,8 +222,9 @@ reference adapters remain separate minimal paths.
 ### Formal Link Metadata Gate Boundary
 
 G1 schema/model validation parses optional `formalizations`, `alignment`, and
-`verification_policy` fields. G10 Formal Link Gate then enforces static
-metadata consistency between those fields. G10 does not treat formal links,
+`verification_policy` fields. G10 Formal Link Gate then enforces consistency
+between those fields, local formal library manifests, and normalized verifier
+results when policy requires a Lean check. G10 does not treat formal links,
 Lean evidence, or alignment metadata as proof of informal/formal semantic
 alignment.
 
@@ -231,19 +232,28 @@ Alignment review is separate from Lean checking. A formal declaration may exist
 or a local Lean file may pass while the informal artifact still needs human
 review for convention and statement alignment.
 
-G10 is static metadata validation. It does not execute Lean, does not fetch
-external libraries, does not inspect CSLib/mathlib declarations, and does not
-require network access. Optional external `#check` output is recorded by G6
-when the `lean_library_ref` verifier runs; it does not turn G10 into an
-execution gate. G10 enforces policy consistency only:
+G10 is metadata and verifier-result consistency validation. It does not execute
+Lean, fetch external libraries, inspect CSLib/mathlib declarations, or require
+network access. Optional external `#check` output is recorded by G6 when the
+`lean_library_ref` verifier runs; G10 consumes that normalized result in the
+same gatekeeper run when policy requires a Lean check. This does not turn G10
+into an execution gate, and skipped verifier results are not passes. G10
+enforces policy consistency only:
 
 - `require_formal_link: true` requires at least one `formalizations` entry.
 - `require_alignment_review: true` requires `alignment.status:
   human_reviewed`.
 - `require_lean_check: true` requires at least one formalization with
-  `status: checked`.
+  `status: checked` and a matching Lean verifier result with status `pass`.
+  For `check_mode: external_library_ref`, the matching result must come from
+  `lean_library_ref` for the same formalization ID. A plain local Lean pass
+  does not satisfy an external-library reference check.
 - `lean_required` policy is expected to require both a formal link and a Lean
   check; schema/model validation normally catches violations first.
+- `library_ref` values must resolve in a local formal library manifest such as
+  `formal-libs/lean-libraries.yaml` or the checked-in example manifest.
+- `import_path` and `symbol` must be non-empty for `linked` and `checked`
+  references; model validation normally catches empty values first.
 - `alignment.status: rejected` is blocking when alignment review is required
   and is always blocking on accepted artifacts.
 - a required formal link whose only formalizations are `broken` or
@@ -261,10 +271,11 @@ change G10. They expose the same metadata for handoff and local inspection, but
 they do not run Lean, load gate reports, or turn formal links into verifier
 passes.
 
-Formal library manifests are also metadata-only. The manifest loader can
-validate manifest shape and help callers check that artifact `library_ref`
-values resolve to manifest IDs, but the gatekeeper does not fetch or build
-external libraries from manifests.
+Formal library manifests are also metadata-only. The gatekeeper loads a local
+manifest only to validate shape and check that artifact `library_ref` values
+resolve to manifest IDs. It does not fetch or build external libraries from
+manifests, and a manifest entry is not proof that a Lean import or symbol
+exists.
 
 ### Reproducibility Metadata Gate
 
@@ -431,7 +442,7 @@ moving eligible artifacts into the accepted area of their KB root.
 - G7 reproducibility metadata gate
 - G8 PR checklist gate
 - G9 source metadata gate for accepted public artifacts
-- G10 formal link gate for static metadata consistency
+- G10 formal link gate for metadata and verifier-result consistency
 
 Formal-link fields are parsed by G1 and checked for policy consistency by G10.
 Checkable linked external Lean references can also trigger G6

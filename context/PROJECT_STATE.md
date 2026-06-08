@@ -192,19 +192,23 @@ configured public KB roots when `accepted_requires_source = true`; it is not
 applicable for draft public artifacts, accepted private artifacts, or legacy
 single-root repositories.
 
-G10 statically checks consistency between `verification_policy`,
-`formalizations`, and `alignment`. It blocks artifacts whose policy requires a
-formal link, Lean check, or alignment review when the corresponding metadata is
-missing or not human-reviewed. It also blocks rejected alignment on accepted
-artifacts and required formal-link policies whose only formalizations are
-`broken` or `deprecated`. Warning-only states, such as planned links on
-accepted artifacts or checked external-library references without verifier
-evidence linkage, remain nonblocking and are not proof failures. G10 does not
-run external library checks for CSLib or mathlib references, does not execute
-Lean, and does not treat a Lean pass as proof of informal/formal statement
-alignment. Missing optional Lean tooling remains a skipped verifier result, not
-a pass. External `#check` output for linked formalization metadata is handled
-by the G6 `lean_library_ref` verifier adapter, not by G10.
+G10 checks consistency between `verification_policy`, `formalizations`,
+`alignment`, local formal library manifests, and G6 Lean verifier results. It
+blocks artifacts whose policy requires a formal link, Lean check, or alignment
+review when the corresponding metadata is missing, not human-reviewed, or not
+backed by a matching verifier `pass`. It also blocks unknown formal
+`library_ref` manifest references, missing local formal manifests for artifacts
+with formalization links, rejected alignment on accepted artifacts, and
+required formal-link policies whose only formalizations are `broken` or
+`deprecated`. Warning-only states, such as planned links on accepted artifacts
+or checked external-library references without verifier evidence linkage,
+remain nonblocking and are not proof failures. G10 does not run external
+library checks for CSLib or mathlib references, does not execute Lean, and does
+not treat a Lean pass as proof of informal/formal statement alignment. Missing
+optional Lean tooling remains a skipped verifier result, not a pass. External
+`#check` output for linked formalization metadata is produced by the G6
+`lean_library_ref` verifier adapter; G10 only consumes the normalized result
+when policy requires it.
 
 Issue 85 integrates context-pack v2 with the local librarian retrieval surface.
 The agent harness layer now builds bounded deterministic context packs for
@@ -415,7 +419,7 @@ gatekeeper result.
 - Gatekeeper G6 verifier gate execution for the default Python checker registry.
 - Gatekeeper G7 reproducibility metadata gate execution.
 - Gatekeeper G9 accepted public source metadata gate execution.
-- Gatekeeper G10 formal link static metadata gate execution.
+- Gatekeeper G10 formal link metadata and verifier-result consistency gate execution.
 - Minimal optional SAT DIMACS verifier adapter in `cosheaf/verification/sat_adapter.py`.
 - Minimal optional SMT-LIB verifier adapter in `cosheaf/verification/smt_adapter.py`.
 - Minimal optional Lean verifier adapter in `cosheaf/verification/lean_adapter.py`.
