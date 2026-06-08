@@ -42,10 +42,15 @@ from cosheaf.core.status import (
     is_preaccepted_status,
 )
 from cosheaf.evals import (
+    DEFAULT_CONTEXT_EVAL_CASES,
     DEFAULT_RETRIEVAL_EVAL_CASES,
+    ContextEvalError,
     RetrievalEvalError,
+    load_context_eval_suite,
     load_retrieval_eval_suite,
+    resolve_context_eval_case_path,
     resolve_retrieval_eval_case_path,
+    run_context_eval_suite,
     run_retrieval_eval_suite,
 )
 from cosheaf.gates.gatekeeper import (
@@ -815,6 +820,65 @@ def eval_retrieval(
             f"forbidden={case.forbidden_hit_count} "
             f"private_leakage={case.private_leakage_count} "
             f"returned={','.join(case.returned_artifacts) or '-'}"
+        )
+
+    if not report.passed:
+        raise typer.Exit(code=1)
+
+
+@eval_app.command("context")
+def eval_context(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    cases: Path = typer.Option(
+        DEFAULT_CONTEXT_EVAL_CASES,
+        "--cases",
+        help="Repository-local YAML context eval case file.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text summary.",
+    ),
+) -> None:
+    """Run deterministic context-pack regression cases."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        case_path = resolve_context_eval_case_path(context, cases)
+        suite = load_context_eval_suite(case_path)
+        report = run_context_eval_suite(context, suite)
+    except ContextEvalError as exc:
+        console.print(f"Context eval failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(report.to_json(), nl=False)
+        return
+
+    verdict = "pass" if report.passed else "fail"
+    console.print(f"Context eval verdict: {verdict}")
+    console.print(f"- cases: {report.case_count}")
+    console.print(f"- max_cards: {report.metrics.max_cards}")
+    console.print(f"- max_full_artifacts: {report.metrics.max_full_artifacts}")
+    console.print(f"- token_estimate: {report.metrics.token_estimate}")
+    console.print(f"- accepted_ratio: {report.metrics.accepted_ratio:.6f}")
+    console.print(f"- draft_ratio: {report.metrics.draft_ratio:.6f}")
+    console.print(f"- private_leakage_count: {report.metrics.private_leakage_count}")
+    console.print(
+        f"- required_artifact_hit: {report.metrics.required_artifact_hit:.6f}"
+    )
+    for case in report.cases:
+        failures = ",".join(case.failures) if case.failures else "-"
+        console.print(
+            f"- {case.id}: cards={case.metrics.max_cards} "
+            f"full={case.metrics.max_full_artifacts} "
+            f"private_leakage={case.metrics.private_leakage_count} "
+            f"required_hit={case.metrics.required_artifact_hit:.6f} "
+            f"failures={failures}"
         )
 
     if not report.passed:

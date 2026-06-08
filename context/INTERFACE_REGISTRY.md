@@ -50,6 +50,13 @@
 - `cosheaf eval retrieval --k <n>`: sets the top-k cutoff used for `hit@k`;
   the default is `5`.
 - `cosheaf eval retrieval --json`: emits deterministic JSON report output.
+- `cosheaf eval context`: runs the default deterministic context-pack
+  regression suite from `evals/context/cases.yaml`.
+- `cosheaf eval context --repo-root <path>`: runs context evals against an
+  explicit repository root.
+- `cosheaf eval context --cases <path>`: uses an explicit repository-local
+  YAML case file.
+- `cosheaf eval context --json`: emits deterministic JSON report output.
 - `cosheaf graph show`: prints the directed artifact dependency graph.
 - `cosheaf graph show --repo-root <path>`: prints the graph for an explicit repository root.
 - `cosheaf gate`: runs the gatekeeper with default options and writes reports under `.cosheaf/reports/`.
