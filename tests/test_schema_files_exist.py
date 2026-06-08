@@ -40,12 +40,18 @@ SCHEMA_FILES = [
     "schemas/review.schema.json",
     "schemas/verifier.schema.json",
     "schemas/task.schema.json",
+    "schemas/orchestrator_run.schema.json",
+    "schemas/worker_bundle_v2.schema.json",
+    "schemas/formal_library.schema.json",
 ]
 
 EXAMPLE_FILES = [
     "examples/issues/issue.example.yaml",
+    "examples/issues/issue.agent-dry-run.demo.yaml",
     "examples/claims/claim.example.yaml",
+    "examples/claims/claim.agent-dry-run.demo.yaml",
     "examples/claims/claim.formal-link.example.yaml",
+    "examples/claims/claim.lean-core-formal-link-pilot.yaml",
     "examples/proofs/proof.example.yaml",
     "examples/constructions/graph.example.yaml",
     "examples/constructions/graph.toy.yaml",
@@ -114,6 +120,10 @@ def test_artifact_schema_defines_optional_formal_link_fields() -> None:
         "external_library_ref",
         "local_file",
     ]
+    assert "CSLib.Graph.Basic" not in formalization["properties"]["library_ref"][
+        "pattern"
+    ]
+    assert "[a-z][a-z0-9]*" in formalization["properties"]["library_ref"]["pattern"]
 
     alignment = properties["alignment"]
     assert alignment["additionalProperties"] is False
@@ -138,6 +148,27 @@ def test_artifact_schema_defines_optional_formal_link_fields() -> None:
         verification_policy["properties"]["require_alignment_review"]["type"]
         == "boolean"
     )
+
+
+def test_formal_library_schema_defines_manifest_contract() -> None:
+    schema = json.loads(
+        (ROOT / "schemas/formal_library.schema.json").read_text(encoding="utf-8")
+    )
+
+    assert schema["required"] == ["schema_version", "libraries"]
+    assert schema["properties"]["schema_version"]["const"] == 1
+    library = schema["properties"]["libraries"]["items"]
+    assert library["additionalProperties"] is False
+    assert library["required"] == [
+        "id",
+        "name",
+        "system",
+        "git",
+        "commit",
+        "lean_version",
+        "lake_manifest",
+    ]
+    assert library["properties"]["system"]["enum"] == ["lean4"]
 
 
 def test_example_files_exist_and_are_valid_yaml() -> None:
@@ -179,3 +210,66 @@ def test_formal_link_example_uses_planned_fake_cslib_reference() -> None:
     assert formalization["status"] == "planned"
     assert formalization["check_mode"] == "external_library_ref"
     assert "Illustrative CSLib symbol only" in formalization["notes"]
+
+
+def test_lean_core_formal_link_pilot_is_linked_but_not_checked() -> None:
+    example = _read_yaml(
+        ROOT / "examples/claims/claim.lean-core-formal-link-pilot.yaml"
+    )
+
+    assert example["status"] == "draft"
+    assert example["evidence"] == []
+    assert example["alignment"]["status"] == "requested"
+    assert example["alignment"]["reviewer"] == ""
+    assert example["verification_policy"]["require_formal_link"] is True
+    assert example["verification_policy"]["require_lean_check"] is False
+    assert example["verification_policy"]["require_alignment_review"] is False
+    assert example["review"]["state"] == "requested"
+
+    formalization = example["formalizations"][0]
+    assert formalization["system"] == "lean4"
+    assert formalization["library"] == "Lean core"
+    assert formalization["library_ref"] == "lean-core"
+    assert formalization["import_path"] == "Init"
+    assert formalization["symbol"] == "Nat"
+    assert formalization["status"] == "linked"
+    assert formalization["check_mode"] == "external_library_ref"
+    assert "does not prove semantic alignment" in formalization["notes"]
+
+
+def test_worker_bundle_v2_schema_is_strict() -> None:
+    schema = json.loads(
+        (ROOT / "schemas/worker_bundle_v2.schema.json").read_text(encoding="utf-8")
+    )
+
+    assert schema["additionalProperties"] is False
+    assert schema["required"] == [
+        "bundle_id",
+        "task_id",
+        "worker_role",
+        "created_at",
+        "summary",
+        "used_artifacts",
+        "used_sources",
+        "claims",
+        "proposed_artifacts",
+        "verification_requests",
+        "failures_or_counterexamples",
+        "risk_flags",
+        "next_steps",
+        "confidence",
+    ]
+    assert schema["properties"]["confidence"]["enum"] == ["low", "medium", "high"]
+    assert schema["properties"]["worker_role"] == {"$ref": "#/$defs/worker_type"}
+    assert schema["$defs"]["worker_type"]["enum"] == [
+        "reasoner",
+        "verifier",
+        "counterexampleer",
+        "construction_searcher",
+        "formalizer",
+        "literature_scout",
+        "orchestrator",
+    ]
+    proposed_artifact = schema["$defs"]["proposed_artifact"]
+    assert proposed_artifact["additionalProperties"] is False
+    assert proposed_artifact["required"] == ["path", "summary"]

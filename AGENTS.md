@@ -21,6 +21,12 @@ User handoff messages should be written in Chinese. Project-facing repository
 content should be written in English unless the task explicitly requires another
 language.
 
+Before re-debugging local GitHub authentication, Windows PATH issues,
+unavailable `make`, `cosheaf` command lookup, or generated runtime output, check
+`docs/OPERATOR_NOTES.md`. If a new operator pitfall is discovered that can
+affect later development or survive context compaction, record the resolution in
+that document through a focused docs PR.
+
 ## 2. Repository Architecture
 
 The intended long-term architecture has three public repositories plus private

@@ -101,8 +101,18 @@ Each formalization reference includes:
 - `notes`: optional, defaults to an empty string
 
 Formalization reference IDs use the same dot-separated lowercase slug format as
-artifact IDs. `library`, `library_ref`, `import_path`, and `symbol` must be
-non-empty after trimming whitespace.
+artifact IDs. `library_ref` is a formal library manifest ID such as
+`cslib-main` or `mathlib-main`; it is not a Lean module path. `library`,
+`import_path`, and `symbol` must be non-empty after trimming whitespace.
+Manifest IDs are pinned in formal library manifest files such as
+`formal-libs/lean-libraries.example.yaml`, whose schema is
+`schemas/formal_library.schema.json`.
+
+Formal library manifests are metadata for external-library references. They do
+not fetch CSLib/mathlib, run Lean or lake by themselves, check symbol
+existence, or prove informal/formal semantic alignment. Optional verifier
+adapters may use formalization metadata to run separate checks when explicitly
+applicable.
 
 Formal declaration references must not be stored in `evidence`. The `evidence`
 field remains for executable or otherwise evidence-like inputs; formal-library
@@ -118,10 +128,11 @@ statuses `human_reviewed` and `rejected` require a non-empty reviewer.
 `verification_policy` records whether the artifact expects a formal link, Lean
 check, or alignment review. Current levels are `source_reviewed`,
 `source_reviewed_with_formal_link`, `machine_checked`, and `lean_required`.
-Policy values are schema/model validated and G10 statically checks consistency
-between the policy, `formalizations`, and `alignment`. G10 can produce ordinary
-blocking gatekeeper issues, so accepted promotion is affected only through the
-existing rule that blocking gatekeeper issues prevent promotion.
+Policy values are schema/model validated and G10 checks consistency between the
+policy, `formalizations`, `alignment`, local formal library manifests, and
+normalized verifier results when `require_lean_check: true`. G10 can produce
+ordinary blocking gatekeeper issues, so accepted promotion is affected only
+through the existing rule that blocking gatekeeper issues prevent promotion.
 `source_reviewed_with_formal_link` requires `require_formal_link: true`;
 `lean_required` requires both `require_formal_link: true` and
 `require_lean_check: true`.
@@ -211,6 +222,7 @@ The initial JSON Schema files are:
 - `schemas/issue.schema.json`
 - `schemas/review.schema.json`
 - `schemas/verifier.schema.json`
+- `schemas/formal_library.schema.json`
 
 ## Pydantic Models
 
@@ -223,6 +235,8 @@ The initial Pydantic v2 model layer lives under `cosheaf/core/`:
 - `cosheaf.core.artifact.FormalizationRef`
 - `cosheaf.core.artifact.AlignmentReview`
 - `cosheaf.core.artifact.VerificationPolicy`
+- `cosheaf.core.formal_library.FormalLibrary`
+- `cosheaf.core.formal_library.FormalLibraryManifest`
 - `cosheaf.core.artifact.Risk`
 - `cosheaf.core.status.ArtifactType`
 - `cosheaf.core.status.ArtifactStatus`
@@ -263,13 +277,17 @@ artifacts in configured workspaces when `accepted_requires_source = true` while
 preserving draft, private, and legacy single-root behavior.
 
 The Formal Link Layer is implemented as optional schema/model metadata, an
-example artifact, G10 static metadata validation, context-pack display, and
-SQLite/query metadata surfaces. It records Lean-library
-declaration references without adding CSLib/mathlib dependencies, without
-requiring network access, and without changing accepted promotion semantics
-beyond ordinary gatekeeper blocking behavior. G10 does not execute Lean, does
-not fetch or inspect external Lean libraries, and does not prove
+example artifact, G10 metadata and verifier-result consistency validation,
+context-pack display, SQLite/query metadata surfaces, and an optional external
+Lean library reference checker. It records Lean-library declaration references
+plus optional formal library manifest metadata without adding CSLib/mathlib
+dependencies, without requiring network access, and without changing accepted
+promotion semantics beyond ordinary gatekeeper blocking behavior. G10 does not
+execute Lean, does not fetch or inspect external Lean libraries, and does not
+prove
 informal/formal semantic alignment. Context packs and query APIs expose the
 same metadata without claiming that Lean verified the informal statement. The
-implementation does not add formal-link CLI commands or verifier execution for
-external library references.
+optional external reference checker can generate a temporary Lean file with
+`import <import_path>` and `#check <symbol>` for linked external-library
+references when Lean or lake is available; a pass means only that the import
+and symbol resolved.

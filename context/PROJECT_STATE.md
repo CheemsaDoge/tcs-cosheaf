@@ -1,16 +1,31 @@
 # Project State
 
+## Phase 0 State Audit - 2026-06-06
+
+`docs/CODEX_STATE_AUDIT.md` records the current three-repository state before
+later longplan phases proceed. The audit confirms that the framework package is
+`0.1.1`, the workspace template has demo, Makefile, bootstrap, and CI smoke
+coverage, and the public KB currently has 19 accepted public artifacts. All
+accepted public KB formalization references are still `planned` metadata with
+`check_mode: external_library_ref`; the framework now has an optional
+external-library `#check` adapter, but planned links remain metadata unless a
+checker actually runs.
+
+The audit also confirms that `context/CURRENT_MILESTONE.md` was stale relative
+to the current `v0.1.1` and three-repo MVP productization state and has been
+updated as part of the same documentation-only task.
+
 ## Current State After v0.1.1 Formal Link Layer Support
 
-TCS-Cosheaf is in v0.1.1 Formal Link Layer support / pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata and formalization-link metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds including formal-link metadata, a read-only SQLite query API over rebuilt index output including formalization queries, gatekeeper report generation including G10 Formal Link Gate output, ranked issue-scoped context pack generation including compact formal-link display, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, and plain Lean verifier adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in v0.1.1 Formal Link Layer support / pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata and formalization-link metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds including formal-link metadata, a read-only SQLite query API over rebuilt index output including formalization queries, gatekeeper report generation including G10 Formal Link Gate output, ranked issue-scoped context pack generation with compact formal-link display, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, plain Lean, and external Lean library reference verifier adapters, graph/SAT/formal-link pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
 Issue 61 prepares the `v0.1.1` release after Formal Link Layer metadata, G10
 static metadata validation, context-pack display, deterministic
 SQLite/manifest indexing, and read-only query API support have landed. The
-Python package version is `0.1.1`. The release boundary is metadata-only:
-Cosheaf does not replace CSLib or mathlib, does not copy Lean proof bodies,
-does not run external Lean library checks, does not add Lean, lake, mathlib, or
-CSLib dependencies, does not fetch external libraries, and does not change
+Python package version is `0.1.1`. That release boundary was metadata-only:
+Cosheaf did not replace CSLib or mathlib, did not copy Lean proof bodies, did
+not run external Lean library checks, did not add Lean, lake, mathlib, or CSLib
+dependencies, did not fetch external libraries, and did not change
 accepted-promotion semantics beyond ordinary gatekeeper blocking behavior.
 Downstream repositories should pin to `v0.1.1` before using formalization
 fields.
@@ -29,6 +44,20 @@ and runs `cosheaf --help`, `cosheaf version`, `cosheaf validate`, `cosheaf gate
 run`, `cosheaf index rebuild`, and `cosheaf context build
 issue.release-smoke`. Fast unit tests verify the smoke plan and fixture without
 requiring network access.
+
+Issue 65 adds a local ecosystem smoke helper for the intended three-repository
+model. `scripts/ecosystem_smoke.py` writes temporary workspace-like fixtures
+with a readonly public KB root, writable private KB root, accepted public
+artifact, private draft artifact depending on public accepted knowledge, and a
+private issue for context-pack generation. The smoke plan runs `cosheaf
+workspace info`, `cosheaf validate`, `cosheaf gate run`, `cosheaf index
+rebuild`, and `cosheaf context build
+issue.ecosystem-smoke.private-context`. It also verifies expected policy
+failures: lifecycle writes to the readonly public root are refused, public
+artifacts depending on private artifacts are rejected, and accepted artifacts
+depending on draft artifacts are rejected. This smoke uses only local fixtures,
+does not clone remote repositories, does not promote artifacts, and does not
+add Lean, CSLib, mathlib, SAT, SMT, or theorem-proving claims.
 
 Issue 51 adds cross-repository integration fixture coverage for the intended
 three-repository model. The tests build local public/private KB roots without
@@ -119,7 +148,9 @@ static metadata validation over `verification_policy`, `formalizations`, and
 `alignment` without running Lean. Issue #59 surfaced the same formal-link
 metadata in context packs and deterministic SQLite/query outputs without
 changing G10 behavior. External Lean `#check` support for CSLib/mathlib
-declaration references remains future work.
+declaration references is now available through an optional verifier adapter,
+but only for linked or checked formalization metadata and only when Lean or lake
+is available.
 
 The configuration layer defines optional `cosheaf.toml` workspace loading. A
 workspace has a name, public/private policy fields, and one or more KB roots,
@@ -161,25 +192,50 @@ configured public KB roots when `accepted_requires_source = true`; it is not
 applicable for draft public artifacts, accepted private artifacts, or legacy
 single-root repositories.
 
-G10 statically checks consistency between `verification_policy`,
-`formalizations`, and `alignment`. It blocks artifacts whose policy requires a
-formal link, Lean check, or alignment review when the corresponding metadata is
-missing or not human-reviewed. It also blocks rejected alignment on accepted
-artifacts and required formal-link policies whose only formalizations are
-`broken` or `deprecated`. Warning-only states, such as planned links on
-accepted artifacts or checked external-library references without verifier
-evidence linkage, remain nonblocking and are not proof failures. G10 does not
-run external library checks for CSLib or mathlib references, does not execute
-Lean, and does not treat a Lean pass as proof of informal/formal statement
-alignment. Missing optional Lean tooling remains a skipped verifier result, not
-a pass. A future Lean library reference checker such as
-`LeanLibraryRefAdapter` remains future work.
+G10 checks consistency between `verification_policy`, `formalizations`,
+`alignment`, local formal library manifests, and G6 Lean verifier results. It
+blocks artifacts whose policy requires a formal link, Lean check, or alignment
+review when the corresponding metadata is missing, not human-reviewed, or not
+backed by a matching verifier `pass`. It also blocks unknown formal
+`library_ref` manifest references, missing local formal manifests for artifacts
+with formalization links, rejected alignment on accepted artifacts, and
+required formal-link policies whose only formalizations are `broken` or
+`deprecated`. Warning-only states, such as planned links on accepted artifacts
+or checked external-library references without verifier evidence linkage,
+remain nonblocking and are not proof failures. G10 does not run external
+library checks for CSLib or mathlib references, does not execute Lean, and does
+not treat a Lean pass as proof of informal/formal statement alignment. Missing
+optional Lean tooling remains a skipped verifier result, not a pass. External
+`#check` output for linked formalization metadata is produced by the G6
+`lean_library_ref` verifier adapter; G10 only consumes the normalized result
+when policy requires it.
 
-The agent harness layer now builds bounded deterministic context packs for issue IDs. Context packs are written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`, `ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and `COMMANDS.md`. Relevant artifacts are selected and ranked from direct issue references, one-hop dependency neighbors, domain matches against issue text/tags, and artifact tag matches against issue tags. Each selected artifact includes explainable reasons. Draft artifacts are visibly labeled, and refuted/obsolete/superseded artifacts appear only when relevant and are marked as known failures rather than current truth. When relevant artifacts carry formal-link metadata or policy-relevant formal settings, context packs show compact formalization, alignment, verification-policy, and G10-relevant hint lines without loading gate reports or claiming Lean verification.
+Issue 85 integrates context-pack v2 with the local librarian retrieval surface.
+The agent harness layer now builds bounded deterministic context packs for
+issue IDs from compact `ArtifactCard` rows by default. Context packs are
+written under `context/TASKS/<issue-id>/` and include `CONTEXT.md`,
+`ACCEPTANCE.md`, `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`,
+`FULL_ARTIFACTS.md`, `RETRIEVAL_AUDIT.json`, and `COMMANDS.md`. The default
+orchestrator role has `max_full_artifacts = 0`, so full artifact YAML is not
+included unless the caller explicitly sets a positive full-artifact budget.
+Retrieved cards are filtered through the existing issue-local relevance rules:
+direct issue references, one-hop dependency neighbors, domain matches against
+issue text/tags, and artifact tag matches against issue tags. Public-only
+context excludes private cards and private artifact IDs from the rendered
+context and retrieval audit. Retrieval scores remain metadata only; they do not
+authorize review, promotion, proof, or public/private policy bypasses. When
+relevant artifacts carry formal-link metadata or policy-relevant formal
+settings, context packs show compact formalization, alignment,
+verification-policy, and G10-relevant hint lines without loading gate reports
+or claiming Lean verification.
 
 The agent task harness now defines protocol worker types for `reasoner`, `verifier`, `counterexampleer`, `construction_searcher`, `formalizer`, `literature_scout`, and `orchestrator`. Task records use deterministic default IDs of the form `task.<issue-id>.<worker-type-slug>`, support lifecycle statuses `open`, `in_progress`, `blocked`, `completed`, `failed`, and `cancelled`, and are written under `.cosheaf/tasks/`. The `cosheaf task create`, `cosheaf task list`, and `cosheaf task complete` CLI commands are local filesystem stubs only: they do not call LLMs, do not make network calls, and do not execute model-provider worker runtimes.
 
 The local worker runner executes explicit repository-local command argv lists for existing task records. `cosheaf task run <task-id> -- <command> [args...]` uses `shell=False`, defaults to the repository root, rejects `--cwd` outside the repository, enforces a timeout, captures stdout/stderr, records return code, and writes run records under `.cosheaf/tasks/<task-id>/runs/<run-id>/` with stdout and stderr stored as separate files. `--bundle <path>` validates an optional worker output bundle without completing the task. `--complete-with-bundle <path>` delegates task completion to the existing orchestrator stub after a successful run and valid bundle. The local runner is not an LLM runtime, does not call hosted APIs or network services, does not merge worker outputs, does not promote artifacts, and does not implement SAT, SMT, or Lean execution.
+
+The local orchestrator dry-run workflow now runs the deterministic planner through local fake workers for reasoner, verifier, and orchestrator nodes. `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only` writes role-aware worker bundle v2 manifests under `.cosheaf/orchestrator/<issue-id>/runs/<run-id>/`, validates and reduces them, and records stdout/stderr paths in the run record. The generated bundles may reference proposal paths under `.cosheaf/orchestrator/.../proposals/`, but the dry-run does not write proposal artifacts, does not create human review or gate records, does not write accepted knowledge, and does not promote artifacts. The verifier dry-run is not a verifier pass and does not run Lean, SAT, SMT, or gate checks.
+
+CodeGraph is now documented as optional developer-only, local-only tooling in `docs/DEV_TOOLING.md`, with a safe availability probe at `scripts/dev/codegraph_probe.py`. The probe reports `fallback: run_full_verification` when CodeGraph is unavailable, and generated CodeGraph outputs are gitignored under `.codegraph/`, `.cosheaf/dev/codegraph/`, and `codegraph*.db`. CodeGraph output remains sidecar/cache only and must not feed artifact truth, retrieval ranking, context generation, gates, verifier results, review records, or promotion.
 
 Worker output bundles are local YAML manifests. `cosheaf task complete` validates the bundle shape, checks that it matches the task, verifies referenced output paths are repository-local, and runs artifact/review YAML outputs through the existing schema gate. Outputs under `kb/accepted/` are rejected, and completion does not merge anything into accepted knowledge.
 
@@ -202,6 +258,17 @@ pass results. The adapter does not autoformalize natural language and does not
 implement SAT or SMT behavior. SAT and SMT support are still intentionally
 minimal: they execute DIMACS CNF or SMT-LIB evidence only when optional
 backends are available and are not a full SAT/SMT theorem-proving integration.
+
+The external Lean library reference adapter now supports optional
+formalization-metadata checks. `LeanLibraryRefAdapter` recognizes Lean 4
+formalizations with `check_mode: external_library_ref` and `status: linked` or
+`checked`, generates a temporary Lean file containing `import <import_path>` and
+`#check <symbol>`, and runs either `lean <tempfile>` or configured
+`lake env lean <tempfile>`. Missing Lean/lake returns `skipped`, nonzero Lean
+exit returns `fail`, and timeout/startup failures return `error`. The adapter
+writes stdout/stderr logs under `.cosheaf/logs/`, records command metadata, and
+does not fetch CSLib/mathlib, update formalization status automatically, or
+prove informal/formal semantic alignment.
 
 The reproducibility metadata gate is now implemented. It checks executable
 evidence verifier results for command, working directory, timeout, input paths,
@@ -247,6 +314,14 @@ The formal-link example
 a fake CSLib `lean4` symbol reference, requested alignment review, and
 `source_reviewed_with_formal_link` verification policy without requiring Lean,
 CSLib, mathlib, lake, or network access.
+
+The Lean core formal-link pilot
+`examples/claims/claim.lean-core-formal-link-pilot.yaml` records a draft
+`linked` formalization reference for `import Init` and `#check Nat`. The pilot
+is not accepted knowledge, keeps `require_lean_check: false`, and keeps
+alignment in `requested` state. If local Lean is unavailable, the optional
+`lean_library_ref` verifier remains `skipped`, not `pass`; if Lean is
+available, a pass means only that the import and symbol resolved.
 
 GitHub issue templates now cover feature tasks, bug tasks, and research issues.
 The pull request template requires summary, changed files, tests run, risks,
@@ -307,6 +382,8 @@ gatekeeper result.
   `docs/ADR/0007-formal-link-surface-query.md`.
 - Formal-link example artifact in
   `examples/claims/claim.formal-link.example.yaml`.
+- Lean core formal-link pilot example in
+  `examples/claims/claim.lean-core-formal-link-pilot.yaml`.
 - Artifact status/path helper functions that do not scan the repository.
 - Model tests in `tests/test_artifact_models.py`.
 - Repository path helpers in `cosheaf/core/paths.py`.
@@ -325,10 +402,14 @@ gatekeeper result.
 - Query API tests in `tests/test_index_query.py`.
 - Gatekeeper reports in `cosheaf/gates/gatekeeper.py`.
 - Gatekeeper tests in `tests/test_gatekeeper.py`.
-- Ranked context pack generation in `cosheaf/agent/context_pack.py`.
+- Context-pack v2 generation in `cosheaf/agent/context_pack.py`, using
+  `ArtifactCard` retrieval by default with explicit full-artifact budgets and
+  retrieval audit output.
 - Formal-link metadata display in context packs without Lean verification
   claims.
-- Context pack CLI commands `cosheaf context build <issue-id>` and `cosheaf context show <issue-id>`.
+- Context pack CLI commands `cosheaf context build <issue-id>` and `cosheaf
+  context show <issue-id>`, including `--role`, `--max-cards`,
+  `--max-full-artifacts`, and `--public-only`.
 - Context pack tests in `tests/test_context_pack.py`.
 - Agent task model in `cosheaf/agent/task.py`.
 - Worker output bundle contract in `cosheaf/agent/worker_contract.py`.
@@ -348,11 +429,15 @@ gatekeeper result.
 - Gatekeeper G6 verifier gate execution for the default Python checker registry.
 - Gatekeeper G7 reproducibility metadata gate execution.
 - Gatekeeper G9 accepted public source metadata gate execution.
-- Gatekeeper G10 formal link static metadata gate execution.
+- Gatekeeper G10 formal link metadata and verifier-result consistency gate execution.
 - Minimal optional SAT DIMACS verifier adapter in `cosheaf/verification/sat_adapter.py`.
 - Minimal optional SMT-LIB verifier adapter in `cosheaf/verification/smt_adapter.py`.
 - Minimal optional Lean verifier adapter in `cosheaf/verification/lean_adapter.py`.
+- Optional external Lean library reference verifier adapter in
+  `cosheaf/verification/lean_external.py`.
 - Optional verifier tests in `tests/test_optional_verifier_skeletons.py`.
+- External Lean library reference adapter tests in
+  `tests/test_lean_external_adapter.py`.
 - Focused SAT adapter tests in `tests/test_sat_adapter.py`.
 - Focused SMT adapter tests in `tests/test_smt_adapter.py`.
 - First graph-theory pilot issue in `issues/open/issue.graph-toy-search.0001.yaml`.
@@ -381,7 +466,4 @@ gatekeeper result.
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond the minimal optional plain-file
   invocation path.
-- External Lean library checking for CSLib/mathlib references recorded in
-  `formalizations`.
-- A future Lean library reference checker such as `LeanLibraryRefAdapter`.
 - Automatic informal/formal semantic alignment checking.

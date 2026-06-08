@@ -65,6 +65,14 @@ not verifier evidence. They are not stored in `evidence`, do not make Lean run
 automatically, and do not satisfy target verifier checks for accepted
 promotion.
 
+Formal library manifest metadata, such as
+`formal-libs/lean-libraries.example.yaml`, pins external library IDs and
+versions for reference checking. The manifest does not change gate or promotion
+semantics: no gate fetches external Lean libraries or treats a manifest entry
+as proof that a symbol exists. Optional external Lean `#check` execution is a
+G6 verifier-adapter result when matching formalization metadata is present and
+Lean or lake is available.
+
 Direct accepted creation remains refused by `cosheaf artifact create`.
 `cosheaf artifact move-status <artifact-id> accepted` also fails clearly
 instead of moving anything into `kb/accepted/`. This preserves the invariant
@@ -91,7 +99,7 @@ The current verifier surface is intentionally small and optional-tool friendly.
 | SAT | Minimal optional adapter available | `sat`, `sat_solver`, `sat_checker` | `kissat` | No SAT solver required; unavailable solver is `skipped` | Supports repository-local DIMACS CNF evidence, not full SAT theorem-proving integration. |
 | SMT | Minimal optional adapter available | `smt`, `smt_solver`, `smt_checker` | `z3` | No SMT solver required; unavailable solver is `skipped` | Supports repository-local SMT-LIB evidence, not full SMT theorem-proving integration. |
 | Lean plain file | Minimal optional adapter available | `lean`, `lean4`, `lean_checker`, `lean_proof` | `lean` | No Lean installation required; unavailable Lean is `skipped` | Checks repository-local plain `.lean` files only when Lean is available. It does not autoformalize natural language. |
-| External Lean library references | Planned/future | `formalizations` metadata plus G10 static policy fields | None | Not required | Current G10 checks metadata consistency only; it does not fetch CSLib/mathlib or check external symbols. |
+| External Lean library references | Optional adapter available | `formalizations` entries with `system: lean4`, `check_mode: external_library_ref`, and `status: linked` or `checked` | `lean`, or `lake env lean` when configured | No Lean or lake installation required; unavailable backend is `skipped` | Generates a temporary file with `import <import_path>` and `#check <symbol>`. It does not fetch CSLib/mathlib, manage checkouts, autoformalize natural language, or prove informal/formal alignment. |
 | Coq | Not implemented | None | None | Not required | No current adapter or roadmap item in this repository. |
 | Isabelle | Not implemented | None | None | Not required | No current adapter or roadmap item in this repository. |
 
@@ -204,17 +212,19 @@ SAT/SMT theorem-proving integration.
 SMT support remains similarly minimal and optional. It can execute
 repository-local SMT-LIB evidence only when a supported backend is available,
 defaults to optional `z3`, and does not make skipped SMT checks pass. Lean
-support is also minimal and optional: it can execute repository-local plain Lean
-files only when a supported backend is available, defaults to optional `lean`,
-does not make skipped Lean checks pass, does not check external Lean library
-links, and does not implement SAT or SMT. SAT, SMT, and Lean adapters remain
-separate minimal paths.
+support is also minimal and optional: the plain-file adapter can execute
+repository-local Lean files only when a supported backend is available, and the
+external-library adapter can generate a temporary `import`/`#check` file from
+linked formalization metadata. Both default to optional Lean tooling and do not
+make skipped Lean checks pass. SAT, SMT, plain Lean, and external Lean
+reference adapters remain separate minimal paths.
 
 ### Formal Link Metadata Gate Boundary
 
 G1 schema/model validation parses optional `formalizations`, `alignment`, and
-`verification_policy` fields. G10 Formal Link Gate then enforces static
-metadata consistency between those fields. G10 does not treat formal links,
+`verification_policy` fields. G10 Formal Link Gate then enforces consistency
+between those fields, local formal library manifests, and normalized verifier
+results when policy requires a Lean check. G10 does not treat formal links,
 Lean evidence, or alignment metadata as proof of informal/formal semantic
 alignment.
 
@@ -222,17 +232,28 @@ Alignment review is separate from Lean checking. A formal declaration may exist
 or a local Lean file may pass while the informal artifact still needs human
 review for convention and statement alignment.
 
-G10 is static metadata validation. It does not execute Lean, does not fetch
-external libraries, does not inspect CSLib/mathlib declarations, and does not
-require network access. It enforces policy consistency only:
+G10 is metadata and verifier-result consistency validation. It does not execute
+Lean, fetch external libraries, inspect CSLib/mathlib declarations, or require
+network access. Optional external `#check` output is recorded by G6 when the
+`lean_library_ref` verifier runs; G10 consumes that normalized result in the
+same gatekeeper run when policy requires a Lean check. This does not turn G10
+into an execution gate, and skipped verifier results are not passes. G10
+enforces policy consistency only:
 
 - `require_formal_link: true` requires at least one `formalizations` entry.
 - `require_alignment_review: true` requires `alignment.status:
   human_reviewed`.
 - `require_lean_check: true` requires at least one formalization with
-  `status: checked`.
+  `status: checked` and a matching Lean verifier result with status `pass`.
+  For `check_mode: external_library_ref`, the matching result must come from
+  `lean_library_ref` for the same formalization ID. A plain local Lean pass
+  does not satisfy an external-library reference check.
 - `lean_required` policy is expected to require both a formal link and a Lean
   check; schema/model validation normally catches violations first.
+- `library_ref` values must resolve in a local formal library manifest such as
+  `formal-libs/lean-libraries.yaml` or the checked-in example manifest.
+- `import_path` and `symbol` must be non-empty for `linked` and `checked`
+  references; model validation normally catches empty values first.
 - `alignment.status: rejected` is blocking when alignment review is required
   and is always blocking on accepted artifacts.
 - a required formal link whose only formalizations are `broken` or
@@ -243,13 +264,18 @@ include formal links present when policy does not require them, planned
 formalizations on accepted artifacts, requested alignment review on accepted
 artifacts, `broken` or `deprecated` formalizations when another active link is
 available or no formal link is required, and `checked` external-library
-references that do not yet have verifier-result linkage. The future
-`LeanLibraryRefAdapter` remains future work.
+references that do not yet have verifier-result linkage.
 
 Context-pack display and SQLite/query indexing of formal-link metadata do not
 change G10. They expose the same metadata for handoff and local inspection, but
 they do not run Lean, load gate reports, or turn formal links into verifier
 passes.
+
+Formal library manifests are also metadata-only. The gatekeeper loads a local
+manifest only to validate shape and check that artifact `library_ref` values
+resolve to manifest IDs. It does not fetch or build external libraries from
+manifests, and a manifest entry is not proof that a Lean import or symbol
+exists.
 
 ### Reproducibility Metadata Gate
 
@@ -282,6 +308,11 @@ the gate requires enough metadata to explain the attempted verifier:
 - `cwd`
 - `evidence_paths`
 - `tool_name`
+
+The external Lean library reference checker uses formalization metadata rather
+than `evidence` entries. Its verifier result still records reproducibility
+metadata, but G7 currently applies to executable evidence kinds under
+`evidence`, not to formalization-only references.
 
 Randomized evidence, detected from artifact/evidence text such as
 `randomized`, `randomness`, `stochastic`, or `monte carlo`, must include
@@ -406,17 +437,19 @@ moving eligible artifacts into the accepted area of their KB root.
 - G4 dependency gate
 - G5 evidence path gate
 - G6 verifier gate with the Python checker adapter, optional minimal SAT DIMACS
-  adapter, optional minimal SMT-LIB adapter, and optional minimal Lean adapter
+  adapter, optional minimal SMT-LIB adapter, optional minimal plain Lean adapter,
+  and optional external Lean library reference checker
 - G7 reproducibility metadata gate
 - G8 PR checklist gate
 - G9 source metadata gate for accepted public artifacts
-- G10 formal link gate for static metadata consistency
+- G10 formal link gate for metadata and verifier-result consistency
 
 Formal-link fields are parsed by G1 and checked for policy consistency by G10.
-They do not alter G6 verifier execution, G7 reproducibility metadata checks, or
-G9 source metadata checks. G10 contributes ordinary gatekeeper blocking issues,
-so accepted promotion is blocked only through the existing gatekeeper blocking
-issue mechanism.
+Checkable linked external Lean references can also trigger G6
+`lean_library_ref` verifier results. They do not alter G7 reproducibility
+metadata checks or G9 source metadata checks. G10 contributes ordinary
+gatekeeper blocking issues, so accepted promotion is blocked only through the
+existing gatekeeper blocking issue mechanism.
 
 G7 is reported as `pass` when applicable executable evidence has reproducibility
 metadata, `fail` when required metadata is missing, and `not_applicable` when no

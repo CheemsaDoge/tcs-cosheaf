@@ -37,6 +37,26 @@
 - `cosheaf artifact promote <artifact-id> --repo-root <path>`: promotes the artifact for an explicit repository root.
 - `cosheaf index rebuild`: rebuilds `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json`.
 - `cosheaf index rebuild --repo-root <path>`: rebuilds index outputs for an explicit repository root.
+- `cosheaf ingest convert <path>`: converts a repository-local source file into staged Markdown plus provenance metadata under `.cosheaf/ingest/` when optional MarkItDown support is installed.
+- `cosheaf ingest convert <path> --out <dir>`: writes staged Markdown and provenance metadata under an explicit repository-local output directory. Accepted KB paths such as `kb/accepted/` or `kb/public/accepted/` are rejected.
+- `cosheaf ingest convert <path> --metadata-json`: emits deterministic conversion provenance JSON to stdout.
+- `cosheaf ingest convert <path> --repo-root <path>`: resolves the source and output paths against an explicit repository root.
+- `cosheaf eval retrieval`: runs the default deterministic retrieval
+  regression suite from `evals/retrieval/cases.yaml`.
+- `cosheaf eval retrieval --repo-root <path>`: runs retrieval evals against an
+  explicit repository root.
+- `cosheaf eval retrieval --cases <path>`: uses an explicit repository-local
+  YAML case file.
+- `cosheaf eval retrieval --k <n>`: sets the top-k cutoff used for `hit@k`;
+  the default is `5`.
+- `cosheaf eval retrieval --json`: emits deterministic JSON report output.
+- `cosheaf eval context`: runs the default deterministic context-pack
+  regression suite from `evals/context/cases.yaml`.
+- `cosheaf eval context --repo-root <path>`: runs context evals against an
+  explicit repository root.
+- `cosheaf eval context --cases <path>`: uses an explicit repository-local
+  YAML case file.
+- `cosheaf eval context --json`: emits deterministic JSON report output.
 - `cosheaf graph show`: prints the directed artifact dependency graph.
 - `cosheaf graph show --repo-root <path>`: prints the graph for an explicit repository root.
 - `cosheaf gate`: runs the gatekeeper with default options and writes reports under `.cosheaf/reports/`.
@@ -47,10 +67,81 @@
 - `cosheaf gate run --repo-root <path>`: runs the gatekeeper for an explicit repository root.
 - `cosheaf gate run --persist-review`: also persists report copies under `reviews/gatekeeper/`.
 - `cosheaf gate run --pr-checklist <path>`: validates a local PR checklist markdown file through G8 without using GitHub API or network access.
-- `cosheaf context build <issue-id>`: builds a bounded deterministic context pack under `context/TASKS/<issue-id>/`.
-- `cosheaf context build <issue-id> --repo-root <path>`: builds a context pack for an explicit repository root.
-- `cosheaf context show <issue-id>`: builds the context pack and prints `CONTEXT.md`.
-- `cosheaf context show <issue-id> --repo-root <path>`: shows context for an explicit repository root.
+- `cosheaf context build <issue-id>`: builds a bounded deterministic context
+  pack under `context/TASKS/<issue-id>/`.
+- `cosheaf context build <issue-id> --repo-root <path>`: builds a context
+  pack for an explicit repository root.
+- `cosheaf context build <issue-id> --role <role>`: records the retrieval role
+  used for context-pack budgets. The default role is `orchestrator`.
+- `cosheaf context build <issue-id> --max-cards <n>`: bounds card search
+  before issue-local filtering. The default is `20`.
+- `cosheaf context build <issue-id> --max-full-artifacts <n>`: explicitly
+  allows at most `n` full YAML artifact pulls into `FULL_ARTIFACTS.md`. The
+  default is `0`, so default context is cards-only.
+- `cosheaf context build <issue-id> --public-only`: excludes private cards and
+  private artifact IDs from the rendered context and retrieval audit.
+- `cosheaf context show <issue-id>`: builds the context pack and prints
+  `CONTEXT.md`.
+- `cosheaf context show <issue-id> --repo-root <path>`: shows context for an
+  explicit repository root.
+- `cosheaf context show <issue-id> --role <role>`: uses the same retrieval role
+  option as `context build`.
+- `cosheaf context show <issue-id> --max-cards <n>`: uses the same card bound
+  option as `context build`.
+- `cosheaf context show <issue-id> --max-full-artifacts <n>`: uses the same
+  explicit full-artifact budget option as `context build`.
+- `cosheaf context show <issue-id> --public-only`: uses the same private
+  exclusion behavior as `context build`.
+- `cosheaf memory cards`: builds deterministic artifact cards from existing
+  repository metadata. Default output is compact text lines, not full artifact
+  YAML or statements.
+- `cosheaf memory cards --repo-root <path>`: builds cards for an explicit
+  repository root.
+- `cosheaf memory cards --issue <issue-id>`: limits cards to the issue record's
+  direct `related_artifacts`, after scope/status filters.
+- `cosheaf memory cards --status <status>`: filters cards by artifact-card
+  lifecycle/trust status, such as `accepted` or `draft`.
+- `cosheaf memory cards --json`: emits deterministic JSON card DTOs.
+- `cosheaf memory search <query>`: searches deterministic artifact cards with
+  local SQLite FTS5/BM25 when available, deterministic lexical fallback
+  otherwise, and issue-conditioned graph ranking signals. Default text output
+  prints compact card lines with total score, not full artifact YAML or
+  statements.
+- `cosheaf memory search <query> --repo-root <path>`: searches cards for an
+  explicit repository root.
+- `cosheaf memory search <query> --issue <issue-id>`: uses the issue and its
+  direct `related_artifacts` as Personalized PageRank seeds after
+  scope/status filters, without granting accepted-promotion authority.
+- `cosheaf memory search <query> --seed-artifact <artifact-id>`: adds an
+  explicit artifact seed to personalized ranking; repeat for multiple seeds.
+- `cosheaf memory search <query> --pin-artifact <artifact-id>`: adds a
+  stronger pinned artifact seed to personalized ranking; repeat for multiple
+  pins.
+- `cosheaf memory search <query> --status <status>`: filters search candidates
+  by artifact-card lifecycle/trust status.
+- `cosheaf memory search <query> --include-refuted`: includes refuted cards
+  with an explicit score penalty.
+- `cosheaf memory search <query> --include-obsolete`: includes obsolete and
+  superseded cards with an explicit score penalty.
+- `cosheaf memory search <query> --explain`: prints score component
+  breakdowns and relevance reasons in text output.
+- `cosheaf memory search <query> --json`: emits a deterministic
+  `RetrievalResult` JSON payload with card hits, score breakdowns, and audit
+  metadata.
+- `cosheaf memory graph build`: rebuilds
+  `.cosheaf/memory/graph_snapshot.json` from repository YAML plus optional
+  local sidecar signals such as gate reports and task run records.
+- `cosheaf memory graph build --repo-root <path>`: rebuilds the memory graph
+  sidecar for an explicit repository root.
+- `cosheaf memory graph build --json`: emits a deterministic JSON build
+  summary with the graph fingerprint, node count, edge count, sidecar path,
+  and warnings.
+- `cosheaf memory graph pagerank`: computes deterministic weighted global
+  PageRank from an existing `.cosheaf/memory/graph_snapshot.json` sidecar.
+- `cosheaf memory graph pagerank --repo-root <path>`: computes PageRank for an
+  explicit repository root.
+- `cosheaf memory graph pagerank --json`: emits a deterministic
+  `PageRankResult` JSON payload.
 - `cosheaf task create --issue <issue-id> --worker <worker-type>`: creates an open local agent task under `.cosheaf/tasks/` after confirming the issue exists.
 - `cosheaf task create --issue <issue-id> --worker <worker-type> --repo-root <path>`: creates the task for an explicit repository root.
 - `cosheaf task list`: lists local task records in deterministic task ID order.
@@ -63,8 +154,60 @@
 - `cosheaf task run <task-id> --bundle <path> -- <command> [args...]`: requires a repository-local bundle path, validates a worker output bundle after a successful command without completing the task, and accepts either a YAML manifest or a directory containing `bundle.yaml`.
 - `cosheaf task run <task-id> --complete-with-bundle <path> -- <command> [args...]`: requires a repository-local bundle path, validates a worker output bundle after a successful command, accepts either a YAML manifest or a directory containing `bundle.yaml`, and delegates task completion to the existing orchestrator stub.
 - `cosheaf task run <task-id> ... --repo-root <path> -- <command> [args...]`: runs the local worker command for an explicit repository root.
+- `cosheaf orchestrator plan --issue <issue-id>`: creates a deterministic
+  local-only task-DAG plan for an existing issue and prints a compact text
+  summary. It does not build context packs, execute workers, run gates, request
+  review, write accepted knowledge, or promote artifacts.
+- `cosheaf orchestrator plan --issue <issue-id> --json`: emits the same
+  deterministic `Plan` payload as JSON.
+- `cosheaf orchestrator plan --issue <issue-id> --repo-root <path>`: creates
+  the plan for an explicit repository root.
+- `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only`: runs a
+  deterministic local-only orchestrator dry-run for an existing issue. It
+  creates issue-scoped local task records for the planned nodes, executes
+  explicit local argv commands through the existing local worker runner,
+  validates worker bundle v2 manifests, reduces them into reducer records,
+  writes an inspectable run record and structured `run_log.json` under
+  `.cosheaf/orchestrator/`, and does not call hosted LLMs, use network
+  services, run gates, request human review, write accepted knowledge, or
+  promote artifacts.
+- `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only --timeout-seconds <seconds>`:
+  enforces a positive timeout for each local worker command.
+- `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only --repo-root <path>`:
+  runs the local-only dry-run for an explicit repository root.
 
 ### Python API
+
+#### Source Ingestion
+
+- `cosheaf.ingest.MarkItDownIngestAdapter`: optional local source-ingestion
+  adapter. It converts repository-local files to staged Markdown and
+  provenance metadata when MarkItDown is installed.
+- `cosheaf.ingest.MarkItDownIngestAdapter.convert(context, source_path, *, out_dir=Path(".cosheaf/ingest"), generated_at=None) -> MarkItDownIngestResult`:
+  converts one source file, rejects remote URL inputs, rejects paths outside
+  the repository, rejects accepted KB output paths, and returns unavailable
+  metadata when MarkItDown is absent.
+- `cosheaf.ingest.MarkItDownIngestResult`: frozen dataclass carrying
+  deterministic provenance metadata for one conversion attempt.
+- `cosheaf.ingest.MarkItDownIngestResult.to_dict() -> dict[str, Any]`: returns
+  JSON-serializable conversion provenance.
+- `cosheaf.ingest.MarkItDownIngestResult.to_json() -> str`: returns
+  deterministic indented JSON with a trailing newline.
+- `cosheaf.ingest.IngestError`: expected error for source-ingestion boundary
+  failures such as nonlocal source paths or accepted KB output paths.
+
+Default MarkItDown ingest options are disabled:
+
+- `allow_remote_urls: false`
+- `allow_plugins: false`
+- `allow_ocr: false`
+- `allow_llm_vision: false`
+- `allow_azure_document_intelligence: false`
+
+The adapter writes staging output only. It does not write artifact YAML,
+review records, verifier results, accepted knowledge, or promotion evidence.
+MarkItDown remains an optional package and is not required for validation,
+gates, index rebuilds, context packs, promotion, or default installation.
 
 #### Workspace Configuration
 
@@ -114,6 +257,20 @@
   declaration.
 - `cosheaf.core.artifact.VerificationPolicy`: Pydantic v2 model for
   per-artifact formal-link, Lean-check, and alignment-review expectations.
+- `cosheaf.core.formal_library.FormalLibrary`: Pydantic v2 model for one
+  pinned external Lean library manifest entry.
+- `cosheaf.core.formal_library.FormalLibraryManifest`: Pydantic v2 model for a
+  manifest of external Lean libraries referenced by artifact metadata.
+- `cosheaf.core.formal_library.FormalLibraryManifestError`: expected manifest
+  or library-reference validation error.
+- `cosheaf.core.formal_library.validate_library_ref(value: str) -> str`:
+  validates the manifest library ID syntax used by
+  `formalizations[].library_ref`.
+- `cosheaf.core.formal_library.validate_formalization_library_refs(refs,
+  manifest) -> None`: requires each formalization reference to resolve against
+  a loaded formal library manifest.
+- `cosheaf.core.formal_library.load_formal_library_manifest(path) ->
+  FormalLibraryManifest`: loads a YAML formal library manifest.
 - `cosheaf.core.task.AgentTask`: Pydantic v2 model for local task records, re-exported through `cosheaf.agent.task.AgentTask`.
 
 `BaseArtifact` fields include:
@@ -153,8 +310,30 @@
 - `notes`: optional, defaults to an empty string
 
 Formalization reference IDs use the same dot-separated lowercase slug format
-as artifact IDs. `library`, `library_ref`, `import_path`, and `symbol` are
-required non-empty strings.
+as artifact IDs. `library_ref` is a formal library manifest ID such as
+`cslib-main` or `mathlib-main`; it is not a Lean module path. `library`,
+`import_path`, and `symbol` are required non-empty strings.
+
+`FormalLibrary` fields are:
+
+- `id`: manifest library ID, matching the `library_ref` syntax.
+- `name`
+- `system`: currently `lean4`
+- `git`
+- `commit`
+- `lean_version`
+- `lake_manifest`
+- `notes`
+
+`FormalLibraryManifest` fields are:
+
+- `schema_version`: currently `1`
+- `libraries: list[FormalLibrary]`
+
+`FormalLibraryManifest.library_ids -> tuple[str, ...]` returns manifest IDs in
+manifest order. `FormalLibraryManifest.get_library(library_ref)` returns a
+library entry or `None`. `FormalLibraryManifest.require_library_ref(library_ref)`
+returns the entry or raises `FormalLibraryManifestError`.
 
 `AlignmentReview` fields are:
 
@@ -179,12 +358,202 @@ Alignment statuses `human_reviewed` and `rejected` require a non-empty
 `lean_required` requires both `require_formal_link: true` and
 `require_lean_check: true`.
 
-Formalization links are metadata references to external declarations. They are
-not copied Lean proof bodies and are not stored in `evidence`. G10 statically
-checks consistency between `formalizations`, `alignment`, and
-`verification_policy`, but it does not execute Lean, inspect CSLib/mathlib
-libraries, prove informal/formal alignment, or change accepted promotion
-semantics beyond ordinary gatekeeper blocking behavior.
+Formalization links and formal library manifests are metadata references to
+external declarations and library pins. They are not copied Lean proof bodies
+and are not stored in `evidence`. G10 checks consistency between
+`formalizations`, `alignment`, `verification_policy`, local formal library
+manifests, and normalized Lean verifier results when policy requires a Lean
+check. It does not execute Lean, inspect CSLib/mathlib libraries, resolve
+manifest checkouts, prove informal/formal alignment, or change accepted
+promotion semantics beyond ordinary gatekeeper blocking behavior.
+
+#### Memory/Retrieval Models
+
+- `cosheaf.memory.ArtifactCard`: Pydantic v2 model for compact retrieval cards
+  derived from existing repository metadata.
+- `cosheaf.memory.ScoreBreakdown`: Pydantic v2 model for inspectable retrieval
+  score components.
+- `cosheaf.memory.RetrievalRequest`: Pydantic v2 model for bounded local
+  retrieval requests.
+- `cosheaf.memory.RetrievedArtifactCard`: Pydantic v2 model pairing an
+  `ArtifactCard` with a `ScoreBreakdown` and relevance reasons.
+- `cosheaf.memory.FullArtifactPull`: Pydantic v2 audit entry for explicit full
+  artifact pulls beyond card metadata.
+- `cosheaf.memory.RetrievalExclusion`: Pydantic v2 audit entry for records
+  excluded by scope, status, or policy.
+- `cosheaf.memory.RetrievalAudit`: Pydantic v2 model for retrieval filters,
+  exclusions, and warnings.
+- `cosheaf.memory.RetrievalResult`: Pydantic v2 model for ordered retrieved
+  cards, full-artifact pull audit entries, and retrieval audit metadata.
+- `cosheaf.memory.RetrievalScoreWeights`: frozen dataclass for configurable
+  retrieval formula weights. Defaults are `0.50` retrieval hybrid, `0.20`
+  personalized PageRank, `0.15` global PageRank, `0.10` quality prior, and
+  `0.05` freshness. Penalty is always subtracted after weighted components.
+- `cosheaf.memory.MemoryGraphNode`: Pydantic v2 model for one deterministic
+  memory graph node.
+- `cosheaf.memory.MemoryGraphEdge`: Pydantic v2 model for one weighted memory
+  graph edge.
+- `cosheaf.memory.MemoryGraphSnapshot`: Pydantic v2 model for the rebuildable
+  `.cosheaf/memory/graph_snapshot.json` sidecar.
+- `cosheaf.memory.PageRankRow`: Pydantic v2 model for one global PageRank row.
+- `cosheaf.memory.PageRankResult`: Pydantic v2 model for deterministic
+  weighted global PageRank output.
+- `cosheaf.memory.MemoryCardError`: expected error for card-builder failures,
+  such as an unknown issue ID or a repository load failure.
+- `cosheaf.memory.MemorySearchError`: expected error for memory-search
+  failures, such as invalid query text or card-builder errors.
+- `cosheaf.memory.MemoryGraphError`: expected error for memory graph build,
+  sidecar read, or PageRank failures.
+
+#### Evaluation Models
+
+- `cosheaf.evals.RetrievalEvalCase`: Pydantic v2 model for one deterministic
+  retrieval regression case with `query`, optional `issue_id`,
+  `expected_relevant_artifacts`, `forbidden_artifacts`, and `allowed_scope`.
+- `cosheaf.evals.RetrievalEvalSuite`: Pydantic v2 model for a YAML suite of
+  retrieval eval cases.
+- `cosheaf.evals.RetrievalEvalMetrics`: frozen dataclass with `hit@k`,
+  `forbidden_hit_count`, `accepted_priority_score`, and
+  `private_leakage_count` output.
+- `cosheaf.evals.RetrievalEvalCaseResult`: frozen dataclass for one scored
+  case, including returned, forbidden, private, and missing expected artifact
+  IDs.
+- `cosheaf.evals.RetrievalEvalReport`: frozen dataclass for aggregate suite
+  output with deterministic `to_dict()` and `to_json()` helpers.
+- `cosheaf.evals.RetrievalEvalError`: expected error for retrieval eval loading
+  or execution failures.
+- `cosheaf.evals.DEFAULT_RETRIEVAL_EVAL_CASES`: default case path
+  `evals/retrieval/cases.yaml`.
+
+All memory models are strict (`extra="forbid"`), frozen, preserve enum values as
+enum instances in Python, and expose:
+
+- `to_dict() -> dict[str, Any]`: deterministic `model_dump(mode="json")`.
+- `to_json() -> str`: deterministic indented JSON with a trailing newline.
+
+`ArtifactCard` fields are:
+
+- `id`
+- `path`
+- `root_scope`
+- `type`
+- `status`
+- `title`
+- `summary`
+- `domain`
+- `tags`
+- `depends_on`
+- `sources`
+- `review_state`
+- `verifier_state`
+- `formalization_state`
+- `trust_score`
+- `retrieval_score`
+- `why_relevant`
+- `risk_flags`
+- `can_pull_full`
+
+`RetrievalRequest` fields are:
+
+- `schema_version`
+- `query`
+- `issue_id`
+- `seed_artifacts`
+- `pinned_artifacts`
+- `allowed_scopes`
+- `allowed_statuses`
+- `include_refuted`
+- `include_obsolete`
+- `max_cards`
+- `max_full_artifacts`
+- `role`
+
+`RetrievalResult` fields are:
+
+- `schema_version`
+- `request_id`
+- `generated_at`
+- `index_fingerprint`
+- `cards`
+- `full_artifact_pulls`
+- `audit`
+
+`MemoryGraphSnapshot` fields are:
+
+- `schema_version`
+- `generated_at`
+- `graph_fingerprint`
+- `nodes`
+- `edges`
+- `warnings`
+
+`MemoryGraphNode` fields are:
+
+- `node_id`
+- `kind`
+- `record_id`
+- `path`
+- `title`
+- `status`
+- `metadata`
+
+`MemoryGraphEdge` fields are:
+
+- `source`
+- `target`
+- `kind`
+- `weight`
+- `evidence`
+
+`PageRankResult` fields are:
+
+- `schema_version`
+- `algorithm`
+- `damping`
+- `iterations`
+- `graph_fingerprint`
+- `rows`
+- `warnings`
+
+The memory package also exposes:
+
+- `cosheaf.memory.build_artifact_cards(context: RepoContext, *, issue_id: str | None = None, status: ArtifactCardStatus | str | None = None, allowed_scopes: Iterable[MemoryRootScope | str] = DEFAULT_CARD_SCOPES) -> tuple[ArtifactCard, ...]`:
+  builds deterministic cards from loaded repository YAML metadata.
+- `cosheaf.memory.artifact_card_from_loaded_record(loaded: LoadedRecord) -> ArtifactCard`:
+  builds one card from a loaded lifecycle artifact record.
+- `cosheaf.memory.DEFAULT_CARD_SCOPES`: default public-output scope set,
+  containing `public`, `workspace`, and `framework`, excluding `private`.
+- `cosheaf.memory.search_artifact_cards(context: RepoContext, *, query: str, issue_id: str | None = None, status: ArtifactCardStatus | str | None = None, max_cards: int = 20, allowed_scopes: tuple[MemoryRootScope, ...] | None = None, seed_artifacts: tuple[str, ...] = (), pinned_artifacts: tuple[str, ...] = (), include_refuted: bool = False, include_obsolete: bool = False, role: RetrievalRole | str = RetrievalRole.LIBRARIAN, max_full_artifacts: int = 0, score_weights: RetrievalScoreWeights = RetrievalScoreWeights()) -> RetrievalResult`:
+  searches deterministic artifact cards with SQLite FTS5/BM25 when available,
+  deterministic lexical fallback otherwise, and in-memory Personalized
+  PageRank/global PageRank/freshness/penalty scoring. It records retrieval
+  role and full-artifact budget metadata in the request but still returns
+  cards by default and does not write memory sidecars.
+- `cosheaf.memory.build_memory_graph(context: RepoContext, *, persist: bool = False) -> MemoryGraphSnapshot`:
+  builds the deterministic memory graph from repository YAML plus optional
+  local sidecar signals. With `persist=True`, it writes the rebuildable
+  `.cosheaf/memory/graph_snapshot.json` sidecar.
+- `cosheaf.memory.load_memory_graph_snapshot(context: RepoContext) -> MemoryGraphSnapshot`:
+  loads the existing graph sidecar and fails clearly if users need to run
+  `cosheaf memory graph build` first.
+- `cosheaf.memory.compute_global_pagerank(graph: MemoryGraphSnapshot, *, damping: float = 0.85, max_iterations: int = 50, tolerance: float = 1e-12) -> PageRankResult`:
+  computes deterministic weighted global PageRank rows from the memory graph.
+- `cosheaf.memory.write_memory_graph_snapshot(context: RepoContext, snapshot: MemoryGraphSnapshot) -> Path`:
+  writes the deterministic rebuildable graph sidecar.
+- `cosheaf.memory.MEMORY_GRAPH_SIDECAR`: repository-relative graph sidecar path,
+  `.cosheaf/memory/graph_snapshot.json`.
+
+The card builder and search read existing YAML records through the storage
+loader. Search uses an in-memory SQLite FTS5 table and in-memory memory graph
+ranking when available and does not write `.cosheaf/memory/` sidecars. Memory
+graph build writes only the rebuildable graph snapshot sidecar, and PageRank
+reads that sidecar without implicitly rebuilding it. The memory package does
+not add embeddings, hosted LLM workers, accepted-promotion shortcuts, formal
+checking, or artifact schema changes. Context-pack v2 consumes memory search
+cards while preserving bounded output and issue-local relevance filters. By
+default, configured private KB roots are excluded from `cosheaf memory cards`
+and `cosheaf memory search`; callers must not treat memory output, graph
+scores, or context-pack scores as accepted knowledge or human review.
 
 #### Core Enums
 
@@ -192,6 +561,19 @@ semantics beyond ordinary gatekeeper blocking behavior.
 - `cosheaf.core.status.ArtifactStatus`: artifact lifecycle status enum.
 - `cosheaf.core.task.WorkerType`: protocol worker type enum, re-exported through `cosheaf.agent.task.WorkerType`.
 - `cosheaf.core.task.TaskStatus`: task lifecycle status enum, re-exported through `cosheaf.agent.task.TaskStatus`.
+- `cosheaf.memory.MemoryRootScope`: memory root scope enum with values
+  `public`, `private`, `workspace`, and `framework`.
+- `cosheaf.memory.ArtifactCardType`: artifact-card type enum with values
+  `definition`, `theorem`, `claim`, `conjecture`, `proof`, `proof_attempt`,
+  `construction`, `algorithm`, `reduction`, `counterexample`, `experiment`,
+  `review`, `verifier`, `issue`, and `source_note`.
+- `cosheaf.memory.ArtifactCardStatus`: artifact-card lifecycle/trust status enum
+  with values `raw`, `draft`, `locally_tested`, `adversarially_tested`,
+  `machine_checked`, `human_reviewed`, `accepted`, `refuted`, `obsolete`, and
+  `superseded`.
+- `cosheaf.memory.RetrievalRole`: retrieval caller role enum with values
+  `librarian`, `orchestrator`, `reasoner`, `verifier`, `formalizer`,
+  `literature_scout`, `counterexampleer`, and `construction_searcher`.
 
 #### Core Helpers
 
@@ -369,7 +751,7 @@ depending on draft or otherwise pre-accepted artifacts.
 - `cosheaf.gates.source_metadata_gate.validate_source_metadata_policy(context: RepoContext, records: tuple[LoadedRecord, ...]) -> SourceMetadataResult`
 - `cosheaf.gates.formal_link_gate.FormalLinkCheck`: one static formal-link metadata check row.
 - `cosheaf.gates.formal_link_gate.FormalLinkResult`: aggregate formal-link metadata policy gate result.
-- `cosheaf.gates.formal_link_gate.validate_formal_link_policy(records: tuple[LoadedRecord, ...]) -> FormalLinkResult`
+- `cosheaf.gates.formal_link_gate.validate_formal_link_policy(records: tuple[LoadedRecord, ...], *, context: RepoContext | None = None, verification_results: tuple[VerificationResult, ...] = ()) -> FormalLinkResult`
 - `cosheaf.gates.gatekeeper.ValidationReport`: validation report with loaded records and failures.
 - `cosheaf.gates.gatekeeper.validate_repository(context: RepoContext) -> ValidationReport`
 - `cosheaf.gates.gatekeeper.validate_artifact_file(context: RepoContext, path: Path) -> ValidationReport`
@@ -401,11 +783,17 @@ KB roots are missing complete source metadata while `accepted_requires_source`
 is true, `pass` when applicable accepted public artifacts are complete, and
 `not_applicable` for legacy mode, disabled source policy, or no accepted public
 artifacts. G10 is `not_applicable` when no artifact has formal-link policy
-metadata to check, `fail` when static policy consistency is violated, and
-`pass` when applicable formal-link metadata has no blocking issue. G10 warnings
-are emitted as nonblocking issues and are not proof failures. It does not call
-GitHub, require network access, run Lean, fetch external libraries, or inspect
-CSLib/mathlib references recorded in `formalizations`; alignment review remains
+metadata to check, `fail` when policy or verifier-result consistency is
+violated, and `pass` when applicable formal-link metadata has no blocking
+issue. G10 warnings are emitted as nonblocking issues and are not proof
+failures. It does not call GitHub, require network access, run Lean, fetch
+external libraries, or prove CSLib/mathlib semantic alignment. When artifacts
+carry `formalizations`, G10 resolves each `library_ref` against a local formal
+library manifest and blocks missing or unknown manifest references. When
+`require_lean_check` is true, G10 consumes G6 verifier results and requires a
+matching Lean verifier `pass`; `skipped`, `fail`, and `error` are not passes.
+For `check_mode: external_library_ref`, the matching verifier is
+`lean_library_ref` for the same formalization ID. Alignment review remains
 separate from Lean checking. It writes JSON and Markdown reports under
 `.cosheaf/reports/` by default.
 
@@ -429,6 +817,8 @@ G10 `GateResult.details` entries use:
 - `require_alignment_review`
 - `formalization_count`
 - `checked_formalization_count`
+- `resolved_library_ref_count`
+- `lean_check_pass_count`
 - `alignment_status`
 - `status`
 - `blocking_messages`
@@ -438,18 +828,19 @@ G10 `GateResult.details` entries use:
 
 - `cosheaf.agent.context_pack.ContextPackError`: expected context pack generation error, such as a missing issue ID.
 - `cosheaf.agent.context_pack.ContextPackResult`: written context pack metadata with issue ID, task directory, and file paths.
-- `cosheaf.agent.context_pack.build_context_pack(context: RepoContext, issue_id: str) -> ContextPackResult`
-- `cosheaf.agent.context_pack.show_context_pack(context: RepoContext, issue_id: str) -> str`
+- `cosheaf.agent.context_pack.build_context_pack(context: RepoContext, issue_id: str, *, role: RetrievalRole | str = RetrievalRole.ORCHESTRATOR, max_cards: int = 20, max_full_artifacts: int | None = None, public_only: bool = False) -> ContextPackResult`
+- `cosheaf.agent.context_pack.show_context_pack(context: RepoContext, issue_id: str, *, role: RetrievalRole | str = RetrievalRole.ORCHESTRATOR, max_cards: int = 20, max_full_artifacts: int | None = None, public_only: bool = False) -> str`
 
 Context pack generation loads repository YAML records, finds an issue by ID,
-selects and ranks artifacts from direct `related_artifacts`, one-hop dependency
-neighbors, artifact domains that match issue text or tags, and artifact tags
-that match issue tags. Ranking is deterministic and each listed artifact
-includes explainable `reasons`. Accepted artifacts are preferred over draft
-artifacts within the same relevance class. Draft artifacts are visibly labeled
-as `[DRAFT]`; refuted, obsolete, and superseded artifacts are included only when
-relevant and are labeled with their terminal status. Context pack files are
-written under `context/TASKS/<issue-id>/`.
+retrieves compact `ArtifactCard` rows, and filters those cards through the
+issue-local relevance rules used by the previous context-pack implementation:
+direct `related_artifacts`, one-hop dependency neighbors, artifact domains that
+match issue text or tags, and artifact tags that match issue tags. Ranking is
+deterministic. Accepted artifacts are preferred over draft artifacts within the
+same relevance class. Draft artifacts are visibly labeled as `[DRAFT]`;
+refuted, obsolete, and superseded artifacts are included only when relevant and
+are labeled with their terminal status. Context pack files are written under
+`context/TASKS/<issue-id>/`.
 
 Generated context pack files are:
 
@@ -457,36 +848,133 @@ Generated context pack files are:
 - `ACCEPTANCE.md`
 - `RELEVANT_ARTIFACTS.md`
 - `KNOWN_FAILURES.md`
+- `FULL_ARTIFACTS.md`
+- `RETRIEVAL_AUDIT.json`
 - `COMMANDS.md`
 
 `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and the artifact sections inside
-`CONTEXT.md` use lines containing artifact ID, title, status, source path, and
-ranking reasons. When a relevant artifact has formal-link metadata or
-policy-relevant formal settings, the artifact entry also includes compact
-formal-link metadata lines:
+`CONTEXT.md` use card-level lines containing artifact ID, title, status,
+source path, retrieval score, root scope, and combined issue/retrieval reasons.
+Full artifact YAML is not included in those card sections. The orchestrator
+default is `max_full_artifacts = 0`; full YAML can appear only in
+`FULL_ARTIFACTS.md` when the caller explicitly passes a positive
+`max_full_artifacts` budget. `RETRIEVAL_AUDIT.json` records the request, role,
+card bound, public-only flag, score breakdowns, filters, exclusions, warnings,
+and full-artifact pull audit entries. `public_only=True` excludes private cards
+and private artifact IDs from both rendered context and audit output.
+
+When a relevant artifact has formal-link metadata or policy-relevant formal
+settings, the artifact entry also includes compact formal-link metadata lines:
 
 - `Formal links:` entries ordered by formalization ID, rendered as
   `<library>@<library_ref>:<import_path>#<symbol> [<kind>, <status>, <mode>]`
 - `Alignment: <status>; reviewer=<reviewer-or-dash>`
 - `Verification policy: <level>; formal_link=<bool>; lean_check=<bool>;
   alignment_review=<bool>`
-- `G10-relevant: yes; ...` static hints derived from artifact metadata
+- `G10-relevant: yes; ...` policy hints derived from artifact metadata
 
 These context-pack lines are metadata-only handoff context. They do not load
 gate reports, do not claim the current G10 verdict, and do not claim Lean
-verification.
+verification. Retrieval scores are ranking metadata only and do not authorize
+review, promotion, proof, or public/private policy bypasses.
 
 #### Agent Tasks
 
+- `cosheaf.agent.roles.RoleName`: enum for role prompt/context contracts with
+  values `librarian`, `reasoner`, `verifier`, `formalizer`, `explorer`,
+  `counterexampleer`, and `collector`.
+- `cosheaf.agent.roles.RoleOutputSchema`: strict Pydantic v2 model describing
+  required and optional fields expected from one role's worker output.
+- `cosheaf.agent.roles.RoleContextBudget`: strict Pydantic v2 model for
+  bounded role context budgets, including maximum cards, maximum full artifact
+  pulls, maximum prompt characters, and private-context allowance.
+- `cosheaf.agent.roles.RoleToolPolicy`: strict Pydantic v2 model for one
+  role's tool and network policy. Current role contracts keep network access
+  disabled.
+- `cosheaf.agent.roles.RoleContract`: strict Pydantic v2 model for
+  machine-readable role boundaries. It records role-specific prompt text,
+  allowed inputs, forbidden actions, required output schema, context budget,
+  tool policy, stop conditions, risk flags, `provider: fake`, and
+  `hosted_llm_enabled: false`.
+- `cosheaf.agent.roles.REQUIRED_ROLE_NAMES`: deterministic tuple of required
+  role names in contract order.
+- `cosheaf.agent.roles.ROLE_CONTRACTS`: deterministic tuple of the built-in
+  role contracts. The built-in roles do not write accepted knowledge, do not
+  promote artifacts, do not mark human review, and do not enable hosted LLMs.
+- `cosheaf.agent.roles.list_role_contracts() -> tuple[RoleContract, ...]`:
+  returns all built-in role contracts in deterministic order.
+- `cosheaf.agent.roles.get_role_contract(role: RoleName | str) -> RoleContract`:
+  returns one built-in role contract by enum value or role-name string.
+- `cosheaf.agent.model_provider.ModelRequest`: strict Pydantic v2 model for a
+  provider-neutral model request. Fields include `provider`, `model`, `prompt`,
+  `temperature`, `top_p`, `reasoning_effort`, `max_output_tokens`,
+  `tool_policy`, `network_policy`, and `metadata`.
+- `cosheaf.agent.model_provider.ModelResponse`: strict Pydantic v2 model for a
+  provider-neutral model response with `provider`, `model`, `content`,
+  `finish_reason`, negotiated `capability`, warnings, and metadata.
+- `cosheaf.agent.model_provider.ProviderCapability`: strict Pydantic v2 model
+  recording supported and unsupported request parameters for one provider/model
+  pair. Capability negotiation metadata is informational and does not grant
+  review, verifier, gate, or promotion authority.
+- `cosheaf.agent.model_provider.ModelProvider`: protocol for provider-neutral
+  model adapters. Implementations expose `negotiate_capability(...)` and
+  `generate(...)`.
+- `cosheaf.agent.model_provider.FakeModelProvider`: deterministic local fake
+  provider. It performs no network call, imports no hosted-provider SDK, and
+  records unsupported requested parameters instead of crashing.
+- `cosheaf.agent.model_provider.ProviderName`: enum with `fake`, `openai`,
+  `anthropic`, `google`, and `local`. Only the fake provider is implemented in
+  the current framework.
+- `cosheaf.agent.model_provider.ReasoningEffort`: enum with `low`, `medium`,
+  and `high`.
+- `cosheaf.agent.model_provider.ToolPolicy`: enum with `none`, `read_only`,
+  `local_tools`, and `verifier_tools`.
+- `cosheaf.agent.model_provider.NetworkPolicy`: enum with `disabled` and
+  `explicit_allow`.
+- `cosheaf.agent.model_provider.FinishReason`: enum with `stop`, `length`, and
+  `error`.
 - `cosheaf.agent.task.WorkerType`: protocol worker type enum with values `reasoner`, `verifier`, `counterexampleer`, `construction_searcher`, `formalizer`, `literature_scout`, and `orchestrator`.
 - `cosheaf.agent.task.TaskStatus`: task status enum with values `open`, `in_progress`, `blocked`, `completed`, `failed`, and `cancelled`.
 - `cosheaf.agent.task.AgentTask`: Pydantic v2 model for local task records with fields `task_id`, `issue_id`, `worker_type`, `status`, `input_context`, `budget`, `expected_outputs`, `created_at`, and `updated_at`.
 - `cosheaf.agent.task.create_task_id(issue_id: str, worker_type: WorkerType | str) -> str`: deterministic default task ID helper. It returns `task.<issue-id>.<worker-type-slug>`, with underscores in worker type values rendered as hyphens.
+- `cosheaf.agent.orchestrator_state.OrchestratorState`: orchestrator run state enum with values `created`, `planned`, `running`, `waiting_for_worker`, `waiting_for_gate`, `waiting_for_review`, `blocked`, `completed`, `failed`, and `abandoned`.
+- `cosheaf.agent.orchestrator_state.OrchestratorRun`: strict serializable Pydantic v2 model for one orchestrator run record. It exposes `create(...)`, `transition(...)`, `to_dict()`, and `to_json()` helpers and validates the explicit transition graph.
+- `cosheaf.agent.orchestrator_state.Plan`: strict serializable Pydantic v2 model for an auditable orchestrator plan.
+- `cosheaf.agent.orchestrator_state.TaskDAG`: strict serializable Pydantic v2 model for task nodes. It rejects duplicate node IDs, unknown dependencies, and cycles.
+- `cosheaf.agent.orchestrator_state.TaskNode`: strict serializable Pydantic v2 model for one task-DAG node.
+- `cosheaf.agent.orchestrator_state.WorkerCall`: strict serializable Pydantic v2 model for worker invocation metadata. It records command, cwd, timestamps, exit code, output log paths, and optional bundle path without executing anything.
+- `cosheaf.agent.orchestrator_state.ReducerResult`: strict serializable Pydantic v2 model for reducer decisions. Its output paths must be repository-local and must not target accepted knowledge.
+- `cosheaf.agent.orchestrator_state.StopCondition`: strict serializable Pydantic v2 model for stop or pause conditions.
+- `cosheaf.agent.orchestrator_planner.plan_for_issue(context: RepoContext, issue_id: str) -> Plan`: deterministic local-only planner stub. It loads an existing issue and returns a `Plan` with librarian-retrieval, reasoner-draft, verifier-check, and review-request task nodes. It does not write files or execute workers.
+- `cosheaf.agent.orchestrator_planner.OrchestratorPlannerError`: expected planner failure, including missing issue records and repository load failures.
 - `cosheaf.agent.worker_contract.WorkerOutputKind`: output kind enum with values `artifact`, `review`, `evidence`, and `report`.
 - `cosheaf.agent.worker_contract.WorkerOutput`: Pydantic v2 model for one repository-local output reference.
 - `cosheaf.agent.worker_contract.WorkerOutputBundle`: Pydantic v2 model for a local worker output bundle manifest.
 - `cosheaf.agent.worker_contract.OutputBundleError`: expected worker output bundle validation error.
 - `cosheaf.agent.worker_contract.validate_output_bundle(context: RepoContext, bundle_path: str | Path, *, task: AgentTask | None = None) -> WorkerOutputBundle`: validates a local bundle manifest and referenced output paths without merging accepted knowledge.
+- `cosheaf.agent.worker_bundle_v2.WorkerBundleConfidence`: confidence enum with values `low`, `medium`, and `high`.
+- `cosheaf.agent.worker_bundle_v2.ProposedArtifact`: strict Pydantic v2 model for one repository-local proposed artifact path and summary.
+- `cosheaf.agent.worker_bundle_v2.WorkerBundleV2`: strict Pydantic v2 model for Phase 4.3 reducer-oriented worker bundles with fields `bundle_id`, `task_id`, `worker_role`, `created_at`, `summary`, `used_artifacts`, `used_sources`, `claims`, `proposed_artifacts`, `verification_requests`, `failures_or_counterexamples`, `risk_flags`, `next_steps`, and `confidence`.
+- `cosheaf.agent.worker_bundle_v2.WorkerBundleV2Error`: expected worker bundle v2 validation or reducer-boundary failure.
+- `cosheaf.agent.worker_bundle_v2.validate_worker_bundle_v2(context: RepoContext, bundle_path: str | Path) -> WorkerBundleV2`: loads and validates a worker bundle v2 manifest without executing workers, writing files, requesting review, or promoting accepted knowledge. It rejects non-repository-local bundle paths, non-repository-local proposed artifact paths, accepted-KB proposals, schema-invalid existing proposed artifacts, and worker-created `human_reviewed` or `accepted` review states.
+- `cosheaf.agent.worker_bundle_v2.reduce_worker_bundle_v2(context: RepoContext, bundle_path: str | Path, *, reducer_id: str) -> ReducerResult`: validates a worker bundle v2 manifest and returns a deterministic `ReducerResult`, preserving failures, risk flags, and confidence as warnings.
+- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunConfig`: dataclass for one local-only orchestrator dry-run with fields `issue_id`, `timeout_seconds`, optional `worker_command`, optional `proposal_path`, optional `run_id`, and optional `now`.
+- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunResult`: dataclass containing the final `OrchestratorRun`, run root, run record path, and structured run-log path.
+- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunner`: local-only orchestrator runner that converts a deterministic plan into local task records, runs explicit argv commands through `LocalWorkerRunner`, validates worker bundle v2 outputs, reduces them into `ReducerResult` records, and writes the final run record plus sanitized structured `run_log.json`. It does not call hosted LLMs, make network calls, run gates, request human review, write accepted knowledge, or promote artifacts.
+- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunner.run_issue(config: OrchestratorLocalRunConfig) -> OrchestratorLocalRunResult`: runs one issue-scoped local-only dry-run and returns the final persisted run metadata.
+- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunError`: expected local orchestrator run failure, including invalid configuration, missing issue records, duplicate run IDs, and local runner boundary failures.
+- `cosheaf.agent.run_logging.StructuredRunLog`: strict Pydantic v2 JSON DTO for local run observability with run/task/artifact/bundle IDs, timing, status, stop reason, and sanitized worker-call metadata.
+- `cosheaf.agent.run_logging.RunLogWorkerCall`: strict Pydantic v2 DTO for sanitized worker-call metadata. It records redacted command argv but does not inline stdout or stderr contents.
+- `cosheaf.agent.run_logging.structured_log_from_orchestrator_run(run: OrchestratorRun) -> StructuredRunLog`: derives a structured local run log from an orchestrator run DTO.
+- `cosheaf.agent.run_logging.write_orchestrator_run_log(path: Path, run: OrchestratorRun) -> StructuredRunLog`: writes deterministic `run_log.json` for a local orchestrator run.
+- `cosheaf.agent.run_logging.redact_command(command: list[str]) -> list[str]`: redacts common secret flags and token-like values from command argv metadata before logging.
+- `cosheaf.observability.otel.OTelTelemetryConfig`: dataclass controlling optional OpenTelemetry-style export with `enabled=False` and `strict=False` by default.
+- `cosheaf.observability.otel.OTelSpanExporter`: minimal exporter protocol for caller-provided span exporters. The framework does not require the OpenTelemetry SDK or configure a collector.
+- `cosheaf.observability.otel.emit_run_log_span(run_log, *, exporter=None, config=None) -> OTelExportResult`: optionally exports sanitized `StructuredRunLog` metadata as one span. Export is disabled by default; non-strict exporter failures return an error result instead of failing the research workflow.
+- `cosheaf.observability.otel.run_log_span_attributes(run_log: StructuredRunLog) -> dict[str, object]`: converts safe run/task/artifact IDs and status fields to span attributes without command argv, stdout, stderr, hidden reasoning, or secret values.
+- `cosheaf.agent.dry_run_workers.dry_run_worker_command(...) -> list[str]`: returns the explicit local argv used by the orchestrator runner's default fake dry-run worker. The command writes a worker bundle v2 manifest only; it does not call hosted LLMs, use network services, run gates, request review, write proposal artifacts, write accepted knowledge, or promote artifacts.
+- `cosheaf.agent.dry_run_workers.build_dry_run_bundle(...) -> dict[str, object]`: builds a role-aware fake worker bundle mapping for orchestrator, reasoner, or verifier dry-runs. Reasoner bundles are draft proposal context only, verifier bundles record that no real gate/Lean/SAT/SMT/promotion result was produced, and all bundles remain low-confidence dry-run output.
+- `cosheaf.agent.dry_run_workers.main(argv: list[str] | None = None) -> int`: CLI entry point invoked by the local runner command to write one deterministic dry-run worker bundle.
 - `cosheaf.agent.orchestrator_stub.OrchestratorStub`: local filesystem task harness stub. It creates, lists, loads, and completes task records without LLM calls, network calls, concrete worker execution, or accepted knowledge merges.
 - `cosheaf.agent.orchestrator_stub.TaskHarnessError`: expected task harness error.
 - `cosheaf.agent.orchestrator_stub.AcceptedKnowledgeMergeProhibitedError`: raised when a caller asks the stub to merge accepted knowledge.
@@ -530,6 +1018,24 @@ Local worker run status values are:
 - `timed_out`
 - `bundle_invalid`
 
+Orchestrator run records use `schemas/orchestrator_run.schema.json` and these
+top-level fields:
+
+- `schema_version`
+- `run_id`
+- `issue_id`
+- `state`
+- `plan`
+- `worker_calls`
+- `reducer_results`
+- `stop_conditions`
+- `created_at`
+- `updated_at`
+
+The state model is a pure contract. It does not dispatch workers, run hosted
+models, run gates, request human review, complete tasks, merge worker outputs,
+or promote accepted knowledge.
+
 Worker output bundles may be passed as a YAML file path or as a directory
 containing `bundle.yaml`. Bundle manifests use:
 
@@ -541,6 +1047,29 @@ containing `bundle.yaml`. Bundle manifests use:
 
 Artifact and review outputs must point to repository-local YAML records that
 pass the schema gate. Outputs under `kb/accepted/` are rejected.
+
+Worker bundle v2 manifests use `schemas/worker_bundle_v2.schema.json` and these
+top-level fields:
+
+- `bundle_id`
+- `task_id`
+- `worker_role`
+- `created_at`
+- `summary`
+- `used_artifacts`
+- `used_sources`
+- `claims`
+- `proposed_artifacts`
+- `verification_requests`
+- `failures_or_counterexamples`
+- `risk_flags`
+- `next_steps`
+- `confidence`
+
+Worker bundle v2 is a reducer-oriented contract only in this phase. It is not
+yet wired into `cosheaf task run` or `cosheaf task complete`, and it does not
+dispatch workers, run gates, request human review, write files, or promote
+accepted knowledge.
 
 #### Verification
 
@@ -564,6 +1093,16 @@ pass the schema gate. Outputs under `kb/accepted/` are rejected.
 - `cosheaf.verification.lean_adapter.LeanBackend`: protocol for optional Lean backends.
 - `cosheaf.verification.lean_adapter.ExternalLeanCommandBackend`: optional external-command Lean backend.
 - `cosheaf.verification.lean_adapter.LeanAdapter`: optional minimal Lean verifier adapter.
+- `cosheaf.verification.lean_external.LeanLibraryRefSpec`: normalized external
+  Lean library formalization reference to check.
+- `cosheaf.verification.lean_external.LeanLibraryRefBackendResult`: normalized
+  external Lean library reference backend invocation result.
+- `cosheaf.verification.lean_external.LeanLibraryRefBackend`: protocol for
+  optional external Lean library reference backends.
+- `cosheaf.verification.lean_external.ExternalLeanLibraryRefBackend`: optional
+  external-command backend for generated Lean `import`/`#check` files.
+- `cosheaf.verification.lean_external.LeanLibraryRefAdapter`: optional
+  external Lean library reference verifier adapter.
 
 `VerifierAdapter` requires:
 
@@ -616,8 +1155,8 @@ Registry ordering is deterministic by adapter name. Duplicate adapter names
 raise `VerifierRegistryError`.
 
 The default verifier registry currently registers `LeanAdapter`,
-`PythonCheckerAdapter`, `SatAdapter`, and `SmtAdapter`. Registry ordering is
-deterministic by adapter name.
+`LeanLibraryRefAdapter`, `PythonCheckerAdapter`, `SatAdapter`, and `SmtAdapter`.
+Registry ordering is deterministic by adapter name.
 
 `PythonCheckerAdapter` exposes:
 
@@ -780,6 +1319,72 @@ The external backend detects availability with PATH lookup, obtains version
 metadata from `lean --version` when possible, and runs `lean <file.lean>` with
 the repository root as cwd.
 
+`LeanLibraryRefAdapter` exposes:
+
+- `name = "lean_library_ref"`
+- `__init__(lean_command: str = "lean", *, lake_command: str = "lake", use_lake: bool = False, backend: LeanLibraryRefBackend | None = None, cwd: str | Path | None = None, timeout_seconds: float = 30.0)`
+- `can_verify(artifact: BaseArtifact, repo: RepoContext) -> bool`
+- `verify(artifact: BaseArtifact, repo: RepoContext) -> VerificationResult`
+
+It recognizes artifact `formalizations` entries with `system: lean4`,
+`check_mode: external_library_ref`, and `status: linked` or `checked`. Planned
+formalizations are skipped by default and are not treated as checked. When a
+checkable formalization exists, the adapter generates a temporary Lean file
+outside the repository with:
+
+```lean
+import <import_path>
+#check <symbol>
+```
+
+When no backend is supplied, it uses `ExternalLeanLibraryRefBackend` with the
+configured Lean command, defaulting to `lean`; `use_lake=True` switches command
+metadata and execution to `lake env lean <tempfile>`. If the selected backend
+is unavailable, the adapter returns `skipped`, which is not a pass. If a backend
+is available, it runs the generated file, writes stdout and stderr logs under
+`.cosheaf/logs/`, and returns normalized `pass`, `fail`, or `error` results
+with command, cwd, timeout, formalization input label, output paths, backend
+metadata, exit code, and diagnostics. Exit code `0` is `pass`, nonzero exit
+code is `fail`, and timeout or startup errors are `error`.
+
+The external reference adapter does not fetch CSLib, mathlib, or any other
+library; does not manage lake checkouts; does not autoformalize natural
+language; does not update `formalizations[].status`; and does not prove
+informal/formal semantic alignment. Under the current one-result verifier
+adapter contract, one `verify(...)` call checks the first applicable
+formalization for an artifact.
+
+`LeanLibraryRefBackendResult` exposes:
+
+- `exit_code: int | None`
+- `stdout: str`
+- `stderr: str`
+
+`LeanLibraryRefBackend` requires:
+
+- `name: str`
+- `is_available() -> bool`
+- `command(lean_path: Path) -> tuple[str, ...]`
+- `version() -> str | None`
+- `check(lean_path: Path, *, cwd: Path, timeout_seconds: float) -> LeanLibraryRefBackendResult`
+
+`ExternalLeanLibraryRefBackend` exposes:
+
+- `__init__(lean_command: str = "lean", *, lake_command: str = "lake", use_lake: bool = False)`
+- `name`
+- `lean_command`
+- `lake_command`
+- `use_lake`
+- `is_available() -> bool`
+- `command(lean_path: Path) -> tuple[str, ...]`
+- `version() -> str | None`
+- `check(lean_path: Path, *, cwd: Path, timeout_seconds: float) -> LeanLibraryRefBackendResult`
+
+The external backend detects availability with PATH lookup for the selected
+command, obtains version metadata from `<command> --version` when possible, and
+runs either `lean <tempfile>` or `lake env lean <tempfile>` with the configured
+working directory.
+
 ### Makefile Targets
 
 - `make lint`: runs `python -m ruff check .`
@@ -798,17 +1403,40 @@ the repository root as cwd.
   Artifact `sources` accepts structured source metadata entries with `kind`,
   `title`, `authors`, `year`, `doi`, `arxiv`, `url`, `theorem_number`, `page`,
   and `notes`. Artifact `formalizations` accepts strict formal declaration
-  reference entries with `system`, `library`, `import_path`, `symbol`,
-  `declaration_kind`, `status`, `check_mode`, `expected_type`, and `notes`.
+  reference entries with `system`, `library`, manifest-ID `library_ref`,
+  `import_path`, `symbol`, `declaration_kind`, `status`, `check_mode`,
+  `expected_type`, and `notes`.
   Artifact `alignment` accepts semantic alignment review metadata. Artifact
   `verification_policy` accepts formal-link, Lean-check, and alignment-review
   policy metadata. Formalization references are separate from `evidence`; this
   schema does not add formal-link CLI commands or verifier execution, but G10,
   context packs, and the deterministic index/query surfaces read this metadata.
+- `schemas/formal_library.schema.json`: formal library manifest schema for
+  pinned external Lean library metadata. It requires `schema_version: 1` and at
+  least one library entry with `id`, `name`, `system`, `git`, `commit`,
+  `lean_version`, and `lake_manifest`; `notes` is optional. This schema is
+  metadata-only and does not imply Lean, lake, CSLib, or mathlib execution.
 - `schemas/issue.schema.json`: issue YAML schema.
 - `schemas/review.schema.json`: review YAML schema.
 - `schemas/verifier.schema.json`: verifier result schema.
 - `schemas/task.schema.json`: agent task YAML schema.
+- `schemas/orchestrator_run.schema.json`: orchestrator run state schema.
+- `schemas/worker_bundle_v2.schema.json`: strict reducer-oriented worker
+  bundle schema. It requires `bundle_id`, `task_id`, `worker_role`,
+  `created_at`, `summary`, `used_artifacts`, `used_sources`, `claims`,
+  `proposed_artifacts`, `verification_requests`,
+  `failures_or_counterexamples`, `risk_flags`, `next_steps`, and
+  `confidence`. It does not authorize accepted writes, review-state changes,
+  worker execution, or promotion.
+
+### Formal Library Manifest Files
+
+- `formal-libs/lean-libraries.example.yaml`: example Lean formal library
+  manifest. The example includes `lean-core`, `cslib-main`, and
+  `mathlib-main` manifest IDs. It uses illustrative commit/version values and
+  `example.invalid` repositories for CSLib/mathlib entries. It is a template
+  for pinned metadata, not evidence that Lean, CSLib, or mathlib was fetched,
+  built, or checked.
 
 ### Workspace Config Files
 

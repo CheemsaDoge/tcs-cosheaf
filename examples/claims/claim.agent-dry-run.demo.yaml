@@ -1,0 +1,25 @@
+id: claim.agent-dry-run.demo
+type: claim
+title: Agent dry-run stays draft-only
+domain:
+  - workflow
+status: draft
+created_at: "2026-06-07T00:00:00Z"
+updated_at: "2026-06-07T00:00:00Z"
+authors:
+  - example-author
+depends_on: []
+supersedes: []
+tags:
+  - agent-dry-run
+  - local-only
+statement: >
+  A local agent dry-run may generate worker bundle proposals, but it does not
+  create accepted knowledge or replace review, gates, and promotion.
+evidence: []
+review:
+  state: requested
+  notes: Example claim remains draft and unreviewed.
+risk:
+  level: low
+  notes: Workflow example only; not a knowledge-base theorem.

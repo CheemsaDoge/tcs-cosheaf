@@ -1,0 +1,36 @@
+schema_version: 1
+libraries:
+  - id: lean-core
+    name: Lean core
+    system: lean4
+    git: https://github.com/leanprover/lean4.git
+    commit: "0123456789abcdef0123456789abcdef01234567"
+    lean_version: lean4-example
+    lake_manifest: lake-manifest.json
+    notes: >
+      Pilot manifest entry for references to declarations available from a
+      local Lean installation's core imports, such as `Init`. The commit and
+      version values are illustrative placeholders in this example manifest;
+      they do not mean Lean was installed, fetched, built, or checked by
+      Cosheaf.
+  - id: cslib-main
+    name: CSLib
+    system: lean4
+    git: https://example.invalid/cslib.git
+    commit: "0123456789abcdef0123456789abcdef01234567"
+    lean_version: lean4-example
+    lake_manifest: lake-manifest.json
+    notes: >
+      Example manifest entry only. Replace with a real repository URL, commit,
+      Lean version, and lake manifest fingerprint before running any external
+      library reference checker.
+  - id: mathlib-main
+    name: mathlib
+    system: lean4
+    git: https://example.invalid/mathlib4.git
+    commit: "abcdef0123456789abcdef0123456789abcdef01"
+    lean_version: lean4-example
+    lake_manifest: lake-manifest.json
+    notes: >
+      Example manifest entry only. This metadata does not mean that mathlib was
+      fetched, built, or checked by Cosheaf.

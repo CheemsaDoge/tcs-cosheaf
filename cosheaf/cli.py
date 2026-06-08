@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -19,6 +20,15 @@ from cosheaf.agent.local_runner import (
     LocalWorkerRunError,
     LocalWorkerRunner,
 )
+from cosheaf.agent.orchestrator_planner import (
+    OrchestratorPlannerError,
+    plan_for_issue,
+)
+from cosheaf.agent.orchestrator_runner import (
+    OrchestratorLocalRunConfig,
+    OrchestratorLocalRunError,
+    OrchestratorLocalRunner,
+)
 from cosheaf.agent.orchestrator_stub import OrchestratorStub, TaskHarnessError
 from cosheaf.agent.task import WorkerType
 from cosheaf.config.workspace import KbRootConfig, WorkspaceConfigError
@@ -31,6 +41,18 @@ from cosheaf.core.status import (
     expected_status_for_path,
     is_preaccepted_status,
 )
+from cosheaf.evals import (
+    DEFAULT_CONTEXT_EVAL_CASES,
+    DEFAULT_RETRIEVAL_EVAL_CASES,
+    ContextEvalError,
+    RetrievalEvalError,
+    load_context_eval_suite,
+    load_retrieval_eval_suite,
+    resolve_context_eval_case_path,
+    resolve_retrieval_eval_case_path,
+    run_context_eval_suite,
+    run_retrieval_eval_suite,
+)
 from cosheaf.gates.gatekeeper import (
     GatekeeperRunResult,
     ValidationReport,
@@ -40,6 +62,20 @@ from cosheaf.gates.gatekeeper import (
 )
 from cosheaf.gates.source_metadata_gate import missing_required_source_metadata
 from cosheaf.graph.claim_graph import DependencyGraph, build_dependency_graph
+from cosheaf.ingest import IngestError, MarkItDownIngestAdapter
+from cosheaf.memory import (
+    MEMORY_GRAPH_SIDECAR,
+    ArtifactCardStatus,
+    MemoryCardError,
+    MemoryGraphError,
+    MemorySearchError,
+    RetrievalRole,
+    build_artifact_cards,
+    build_memory_graph,
+    compute_global_pagerank,
+    load_memory_graph_snapshot,
+    search_artifact_cards,
+)
 from cosheaf.storage.index import rebuild_index
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
 from cosheaf.storage.repo import RepoContext
@@ -79,9 +115,34 @@ task_app = typer.Typer(
     help="Agent task commands.",
     no_args_is_help=True,
 )
+orchestrator_app = typer.Typer(
+    add_completion=False,
+    help="Deterministic local orchestrator commands.",
+    no_args_is_help=True,
+)
 workspace_app = typer.Typer(
     add_completion=False,
     help="Workspace configuration commands.",
+    no_args_is_help=True,
+)
+ingest_app = typer.Typer(
+    add_completion=False,
+    help="Source ingestion commands.",
+    no_args_is_help=True,
+)
+eval_app = typer.Typer(
+    add_completion=False,
+    help="Deterministic local evaluation commands.",
+    no_args_is_help=True,
+)
+memory_app = typer.Typer(
+    add_completion=False,
+    help="Deterministic memory/card commands.",
+    no_args_is_help=True,
+)
+memory_graph_app = typer.Typer(
+    add_completion=False,
+    help="Deterministic memory graph commands.",
     no_args_is_help=True,
 )
 app.add_typer(artifact_app, name="artifact")
@@ -90,7 +151,12 @@ app.add_typer(graph_app, name="graph")
 app.add_typer(gate_app, name="gate")
 app.add_typer(context_app, name="context")
 app.add_typer(task_app, name="task")
+app.add_typer(orchestrator_app, name="orchestrator")
 app.add_typer(workspace_app, name="workspace")
+app.add_typer(ingest_app, name="ingest")
+app.add_typer(eval_app, name="eval")
+app.add_typer(memory_app, name="memory")
+memory_app.add_typer(memory_graph_app, name="graph")
 
 
 @app.command()
@@ -328,6 +394,52 @@ def index_rebuild(
     )
 
 
+@ingest_app.command("convert")
+def ingest_convert(
+    path: Path = typer.Argument(..., help="Repository-local source file to convert."),
+    out_dir: Path = typer.Option(
+        Path(".cosheaf/ingest"),
+        "--out",
+        help="Repository-local staging directory for Markdown and metadata output.",
+    ),
+    metadata_json: bool = typer.Option(
+        False,
+        "--metadata-json",
+        help="Emit deterministic provenance metadata JSON.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used to resolve source and output paths.",
+    ),
+) -> None:
+    """Convert a local source file into staged Markdown with provenance."""
+    console = Console(width=120, markup=False)
+    try:
+        result = MarkItDownIngestAdapter().convert(
+            RepoContext(repo_root),
+            path,
+            out_dir=out_dir,
+        )
+    except IngestError as exc:
+        console.print(f"Ingest failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if metadata_json:
+        typer.echo(result.to_json(), nl=False)
+    else:
+        console.print(f"Ingest status: {result.status}")
+        if result.output_path is not None:
+            console.print(f"- output: {result.output_path}")
+        if result.metadata_path is not None:
+            console.print(f"- metadata: {result.metadata_path}")
+        if result.message:
+            console.print(f"- note: {result.message}")
+
+    if result.status == "unavailable":
+        raise typer.Exit(code=1)
+
+
 @graph_app.command("show")
 def graph_show(
     repo_root: Path = typer.Option(
@@ -410,11 +522,40 @@ def context_build(
         "--repo-root",
         help="Repository root to inspect.",
     ),
+    role: RetrievalRole = typer.Option(
+        RetrievalRole.ORCHESTRATOR,
+        "--role",
+        help="Retrieval role used for context-pack budgets.",
+    ),
+    max_cards: int = typer.Option(
+        20,
+        "--max-cards",
+        min=1,
+        help="Maximum artifact cards to include before issue-local filtering.",
+    ),
+    max_full_artifacts: int = typer.Option(
+        0,
+        "--max-full-artifacts",
+        min=0,
+        help="Explicit full artifact pull budget; defaults to cards only.",
+    ),
+    public_only: bool = typer.Option(
+        False,
+        "--public-only",
+        help="Exclude private cards and private artifact IDs from audit output.",
+    ),
 ) -> None:
     """Build a bounded deterministic context pack for an issue."""
     console = Console(width=120, markup=False)
     try:
-        result = build_context_pack(RepoContext(repo_root), issue_id)
+        result = build_context_pack(
+            RepoContext(repo_root),
+            issue_id,
+            role=role,
+            max_cards=max_cards,
+            max_full_artifacts=max_full_artifacts,
+            public_only=public_only,
+        )
     except ContextPackError as exc:
         console.print(f"Context pack failed: {exc}")
         raise typer.Exit(code=1) from None
@@ -432,16 +573,503 @@ def context_show(
         "--repo-root",
         help="Repository root to inspect.",
     ),
+    role: RetrievalRole = typer.Option(
+        RetrievalRole.ORCHESTRATOR,
+        "--role",
+        help="Retrieval role used for context-pack budgets.",
+    ),
+    max_cards: int = typer.Option(
+        20,
+        "--max-cards",
+        min=1,
+        help="Maximum artifact cards to include before issue-local filtering.",
+    ),
+    max_full_artifacts: int = typer.Option(
+        0,
+        "--max-full-artifacts",
+        min=0,
+        help="Explicit full artifact pull budget; defaults to cards only.",
+    ),
+    public_only: bool = typer.Option(
+        False,
+        "--public-only",
+        help="Exclude private cards and private artifact IDs from audit output.",
+    ),
 ) -> None:
     """Build and print the main context document for an issue."""
     console = Console(width=120, markup=False)
     try:
-        rendered = show_context_pack(RepoContext(repo_root), issue_id)
+        rendered = show_context_pack(
+            RepoContext(repo_root),
+            issue_id,
+            role=role,
+            max_cards=max_cards,
+            max_full_artifacts=max_full_artifacts,
+            public_only=public_only,
+        )
     except ContextPackError as exc:
         console.print(f"Context pack failed: {exc}")
         raise typer.Exit(code=1) from None
 
     typer.echo(rendered, nl=False)
+
+
+@memory_app.command("cards")
+def memory_cards(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    issue: str | None = typer.Option(
+        None,
+        "--issue",
+        help="Optional issue ID whose direct related artifacts should be shown.",
+    ),
+    status: ArtifactCardStatus | None = typer.Option(
+        None,
+        "--status",
+        help="Optional artifact-card status filter.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """Build compact artifact cards from existing repository metadata."""
+    console = Console(width=120, markup=False)
+    try:
+        cards = build_artifact_cards(
+            RepoContext(repo_root),
+            issue_id=issue,
+            status=status,
+        )
+    except MemoryCardError as exc:
+        console.print(f"Memory cards failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(
+            json.dumps(
+                [card.to_dict() for card in cards],
+                ensure_ascii=True,
+                indent=2,
+            )
+        )
+        return
+
+    if not cards:
+        console.print("No memory cards.")
+        return
+
+    for card in cards:
+        console.print(
+            f"{card.id} | {card.title} | {card.status.value} | "
+            f"{card.root_scope.value} | {card.path}"
+        )
+
+
+@memory_app.command("search")
+def memory_search(
+    query: str = typer.Argument(..., help="Search query."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    issue: str | None = typer.Option(
+        None,
+        "--issue",
+        help="Optional issue ID used as a Personalized PageRank seed.",
+    ),
+    seed_artifact: list[str] | None = typer.Option(
+        None,
+        "--seed-artifact",
+        help="Explicit artifact ID to seed personalized ranking. Repeatable.",
+    ),
+    pin_artifact: list[str] | None = typer.Option(
+        None,
+        "--pin-artifact",
+        help="Artifact ID to strongly pin into personalized ranking. Repeatable.",
+    ),
+    status: ArtifactCardStatus | None = typer.Option(
+        None,
+        "--status",
+        help="Optional artifact-card status filter.",
+    ),
+    include_refuted: bool = typer.Option(
+        False,
+        "--include-refuted",
+        help="Include refuted cards with an explicit score penalty.",
+    ),
+    include_obsolete: bool = typer.Option(
+        False,
+        "--include-obsolete",
+        help="Include obsolete or superseded cards with an explicit score penalty.",
+    ),
+    explain: bool = typer.Option(
+        False,
+        "--explain",
+        help="Print score component breakdowns in text output.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON retrieval result instead of text lines.",
+    ),
+) -> None:
+    """Search compact artifact cards with deterministic local scoring."""
+    console = Console(width=120, markup=False)
+    try:
+        result = search_artifact_cards(
+            RepoContext(repo_root),
+            query=query,
+            issue_id=issue,
+            status=status,
+            seed_artifacts=tuple(seed_artifact or ()),
+            pinned_artifacts=tuple(pin_artifact or ()),
+            include_refuted=include_refuted,
+            include_obsolete=include_obsolete,
+        )
+    except MemorySearchError as exc:
+        console.print(f"Memory search failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(result.to_json(), nl=False)
+        return
+
+    if not result.cards:
+        console.print("No memory search results.")
+        return
+
+    for hit in result.cards:
+        card = hit.card
+        console.print(
+            f"{card.id} | score={hit.score_breakdown.total:.6f} | "
+            f"{card.title} | {card.status.value} | "
+            f"{card.root_scope.value} | {card.path}"
+        )
+        if explain:
+            breakdown = hit.score_breakdown
+            console.print(
+                "  breakdown: "
+                f"retrieval_hybrid={breakdown.retrieval_hybrid:.6f} "
+                f"personalized_pagerank={breakdown.personalized_pagerank:.6f} "
+                f"global_pagerank={breakdown.global_pagerank:.6f} "
+                f"quality_prior={breakdown.quality_prior:.6f} "
+                f"freshness={breakdown.freshness:.6f} "
+                f"penalty={breakdown.penalty:.6f}"
+            )
+            for reason in hit.why_relevant:
+                console.print(f"  why: {reason}")
+
+
+@eval_app.command("retrieval")
+def eval_retrieval(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    cases: Path = typer.Option(
+        DEFAULT_RETRIEVAL_EVAL_CASES,
+        "--cases",
+        help="Repository-local YAML retrieval eval case file.",
+    ),
+    k: int = typer.Option(
+        5,
+        "--k",
+        min=1,
+        help="Top-k cutoff used for hit@k.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text summary.",
+    ),
+) -> None:
+    """Run deterministic retrieval regression cases."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        case_path = resolve_retrieval_eval_case_path(context, cases)
+        suite = load_retrieval_eval_suite(case_path)
+        report = run_retrieval_eval_suite(context, suite, k=k)
+    except RetrievalEvalError as exc:
+        console.print(f"Retrieval eval failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(report.to_json(), nl=False)
+        return
+
+    verdict = "pass" if report.passed else "fail"
+    console.print(f"Retrieval eval verdict: {verdict}")
+    console.print(f"- cases: {report.case_count}")
+    console.print(f"- hit@{k}: {report.metrics.hit_at_k:.6f}")
+    console.print(f"- forbidden_hit_count: {report.metrics.forbidden_hit_count}")
+    console.print(
+        f"- accepted_priority_score: {report.metrics.accepted_priority_score:.6f}"
+    )
+    console.print(f"- private_leakage_count: {report.metrics.private_leakage_count}")
+    for case in report.cases:
+        console.print(
+            f"- {case.id}: hit@{k}={case.hit_at_k:.6f} "
+            f"forbidden={case.forbidden_hit_count} "
+            f"private_leakage={case.private_leakage_count} "
+            f"returned={','.join(case.returned_artifacts) or '-'}"
+        )
+
+    if not report.passed:
+        raise typer.Exit(code=1)
+
+
+@eval_app.command("context")
+def eval_context(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    cases: Path = typer.Option(
+        DEFAULT_CONTEXT_EVAL_CASES,
+        "--cases",
+        help="Repository-local YAML context eval case file.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text summary.",
+    ),
+) -> None:
+    """Run deterministic context-pack regression cases."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        case_path = resolve_context_eval_case_path(context, cases)
+        suite = load_context_eval_suite(case_path)
+        report = run_context_eval_suite(context, suite)
+    except ContextEvalError as exc:
+        console.print(f"Context eval failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(report.to_json(), nl=False)
+        return
+
+    verdict = "pass" if report.passed else "fail"
+    console.print(f"Context eval verdict: {verdict}")
+    console.print(f"- cases: {report.case_count}")
+    console.print(f"- max_cards: {report.metrics.max_cards}")
+    console.print(f"- max_full_artifacts: {report.metrics.max_full_artifacts}")
+    console.print(f"- token_estimate: {report.metrics.token_estimate}")
+    console.print(f"- accepted_ratio: {report.metrics.accepted_ratio:.6f}")
+    console.print(f"- draft_ratio: {report.metrics.draft_ratio:.6f}")
+    console.print(f"- private_leakage_count: {report.metrics.private_leakage_count}")
+    console.print(
+        f"- required_artifact_hit: {report.metrics.required_artifact_hit:.6f}"
+    )
+    for case in report.cases:
+        failures = ",".join(case.failures) if case.failures else "-"
+        console.print(
+            f"- {case.id}: cards={case.metrics.max_cards} "
+            f"full={case.metrics.max_full_artifacts} "
+            f"private_leakage={case.metrics.private_leakage_count} "
+            f"required_hit={case.metrics.required_artifact_hit:.6f} "
+            f"failures={failures}"
+        )
+
+    if not report.passed:
+        raise typer.Exit(code=1)
+
+
+@memory_graph_app.command("build")
+def memory_graph_build(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON summary instead of text lines.",
+    ),
+) -> None:
+    """Build the rebuildable memory graph sidecar."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        snapshot = build_memory_graph(context, persist=True)
+    except MemoryGraphError as exc:
+        console.print(f"Memory graph build failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    sidecar = MEMORY_GRAPH_SIDECAR.as_posix()
+    if json_output:
+        typer.echo(
+            json.dumps(
+                {
+                    "schema_version": snapshot.schema_version,
+                    "graph_fingerprint": snapshot.graph_fingerprint,
+                    "node_count": snapshot.node_count,
+                    "edge_count": snapshot.edge_count,
+                    "sidecar_path": sidecar,
+                    "warnings": snapshot.warnings,
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+        )
+        return
+
+    console.print(
+        "Memory graph built: "
+        f"{sidecar} ({snapshot.node_count} node(s), "
+        f"{snapshot.edge_count} edge(s))."
+    )
+    console.print(f"- fingerprint: {snapshot.graph_fingerprint}")
+    for warning in snapshot.warnings:
+        console.print(f"- warning: {warning}")
+
+
+@memory_graph_app.command("pagerank")
+def memory_graph_pagerank(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON PageRank output instead of text lines.",
+    ),
+) -> None:
+    """Compute global PageRank from an existing memory graph sidecar."""
+    console = Console(width=120, markup=False)
+    try:
+        snapshot = load_memory_graph_snapshot(RepoContext(repo_root))
+        result = compute_global_pagerank(snapshot)
+    except MemoryGraphError as exc:
+        console.print(f"Memory graph PageRank failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(result.to_json(), nl=False)
+        return
+
+    if not result.rows:
+        console.print("No memory graph PageRank rows.")
+        return
+
+    for row in result.rows:
+        console.print(
+            f"{row.rank}. {row.node_id} | score={row.score:.12f} | "
+            f"{row.kind} | {row.record_id}"
+        )
+
+
+@orchestrator_app.command("plan")
+def orchestrator_plan(
+    issue: str = typer.Option(..., "--issue", help="Issue ID to plan for."),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON for the plan.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+) -> None:
+    """Create a deterministic task-DAG plan without executing workers."""
+    console = Console(width=120, markup=False)
+    try:
+        plan = plan_for_issue(RepoContext(repo_root), issue)
+    except OrchestratorPlannerError as exc:
+        console.print(f"Orchestrator plan failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(plan.to_json(), nl=False)
+        return
+
+    console.print(f"Plan: {plan.plan_id}")
+    console.print(f"- issue: {plan.issue_id}")
+    console.print(f"- objective: {plan.objective}")
+    console.print("- execution: not performed")
+    console.print("- accepted knowledge writes: not performed")
+    console.print("Task DAG:")
+    for node in plan.task_dag.nodes:
+        depends_on = ", ".join(node.depends_on) if node.depends_on else "-"
+        console.print(
+            f"- {node.node_id} | {node.worker_type.value} | depends_on={depends_on}"
+        )
+
+
+@orchestrator_app.command("run")
+def orchestrator_run(
+    issue: str = typer.Option(..., "--issue", help="Issue ID to run locally."),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Run deterministic dry-run workers only.",
+    ),
+    local_only: bool = typer.Option(
+        False,
+        "--local-only",
+        help="Require local-only execution with no hosted LLM or network.",
+    ),
+    timeout_seconds: int = typer.Option(
+        60,
+        "--timeout-seconds",
+        help="Maximum runtime for each local worker command in seconds.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+) -> None:
+    """Run a deterministic local-only orchestrator dry-run for an issue."""
+    console = Console(width=120, markup=False)
+    if not dry_run:
+        console.print("Orchestrator run failed: --dry-run is required")
+        raise typer.Exit(code=1)
+    if not local_only:
+        console.print("Orchestrator run failed: --local-only is required")
+        raise typer.Exit(code=1)
+
+    try:
+        result = OrchestratorLocalRunner(RepoContext(repo_root)).run_issue(
+            OrchestratorLocalRunConfig(
+                issue_id=issue,
+                timeout_seconds=timeout_seconds,
+            )
+        )
+    except OrchestratorLocalRunError as exc:
+        console.print(f"Orchestrator run failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    console.print(f"Orchestrator run: {result.run.run_id}")
+    console.print(f"- issue: {result.run.issue_id}")
+    console.print(f"- state: {result.run.state.value}")
+    console.print("- local_only: true")
+    console.print("- hosted_llm: not used")
+    console.print("- network: not used")
+    console.print("- accepted_writes: not performed")
+    console.print(f"- run_record: {result.record_path}")
+    console.print(f"- worker_calls: {len(result.run.worker_calls)}")
+    console.print(f"- reducer_results: {len(result.run.reducer_results)}")
+    for stop in result.run.stop_conditions:
+        console.print(f"- stop: {stop.reason} | {stop.description}")
+
+    if result.run.state.value != "completed":
+        raise typer.Exit(code=1)
 
 
 @task_app.command("create")

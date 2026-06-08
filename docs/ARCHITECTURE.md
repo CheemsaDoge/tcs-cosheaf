@@ -23,6 +23,25 @@ The workspace configuration model contains a workspace name, public/private
 policy fields, and one or more KB roots. Each KB root has a `name`,
 repository-relative `path`, `readonly` flag, and integer `priority`.
 
+### Source Ingestion Layer
+
+Defines the boundary for local source conversion before source material enters
+artifact or source-note review workflows. The policy is documented in [Source
+Ingestion](SOURCE_INGESTION.md).
+
+This layer is staging only. The optional MarkItDown adapter can convert
+repository-local source files to Markdown with provenance metadata through
+`cosheaf ingest convert`, but converted output is not validation, gatekeeper
+evidence, verifier evidence, human review, accepted artifact truth, or
+promotion evidence. Converted Markdown may feed source notes, explorer tasks,
+or draft proposals only.
+
+URL, OCR, plugins, LLM vision, and cloud-document capabilities are disabled by
+default. The MVP adapter is not a sandbox for hostile documents; untrusted
+source files require a future bounded subprocess or documented sandbox
+boundary. Missing MarkItDown does not affect core validation, gates, index
+rebuilds, context packs, promotion, tests, or default installation.
+
 ### Storage/Index Layer
 
 Loads artifacts from Git-backed paths, builds deterministic indexes, and records repository-local metadata needed by other layers.
@@ -66,12 +85,16 @@ formal declaration is recorded separately under `alignment`; a Lean pass does
 not automatically prove informal/formal alignment.
 
 `verification_policy` records whether a formal link, Lean check, or alignment
-review is expected for an artifact. G10 Formal Link Gate enforces static
-consistency between `verification_policy`, `formalizations`, and `alignment`.
-This gate does not execute Lean, fetch external libraries, prove
-informal/formal alignment, or change accepted-promotion semantics. Formal-link
-context-pack display and SQLite/query support are metadata-only surfaces built
-on the same artifact fields; they do not change G10 behavior.
+review is expected for an artifact. G10 Formal Link Gate enforces consistency
+between `verification_policy`, `formalizations`, `alignment`, local formal
+library manifests, and normalized Lean verifier results when policy requires a
+Lean check. This gate does not execute Lean, fetch external libraries, prove
+informal/formal alignment, or change accepted-promotion semantics. The optional
+external Lean library reference checker lives in the Verification Layer and can
+turn linked formalization metadata into `import`/`#check` verifier results when
+Lean or lake is available. Formal-link context-pack display and SQLite/query
+support are metadata-only surfaces built on the same artifact fields; they do
+not execute Lean or claim proof status.
 
 ### Graph Layer
 
@@ -79,6 +102,39 @@ Builds a directed artifact dependency graph from `depends_on`. Edge direction is
 artifact-to-dependency, for example `claim -> dependency`. The graph layer
 detects missing dependencies, directed cycles, and accepted artifacts that depend
 on draft or otherwise pre-accepted artifacts.
+
+### Memory/Retrieval Layer
+
+The memory/retrieval layer provides deterministic librarian behavior between
+storage/index/graph data and context-pack or future orchestrator consumers. It
+is documented in [Memory Policy](MEMORY_POLICY.md).
+
+The default retrieval unit is an artifact card, not a full artifact dump. Cards
+carry compact metadata such as ID, path, root scope, type, status, title,
+summary, domain, dependency IDs, source/review/verifier/formalization states,
+trust score, retrieval score, relevance explanation, risk flags, and whether a
+caller may pull the full artifact.
+
+Retrieval requests are expected to be issue-scoped and bounded. They should
+declare allowed scopes, allowed statuses, seed artifacts, role, maximum card
+count, and maximum full-artifact pulls. Public-only retrieval must exclude
+private records and private-derived summaries. Orchestrator context defaults to
+cards only.
+
+The local implementation builds artifact cards, searches them with
+deterministic lexical or SQLite FTS/BM25 matching, blends issue-conditioned
+Personalized PageRank, global PageRank, quality, freshness, and penalty
+signals, and records retrieval audit metadata. The memory graph extends the
+dependency graph with review, source, formalization, verifier, task-run,
+worker-bundle, and issue-context signals. Graph weights and retrieval caches
+are sidecars under `.cosheaf/memory/`. Sidecars are rebuildable views and must
+not become artifact truth.
+
+The librarian may build cards, rank/filter them, compute graph weights, produce
+context-pack candidates, and record retrieval audits. It must not create
+claims, edit artifacts, mark review as human-reviewed, run promotion, or treat
+retrieval scores as proof. Accepted knowledge still enters only through
+validation, gates, human review, and explicit promotion.
 
 ### Verification Layer
 
@@ -94,9 +150,14 @@ available, while keeping solver binaries optional and recording skipped results
 when no backend is available. The Lean adapter supports a minimal optional plain
 Lean file invocation path through a supported backend, currently external
 `lean` when available, while keeping Lean optional and recording skipped results
-when no backend is available. No verifier adapter performs natural-language
-autoformalization. The Lean adapter does not fetch or check CSLib/mathlib
-references recorded in `formalizations`.
+when no backend is available. The external Lean library reference adapter
+supports a minimal optional generated-file path for linked Lean formalization
+metadata: it writes a temporary file containing `import <import_path>` and
+`#check <symbol>`, then runs `lean` or configured `lake env lean` when
+available. It records skipped when Lean/lake is unavailable and does not fetch
+CSLib/mathlib or manage external library checkouts. No verifier adapter
+performs natural-language autoformalization, and no Lean verifier result proves
+informal/formal semantic alignment.
 
 ### Gate/Review Layer
 
@@ -106,11 +167,12 @@ into gate results.
 
 Alignment review remains separate from verifier execution. Missing optional
 Lean tooling remains a skipped verifier result, not a pass. The gate layer
-records formal-link fields through schema/model validation and G10 static
-metadata validation. G10 may block ordinary gatekeeper runs when policy
-metadata is inconsistent, which means accepted promotion is blocked through the
-existing gatekeeper blocking-issue mechanism. It does not add a new promotion
-policy path.
+records formal-link fields through schema/model validation and G10 metadata and
+verifier-result consistency validation. G10 may block ordinary gatekeeper runs
+when policy metadata is inconsistent or a required Lean check has no matching
+verifier `pass`, which means accepted promotion is blocked through the existing
+gatekeeper blocking-issue mechanism. It does not add a new promotion policy
+path.
 
 Workspace-aware dependency checks additionally reject public artifacts that
 depend on private artifacts. Status/path checks evaluate artifact lifecycle
@@ -129,13 +191,24 @@ Current agent harness outputs are:
 - `.cosheaf/tasks/<task-id>/runs/<run-id>/` local worker run records with
   separate stdout and stderr files.
 
-Context packs use deterministic relevance ranking. The ranking includes direct
-issue artifact references, one-hop dependency neighbors, artifact domains that
-match issue text or tags, and artifact tags that match issue tags. Each listed
-artifact includes explainable ranking reasons. Accepted artifacts are preferred
-over draft artifacts within the same relevance class. Refuted, obsolete, and
-superseded artifacts are included only when relevant and are marked as known
-failures, not current truth.
+Context packs use deterministic card retrieval and issue-local relevance
+ranking. The generated files are `CONTEXT.md`, `ACCEPTANCE.md`,
+`RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, `FULL_ARTIFACTS.md`,
+`RETRIEVAL_AUDIT.json`, and `COMMANDS.md`. The rendered artifact sections use
+compact `ArtifactCard` rows by default, including score metadata, root scope,
+and relevance reasons. Full artifact YAML is written only to
+`FULL_ARTIFACTS.md` when the caller sets an explicit nonzero
+`--max-full-artifacts` budget. The default orchestrator role uses
+`max_full_artifacts = 0`, so default handoff context is cards-only.
+
+Context-pack relevance still preserves the existing issue-local constraints:
+direct issue artifact references, one-hop dependency neighbors, artifact
+domains that match issue text or tags, and artifact tags that match issue tags.
+Accepted artifacts are preferred over draft artifacts within the same
+relevance class. Refuted, obsolete, and superseded artifacts are included only
+when relevant and are marked as known failures, not current truth. Public-only
+context packs exclude private cards and private artifact IDs from the rendered
+context and retrieval audit.
 
 When a relevant artifact carries formal-link metadata or policy-relevant formal
 settings, context packs include compact formalization, alignment, verification
@@ -148,6 +221,53 @@ or completing tasks does not call LLMs or external services. The orchestrator
 stub validates that tasks are issue-scoped, records deterministic default task
 IDs, and can mark a task completed only after a local worker output bundle
 passes the worker contract.
+
+The orchestrator state-machine contract is defined separately from runtime
+execution. `cosheaf.agent.orchestrator_state` contains strict serializable
+models for `OrchestratorRun`, `Plan`, `TaskDAG`, `TaskNode`, `WorkerCall`,
+`ReducerResult`, and `StopCondition`. These models validate explicit run
+states, state transitions, task-DAG dependencies, and repository-local paths,
+but they do not execute workers, call hosted LLMs, run gates, request human
+review, merge outputs, or promote accepted knowledge.
+
+The deterministic planner stub in `cosheaf.agent.orchestrator_planner` converts
+an existing issue into a small `Plan` / `TaskDAG` through
+`cosheaf orchestrator plan --issue <issue-id> --json`. The plan contains fixed
+librarian-retrieval, reasoner-draft, verifier-check, and review-request nodes.
+It references the expected context-pack location, but it does not build context
+packs, write plan files, dispatch workers, run verifier adapters, call model
+providers, request human review, or create accepted knowledge.
+
+The local orchestrator runner in `cosheaf.agent.orchestrator_runner` wires that
+plan to the existing local worker runner through
+`cosheaf orchestrator run --issue <issue-id> --dry-run --local-only`. It creates
+issue-scoped local task records for the planned nodes, runs deterministic
+repository-local worker commands with `shell=False`, validates worker bundle v2
+manifests, reduces them into `ReducerResult` records, and writes an inspectable
+run record under `.cosheaf/orchestrator/<issue-id>/runs/<run-id>/run.yaml`.
+It also writes a sanitized structured `run_log.json` for local observability;
+see [Observability](OBSERVABILITY.md). This is still a dry-run workflow: it
+does not call hosted LLMs, make network
+calls, run gates, request human review, merge outputs, write accepted
+knowledge, or promote artifacts.
+
+The default local dry-run worker command is implemented by
+`cosheaf.agent.dry_run_workers`. It generates role-aware worker bundle v2
+manifests for the planner's reasoner, verifier, and orchestrator nodes. The
+reasoner output is candidate review context only, the verifier output records
+that no real gate, Lean, SAT, SMT, or promotion result was produced, and all
+proposal paths remain under `.cosheaf/orchestrator/.../proposals/`. The worker
+does not write proposed artifacts; it only writes the bundle manifest that the
+runner validates and reduces.
+
+The provider-neutral model interface in `cosheaf.agent.model_provider` defines
+request, response, capability-negotiation, and provider protocol DTOs for
+future worker integrations. The only implemented provider is
+`FakeModelProvider`, a deterministic local fake used for tests and disabled
+hosted-runtime paths. Capability negotiation records unsupported requested
+parameters instead of crashing. This interface does not add OpenAI, Anthropic,
+Google, local model, or other hosted-provider SDK dependencies, and it does
+not perform network calls.
 
 The local worker runner is not an LLM runtime or model-provider integration. It
 executes only an explicit argv command with `shell=False`, defaults to the
@@ -163,6 +283,18 @@ must reference repository-local YAML records that pass the existing schema gate.
 Bundle manifests may also be passed as repository-local directories containing
 `bundle.yaml`. Bundles must not target `kb/accepted/`, and task completion does
 not merge anything into accepted knowledge.
+
+Worker bundle v2 is a stricter Phase 4.3 contract for future reducer-driven
+orchestration. `cosheaf.agent.worker_bundle_v2` records bundle ID, task ID,
+worker role, creation time, summary, used artifacts and sources, claims,
+proposed artifacts, verification requests, failures or counterexamples, risk
+flags, next steps, and confidence. Its reducer validates repository-local
+paths, rejects accepted-KB proposals, rejects worker-created
+`human_reviewed` or `accepted` review states, preserves failures and
+uncertainty as reducer warnings, and returns a deterministic `ReducerResult`.
+The local orchestrator runner can now validate and reduce these bundles after
+local dry-run worker commands, but it does not run gates, request review, merge
+outputs, write accepted artifacts, or promote accepted knowledge.
 
 ### CLI Layer
 

@@ -145,4 +145,10 @@ def test_optional_adapters_skip_artifacts_without_matching_evidence(
 def test_default_registry_includes_optional_skeletons() -> None:
     registry = default_verifier_registry()
 
-    assert registry.names == ("lean", "python_checker", "sat", "smt")
+    assert registry.names == (
+        "lean",
+        "lean_library_ref",
+        "python_checker",
+        "sat",
+        "smt",
+    )
