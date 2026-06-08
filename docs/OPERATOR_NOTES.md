@@ -135,6 +135,48 @@ git show -s --format=fuller HEAD
 Do not add `Co-authored-by` trailers unless the maintainer explicitly asks for
 them.
 
+## GitHub Squash Merge Attribution
+
+GitHub squash merges can preserve commit-message trailers from the PR body or
+from commits included in the PR. This can happen even when the local commit
+author and committer are both correct. A bad trailer such as:
+
+```text
+Co-authored-by: cheemsadoge <ywjh.net@qq.com>
+```
+
+can create an unwanted anonymous contributor entry on GitHub. Before merging a
+PR with `gh pr merge --squash`, inspect the PR commits and avoid inheriting a
+default squash body that contains stale attribution:
+
+```powershell
+gh pr view <number> --json commits
+git log origin/main..HEAD --pretty=fuller
+git log origin/main..HEAD --format=%B | Select-String -Pattern "Co-authored-by"
+```
+
+When the PR should attribute only the maintainer, merge with an explicit body
+and author email:
+
+```powershell
+gh pr merge <number> --squash --delete-branch `
+  --author-email cheemsadoge@gmail.com `
+  --subject "<title>" `
+  --body " "
+```
+
+After merging, verify the resulting default-branch commit:
+
+```powershell
+git fetch origin --prune
+git log -1 origin/main --pretty=fuller
+git log -1 origin/main --format=%B | Select-String -Pattern "Co-authored-by"
+```
+
+If unwanted authors or trailers already exist on the default branch, deleting
+feature branches is not enough. Contributor cleanup then requires the
+default-branch history-cleanup procedure below.
+
 ## Default Branch History Cleanup
 
 GitHub contributor cleanup can require history cleanup when the default branch
