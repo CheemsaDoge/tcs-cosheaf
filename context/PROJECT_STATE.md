@@ -145,12 +145,13 @@ interfaces, schema fields, accepted artifacts, or SAT/SMT/Lean execution.
 
 The durable workflow rules now require nontrivial Codex work to be issue-driven
 where possible, with one issue, one focused branch, one PR, and one reviewable
-increment. `codex/<task>` is the default branch convention, but issues,
-maintainers, and release workflows may specify a different human-readable branch
-name that must be preserved. The rules also record repository creation checks through
-`gh --version` and `gh auth status`, local issue-draft fallback behavior when
-remote issue creation is unavailable, and the rule that repository, branch,
-issue, PR, remote push, and check success must never be faked.
+increment. Branches should use short human-readable names and should not add
+`codex/`, `codex-`, or other agent-specific prefixes to issue titles, branch
+names, or PR titles unless the maintainer explicitly asks for that prefix. The
+rules also record repository creation checks through `gh --version` and
+`gh auth status`, local issue-draft fallback behavior when remote issue
+creation is unavailable, and the rule that repository, branch, issue, PR,
+remote push, and check success must never be faked.
 
 `AGENTS.md` now also records the accepted-artifact promotion protocol: accepted
 knowledge must enter lifecycle KB roots through

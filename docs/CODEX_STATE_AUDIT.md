@@ -275,10 +275,11 @@ Known stale or follow-up documentation state:
   candidate cleanup milestone even though the framework is now `v0.1.1` and
   ecosystem work has moved into three-repo MVP productization. This PR updates
   that file.
-- The durable docs still record `codex/<task-id-or-short-name>` as the default
-  branch convention. The maintainer has explicitly overridden the current run:
-  do not add `codex` prefixes to issue names, branch names, or PR titles. This
-  audit branch is therefore `phase0-state-audit`.
+- This audit originally found durable docs that still recorded
+  `codex/<task-id-or-short-name>` as the default branch convention. Later
+  workflow-doc updates resolved that gap: current work should use short
+  human-readable branch names without `codex` prefixes unless the maintainer
+  explicitly asks for that prefix.
 - `longplan.md` remains the authoritative execution runbook outside the repo,
   but some Phase 1 workspace-template items have already landed through prior
   PRs. Later planning should reconcile that history before opening duplicate
