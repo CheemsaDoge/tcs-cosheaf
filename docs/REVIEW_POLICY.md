@@ -1,5 +1,3 @@
-[中文版](REVIEW_POLICY.zh-CN.md) | [English](REVIEW_POLICY.md)
-
 # Review Policy
 
 ## Purpose

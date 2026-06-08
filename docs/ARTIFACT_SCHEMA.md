@@ -1,5 +1,3 @@
-[中文版](ARTIFACT_SCHEMA.zh-CN.md) | [English](ARTIFACT_SCHEMA.md)
-
 # Artifact Schema
 
 ## Purpose

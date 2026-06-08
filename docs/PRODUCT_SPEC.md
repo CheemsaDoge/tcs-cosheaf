@@ -1,5 +1,3 @@
-[中文版](PRODUCT_SPEC.zh-CN.md) | [English](PRODUCT_SPEC.md)
-
 # Product Spec
 
 ## Purpose

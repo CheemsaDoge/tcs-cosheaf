@@ -1,5 +1,3 @@
-[中文版](WORKSPACE.zh-CN.md) | [English](WORKSPACE.md)
-
 # Workspace Model
 
 TCS-Cosheaf workspaces are configured by an optional `cosheaf.toml` file at the
