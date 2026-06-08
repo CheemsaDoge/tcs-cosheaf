@@ -1,37 +1,39 @@
 # Three-Repository Release Checklist
 
-This checklist is for release-hardening the TCS-Cosheaf ecosystem after the
-`v0.1.1` Formal Link Layer support baseline. It is an operator checklist for
-the framework package, public KB, and workspace template together. It is not a
-production-readiness claim.
+This checklist is for release-hardening the TCS-Cosheaf ecosystem for the
+`v0.2.0` local-MVP release candidate after the `v0.1.1` Formal Link Layer
+support baseline. It is an operator checklist for the framework package, public
+KB, and workspace template together. It is not a production-readiness claim.
 
-`v0.1.1` is the current downstream tag baseline for formal-link metadata. The
-current `main` branch also contains later hardening work, including the
-optional external Lean library reference adapter. Do not assume a downstream
-pin to `@v0.1.1` includes post-tag `main` features.
+`v0.1.1` remains the downstream tag baseline for formal-link metadata.
+`v0.2.0` packages the later deterministic local workflow on current `main`,
+including the optional external Lean library reference adapter. Do not assume a
+downstream pin to `@v0.1.1` includes `v0.2.0` features.
 
 ## Scope
 
 - Framework repository: `tcs-cosheaf`.
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
-- Current framework package metadata version on `main`: `0.1.1` until the next
-  release tag is cut.
+- Current framework package metadata version on this release-candidate branch:
+  `0.2.0`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
+- Intended downstream dependency for local-MVP workflows after the tag is cut:
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.0`.
 
 ## Framework Checklist
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.1.1`.
+- [x] `pyproject.toml` records package version `0.2.0`.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
-- [ ] For any later release tag, confirm the tag target is a reviewed merge
-  commit on the protected default branch.
+- [ ] Remote tag `v0.2.0` points to a reviewed merge commit on the protected
+  default branch.
 - [ ] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
-- [ ] If downstream repositories need post-`v0.1.1` features such as the
-  external Lean library reference adapter, cut and validate a later tag first.
+- [ ] Downstream workspace-template verification installs/pins `@v0.2.0`
+  before relying on local-MVP surfaces.
 
 ### License
 
@@ -67,7 +69,7 @@ gate output and release notes.
 ### Demo Status
 
 - [ ] `python scripts/release_smoke.py --source
-  git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1` runs against a
+  git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.0` runs against a
   clean environment when network access is available.
 - [ ] `python scripts/ecosystem_smoke.py --cosheaf cosheaf` runs without
   cloning remote repositories.
@@ -127,9 +129,9 @@ Implemented framework surfaces on current `main`:
 - Optional external Lean library reference checker for generated
   `import <module>` / `#check <symbol>` runs when Lean or lake is available.
 
-The `v0.1.1` tag includes formal-link metadata, G10, context, index, and query
-surfaces, but it does not include the later `LeanLibraryRefAdapter`. A future
-tag is required before downstream pinned work can rely on that adapter.
+The `v0.2.0` tag includes formal-link metadata, G10, context, index, query
+surfaces, and the optional `LeanLibraryRefAdapter`. Downstream pinned work
+should use `@v0.2.0` before relying on that adapter.
 
 Boundaries:
 

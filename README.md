@@ -5,12 +5,11 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **post-v0.1.1 main hardening with a proposed v0.2.0 local-MVP
-scope**. The `v0.1.1` tag remains the downstream Formal Link Layer support
-baseline. The current `main` branch includes later longplan hardening and
-completion-audit docs, while the Python package metadata still records version
-`0.1.1` until a future release tag is intentionally cut. The repository has
-working Python scaffolding, typed artifact models, filesystem loading,
+Current status: **v0.2.0 local-MVP release**. The `v0.1.1` tag remains the
+downstream Formal Link Layer support baseline; `v0.2.0` packages the later
+deterministic local workflow on `main` into a pin-able framework version. The
+repository has working Python scaffolding, typed artifact models, filesystem
+loading,
 validation, dependency graph indexing,
 workspace-aware KB root loading, artifact lifecycle CLI commands, gatekeeper
 reports including the G10 Formal Link Gate, ranked context-pack generation with
@@ -224,10 +223,9 @@ cosheaf context show <issue-id>
 See [Workspace quickstart](docs/WORKSPACE_QUICKSTART.md),
 [Workspace model](docs/WORKSPACE.md), and
 [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md) for layered KB roots.
-Downstream repositories should pin to `v0.1.1` before using formalization
-fields in artifact YAML. Post-tag `main` features, such as the optional
-external Lean library reference checker, require a later validated release tag
-before downstream pinned work can rely on them.
+Downstream repositories that only need Formal Link Layer metadata can stay
+pinned to `v0.1.1`. Downstream repositories that need the deterministic
+local-MVP workflow should pin to `v0.2.0`.
 
 ## Development Commands
 
