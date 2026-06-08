@@ -1,5 +1,22 @@
 # Project State
 
+## Longplan Completion Audit - 2026-06-08
+
+Issue 145 adds `docs/LONGPLAN_COMPLETION_AUDIT.md`, a requirement-by-requirement
+audit of `longplan_fixed.md` against merged PR evidence across `tcs-cosheaf`,
+`tcs-kb-public`, and `tcs-cosheaf-workspace-template`. The audit records that
+all fixed-plan tasks through Phase 8 have merged evidence except Phase 5 Task
+5.3, which remains intentionally unimplemented because its own precondition
+requires explicit maintainer approval before adding a hosted provider
+dependency.
+
+This is an audit/documentation update only. It does not add hosted provider
+SDKs, does not enable hosted LLM execution, does not change code, schemas,
+gates, verifier adapters, accepted-promotion policy, public KB artifacts, or
+workspace-template behavior. The current provider boundary remains
+`FakeModelProvider` plus provider-neutral contracts; hosted provider work must
+be a future explicit opt-in task if the maintainer approves the dependency.
+
 ## Phase 8 Release-Hardening Docs - 2026-06-08
 
 Issue 133 updates the durable release-hardening documentation after the current
