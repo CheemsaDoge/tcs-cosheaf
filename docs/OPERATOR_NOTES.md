@@ -94,6 +94,47 @@ afterward. If the command reports `unknown arguments` followed by words from
 the issue title, the shell split the search query; this is not an
 authentication failure.
 
+## GitHub Actions Stuck Check Runs
+
+Sometimes a GitHub Actions job can show every step completed successfully while
+the job and PR check-run still report `in_progress`. This blocks protected
+branch merges even though the visible job steps look green. Treat that as a
+GitHub Actions/check-run state problem, not as a passing required check.
+
+First verify the exact state from both PR checks and the Actions job:
+
+```powershell
+gh pr checks <number> --repo CheemsaDoge/tcs-cosheaf
+gh pr view <number> --repo CheemsaDoge/tcs-cosheaf `
+  --json mergeStateStatus,statusCheckRollup
+gh run view <run-id> --repo CheemsaDoge/tcs-cosheaf --json status,conclusion,jobs
+gh api repos/CheemsaDoge/tcs-cosheaf/actions/runs/<run-id>/jobs
+```
+
+Do not bypass branch protection and do not merge while a required check remains
+pending. If the job has been stuck after its final step completed, a low-risk
+recovery path is:
+
+```powershell
+gh run cancel <run-id> --repo CheemsaDoge/tcs-cosheaf
+git commit --allow-empty -m "Retry CI for <short task name>"
+git push
+gh pr checks <number> --repo CheemsaDoge/tcs-cosheaf
+```
+
+Use the empty commit only to trigger a fresh CI run when no file change is
+needed. After the rerun is green and `mergeStateStatus` is clean, squash merge
+with an explicit subject, body, and author email so the retry commit does not
+become a separate default-branch commit:
+
+```powershell
+gh pr merge <number> --repo CheemsaDoge/tcs-cosheaf --squash `
+  --delete-branch `
+  --author-email cheemsadoge@gmail.com `
+  --subject "<title>" `
+  --body " "
+```
+
 ## Git Path
 
 Confirm the Git executable when debugging remote or credential behavior:
