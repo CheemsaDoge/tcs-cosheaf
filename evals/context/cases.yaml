@@ -16,3 +16,19 @@ cases:
     allow_private_cards: false
     allow_known_failures: false
     require_all_required_artifacts: true
+  - id: case.context.sat-smt-gadget
+    issue_id: issue.sat-smt-gadget.0001
+    required_artifacts:
+      - construction.sat-smt-gadget.0001
+    role: orchestrator
+    public_only: false
+    max_cards: 5
+    max_full_artifacts: 0
+    max_allowed_cards: 5
+    max_allowed_full_artifacts: 0
+    max_token_estimate: 4000
+    min_accepted_ratio: 0.0
+    max_draft_ratio: 1.0
+    allow_private_cards: false
+    allow_known_failures: false
+    require_all_required_artifacts: true
