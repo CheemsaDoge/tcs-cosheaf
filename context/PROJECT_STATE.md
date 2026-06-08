@@ -1,5 +1,25 @@
 # Project State
 
+## Phase 8 Release-Hardening Docs - 2026-06-08
+
+Issue 133 updates the durable release-hardening documentation after the current
+Phase 8 baseline. `RELEASE_CHECKLIST.md` is now an actionable
+three-repository checklist for the framework package, public KB, and workspace
+template rather than a stale checklist for creating the already-existing
+`v0.1.1` tag. `context/CURRENT_MILESTONE.md` now points to Phase 8 Task 8.1
+instead of the completed Phase 6 formal-link pilot. `docs/ROADMAP.md` now
+describes release hardening and showcase preparation after the `v0.1.1`
+baseline.
+
+This update is documentation-only. It does not change code, CLI behavior,
+schemas, gate semantics, verifier adapters, accepted-promotion policy, public
+KB artifacts, or workspace-template behavior. The `v0.1.1` tag remains the
+downstream metadata baseline; later `main` hardening includes the optional
+external Lean library reference adapter. The current formal-link boundary
+remains: the adapter can check `import`/`#check` symbol resolution when Lean or
+lake is available, missing Lean/lake is `skipped`, and a successful `#check`
+does not prove informal/formal semantic alignment.
+
 ## Phase 0 State Audit - 2026-06-06
 
 `docs/CODEX_STATE_AUDIT.md` records the current three-repository state before

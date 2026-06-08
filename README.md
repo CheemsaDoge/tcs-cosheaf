@@ -5,19 +5,20 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.1.1 Formal Link Layer support release / pre-MVP
-scaffold**. The repository has working Python scaffolding, typed artifact
-models, filesystem loading, validation, dependency graph indexing,
+Current status: **post-v0.1.1 release-hardening / pre-MVP scaffold**. The
+`v0.1.1` tag is the downstream Formal Link Layer support baseline. The current
+`main` branch has additional hardening work while the Python package metadata
+still records version `0.1.1` until the next release tag is cut. The repository
+has working Python scaffolding, typed artifact models, filesystem loading,
+validation, dependency graph indexing,
 workspace-aware KB root loading, artifact lifecycle CLI commands, gatekeeper
 reports including the G10 Formal Link Gate, ranked context-pack generation with
 compact formal-link display, local task harness stubs, verifier adapters
 including a Python checker, a minimal optional SAT DIMACS path, a minimal
 optional SMT-LIB path, a minimal optional plain Lean file path, and an optional
 external Lean library reference `#check` path, GitHub Actions CI, and
-collaboration templates. The
-Python package metadata is set to `0.1.1` for the Formal Link Layer support
-release. It is not production software and does not yet provide a web UI,
-automatic theorem proving, full Lean autoformalization, or multi-user
+collaboration templates. It is not production software and does not yet provide
+a web UI, automatic theorem proving, full Lean autoformalization, or multi-user
 permissions.
 
 ## Problem
@@ -223,7 +224,9 @@ See [Workspace quickstart](docs/WORKSPACE_QUICKSTART.md),
 [Workspace model](docs/WORKSPACE.md), and
 [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md) for layered KB roots.
 Downstream repositories should pin to `v0.1.1` before using formalization
-fields in artifact YAML.
+fields in artifact YAML. Post-tag `main` features, such as the optional
+external Lean library reference checker, require a later validated release tag
+before downstream pinned work can rely on them.
 
 ## Development Commands
 

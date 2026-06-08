@@ -2,81 +2,82 @@
 
 ## Milestone
 
-Phase 6 Task 6.4: formal link pilot.
+Phase 8 Task 8.1: three-repository release checklist and stale-docs cleanup.
 
 ## Goal
 
-Add one minimal formal-link pilot showing metadata and optional external Lean
-library reference checking without claiming accepted knowledge, automatic
-proof, or informal/formal alignment.
+Close the current framework documentation gap before showcase work by making
+the release checklist, roadmap, project state, and milestone docs match the
+actual three-repository implementation. This task is documentation-only and
+must not change framework behavior, artifact schema, gate semantics, verifier
+adapters, accepted-promotion policy, public KB content, or workspace-template
+behavior.
 
 ## Current Baseline
 
-- Phase 0 Task 0.1 is complete in `docs/CODEX_STATE_AUDIT.md`.
-- Phase 0 Task 0.2 is complete in `docs/CODEX_DEVELOPMENT_PLAN.md` and
-  `docs/ADR/0008-agent-memory-runtime-roadmap.md`.
-- Phase 2 Task 2.4 MarkItDown local source-ingestion adapter is complete.
-- Phase 2 Task 2.5 added exactly one draft public foundation artifact in
-  `tcs-kb-public`.
-- Phase 3 Task 3.7 context-pack v2 integration is complete.
-- Phase 4 Task 4.1 orchestrator state model is complete in
-  `cosheaf.agent.orchestrator_state`,
-  `schemas/orchestrator_run.schema.json`, and
-  `docs/ADR/0010-orchestrator-state-machine.md`.
-- Phase 4 Task 4.2 deterministic task-DAG planner stub is complete in
-  `cosheaf.agent.orchestrator_planner` and
-  `cosheaf orchestrator plan --issue <issue-id> --json`.
-- Phase 4 Task 4.3 reducer and worker bundle v2 is complete in
-  `cosheaf.agent.worker_bundle_v2` and
-  `schemas/worker_bundle_v2.schema.json`.
-- Phase 4 Task 4.4 local worker runner integration is complete in
-  `cosheaf.agent.orchestrator_runner` and
-  `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only`.
-- Phase 4 Task 4.5 agent dry-run workflow is complete in
-  `cosheaf.agent.dry_run_workers` and
-  `examples/issues/issue.agent-dry-run.demo.yaml`.
-- Phase 6 Task 6.3 Formal Link Gate hardening is complete. G10 consumes
-  normalized verifier results when policy requires a Lean check, but still
-  does not execute Lean.
-- Framework package version is `0.1.1`.
-- `tcs-cosheaf` has workspace-aware validation, gatekeeper G1-G10,
-  deterministic index rebuilds, read-only query surfaces, artifact-card
-  retrieval, memory graph/PageRank surfaces, context-pack v2, local task-runner
-  scaffolding, an orchestrator state-machine contract, and minimal optional
-  SAT, SMT, plain Lean, and external Lean library reference verifier adapters.
-- Formal-link metadata is implemented as artifact metadata, G10 gate checks,
-  context-pack display, index/query output, and one draft Lean core pilot.
-- External Lean-library `#check` for linked Lean formalization references is
-  available as an optional verifier adapter. Missing Lean/lake remains
-  `skipped`, not `pass`.
-- Hosted LLM worker execution is not implemented.
-- MarkItDown, Headroom, CodeGraph, and Understand-Anything are not default
-  dependencies.
-- Phase 0 Task 0.3 recorded external-tool boundaries in
-  `docs/EXTERNAL_TOOLS.md` and
-  `docs/ADR/0011-external-tooling-boundaries.md`.
-- Phase 2 Task 2.3 recorded the source-ingestion boundary in
-  `docs/SOURCE_INGESTION.md` and
-  `docs/ADR/0012-source-ingestion-boundary.md`.
+- Framework package metadata currently records version `0.1.1`.
+- Remote tag `v0.1.1` exists and remains the downstream formal-link metadata
+  baseline. Current `main` also contains later hardening work that is not part
+  of that tag.
+- `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
+  index/query, context packs, local task/orchestrator dry-runs, verifier
+  adapters, evaluation, and observability scaffolding.
+- `tcs-kb-public` is the reusable public KB and must stay public, citable,
+  source-reviewed, and human-reviewed before accepted knowledge is added.
+- `tcs-cosheaf-workspace-template` is the user-facing entry point with readonly
+  public KB plus writable private KB overlay.
+- Workspace-template productization is complete for the current scope: demo,
+  Makefile shortcuts, public KB bootstrap guidance, onboarding docs, and CI
+  smoke coverage have landed.
+- Public KB policy-first work is in place: contribution/review guidance,
+  graph-foundation backlog, source-note convention, and policy CI guard exist.
+- MarkItDown local source ingestion exists only as an optional staging adapter.
+  It cannot write accepted artifacts, gate evidence, verifier evidence, human
+  review, or promotion evidence.
+- Deterministic librarian work is implemented through artifact cards, lexical
+  and SQLite FTS/BM25 search, memory graph/PageRank, Personalized PageRank, and
+  context-pack v2 integration.
+- Local orchestrator work is implemented as explicit state-machine contracts,
+  deterministic planner stubs, reducer and worker-bundle v2 validation, local
+  worker-runner integration, and local-only dry-run workflow. It is not hosted
+  LLM execution.
+- The provider-neutral model interface exists with deterministic fake-provider
+  tests. Hosted provider integration is not enabled as a default runtime path.
+- Headroom and CodeGraph are documented as optional developer or experiment
+  surfaces only; they do not alter artifact truth, retrieval truth, gate input,
+  verifier input, review, or promotion.
+- Formal-link metadata, formal library manifest schema, G10 hardening, and a
+  draft formal-link pilot are in place.
+- Optional external Lean-library `#check` support is implemented on current
+  `main` by `LeanLibraryRefAdapter` for linked or checked Lean 4
+  formalization metadata when Lean or lake is available. It requires a later
+  release tag before downstream pinned work can rely on it.
+- Missing Lean/lake remains `skipped`, not `pass`.
+- A successful external Lean `#check` means only that the import and symbol
+  resolved; it does not prove informal/formal semantic alignment.
+- Retrieval/context evals, structured run logs, and optional OpenTelemetry run
+  log export scaffolding are implemented. Telemetry is optional and disabled
+  unless configured.
 
 ## Completion Criteria
 
-- Exactly one minimal pilot artifact or example is added for formal-link
-  metadata and optional `#check`.
-- The pilot remains draft/example material and is not promoted to accepted
-  knowledge.
-- The formalization is not marked `checked` unless a checker result is actually
-  recorded as pass.
-- Alignment is not marked `human_reviewed` without real human review metadata.
-- Missing Lean/lake remains `skipped`, not `pass`.
-- No accepted-promotion policy path is changed.
+- `RELEASE_CHECKLIST.md` is actionable for the three-repository release/demo
+  workflow.
+- Stale claims that external Lean-library reference checking is only future
+  work are removed from current-state docs.
+- `context/CURRENT_MILESTONE.md` no longer points to Phase 6 Task 6.4 as the
+  active milestone.
+- `docs/ROADMAP.md` describes the current Phase 8 release-hardening/showcase
+  focus and keeps non-goals explicit.
+- `context/PROJECT_STATE.md` records that Phase 8 Task 8.1 corrected stale
+  release/milestone docs.
+- Required local commands are run and reported honestly.
 
 ## Next Focus
 
-After Phase 6 Task 6.4 lands, the next fixed-plan item is Phase 7 Task 7.1:
-retrieval eval harness. Do not expand this task into hosted LLM execution,
-agent runtime work, public KB artifact batches, web UI work, or
-accepted-promotion policy changes.
+After Phase 8 Task 8.1 lands, the next fixed-plan item is Phase 8 Task 8.2:
+showcase demo docs. Start in `tcs-cosheaf-workspace-template` first, then make
+framework documentation updates only if needed.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
