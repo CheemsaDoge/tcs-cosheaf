@@ -9,3 +9,12 @@ cases:
       - construction.sat-smt-gadget.0001
     allowed_scope:
       - workspace
+  - id: case.retrieval.sat-smt-gadget
+    query: tiny SAT CNF satisfying assignment optional solver
+    issue_id: issue.sat-smt-gadget.0001
+    expected_relevant_artifacts:
+      - construction.sat-smt-gadget.0001
+    forbidden_artifacts:
+      - construction.graph-toy.0001
+    allowed_scope:
+      - workspace
