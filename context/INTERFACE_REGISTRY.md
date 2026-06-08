@@ -1386,9 +1386,11 @@ working directory.
 ### Formal Library Manifest Files
 
 - `formal-libs/lean-libraries.example.yaml`: example Lean formal library
-  manifest. The example uses placeholder `example.invalid` repositories and
-  illustrative commit/version values. It is a template for pinned metadata,
-  not evidence that CSLib or mathlib was fetched, built, or checked.
+  manifest. The example includes `lean-core`, `cslib-main`, and
+  `mathlib-main` manifest IDs. It uses illustrative commit/version values and
+  `example.invalid` repositories for CSLib/mathlib entries. It is a template
+  for pinned metadata, not evidence that Lean, CSLib, or mathlib was fetched,
+  built, or checked.
 
 ### Workspace Config Files
 

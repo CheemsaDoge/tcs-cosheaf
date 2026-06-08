@@ -2,13 +2,13 @@
 
 ## Milestone
 
-Phase 6 Task 6.3: Formal Link Gate hardening.
+Phase 6 Task 6.4: formal link pilot.
 
 ## Goal
 
-Harden G10 Formal Link Gate so checked formal-link metadata cannot be treated
-as a Lean pass without matching verifier evidence, while preserving the
-boundary that G10 does not execute Lean or prove informal/formal alignment.
+Add one minimal formal-link pilot showing metadata and optional external Lean
+library reference checking without claiming accepted knowledge, automatic
+proof, or informal/formal alignment.
 
 ## Current Baseline
 
@@ -35,6 +35,9 @@ boundary that G10 does not execute Lean or prove informal/formal alignment.
 - Phase 4 Task 4.5 agent dry-run workflow is complete in
   `cosheaf.agent.dry_run_workers` and
   `examples/issues/issue.agent-dry-run.demo.yaml`.
+- Phase 6 Task 6.3 Formal Link Gate hardening is complete. G10 consumes
+  normalized verifier results when policy requires a Lean check, but still
+  does not execute Lean.
 - Framework package version is `0.1.1`.
 - `tcs-cosheaf` has workspace-aware validation, gatekeeper G1-G10,
   deterministic index rebuilds, read-only query surfaces, artifact-card
@@ -42,7 +45,7 @@ boundary that G10 does not execute Lean or prove informal/formal alignment.
   scaffolding, an orchestrator state-machine contract, and minimal optional
   SAT, SMT, plain Lean, and external Lean library reference verifier adapters.
 - Formal-link metadata is implemented as artifact metadata, G10 gate checks,
-  context-pack display, and index/query output.
+  context-pack display, index/query output, and one draft Lean core pilot.
 - External Lean-library `#check` for linked Lean formalization references is
   available as an optional verifier adapter. Missing Lean/lake remains
   `skipped`, not `pass`.
@@ -58,27 +61,23 @@ boundary that G10 does not execute Lean or prove informal/formal alignment.
 
 ## Completion Criteria
 
-- G10 resolves artifact `library_ref` values against a local formal library
-  manifest and blocks missing or unknown manifest references when
-  formalization links are present.
-- G10 requires `import_path` and `symbol` metadata for `linked` and `checked`
-  formalization references.
-- G10 requires a matching Lean verifier `pass` when
-  `verification_policy.require_lean_check` is true; skipped, failed, or errored
-  verifier results are not passes.
-- Planned formalizations remain metadata and are not treated as checked.
-- Alignment review remains separate from Lean checking.
-- No Lean execution is added to G10, no external library fetch is added, and no
-  accepted-promotion policy path is changed beyond ordinary gatekeeper
-  blocking behavior.
+- Exactly one minimal pilot artifact or example is added for formal-link
+  metadata and optional `#check`.
+- The pilot remains draft/example material and is not promoted to accepted
+  knowledge.
+- The formalization is not marked `checked` unless a checker result is actually
+  recorded as pass.
+- Alignment is not marked `human_reviewed` without real human review metadata.
+- Missing Lean/lake remains `skipped`, not `pass`.
+- No accepted-promotion policy path is changed.
 
 ## Next Focus
 
-After Phase 6 Task 6.3 lands, the next fixed-plan item is Phase 6 Task 6.4:
-formal link pilot. Do not expand this task into hosted LLM execution, agent
-runtime work, public KB artifact batches, web UI work, or accepted-promotion
-policy changes.
+After Phase 6 Task 6.4 lands, the next fixed-plan item is Phase 7 Task 7.1:
+retrieval eval harness. Do not expand this task into hosted LLM execution,
+agent runtime work, public KB artifact batches, web UI work, or
+accepted-promotion policy changes.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
-names, branch names, or pull request titles, even when older examples show
-that prefix.
+names, branch names, or pull request titles, even when older examples show that
+prefix.

@@ -1,0 +1,74 @@
+id: claim.example.lean-core-formal-link-pilot
+type: claim
+title: Lean core formal-link pilot
+domain:
+  - formalization
+  - lean
+status: draft
+created_at: "2026-06-08T00:00:00Z"
+updated_at: "2026-06-08T00:00:00Z"
+authors:
+  - example-author
+depends_on: []
+supersedes: []
+tags:
+  - formal-link
+  - lean-core
+  - pilot
+statement: >
+  This draft pilot records a minimal reference to a Lean core declaration so
+  the optional external Lean library reference checker can demonstrate its
+  import/#check workflow without depending on CSLib, mathlib, network access,
+  or accepted knowledge. The linked declaration is `Nat` from `Init`.
+evidence: []
+sources:
+  - kind: website
+    title: Lean 4 Documentation
+    authors:
+      - Lean FRO
+    year: 2026
+    url: https://lean-lang.org/
+    notes: >
+      General public project reference for the Lean language. This source is
+      not used as human-reviewed mathematical evidence for an accepted
+      artifact.
+formalizations:
+  - id: lean.core.nat
+    system: lean4
+    library: Lean core
+    library_ref: lean-core
+    import_path: Init
+    symbol: Nat
+    declaration_kind: other
+    status: linked
+    check_mode: external_library_ref
+    expected_type: Sort u
+    notes: >
+      Minimal pilot reference. Optional `lean_library_ref` can generate
+      `import Init` and `#check Nat`; a pass only means the import and symbol
+      resolved in the configured Lean environment and does not prove semantic
+      alignment with the informal artifact.
+alignment:
+  status: requested
+  reviewer: ""
+  reviewed_at: null
+  convention_notes:
+    - Confirm any informal use before treating this as semantic alignment.
+  limitations: >
+    This pilot intentionally does not claim human-reviewed informal/formal
+    alignment.
+verification_policy:
+  level: source_reviewed_with_formal_link
+  require_formal_link: true
+  require_lean_check: false
+  require_alignment_review: false
+review:
+  state: requested
+  notes: >
+    Draft formal-link pilot only. It is not accepted knowledge and does not
+    claim Lean-checked alignment.
+risk:
+  level: low
+  notes: >
+    Minimal Lean core reference for optional checker demonstration; no accepted
+    promotion or theorem claim.
