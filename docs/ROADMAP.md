@@ -1,23 +1,32 @@
 # Roadmap
 
-TCS-Cosheaf is at the `v0.2.0` local-MVP release milestone after the `v0.1.1`
-Formal Link Layer support baseline. The project is still not production-ready.
+TCS-Cosheaf is at the published `v0.2.0` local-MVP release baseline after the
+`v0.1.1` Formal Link Layer support baseline. The project is still not
+production-ready.
 This roadmap records durable direction and named milestones; live issue state
 belongs in GitHub issues.
 
-## Current Milestone: v0.2.0 Local MVP Release
+## Current Baseline: v0.2.0 Local MVP Release
 
-Goal: tag the already-implemented deterministic local workflow as a pin-able
-framework version without adding new capability or overclaiming production
-readiness, automatic theorem proving, Lean autoformalization, or hosted agent
-behavior.
+The `v0.2.0` tag packages the already-implemented deterministic local workflow
+as a pin-able framework version without adding new capability or overclaiming
+production readiness, automatic theorem proving, Lean autoformalization, or
+hosted agent behavior.
 
-Current release-candidate work focuses on:
+Completed release work includes:
 
 - Package metadata and release notes for `v0.2.0`.
-- Full framework verification before tagging.
+- Full framework verification for the tag.
 - Workspace-template install/pin verification against the tag.
-- Public KB validation/gate regression in the follow-up three-repo pass.
+- Public KB validation/gate regression against the tag.
+
+## Next Focus: Local Orchestrator Hardening
+
+The next implementation work should stay local-only and should not introduce
+hosted providers. Start with a narrow audit or hardening pass over the Phase
+4.1 orchestrator state-model contract and current tests before adding any new
+runtime behavior. The goal is replayable local workflow reliability, not a
+production multi-agent system.
 
 ## Completed Baseline
 

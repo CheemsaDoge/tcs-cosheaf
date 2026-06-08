@@ -1,15 +1,22 @@
 # Project State
 
+This file is ordered newest first. Older sections are historical snapshots and
+must not override the current status recorded at the top of the file.
+
 ## v0.2.0 Local-MVP Release - 2026-06-08
 
-Issue 153 prepares `v0.2.0` as a pin-able local-MVP framework release. The
-package version is updated to `0.2.0`, and `docs/releases/v0.2.0.md` records
-release boundaries for the already-merged deterministic librarian,
-context-pack v2, local orchestrator dry-run, fake provider, retrieval/context
-evals, optional OpenTelemetry scaffold, optional MarkItDown staging, and
-optional Lean external-library `#check` path.
+Issue 153 prepared `v0.2.0` as a pin-able local-MVP framework release. The
+package version is `0.2.0`, `cosheaf.__version__` reports `0.2.0`, the
+annotated `v0.2.0` tag points to the reviewed default-branch merge commit, and
+the GitHub release is published as a prerelease to avoid production-readiness
+overclaiming. `docs/releases/v0.2.0.md` records release boundaries for the
+already-merged deterministic librarian, context-pack v2, local orchestrator
+dry-run, fake provider, retrieval/context evals, optional OpenTelemetry
+scaffold, optional MarkItDown staging, and optional Lean external-library
+`#check` path.
 
-This release does not add new capability. It does not enable hosted
+This release did not add new capability beyond packaging the already-merged
+local-MVP surfaces. It does not enable hosted
 LLM execution, automatic theorem proving, automatic accepted promotion, web UI,
 multi-user permissions, or automatic informal/formal semantic alignment. Phase
 5 Task 5.3 remains gated until the maintainer explicitly approves a hosted
@@ -17,11 +24,10 @@ provider dependency.
 
 ## v0.2.0 Closeout Hygiene - 2026-06-08
 
-Issue 151 aligns repository-facing status language after the fixed longplan
+Issue 151 aligned repository-facing status language after the fixed longplan
 completion audit. The durable state now distinguishes three separate concepts:
-the existing `v0.1.1` release tag, the current hardened `main` branch, and the
-planned `v0.2.0` local-MVP scope. Issue 153 later converts that proposed scope
-into the `v0.2.0` release target. The `v0.2.0` release does not imply
+the existing `v0.1.1` release tag, the current default branch, and the
+published `v0.2.0` local-MVP tag. The `v0.2.0` release does not imply
 production readiness.
 
 This is documentation-only cleanup. It does not change code, schemas, gates,
@@ -83,7 +89,7 @@ The audit also confirms that `context/CURRENT_MILESTONE.md` was stale relative
 to the current `v0.1.1` and three-repo MVP productization state and has been
 updated as part of the same documentation-only task.
 
-## Current State After v0.1.1 Formal Link Layer Support
+## Historical Snapshot: v0.1.1 Formal Link Layer Support
 
 TCS-Cosheaf is in v0.1.1 Formal Link Layer support / pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata and formalization-link metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds including formal-link metadata, a read-only SQLite query API over rebuilt index output including formalization queries, gatekeeper report generation including G10 Formal Link Gate output, ranked issue-scoped context pack generation with compact formal-link display, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, plain Lean, and external Lean library reference verifier adapters, graph/SAT/formal-link pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 

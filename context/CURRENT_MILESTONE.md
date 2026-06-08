@@ -2,27 +2,29 @@
 
 ## Milestone
 
-v0.2.0 local-MVP release.
+Post-`v0.2.0` state consistency and local orchestrator hardening.
 
 ## Goal
 
-Prepare a pin-able `v0.2.0` local-MVP framework release from the already-merged
-deterministic librarian, context-pack v2, local orchestrator dry-run, fake
-provider, evaluation, observability, and optional Lean `#check` surfaces. This
-release task must not add new capabilities or change artifact schema, gate
-semantics, verifier adapter behavior, accepted-promotion policy, public KB
-content, workspace-template behavior, or runtime dependencies.
+Keep the repository-facing version, license, release, milestone, and roadmap
+language aligned with the actual code and tags after the `v0.2.0` local-MVP
+release. State-consistency work must not add new runtime capabilities or change
+artifact schema, gate semantics, verifier adapter behavior,
+accepted-promotion policy, public KB content, workspace-template behavior, or
+runtime dependencies.
 
 ## Current Baseline
 
-- Framework package metadata is updated from `0.1.1` to `0.2.0` for this
-  release.
+- Framework package metadata and `cosheaf.__version__` record `0.2.0`.
 - Remote tag `v0.1.1` exists and remains the downstream formal-link metadata
-  baseline. Current `main` also contains later hardening work that is not part
-  of that tag.
+  baseline.
+- Remote tag `v0.2.0` exists as the local-MVP framework release. It is
+  published as a prerelease on GitHub to avoid production-readiness
+  overclaiming.
 - The current `main` branch has completed the fixed longplan audit through
   Phase 8, except for the explicitly gated hosted-provider adapter task.
-- `v0.2.0` is the local-MVP release target. It is not a production-ready claim.
+- `v0.2.0` is the current local-MVP framework pin. It is not a
+  production-ready claim.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
   index/query, context packs, local task/orchestrator dry-runs, verifier
   adapters, evaluation, and observability scaffolding.
@@ -52,10 +54,10 @@ content, workspace-template behavior, or runtime dependencies.
   retrieval truth, gate input, verifier input, review, or promotion.
 - Formal-link metadata, formal library manifest schema, G10 hardening, and a
   draft formal-link pilot are in place.
-- Optional external Lean-library `#check` support is implemented on current
-  `main` by `LeanLibraryRefAdapter` for linked or checked Lean 4
-  formalization metadata when Lean or lake is available. It requires a later
-  release tag before downstream pinned work can rely on it.
+- Optional external Lean-library `#check` support is implemented by
+  `LeanLibraryRefAdapter` for linked or checked Lean 4 formalization metadata
+  when Lean or lake is available. Downstream work should pin `v0.2.0` before
+  relying on that adapter.
 - Missing Lean/lake remains `skipped`, not `pass`.
 - A successful external Lean `#check` means only that the import and symbol
   resolved; it does not prove informal/formal semantic alignment.
@@ -88,12 +90,15 @@ Explicit non-goals:
 - Multi-user authentication or permissions.
 - Full CSLib/mathlib ingestion, vendoring, or semantic-alignment automation.
 
-## Completion Criteria
+## State Consistency Criteria
 
 - `pyproject.toml` and `cosheaf.__version__` record `0.2.0`.
+- `LICENSE` and `pyproject.toml` both identify Apache-2.0 licensing.
+- The `v0.2.0` tag and release exist and are described as a bounded local-MVP
+  release, not production-ready software.
 - `docs/releases/v0.2.0.md` records the local-MVP release boundaries.
 - README, PROJECT_STATE, and this milestone file consistently distinguish the
-  existing `v0.1.1` baseline and the `v0.2.0` local-MVP release target.
+  existing `v0.1.1` baseline, current `main`, and the `v0.2.0` local-MVP tag.
 - `docs/LONGPLAN_COMPLETION_AUDIT.md` records accurate merged-PR evidence for
   every fixed-plan task through Phase 8.
 - `docs/LONGPLAN_COMPLETION_AUDIT.md` continues to state that the audit is not
@@ -108,10 +113,11 @@ Explicit non-goals:
 
 ## Next Focus
 
-After this release PR lands and verification passes, cut the `v0.2.0` tag on
-protected `main`, then verify that workspace-template can pin and install the
-tag. Follow-up P2 work should run the three-repository regression against the
-tag.
+After state consistency is merged, do not start hosted-provider or large agent
+runtime work. The next implementation focus should be a narrow local
+orchestrator hardening task, starting with an audit of the Phase 4.1
+state-model contract against the current code and tests before adding any new
+runtime behavior.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
