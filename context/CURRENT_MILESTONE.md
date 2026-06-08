@@ -2,26 +2,27 @@
 
 ## Milestone
 
-Post-longplan repository hygiene and v0.2.0 proposal alignment.
+v0.2.0 local-MVP release.
 
 ## Goal
 
-Keep repository-facing status docs aligned after Phase 8 hardening, the
-longplan completion audit, and the v0.2.0 milestone proposal have landed. This
-closeout is documentation-only and must not change framework behavior,
-artifact schema, gate semantics, verifier adapters, accepted-promotion policy,
-public KB content, workspace-template behavior, or runtime dependencies.
+Prepare a pin-able `v0.2.0` local-MVP framework release from the already-merged
+deterministic librarian, context-pack v2, local orchestrator dry-run, fake
+provider, evaluation, observability, and optional Lean `#check` surfaces. This
+release task must not add new capabilities or change artifact schema, gate
+semantics, verifier adapter behavior, accepted-promotion policy, public KB
+content, workspace-template behavior, or runtime dependencies.
 
 ## Current Baseline
 
-- Framework package metadata currently records version `0.1.1`.
+- Framework package metadata is updated from `0.1.1` to `0.2.0` for this
+  release.
 - Remote tag `v0.1.1` exists and remains the downstream formal-link metadata
   baseline. Current `main` also contains later hardening work that is not part
   of that tag.
 - The current `main` branch has completed the fixed longplan audit through
   Phase 8, except for the explicitly gated hosted-provider adapter task.
-- `v0.2.0` is a proposed next local-MVP release scope, not an existing release
-  tag and not a production-ready claim.
+- `v0.2.0` is the local-MVP release target. It is not a production-ready claim.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
   index/query, context packs, local task/orchestrator dry-runs, verifier
   adapters, evaluation, and observability scaffolding.
@@ -62,10 +63,10 @@ public KB content, workspace-template behavior, or runtime dependencies.
   log export scaffolding are implemented. Telemetry is optional and disabled
   unless configured.
 
-## Proposed v0.2.0 Scope
+## v0.2.0 Scope
 
-`v0.2.0` should be a bounded local-MVP milestone. It should package and polish
-the existing deterministic workflow rather than introduce a production agent
+`v0.2.0` is a bounded local-MVP milestone. It packages and polishes the
+existing deterministic workflow rather than introducing a production agent
 platform.
 
 Included scope:
@@ -89,8 +90,10 @@ Explicit non-goals:
 
 ## Completion Criteria
 
+- `pyproject.toml` and `cosheaf.__version__` record `0.2.0`.
+- `docs/releases/v0.2.0.md` records the local-MVP release boundaries.
 - README, PROJECT_STATE, and this milestone file consistently distinguish the
-  existing `v0.1.1` tag, current hardened `main`, and proposed `v0.2.0` scope.
+  existing `v0.1.1` baseline and the `v0.2.0` local-MVP release target.
 - `docs/LONGPLAN_COMPLETION_AUDIT.md` records accurate merged-PR evidence for
   every fixed-plan task through Phase 8.
 - `docs/LONGPLAN_COMPLETION_AUDIT.md` continues to state that the audit is not
@@ -105,11 +108,10 @@ Explicit non-goals:
 
 ## Next Focus
 
-After this hygiene closeout lands and verification passes, future work should
-proceed from the bounded v0.2.0 proposal, or from a separate
-maintainer-approved hosted-provider issue if Phase 5 Task 5.3 is later
-unblocked. Do not treat the current `main` branch as a released v0.2.0 artifact
-until a release audit and tag are created.
+After this release PR lands and verification passes, cut the `v0.2.0` tag on
+protected `main`, then verify that workspace-template can pin and install the
+tag. Follow-up P2 work should run the three-repository regression against the
+tag.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

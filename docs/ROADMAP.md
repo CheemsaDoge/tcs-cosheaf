@@ -1,24 +1,23 @@
 # Roadmap
 
-TCS-Cosheaf is in Phase 8 release hardening and showcase preparation after the
-`v0.1.1` Formal Link Layer support baseline. The project is still pre-MVP.
+TCS-Cosheaf is at the `v0.2.0` local-MVP release milestone after the `v0.1.1`
+Formal Link Layer support baseline. The project is still not production-ready.
 This roadmap records durable direction and named milestones; live issue state
 belongs in GitHub issues.
 
-## Current Milestone: Phase 8 Release Hardening / Showcase
+## Current Milestone: v0.2.0 Local MVP Release
 
-Goal: make the three-repository workflow reviewable, reproducible, and easy to
-demonstrate without overclaiming production readiness, automatic theorem
-proving, Lean autoformalization, or hosted agent behavior.
+Goal: tag the already-implemented deterministic local workflow as a pin-able
+framework version without adding new capability or overclaiming production
+readiness, automatic theorem proving, Lean autoformalization, or hosted agent
+behavior.
 
-Current release-hardening work focuses on:
+Current release-candidate work focuses on:
 
-- An actionable three-repository release checklist.
-- Stale documentation cleanup after the external Lean library reference adapter
-  and Phase 7 evaluation/observability work landed.
-- Workspace-template showcase/demo documentation.
-- Clear external-tool onboarding notes for manual developer tools.
-- A bounded proposal for the next `v0.2.0` milestone.
+- Package metadata and release notes for `v0.2.0`.
+- Full framework verification before tagging.
+- Workspace-template install/pin verification against the tag.
+- Public KB validation/gate regression in the follow-up three-repo pass.
 
 ## Completed Baseline
 
@@ -95,11 +94,11 @@ Near-term public KB work should remain:
 
 ## Next Named Milestones
 
-### v0.2.0 Proposal
+### v0.2.0 Local MVP
 
-`v0.2.0` is proposed as a bounded milestone after Phase 8 hardening. It should
-turn the existing local, deterministic surfaces into a coherent MVP without
-changing the knowledge-governance boundary. The proposed scope is:
+`v0.2.0` is the bounded local-MVP milestone after Phase 8 hardening. It turns
+the existing local, deterministic surfaces into a coherent pin-able framework
+version without changing the knowledge-governance boundary. The scope is:
 
 - Librarian v1: deterministic artifact-card retrieval, public/private
   filtering, audit records, and clear CLI/docs for issue-scoped context

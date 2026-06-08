@@ -1,12 +1,28 @@
 # Project State
 
+## v0.2.0 Local-MVP Release - 2026-06-08
+
+Issue 153 prepares `v0.2.0` as a pin-able local-MVP framework release. The
+package version is updated to `0.2.0`, and `docs/releases/v0.2.0.md` records
+release boundaries for the already-merged deterministic librarian,
+context-pack v2, local orchestrator dry-run, fake provider, retrieval/context
+evals, optional OpenTelemetry scaffold, optional MarkItDown staging, and
+optional Lean external-library `#check` path.
+
+This release does not add new capability. It does not enable hosted
+LLM execution, automatic theorem proving, automatic accepted promotion, web UI,
+multi-user permissions, or automatic informal/formal semantic alignment. Phase
+5 Task 5.3 remains gated until the maintainer explicitly approves a hosted
+provider dependency.
+
 ## v0.2.0 Closeout Hygiene - 2026-06-08
 
 Issue 151 aligns repository-facing status language after the fixed longplan
 completion audit. The durable state now distinguishes three separate concepts:
 the existing `v0.1.1` release tag, the current hardened `main` branch, and the
-proposed future `v0.2.0` local-MVP scope. `v0.2.0` is not yet a release tag and
-does not imply production readiness.
+planned `v0.2.0` local-MVP scope. Issue 153 later converts that proposed scope
+into the `v0.2.0` release target. The `v0.2.0` release does not imply
+production readiness.
 
 This is documentation-only cleanup. It does not change code, schemas, gates,
 verifier adapters, accepted-promotion policy, public KB artifacts,
