@@ -108,6 +108,19 @@ def test_validate_worker_bundle_v2_rejects_paths_outside_repo(tmp_path: Path) ->
         validate_worker_bundle_v2(RepoContext(tmp_path), "outputs/bundle.yaml")
 
 
+def test_validate_worker_bundle_v2_rejects_nested_parent_directory_segments(
+    tmp_path: Path,
+) -> None:
+    _write_yaml(
+        tmp_path,
+        "outputs/bundle.yaml",
+        _bundle_data(proposed_path="kb/draft/../claims/worker-bundle-v2.yaml"),
+    )
+
+    with pytest.raises(WorkerBundleV2Error, match="repository-local"):
+        validate_worker_bundle_v2(RepoContext(tmp_path), "outputs/bundle.yaml")
+
+
 def test_validate_worker_bundle_v2_rejects_accepted_kb_proposals(
     tmp_path: Path,
 ) -> None:
