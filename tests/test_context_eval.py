@@ -9,14 +9,17 @@ from typer.testing import CliRunner
 
 from cosheaf.cli import app
 from cosheaf.evals.context import (
+    DEFAULT_CONTEXT_EVAL_CASES,
     ContextEvalCase,
     ContextEvalSuite,
+    load_context_eval_suite,
     run_context_eval_suite,
 )
 from cosheaf.memory import RetrievalRole
 from cosheaf.storage.repo import RepoContext
 
 runner = CliRunner()
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _write_yaml(repo_root: Path, relative_path: str, data: dict[str, Any]) -> None:
@@ -267,6 +270,24 @@ def test_context_eval_reports_known_failures_unless_allowed(
     assert report.cases[0].failures == [
         "known_failure_count 1 exceeds allowed 0"
     ]
+
+
+def test_default_context_eval_suite_covers_graph_and_sat_pilots() -> None:
+    suite = load_context_eval_suite(ROOT / DEFAULT_CONTEXT_EVAL_CASES)
+    cases_by_id = {case.id: case for case in suite.cases}
+
+    assert set(cases_by_id) == {
+        "case.context.graph-toy",
+        "case.context.sat-smt-gadget",
+    }
+    assert cases_by_id["case.context.graph-toy"].required_artifacts == [
+        "construction.graph-toy.0001"
+    ]
+    assert cases_by_id["case.context.sat-smt-gadget"].required_artifacts == [
+        "construction.sat-smt-gadget.0001"
+    ]
+    assert all(case.role is RetrievalRole.ORCHESTRATOR for case in cases_by_id.values())
+    assert all(case.max_full_artifacts == 0 for case in cases_by_id.values())
 
 
 def test_context_eval_cli_runs_deterministic_fixture(tmp_path: Path) -> None:
