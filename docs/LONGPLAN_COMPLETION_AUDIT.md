@@ -18,7 +18,8 @@ that is not equivalent to approving a new hosted provider dependency or SDK.
 
 Current ecosystem state at the audit point:
 
-- `tcs-cosheaf` is on `main` at the Phase 8 Task 8.4 milestone proposal.
+- `tcs-cosheaf` is on `main` with the longplan completion audit merged after
+  the Phase 8 Task 8.4 milestone proposal.
 - `tcs-kb-public` is on `main` with public-KB policy, source-note, backlog, and
   small foundation-artifact work merged.
 - `tcs-cosheaf-workspace-template` is on `main` with workspace demo,
@@ -57,17 +58,17 @@ Current ecosystem state at the audit point:
 | 4.4 Local worker runner integration | Complete | `tcs-cosheaf` PR #102. |
 | 4.5 Agent dry-run workflow | Complete | `tcs-cosheaf` PR #104. |
 | 4.6 CodeGraph dev-only tooling | Complete | `tcs-cosheaf` PR #106. |
-| 5.1 Provider-neutral model interface | Complete | `tcs-cosheaf` PR #110, ADR 0013. |
-| 5.2 Role prompt contracts | Complete | `tcs-cosheaf` PR #112, `docs/AGENT_ROLES.md`. |
+| 5.1 Provider-neutral model interface | Complete | `tcs-cosheaf` PR #108, ADR 0013. |
+| 5.2 Role prompt contracts | Complete | `tcs-cosheaf` PR #110, `docs/AGENT_ROLES.md`. |
 | 5.3 Hosted provider adapter behind explicit flag | Gated, not implemented | The plan requires explicit maintainer approval before adding a hosted provider dependency. No such dependency approval has been given. Current code intentionally keeps only `FakeModelProvider`; hosted execution is not enabled. |
-| 5.4 Headroom default-off scaffold | Complete | `tcs-cosheaf` PR #114. |
-| 6.1 Formal library manifest audit | Complete | `tcs-cosheaf` PR #116. |
-| 6.2 Lean external library `#check` adapter | Complete | `tcs-cosheaf` PR #118. |
-| 6.3 Formal Link Gate hardening | Complete | `tcs-cosheaf` PR #120. |
-| 6.4 Formal link pilot | Complete | `tcs-cosheaf` PR #122. |
-| 7.1 Retrieval eval harness | Complete | `tcs-cosheaf` PR #124. |
-| 7.2 Context pack regression eval | Complete | `tcs-cosheaf` PR #126. |
-| 7.3 Structured run logging | Complete | `tcs-cosheaf` PR #128. |
+| 5.4 Headroom default-off scaffold | Complete | `tcs-cosheaf` PR #112. |
+| 6.1 Formal library manifest audit | Complete | `tcs-cosheaf` PR #114. |
+| 6.2 Lean external library `#check` adapter | Complete | `tcs-cosheaf` PR #116. |
+| 6.3 Formal Link Gate hardening | Complete | `tcs-cosheaf` PR #118. |
+| 6.4 Formal link pilot | Complete | `tcs-cosheaf` PR #120. |
+| 7.1 Retrieval eval harness | Complete | `tcs-cosheaf` PR #122. |
+| 7.2 Context pack regression eval | Complete | `tcs-cosheaf` PR #124. |
+| 7.3 Structured run logging | Complete | `tcs-cosheaf` PR #126. |
 | 7.4 Optional OpenTelemetry adapter | Complete | `tcs-cosheaf` PR #129. |
 | 8.1 Three-repo release checklist | Complete | `tcs-cosheaf` PR #138. |
 | 8.2 Showcase demo docs | Complete | `tcs-cosheaf-workspace-template` PR #32. |

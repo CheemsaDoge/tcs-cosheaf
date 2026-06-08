@@ -78,6 +78,22 @@ The proxy setting is a diagnostic and transport setup step only. It does not
 prove that authentication is valid; still run the current `gh auth status`, API,
 or Git command and report the real output.
 
+Some older or packaged GitHub CLI builds do not support newer output flags on
+every command. On this Windows environment, `gh issue create --json ...` failed
+with `unknown flag: --json`. Create the issue with the plain command, capture
+the printed URL, then inspect it separately if structured fields are needed:
+
+```powershell
+gh issue create --repo CheemsaDoge/tcs-cosheaf --title "<title>" --body "<body>"
+gh issue view <number> --repo CheemsaDoge/tcs-cosheaf --json number,title,url
+```
+
+When using `gh issue list --search` from PowerShell, pass the search string as
+one argument with quotes or avoid the search flag and filter JSON output
+afterward. If the command reports `unknown arguments` followed by words from
+the issue title, the shell split the search query; this is not an
+authentication failure.
+
 ## Git Path
 
 Confirm the Git executable when debugging remote or credential behavior:
