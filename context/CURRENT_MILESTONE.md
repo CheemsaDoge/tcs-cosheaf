@@ -2,28 +2,32 @@
 
 ## Milestone
 
-Post-`v0.2.0` state consistency and local orchestrator hardening.
+Post-`v0.2.0` direction correction toward `v0.2.1` Agent Access,
+Hosted API Provider, MCP, and Skill.
 
 ## Goal
 
-Keep the repository-facing version, license, release, milestone, and roadmap
-language aligned with the actual code and tags after the `v0.2.0` local-MVP
-release. State-consistency work must not add new runtime capabilities or change
-artifact schema, gate semantics, verifier adapter behavior,
-accepted-promotion policy, public KB content, workspace-template behavior, or
-runtime dependencies.
+Replace local-only next-focus language with the post-`v0.2.0` architecture
+direction recorded in `longplan_v3.md` and
+`docs/POST_V020_ROLLBACK_AUDIT.md`. The next milestone is not a permanent
+local-only orchestrator hardening track. It is a controlled agent-access track
+that keeps the deterministic local workflow as the baseline while designing
+safe MCP, Skill, service-layer, and hosted model API worker access.
+
+This milestone update is documentation only. It does not add runtime behavior,
+change artifact schema, change gate semantics, change verifier adapter
+behavior, change accepted-promotion policy, modify public KB content, modify
+workspace-template behavior, or add runtime dependencies.
 
 ## Current Baseline
 
 - Framework package metadata and `cosheaf.__version__` record `0.2.0`.
 - Remote tag `v0.1.1` exists and remains the downstream formal-link metadata
   baseline.
-- Remote tag `v0.2.0` exists as the local-MVP framework release. It is
+- Remote tag `v0.2.0` exists as the bounded local-MVP framework release. It is
   published as a prerelease on GitHub to avoid production-readiness
   overclaiming.
-- The current `main` branch has completed the fixed longplan audit through
-  Phase 8, except for the explicitly gated hosted-provider adapter task.
-- `v0.2.0` is the current local-MVP framework pin. It is not a
+- `v0.2.0` remains the post-release baseline for this plan. It is not a
   production-ready claim.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
   index/query, context packs, local task/orchestrator dry-runs, verifier
@@ -32,92 +36,101 @@ runtime dependencies.
   source-reviewed, and human-reviewed before accepted knowledge is added.
 - `tcs-cosheaf-workspace-template` is the user-facing entry point with readonly
   public KB plus writable private KB overlay.
-- Workspace-template productization is complete for the current scope: demo,
-  Makefile shortcuts, public KB bootstrap guidance, onboarding docs, showcase
-  docs, and CI smoke coverage have landed.
-- Public KB policy-first work is in place: contribution/review guidance,
-  graph-foundation backlog, source-note convention, and policy CI guard exist.
-- MarkItDown local source ingestion exists only as an optional staging adapter.
-  It cannot write accepted artifacts, gate evidence, verifier evidence, human
-  review, or promotion evidence.
-- Deterministic librarian work is implemented through artifact cards, lexical
-  and SQLite FTS/BM25 search, memory graph/PageRank, Personalized PageRank, and
-  context-pack v2 integration.
-- Local orchestrator work is implemented as explicit state-machine contracts,
-  deterministic planner stubs, reducer and worker-bundle v2 validation, local
-  worker-runner integration, and local-only dry-run workflow. It is not hosted
-  LLM execution.
-- The provider-neutral model interface exists with deterministic fake-provider
-  tests. Hosted provider integration is not enabled as a default runtime path.
-- Headroom, CodeGraph, and Understand-Anything are documented as optional
-  developer or experiment surfaces only; they do not alter artifact truth,
-  retrieval truth, gate input, verifier input, review, or promotion.
-- Formal-link metadata, formal library manifest schema, G10 hardening, and a
-  draft formal-link pilot are in place.
-- Optional external Lean-library `#check` support is implemented by
-  `LeanLibraryRefAdapter` for linked or checked Lean 4 formalization metadata
-  when Lean or lake is available. Downstream work should pin `v0.2.0` before
-  relying on that adapter.
-- Missing Lean/lake remains `skipped`, not `pass`.
-- A successful external Lean `#check` means only that the import and symbol
-  resolved; it does not prove informal/formal semantic alignment.
-- Retrieval/context evals, structured run logs, and optional OpenTelemetry run
-  log export scaffolding are implemented. Telemetry is optional and disabled
-  unless configured.
+- The post-`v0.2.0` rollback audit identifies `context/CURRENT_MILESTONE.md`
+  and `docs/ROADMAP.md` as the documents that needed direction rewrite. It did
+  not identify code, schema, KB, verifier, gate, or promotion behavior that
+  required revert.
 
-## v0.2.0 Scope
+## v0.2.0 Baseline Scope
 
-`v0.2.0` is a bounded local-MVP milestone. It packages and polishes the
-existing deterministic workflow rather than introducing a production agent
-platform.
-
-Included scope:
+`v0.2.0` packages the deterministic local workflow that already exists:
 
 - Librarian v1 usability and evaluation.
 - Context pack v2 as the default card-first context handoff.
 - Local orchestrator state machine and local-only dry-run ergonomics.
 - Fake provider model interface for deterministic provider-neutral tests.
 - Retrieval evaluation harness and regression metrics.
-- Optional external Lean `#check` ergonomics only if the current checker remains
-  stable, optional, and honest about its narrow meaning.
+- Optional external Lean `#check` ergonomics with the narrow meaning that an
+  import and symbol resolved when Lean/lake is available.
 
-Explicit non-goals:
+`v0.2.0` did not add production hosted multi-agent execution, automatic theorem
+proving, automatic accepted promotion, web UI, multi-user authentication, full
+CSLib/mathlib ingestion, or semantic-alignment automation.
 
-- Production hosted multi-agent system.
-- Automatic theorem proving.
-- Automatic accepted promotion.
-- Web UI.
-- Multi-user authentication or permissions.
-- Full CSLib/mathlib ingestion, vendoring, or semantic-alignment automation.
+## v0.2.1 Direction
 
-## State Consistency Criteria
+The next target is `v0.2.1` Agent Access + Hosted API Provider + MCP/Skill.
+The target direction is:
 
-- `pyproject.toml` and `cosheaf.__version__` record `0.2.0`.
-- `LICENSE` and `pyproject.toml` both identify Apache-2.0 licensing.
-- The `v0.2.0` tag and release exist and are described as a bounded local-MVP
-  release, not production-ready software.
-- `docs/releases/v0.2.0.md` records the local-MVP release boundaries.
-- README, PROJECT_STATE, and this milestone file consistently distinguish the
-  existing `v0.1.1` baseline, current `main`, and the `v0.2.0` local-MVP tag.
-- `docs/LONGPLAN_COMPLETION_AUDIT.md` records accurate merged-PR evidence for
-  every fixed-plan task through Phase 8.
-- `docs/LONGPLAN_COMPLETION_AUDIT.md` continues to state that the audit is not
-  a production-ready claim.
-- The audit keeps Phase 5 Task 5.3 as gated and unimplemented unless the
-  maintainer explicitly approves a hosted provider dependency.
-- Workflow docs remain aligned with the maintainer override: no `codex`
-  prefixes for issue titles, branch names, or PR titles by default.
-- Operator notes record repeated local GitHub CLI, proxy, identity, and runtime
-  output pitfalls that can affect future development.
+- MCP is the first-class external-agent machine interface.
+- Skill is an optional operator guide, not a source of truth and not an
+  authority expansion.
+- Hosted model API/provider support is a scheduled capability, implemented
+  through explicit provider-gateway and worker contracts.
+- Local-only execution remains the fallback and CI/testing mode. It is not the
+  permanent product boundary.
+- External agents may act as orchestrators or workers through controlled MCP
+  and service-layer interfaces.
+- The internal orchestrator may call hosted API workers only when policy,
+  configuration, consent, and context-sending rules permit.
+- CLI remains the human and CI oracle.
+- Service-layer functions should become the shared implementation boundary for
+  CLI, MCP, internal orchestrator, and provider-backed workers.
+
+## API And CI Boundary
+
+Real hosted API calls are supported by design as a planned capability, but they
+must not run in CI. CI and default tests must use fake or mocked providers.
+
+Hosted provider behavior must remain:
+
+- default-off;
+- explicit in configuration;
+- explicit about policy scope and consent;
+- unable to read private KB context unless the selected policy allows it;
+- unable to write accepted knowledge;
+- unable to bypass reducer, validation, gates, human review, or promotion;
+- careful not to log API keys, secrets, hidden reasoning, or private context
+  beyond the configured audit boundary.
+
+Missing optional provider credentials or external tools must be reported as
+unavailable or skipped, never as pass.
+
+## Knowledge-Governance Boundary
+
+The agent-access direction does not weaken knowledge governance:
+
+- Worker output may become draft/proposal/bundle/review context only.
+- Accepted knowledge still requires validation, gates, human review where
+  policy requires it, and explicit promotion.
+- AI review is not human review.
+- Validation/gate success is not accepted status.
+- Skipped verifier results are not passes.
+- Public KB accepted artifacts still require complete source metadata and
+  human review.
+- Formal links remain metadata unless a checker actually records a result.
+- A successful Lean `#check` remains symbol/import resolution, not
+  informal/formal semantic alignment.
+
+## Completion Criteria
+
+- `context/CURRENT_MILESTONE.md` no longer says the next focus is only local
+  orchestrator hardening.
+- `docs/ROADMAP.md` schedules API/provider integration as controlled v0.2.1
+  work rather than deferring it indefinitely.
+- `docs/ADR/0015-agent-api-mcp-direction.md` records the direction change.
+- Documentation preserves gate, review, promotion, public/private KB, and
+  skipped-not-pass boundaries.
+- Documentation states that real API calls are supported by design but not used
+  in CI.
 - Required local commands are run and reported honestly.
 
 ## Next Focus
 
-After state consistency is merged, do not start hosted-provider or large agent
-runtime work. The next implementation focus should be a narrow local
-orchestrator hardening task, starting with an audit of the Phase 4.1
-state-model contract against the current code and tests before adding any new
-runtime behavior.
+After this direction rewrite lands, continue with Phase R / Task R.3: install
+`longplan_v3.md` as the current durable repository execution plan. After R.3,
+begin Phase A with an agent-access architecture ADR and threat model before
+implementing service-layer, MCP, or hosted-provider code.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
