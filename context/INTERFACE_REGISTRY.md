@@ -41,6 +41,15 @@
 - `cosheaf ingest convert <path> --out <dir>`: writes staged Markdown and provenance metadata under an explicit repository-local output directory. Accepted KB paths such as `kb/accepted/` or `kb/public/accepted/` are rejected.
 - `cosheaf ingest convert <path> --metadata-json`: emits deterministic conversion provenance JSON to stdout.
 - `cosheaf ingest convert <path> --repo-root <path>`: resolves the source and output paths against an explicit repository root.
+- `cosheaf eval retrieval`: runs the default deterministic retrieval
+  regression suite from `evals/retrieval/cases.yaml`.
+- `cosheaf eval retrieval --repo-root <path>`: runs retrieval evals against an
+  explicit repository root.
+- `cosheaf eval retrieval --cases <path>`: uses an explicit repository-local
+  YAML case file.
+- `cosheaf eval retrieval --k <n>`: sets the top-k cutoff used for `hit@k`;
+  the default is `5`.
+- `cosheaf eval retrieval --json`: emits deterministic JSON report output.
 - `cosheaf graph show`: prints the directed artifact dependency graph.
 - `cosheaf graph show --repo-root <path>`: prints the graph for an explicit repository root.
 - `cosheaf gate`: runs the gatekeeper with default options and writes reports under `.cosheaf/reports/`.
@@ -387,6 +396,26 @@ promotion semantics beyond ordinary gatekeeper blocking behavior.
   failures, such as invalid query text or card-builder errors.
 - `cosheaf.memory.MemoryGraphError`: expected error for memory graph build,
   sidecar read, or PageRank failures.
+
+#### Evaluation Models
+
+- `cosheaf.evals.RetrievalEvalCase`: Pydantic v2 model for one deterministic
+  retrieval regression case with `query`, optional `issue_id`,
+  `expected_relevant_artifacts`, `forbidden_artifacts`, and `allowed_scope`.
+- `cosheaf.evals.RetrievalEvalSuite`: Pydantic v2 model for a YAML suite of
+  retrieval eval cases.
+- `cosheaf.evals.RetrievalEvalMetrics`: frozen dataclass with `hit@k`,
+  `forbidden_hit_count`, `accepted_priority_score`, and
+  `private_leakage_count` output.
+- `cosheaf.evals.RetrievalEvalCaseResult`: frozen dataclass for one scored
+  case, including returned, forbidden, private, and missing expected artifact
+  IDs.
+- `cosheaf.evals.RetrievalEvalReport`: frozen dataclass for aggregate suite
+  output with deterministic `to_dict()` and `to_json()` helpers.
+- `cosheaf.evals.RetrievalEvalError`: expected error for retrieval eval loading
+  or execution failures.
+- `cosheaf.evals.DEFAULT_RETRIEVAL_EVAL_CASES`: default case path
+  `evals/retrieval/cases.yaml`.
 
 All memory models are strict (`extra="forbid"`), frozen, preserve enum values as
 enum instances in Python, and expose:
