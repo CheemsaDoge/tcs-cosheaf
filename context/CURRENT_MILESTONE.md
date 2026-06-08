@@ -119,6 +119,10 @@ The agent-access direction does not weaken knowledge governance:
 - `docs/ROADMAP.md` schedules API/provider integration as controlled v0.2.1
   work rather than deferring it indefinitely.
 - `docs/ADR/0015-agent-api-mcp-direction.md` records the direction change.
+- `docs/CODEX_DEVELOPMENT_PLAN_V3.md` is installed as the current durable
+  execution plan.
+- `docs/CODEX_DEVELOPMENT_PLAN.md` is clearly marked historical and
+  superseded.
 - Documentation preserves gate, review, promotion, public/private KB, and
   skipped-not-pass boundaries.
 - Documentation states that real API calls are supported by design but not used
@@ -127,10 +131,14 @@ The agent-access direction does not weaken knowledge governance:
 
 ## Next Focus
 
-After this direction rewrite lands, continue with Phase R / Task R.3: install
-`longplan_v3.md` as the current durable repository execution plan. After R.3,
-begin Phase A with an agent-access architecture ADR and threat model before
-implementing service-layer, MCP, or hosted-provider code.
+After this execution-plan installation lands, Phase R is complete. Continue
+with Phase A / Task A.1: document the agent-access architecture and threat
+model before implementing service-layer, MCP, or hosted-provider code.
+
+The current durable execution plan is
+[`docs/CODEX_DEVELOPMENT_PLAN_V3.md`](../docs/CODEX_DEVELOPMENT_PLAN_V3.md).
+The older `docs/CODEX_DEVELOPMENT_PLAN.md` file is historical only and must not
+override v3 task order or direction.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

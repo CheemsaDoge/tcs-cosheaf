@@ -1,8 +1,17 @@
-# Codex Development Plan
+# Historical Codex Development Plan
 
-This document is durable repository memory for the next TCS-Cosheaf development
-phases. It summarizes the current longplan in repository-facing terms and must
-be reconciled with `docs/CODEX_STATE_AUDIT.md` before each new phase task.
+This document is historical project memory. It is superseded by
+[`CODEX_DEVELOPMENT_PLAN_V3.md`](CODEX_DEVELOPMENT_PLAN_V3.md), which is the
+current durable Codex execution plan for post-`v0.2.0` work.
+
+Do not use this file to select the next task. It remains in the repository for
+traceability only because it describes earlier local-MVP planning and fixed
+longplan work. If this file conflicts with `CODEX_DEVELOPMENT_PLAN_V3.md`,
+the v3 plan controls.
+
+The historical plan below summarized an earlier longplan in repository-facing
+terms and was reconciled with `docs/CODEX_STATE_AUDIT.md` during the earlier
+local-MVP phases.
 
 Codex conversations are not project memory. If a decision, workflow constraint,
 known limitation, or operator pitfall matters after context compaction, record
