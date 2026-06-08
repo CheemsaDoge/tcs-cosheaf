@@ -6,14 +6,15 @@ constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
 Current status: **v0.2.0 local-MVP release**. The `v0.1.1` tag remains the
-downstream Formal Link Layer support baseline; `v0.2.0` packages the later
-deterministic local workflow on `main` into a pin-able framework version. The
+downstream Formal Link Layer support baseline; the `v0.2.0` tag packages the
+later deterministic local workflow into a pin-able framework version. The
 repository has working Python scaffolding, typed artifact models, filesystem
 loading,
 validation, dependency graph indexing,
 workspace-aware KB root loading, artifact lifecycle CLI commands, gatekeeper
 reports including the G10 Formal Link Gate, ranked context-pack generation with
-compact formal-link display, local task harness stubs, verifier adapters
+compact formal-link display, local task harness and local-only dry-run
+surfaces, verifier adapters
 including a Python checker, a minimal optional SAT DIMACS path, a minimal
 optional SMT-LIB path, a minimal optional plain Lean file path, and an optional
 external Lean library reference `#check` path, GitHub Actions CI, and
@@ -88,8 +89,9 @@ Implemented:
   compact manifest metadata.
 - Context-pack display of formal-link metadata without claiming Lean
   verification or informal/formal alignment.
-- Local task harness stubs with `cosheaf task create`, `cosheaf task list`, and
-  `cosheaf task complete`.
+- Local task harness and local-only orchestrator dry-run surfaces with
+  `cosheaf task ...`, `cosheaf orchestrator plan`, and
+  `cosheaf orchestrator run --dry-run --local-only`.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
   DIMACS adapter, minimal optional SMT-LIB adapter, minimal optional Lean
   plain-file adapter, and optional external Lean library reference checker.
@@ -126,10 +128,12 @@ working directories, timeout metadata, stdout, stderr, and return-code records.
 Workers can return structured output bundles that the existing contract
 validates for review.
 
-The current orchestrator is a local filesystem stub. It does not call hosted
-LLMs or model providers, does not run network services, does not merge worker
-outputs, and does not promote accepted knowledge. Accepted knowledge still
-enters through review, gates, and `cosheaf artifact promote`.
+The current orchestrator surface is local-only and deterministic. It can plan
+and run a bounded dry-run workflow with fake local workers, but it is not a
+hosted agent runtime. It does not call hosted LLMs or model providers, does not
+run network services, does not merge worker outputs, and does not promote
+accepted knowledge. Accepted knowledge still enters through review, gates, and
+`cosheaf artifact promote`.
 
 ## Core Concepts
 

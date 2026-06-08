@@ -1,12 +1,12 @@
 # Three-Repository Release Checklist
 
-This checklist is for release-hardening the TCS-Cosheaf ecosystem for the
-`v0.2.0` local-MVP release candidate after the `v0.1.1` Formal Link Layer
-support baseline. It is an operator checklist for the framework package, public
-KB, and workspace template together. It is not a production-readiness claim.
+This checklist is for post-release smoke and showcase checks for the
+`v0.2.0` local-MVP release after the `v0.1.1` Formal Link Layer support
+baseline. It is an operator checklist for the framework package, public KB,
+and workspace template together. It is not a production-readiness claim.
 
 `v0.1.1` remains the downstream tag baseline for formal-link metadata.
-`v0.2.0` packages the later deterministic local workflow on current `main`,
+`v0.2.0` packages the later deterministic local workflow,
 including the optional external Lean library reference adapter. Do not assume a
 downstream pin to `@v0.1.1` includes `v0.2.0` features.
 
@@ -15,11 +15,10 @@ downstream pin to `@v0.1.1` includes `v0.2.0` features.
 - Framework repository: `tcs-cosheaf`.
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
-- Current framework package metadata version on this release-candidate branch:
-  `0.2.0`.
+- Current framework package metadata version on the release tag: `0.2.0`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
-- Intended downstream dependency for local-MVP workflows after the tag is cut:
+- Intended downstream dependency for local-MVP workflows:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.0`.
 
 ## Framework Checklist
@@ -28,11 +27,11 @@ downstream pin to `@v0.1.1` includes `v0.2.0` features.
 
 - [x] `pyproject.toml` records package version `0.2.0`.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
-- [ ] Remote tag `v0.2.0` points to a reviewed merge commit on the protected
+- [x] Remote tag `v0.2.0` points to a reviewed merge commit on the protected
   default branch.
-- [ ] Downstream repositories pin to an explicit release tag rather than
+- [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
-- [ ] Downstream workspace-template verification installs/pins `@v0.2.0`
+- [x] Downstream workspace-template verification installs/pins `@v0.2.0`
   before relying on local-MVP surfaces.
 
 ### License
