@@ -41,6 +41,13 @@ from cosheaf.core.status import (
     expected_status_for_path,
     is_preaccepted_status,
 )
+from cosheaf.evals import (
+    DEFAULT_RETRIEVAL_EVAL_CASES,
+    RetrievalEvalError,
+    load_retrieval_eval_suite,
+    resolve_retrieval_eval_case_path,
+    run_retrieval_eval_suite,
+)
 from cosheaf.gates.gatekeeper import (
     GatekeeperRunResult,
     ValidationReport,
@@ -118,6 +125,11 @@ ingest_app = typer.Typer(
     help="Source ingestion commands.",
     no_args_is_help=True,
 )
+eval_app = typer.Typer(
+    add_completion=False,
+    help="Deterministic local evaluation commands.",
+    no_args_is_help=True,
+)
 memory_app = typer.Typer(
     add_completion=False,
     help="Deterministic memory/card commands.",
@@ -137,6 +149,7 @@ app.add_typer(task_app, name="task")
 app.add_typer(orchestrator_app, name="orchestrator")
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(ingest_app, name="ingest")
+app.add_typer(eval_app, name="eval")
 app.add_typer(memory_app, name="memory")
 memory_app.add_typer(memory_graph_app, name="graph")
 
@@ -746,6 +759,66 @@ def memory_search(
             )
             for reason in hit.why_relevant:
                 console.print(f"  why: {reason}")
+
+
+@eval_app.command("retrieval")
+def eval_retrieval(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    cases: Path = typer.Option(
+        DEFAULT_RETRIEVAL_EVAL_CASES,
+        "--cases",
+        help="Repository-local YAML retrieval eval case file.",
+    ),
+    k: int = typer.Option(
+        5,
+        "--k",
+        min=1,
+        help="Top-k cutoff used for hit@k.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text summary.",
+    ),
+) -> None:
+    """Run deterministic retrieval regression cases."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        case_path = resolve_retrieval_eval_case_path(context, cases)
+        suite = load_retrieval_eval_suite(case_path)
+        report = run_retrieval_eval_suite(context, suite, k=k)
+    except RetrievalEvalError as exc:
+        console.print(f"Retrieval eval failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(report.to_json(), nl=False)
+        return
+
+    verdict = "pass" if report.passed else "fail"
+    console.print(f"Retrieval eval verdict: {verdict}")
+    console.print(f"- cases: {report.case_count}")
+    console.print(f"- hit@{k}: {report.metrics.hit_at_k:.6f}")
+    console.print(f"- forbidden_hit_count: {report.metrics.forbidden_hit_count}")
+    console.print(
+        f"- accepted_priority_score: {report.metrics.accepted_priority_score:.6f}"
+    )
+    console.print(f"- private_leakage_count: {report.metrics.private_leakage_count}")
+    for case in report.cases:
+        console.print(
+            f"- {case.id}: hit@{k}={case.hit_at_k:.6f} "
+            f"forbidden={case.forbidden_hit_count} "
+            f"private_leakage={case.private_leakage_count} "
+            f"returned={','.join(case.returned_artifacts) or '-'}"
+        )
+
+    if not report.passed:
+        raise typer.Exit(code=1)
 
 
 @memory_graph_app.command("build")

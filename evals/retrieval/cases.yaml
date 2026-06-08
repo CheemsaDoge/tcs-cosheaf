@@ -1,0 +1,11 @@
+schema_version: 1
+cases:
+  - id: case.retrieval.graph-toy
+    query: toy five cycle graph
+    issue_id: issue.graph-toy-search.0001
+    expected_relevant_artifacts:
+      - construction.graph-toy.0001
+    forbidden_artifacts:
+      - construction.sat-smt-gadget.0001
+    allowed_scope:
+      - workspace
