@@ -226,3 +226,14 @@ def test_models_reject_accepted_output_paths() -> None:
             summary="This would bypass promotion policy.",
             output_paths=["kb/accepted/claims/claim.graph.demo.yaml"],
         )
+
+
+def test_models_reject_nested_parent_directory_traversal() -> None:
+    with pytest.raises(ValidationError, match="repository-local"):
+        WorkerCall(
+            call_id="call.issue.graph.demo.reasoner",
+            task_node_id="node.plan.graph",
+            worker_type=WorkerType.REASONER,
+            status="pending",
+            cwd="logs/../../outside",
+        )
