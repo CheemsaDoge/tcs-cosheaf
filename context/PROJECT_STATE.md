@@ -17,7 +17,7 @@ updated as part of the same documentation-only task.
 
 ## Current State After v0.1.1 Formal Link Layer Support
 
-TCS-Cosheaf is in v0.1.1 Formal Link Layer support / pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata and formalization-link metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds including formal-link metadata, a read-only SQLite query API over rebuilt index output including formalization queries, gatekeeper report generation including G10 Formal Link Gate output, ranked issue-scoped context pack generation including compact formal-link display, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, plain Lean, and external Lean library reference verifier adapters, two draft pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
+TCS-Cosheaf is in v0.1.1 Formal Link Layer support / pre-MVP scaffold state. The repository contains project governance documentation, a short README, a Python-oriented `.gitignore`, the durable documentation skeleton, the minimal Python project scaffold, the initial repository directory layout, initial JSON Schema files, example YAML artifacts, initial Pydantic v2 core artifact models including structured source metadata and formalization-link metadata, filesystem-backed storage loading utilities, optional workspace configuration, workspace-aware validation gates including accepted public source metadata enforcement, artifact lifecycle CLI commands including controlled accepted-artifact promotion, an artifact dependency graph, deterministic repository index rebuilds including formal-link metadata, a read-only SQLite query API over rebuilt index output including formalization queries, gatekeeper report generation including G10 Formal Link Gate output, ranked issue-scoped context pack generation with compact formal-link display, local agent task records, a worker output bundle contract, an orchestrator stub, a local worker command runner, the initial verifier adapter interface, a Python checker verifier adapter, minimal optional SAT DIMACS, SMT-LIB, plain Lean, and external Lean library reference verifier adapters, graph/SAT/formal-link pilot workflows, GitHub Actions CI, and GitHub collaboration templates.
 
 Issue 61 prepares the `v0.1.1` release after Formal Link Layer metadata, G10
 static metadata validation, context-pack display, deterministic
@@ -315,6 +315,14 @@ a fake CSLib `lean4` symbol reference, requested alignment review, and
 `source_reviewed_with_formal_link` verification policy without requiring Lean,
 CSLib, mathlib, lake, or network access.
 
+The Lean core formal-link pilot
+`examples/claims/claim.lean-core-formal-link-pilot.yaml` records a draft
+`linked` formalization reference for `import Init` and `#check Nat`. The pilot
+is not accepted knowledge, keeps `require_lean_check: false`, and keeps
+alignment in `requested` state. If local Lean is unavailable, the optional
+`lean_library_ref` verifier remains `skipped`, not `pass`; if Lean is
+available, a pass means only that the import and symbol resolved.
+
 GitHub issue templates now cover feature tasks, bug tasks, and research issues.
 The pull request template requires summary, changed files, tests run, risks,
 interface changes, documentation changes, artifact/schema changes, and the
@@ -374,6 +382,8 @@ gatekeeper result.
   `docs/ADR/0007-formal-link-surface-query.md`.
 - Formal-link example artifact in
   `examples/claims/claim.formal-link.example.yaml`.
+- Lean core formal-link pilot example in
+  `examples/claims/claim.lean-core-formal-link-pilot.yaml`.
 - Artifact status/path helper functions that do not scan the repository.
 - Model tests in `tests/test_artifact_models.py`.
 - Repository path helpers in `cosheaf/core/paths.py`.

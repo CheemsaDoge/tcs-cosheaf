@@ -127,12 +127,35 @@ cosheaf validate
 Do not claim the original `cosheaf ...` command passed if it first failed due
 to PATH. Report both the initial failure and the verified rerun.
 
-## Windows `make` Fallback
+## Windows `make` Lookup
 
-In this Windows environment, the literal `make` command may be unavailable even
-when repository checks can be run through MinGW Make. If a required command says
-`make lint`, first run the literal command when the PR checklist requires it.
-If it fails because `make` is missing, report that exact failure and then use
+In this Windows environment, `D:\Code\mingw64\bin` is on `PATH` and contains
+`mingw32-make.exe`. A local hardlink has been added in that directory so the
+literal `make` command resolves directly to MinGW Make without going through
+PowerShell or `cmd.exe` script wrappers:
+
+```text
+D:\Code\mingw64\bin\make.exe -> D:\Code\mingw64\bin\mingw32-make.exe
+```
+
+Before falling back manually, check the current command lookup:
+
+```powershell
+Get-Command make -All
+make --version
+```
+
+If this executable is present, run the required literal commands normally:
+
+```powershell
+make lint
+make typecheck
+make test
+make validate
+make gate
+```
+
+If `make` is missing in a future session, report that exact failure and then use
 the repository-supported fallback where available:
 
 ```powershell
@@ -143,8 +166,9 @@ mingw32-make validate
 mingw32-make gate
 ```
 
-Do not describe `mingw32-make` as if it were the literal `make` command. PR
-summaries should distinguish the unavailable command from the successful
+Do not describe `mingw32-make` as if it were the literal `make` command unless
+`Get-Command make` shows that the `make.exe` hardlink is what actually ran. PR
+summaries should distinguish an unavailable literal command from any successful
 fallback.
 
 ## Runtime Outputs

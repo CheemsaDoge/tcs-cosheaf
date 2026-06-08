@@ -182,6 +182,25 @@ artifacts require Lean in CI. Under the current one-result verifier adapter
 contract, one `verify(...)` call checks the first applicable formalization for
 an artifact.
 
+## Lean Core Pilot
+
+`examples/claims/claim.lean-core-formal-link-pilot.yaml` is the minimal
+framework pilot for this workflow. It is a draft example, not accepted
+knowledge. The formalization link uses:
+
+```lean
+import Init
+#check Nat
+```
+
+The linked formalization stays `status: linked` and
+`verification_policy.require_lean_check: false`, so missing Lean remains a
+skipped optional verifier result, not a failed required proof. If a local Lean
+installation is available, the optional `lean_library_ref` verifier can check
+that `Init` and `Nat` resolve. That result still does not prove semantic
+alignment, does not set `alignment.status: human_reviewed`, and does not
+promote the artifact.
+
 ## G10 Formal Link Gate
 
 G10 is a metadata and verifier-result consistency gate over `formalizations`,

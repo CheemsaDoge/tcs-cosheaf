@@ -99,6 +99,9 @@ Implemented:
   Python checker.
 - Second SAT/CNF pilot workflow with optional SAT evidence, a known satisfying
   assignment, and a Python fallback checker.
+- Lean core formal-link pilot with draft metadata for `import Init` / `#check
+  Nat`; missing Lean remains `skipped`, and the pilot does not claim alignment
+  or accepted knowledge.
 - GitHub Actions CI with separate `lint`, `typecheck`, `test`, `validate`, and
   `gate` checks.
 

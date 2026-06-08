@@ -51,6 +51,7 @@ EXAMPLE_FILES = [
     "examples/claims/claim.example.yaml",
     "examples/claims/claim.agent-dry-run.demo.yaml",
     "examples/claims/claim.formal-link.example.yaml",
+    "examples/claims/claim.lean-core-formal-link-pilot.yaml",
     "examples/proofs/proof.example.yaml",
     "examples/constructions/graph.example.yaml",
     "examples/constructions/graph.toy.yaml",
@@ -209,6 +210,31 @@ def test_formal_link_example_uses_planned_fake_cslib_reference() -> None:
     assert formalization["status"] == "planned"
     assert formalization["check_mode"] == "external_library_ref"
     assert "Illustrative CSLib symbol only" in formalization["notes"]
+
+
+def test_lean_core_formal_link_pilot_is_linked_but_not_checked() -> None:
+    example = _read_yaml(
+        ROOT / "examples/claims/claim.lean-core-formal-link-pilot.yaml"
+    )
+
+    assert example["status"] == "draft"
+    assert example["evidence"] == []
+    assert example["alignment"]["status"] == "requested"
+    assert example["alignment"]["reviewer"] == ""
+    assert example["verification_policy"]["require_formal_link"] is True
+    assert example["verification_policy"]["require_lean_check"] is False
+    assert example["verification_policy"]["require_alignment_review"] is False
+    assert example["review"]["state"] == "requested"
+
+    formalization = example["formalizations"][0]
+    assert formalization["system"] == "lean4"
+    assert formalization["library"] == "Lean core"
+    assert formalization["library_ref"] == "lean-core"
+    assert formalization["import_path"] == "Init"
+    assert formalization["symbol"] == "Nat"
+    assert formalization["status"] == "linked"
+    assert formalization["check_mode"] == "external_library_ref"
+    assert "does not prove semantic alignment" in formalization["notes"]
 
 
 def test_worker_bundle_v2_schema_is_strict() -> None:
