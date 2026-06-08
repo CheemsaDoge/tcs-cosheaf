@@ -193,6 +193,8 @@ Decision: allow only isolated manual onboarding and architecture visualization.
 It must not be integrated into runtime, default CI, package dependencies,
 retrieval, `.cosheaf/memory`, or KB truth paths.
 
+Manual usage guidance is documented in [Developer Tooling](DEV_TOOLING.md).
+
 Allowed future surfaces:
 
 - Manual onboarding notes for sanitized public-only clones.
