@@ -1,5 +1,3 @@
-[中文版](ROADMAP.zh-CN.md) | [English](ROADMAP.md)
-
 # Roadmap
 
 TCS-Cosheaf is preparing a v0.1.1 Formal Link Layer support release while

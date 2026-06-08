@@ -1,5 +1,3 @@
-[中文版](ARCHITECTURE.zh-CN.md) | [English](ARCHITECTURE.md)
-
 # Architecture
 
 ## Overview

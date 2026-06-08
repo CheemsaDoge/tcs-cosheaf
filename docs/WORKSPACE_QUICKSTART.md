@@ -1,5 +1,3 @@
-[中文版](WORKSPACE_QUICKSTART.zh-CN.md) | [English](WORKSPACE_QUICKSTART.md)
-
 # Workspace Quickstart
 
 This guide shows the recommended end-to-end workspace shape for using the

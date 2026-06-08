@@ -1,5 +1,3 @@
-[中文版](CODEX_WORKFLOW.zh-CN.md) | [English](CODEX_WORKFLOW.md)
-
 # Codex Workflow
 
 ## Repository Memory
