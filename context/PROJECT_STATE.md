@@ -1,5 +1,20 @@
 # Project State
 
+## v0.2.0 Closeout Hygiene - 2026-06-08
+
+Issue 151 aligns repository-facing status language after the fixed longplan
+completion audit. The durable state now distinguishes three separate concepts:
+the existing `v0.1.1` release tag, the current hardened `main` branch, and the
+proposed future `v0.2.0` local-MVP scope. `v0.2.0` is not yet a release tag and
+does not imply production readiness.
+
+This is documentation-only cleanup. It does not change code, schemas, gates,
+verifier adapters, accepted-promotion policy, public KB artifacts,
+workspace-template behavior, or runtime dependencies. The longplan completion
+audit remains conservative: it is documentation and code-surface evidence, not
+a production-ready claim. Phase 5 Task 5.3 remains gated until the maintainer
+explicitly approves a hosted provider dependency.
+
 ## Longplan Completion Audit - 2026-06-08
 
 Issue 145 adds `docs/LONGPLAN_COMPLETION_AUDIT.md`, a requirement-by-requirement

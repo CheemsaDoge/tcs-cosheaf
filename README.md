@@ -5,11 +5,12 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **post-v0.1.1 release-hardening / pre-MVP scaffold**. The
-`v0.1.1` tag is the downstream Formal Link Layer support baseline. The current
-`main` branch has additional hardening work while the Python package metadata
-still records version `0.1.1` until the next release tag is cut. The repository
-has working Python scaffolding, typed artifact models, filesystem loading,
+Current status: **post-v0.1.1 main hardening with a proposed v0.2.0 local-MVP
+scope**. The `v0.1.1` tag remains the downstream Formal Link Layer support
+baseline. The current `main` branch includes later longplan hardening and
+completion-audit docs, while the Python package metadata still records version
+`0.1.1` until a future release tag is intentionally cut. The repository has
+working Python scaffolding, typed artifact models, filesystem loading,
 validation, dependency graph indexing,
 workspace-aware KB root loading, artifact lifecycle CLI commands, gatekeeper
 reports including the G10 Formal Link Gate, ranked context-pack generation with
@@ -17,9 +18,9 @@ compact formal-link display, local task harness stubs, verifier adapters
 including a Python checker, a minimal optional SAT DIMACS path, a minimal
 optional SMT-LIB path, a minimal optional plain Lean file path, and an optional
 external Lean library reference `#check` path, GitHub Actions CI, and
-collaboration templates. It is not production software and does not yet provide
-a web UI, automatic theorem proving, full Lean autoformalization, or multi-user
-permissions.
+collaboration templates. It is not production-ready software and does not yet
+provide a web UI, automatic theorem proving, full Lean autoformalization,
+hosted LLM execution, automatic accepted promotion, or multi-user permissions.
 
 ## Problem
 
