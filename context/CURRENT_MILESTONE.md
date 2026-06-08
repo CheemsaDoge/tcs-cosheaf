@@ -2,15 +2,15 @@
 
 ## Milestone
 
-Phase 8 Task 8.4: v0.2.0 milestone proposal.
+Longplan completion audit closeout.
 
 ## Goal
 
-Close Phase 8 hardening by proposing the next bounded milestone after the
-current pre-MVP scaffold. This task is documentation-only and must not change
-framework behavior, artifact schema, gate semantics, verifier adapters,
-accepted-promotion policy, public KB content, workspace-template behavior, or
-runtime dependencies.
+Keep the fixed longplan completion audit accurate after Phase 8 hardening and
+the v0.2.0 milestone proposal have landed. This closeout is
+documentation-only and must not change framework behavior, artifact schema,
+gate semantics, verifier adapters, accepted-promotion policy, public KB
+content, workspace-template behavior, or runtime dependencies.
 
 ## Current Baseline
 
@@ -85,18 +85,23 @@ Explicit non-goals:
 
 ## Completion Criteria
 
-- `docs/ROADMAP.md` records the concrete `v0.2.0` proposal.
-- `docs/ADR/0014-v020-scope.md` records the milestone-scope decision.
-- This milestone file no longer points at completed Phase 8 Task 8.1 work.
-- The proposal remains conservative about hosted LLMs, Lean, CSLib, mathlib,
-  review, gates, and promotion.
+- `docs/LONGPLAN_COMPLETION_AUDIT.md` records accurate merged-PR evidence for
+  every fixed-plan task through Phase 8.
+- The audit keeps Phase 5 Task 5.3 as gated and unimplemented unless the
+  maintainer explicitly approves a hosted provider dependency.
+- Workflow docs remain aligned with the maintainer override: no `codex`
+  prefixes for issue titles, branch names, or PR titles by default.
+- Operator notes record repeated local GitHub CLI, proxy, identity, and runtime
+  output pitfalls that can affect future development.
 - Required local commands are run and reported honestly.
 
 ## Next Focus
 
-After Phase 8 Task 8.4 lands, continue from the next unfinished item in
-`longplan_fixed.md` or run a requirement-by-requirement audit before declaring
-the documentation update and code audit objective complete.
+After this closeout lands and verification passes, the fixed longplan objective
+can be treated as complete except for the explicitly gated Phase 5 Task 5.3.
+Future work should proceed from the bounded v0.2.0 proposal, or from a separate
+maintainer-approved hosted-provider issue if Phase 5 Task 5.3 is later
+unblocked.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
