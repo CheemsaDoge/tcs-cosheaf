@@ -39,6 +39,9 @@ codegraph*.db
 .cosheaf/dev/headroom/
 headroom*.json
 
+# Optional developer-only Understand-Anything outputs
+.understand-anything/
+
 # OS metadata
 .DS_Store
 Thumbs.db

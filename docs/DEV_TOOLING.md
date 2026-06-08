@@ -83,3 +83,51 @@ are `.headroom/` and `.cosheaf/dev/headroom/`, both of which are gitignored.
 Do not commit compressed summaries, learned state, caches, or experiment
 metadata unless a later focused policy explicitly makes a particular artifact
 reviewable.
+
+## Understand-Anything
+
+Understand-Anything may be used only as an isolated manual onboarding aid for
+developers who want a visual map of the framework code or public documentation.
+It is not a runtime dependency, package dependency, validation input, gate
+input, retrieval index, memory sidecar, verifier result, review record, or
+accepted-knowledge source.
+
+Use it only on sanitized local copies. If a checkout may contain private KB
+records, unpublished research, local paths, secrets, or sensitive `.cosheaf/`
+runtime output, first create a scrubbed copy that excludes those paths. A safe
+manual workflow is:
+
+```bash
+git clone https://github.com/CheemsaDoge/tcs-cosheaf.git tcs-cosheaf-ua-sanitized
+cd tcs-cosheaf-ua-sanitized
+git clean -xdf
+```
+
+Then run Understand-Anything according to its own local documentation from that
+sanitized copy. Keep any dashboard bound to `127.0.0.1` or another local-only
+interface. Do not expose the dashboard on a public network, and do not upload
+private KB files, unpublished source notes, generated context packs, run logs,
+or machine-specific paths.
+
+Generated Understand-Anything output must remain sidecar/cache only. The
+expected local output path is `.understand-anything/`, which is gitignored. Do
+not commit generated graphs, dashboards, indexes, summaries, or caches, and do
+not copy them into `.cosheaf/memory/`, artifact YAML, review records, verifier
+evidence, source notes, or accepted KB paths.
+
+Manual teardown after inspection:
+
+```bash
+rm -rf .understand-anything/
+git status --short
+```
+
+On Windows PowerShell:
+
+```powershell
+Remove-Item -Recurse -Force .understand-anything -ErrorAction SilentlyContinue
+git status --short
+```
+
+If Understand-Anything is unavailable, no project workflow is affected. Use the
+normal repository docs and full verification ladder instead.
