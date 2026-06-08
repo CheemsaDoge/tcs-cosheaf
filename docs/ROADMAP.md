@@ -97,14 +97,35 @@ Near-term public KB work should remain:
 
 ### v0.2.0 Proposal
 
-`v0.2.0` should be proposed as a bounded milestone after Phase 8 hardening. The
-candidate scope should emphasize:
+`v0.2.0` is proposed as a bounded milestone after Phase 8 hardening. It should
+turn the existing local, deterministic surfaces into a coherent MVP without
+changing the knowledge-governance boundary. The proposed scope is:
 
-- Librarian v1 usability and evaluation.
-- Local orchestrator ergonomics without hosted LLM defaults.
-- Source/review workflow hardening.
-- More useful formal-link/reference-check workflows without claiming semantic
-  proof.
+- Librarian v1: deterministic artifact-card retrieval, public/private
+  filtering, audit records, and clear CLI/docs for issue-scoped context
+  assembly.
+- Context pack v2: bounded, card-first context packs with explicit
+  full-artifact pull budgets and policy-safe public-only behavior.
+- Local orchestrator state machine: replayable issue-scoped plans, task DAGs,
+  reducers, and local dry-run ergonomics without hosted LLM defaults.
+- Fake provider model interface: deterministic provider-neutral tests and
+  capability negotiation before any hosted provider is considered.
+- Retrieval evaluation harness: regression metrics for relevance, forbidden
+  hits, private leakage, and accepted-priority behavior.
+- Optional external Lean `#check` ergonomics only if the current checker remains
+  stable and optional. A passing `#check` remains symbol/import resolution, not
+  informal/formal alignment.
+
+Out of scope for `v0.2.0`:
+
+- Production hosted multi-agent runtime.
+- Automatic theorem proving.
+- Automatic accepted-artifact promotion.
+- Web UI.
+- Multi-user authentication or permissions.
+- Full CSLib/mathlib ingestion, vendoring, or semantic-alignment automation.
+
+ADR 0014 records this scope decision.
 
 ### Verification Depth
 

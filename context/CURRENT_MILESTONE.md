@@ -2,16 +2,15 @@
 
 ## Milestone
 
-Phase 8 Task 8.1: three-repository release checklist and stale-docs cleanup.
+Phase 8 Task 8.4: v0.2.0 milestone proposal.
 
 ## Goal
 
-Close the current framework documentation gap before showcase work by making
-the release checklist, roadmap, project state, and milestone docs match the
-actual three-repository implementation. This task is documentation-only and
-must not change framework behavior, artifact schema, gate semantics, verifier
-adapters, accepted-promotion policy, public KB content, or workspace-template
-behavior.
+Close Phase 8 hardening by proposing the next bounded milestone after the
+current pre-MVP scaffold. This task is documentation-only and must not change
+framework behavior, artifact schema, gate semantics, verifier adapters,
+accepted-promotion policy, public KB content, workspace-template behavior, or
+runtime dependencies.
 
 ## Current Baseline
 
@@ -27,8 +26,8 @@ behavior.
 - `tcs-cosheaf-workspace-template` is the user-facing entry point with readonly
   public KB plus writable private KB overlay.
 - Workspace-template productization is complete for the current scope: demo,
-  Makefile shortcuts, public KB bootstrap guidance, onboarding docs, and CI
-  smoke coverage have landed.
+  Makefile shortcuts, public KB bootstrap guidance, onboarding docs, showcase
+  docs, and CI smoke coverage have landed.
 - Public KB policy-first work is in place: contribution/review guidance,
   graph-foundation backlog, source-note convention, and policy CI guard exist.
 - MarkItDown local source ingestion exists only as an optional staging adapter.
@@ -43,9 +42,9 @@ behavior.
   LLM execution.
 - The provider-neutral model interface exists with deterministic fake-provider
   tests. Hosted provider integration is not enabled as a default runtime path.
-- Headroom and CodeGraph are documented as optional developer or experiment
-  surfaces only; they do not alter artifact truth, retrieval truth, gate input,
-  verifier input, review, or promotion.
+- Headroom, CodeGraph, and Understand-Anything are documented as optional
+  developer or experiment surfaces only; they do not alter artifact truth,
+  retrieval truth, gate input, verifier input, review, or promotion.
 - Formal-link metadata, formal library manifest schema, G10 hardening, and a
   draft formal-link pilot are in place.
 - Optional external Lean-library `#check` support is implemented on current
@@ -59,25 +58,45 @@ behavior.
   log export scaffolding are implemented. Telemetry is optional and disabled
   unless configured.
 
+## Proposed v0.2.0 Scope
+
+`v0.2.0` should be a bounded local-MVP milestone. It should package and polish
+the existing deterministic workflow rather than introduce a production agent
+platform.
+
+Included scope:
+
+- Librarian v1 usability and evaluation.
+- Context pack v2 as the default card-first context handoff.
+- Local orchestrator state machine and local-only dry-run ergonomics.
+- Fake provider model interface for deterministic provider-neutral tests.
+- Retrieval evaluation harness and regression metrics.
+- Optional external Lean `#check` ergonomics only if the current checker remains
+  stable, optional, and honest about its narrow meaning.
+
+Explicit non-goals:
+
+- Production hosted multi-agent system.
+- Automatic theorem proving.
+- Automatic accepted promotion.
+- Web UI.
+- Multi-user authentication or permissions.
+- Full CSLib/mathlib ingestion, vendoring, or semantic-alignment automation.
+
 ## Completion Criteria
 
-- `RELEASE_CHECKLIST.md` is actionable for the three-repository release/demo
-  workflow.
-- Stale claims that external Lean-library reference checking is only future
-  work are removed from current-state docs.
-- `context/CURRENT_MILESTONE.md` no longer points to Phase 6 Task 6.4 as the
-  active milestone.
-- `docs/ROADMAP.md` describes the current Phase 8 release-hardening/showcase
-  focus and keeps non-goals explicit.
-- `context/PROJECT_STATE.md` records that Phase 8 Task 8.1 corrected stale
-  release/milestone docs.
+- `docs/ROADMAP.md` records the concrete `v0.2.0` proposal.
+- `docs/ADR/0014-v020-scope.md` records the milestone-scope decision.
+- This milestone file no longer points at completed Phase 8 Task 8.1 work.
+- The proposal remains conservative about hosted LLMs, Lean, CSLib, mathlib,
+  review, gates, and promotion.
 - Required local commands are run and reported honestly.
 
 ## Next Focus
 
-After Phase 8 Task 8.1 lands, the next fixed-plan item is Phase 8 Task 8.2:
-showcase demo docs. Start in `tcs-cosheaf-workspace-template` first, then make
-framework documentation updates only if needed.
+After Phase 8 Task 8.4 lands, continue from the next unfinished item in
+`longplan_fixed.md` or run a requirement-by-requirement audit before declaring
+the documentation update and code audit objective complete.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
