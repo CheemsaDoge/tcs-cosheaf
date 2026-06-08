@@ -243,7 +243,9 @@ issue-scoped local task records for the planned nodes, runs deterministic
 repository-local worker commands with `shell=False`, validates worker bundle v2
 manifests, reduces them into `ReducerResult` records, and writes an inspectable
 run record under `.cosheaf/orchestrator/<issue-id>/runs/<run-id>/run.yaml`.
-This is still a dry-run workflow: it does not call hosted LLMs, make network
+It also writes a sanitized structured `run_log.json` for local observability;
+see [Observability](OBSERVABILITY.md). This is still a dry-run workflow: it
+does not call hosted LLMs, make network
 calls, run gates, request human review, merge outputs, write accepted
 knowledge, or promote artifacts.
 

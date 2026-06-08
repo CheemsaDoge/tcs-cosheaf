@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -109,6 +111,39 @@ def test_orchestrator_run_dry_run_local_only_executes_plan_and_records_logs(
     assert len(record["reducer_results"]) == 4
     assert not (tmp_path / "kb" / "accepted").exists()
 
+    log_path = run_root / "run_log.json"
+    assert log_path.is_file()
+    log = json.loads(log_path.read_text(encoding="utf-8"))
+    assert log["schema_version"] == 1
+    assert log["run_id"] == "run.issue.fixture.orchestrator-run"
+    assert log["issue_id"] == "issue.fixture.orchestrator-run"
+    assert log["plan_id"] == "plan.issue.fixture.orchestrator-run"
+    assert len(log["task_ids"]) == 4
+    assert log["task_ids"][0] == (
+        "task.node.issue.fixture.orchestrator-run.librarian-retrieval"
+    )
+    assert log["worker_roles"] == [
+        "orchestrator",
+        "reasoner",
+        "verifier",
+        "orchestrator",
+    ]
+    assert log["retrieved_artifacts"] == ["claim.fixture.orchestrator-run"]
+    assert log["full_artifact_pulls"] == []
+    assert log["verifier_results"] == []
+    assert log["gate_results"] == []
+    assert len(log["output_bundle_paths"]) == 4
+    start_time = datetime.fromisoformat(log["start_time"].replace("Z", "+00:00"))
+    end_time = datetime.fromisoformat(log["end_time"].replace("Z", "+00:00"))
+    assert end_time >= start_time
+    assert log["status"] == "completed"
+    assert log["stop_reason"] == "completed"
+    assert "command" in log["worker_calls"][0]
+    assert "stdout" not in json.dumps(log).lower()
+    assert "stderr" not in json.dumps(log).lower()
+    assert "chain" not in json.dumps(log).lower()
+    assert "reasoning" not in json.dumps(log).lower()
+
     for call in record["worker_calls"]:
         assert call["status"] == "completed"
         assert call["command"][0] == sys.executable
@@ -156,6 +191,58 @@ def test_orchestrator_run_timeout_exits_nonzero_and_records_failed_run(
     assert record["state"] == "failed"
     assert record["worker_calls"][0]["status"] == "timed_out"
     assert record["worker_calls"][0]["exit_code"] is None
+    run_log = json.loads(
+        (
+            tmp_path
+            / ".cosheaf"
+            / "orchestrator"
+            / "issue.fixture.orchestrator-run"
+            / "runs"
+            / "run.issue.fixture.orchestrator-run"
+            / "run_log.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert run_log["status"] == "failed"
+    assert run_log["stop_reason"] == "worker_failed"
+
+
+def test_orchestrator_structured_log_redacts_secrets(
+    tmp_path: Path,
+) -> None:
+    _write_repo(tmp_path)
+
+    result = OrchestratorLocalRunner(RepoContext(tmp_path)).run_issue(
+        OrchestratorLocalRunConfig(
+            issue_id="issue.fixture.orchestrator-run",
+            worker_command=[
+                sys.executable,
+                "-c",
+                "print('ok')",
+                "--api-key",
+                "sk-secret-value",
+                "--token=ghp_secret_value",
+                "password=hunter2",
+            ],
+        )
+    )
+
+    log_path = result.run_root / "run_log.json"
+    log_text = log_path.read_text(encoding="utf-8")
+    log = json.loads(log_text)
+
+    assert "sk-secret-value" not in log_text
+    assert "ghp_secret_value" not in log_text
+    assert "hunter2" not in log_text
+    assert "<redacted>" in log_text
+    assert log["worker_calls"][0]["command"] == [
+        sys.executable,
+        "-c",
+        "print('ok')",
+        "--api-key",
+        "<redacted>",
+        "--token=<redacted>",
+        "password=<redacted>",
+    ]
 
 
 def test_orchestrator_run_can_repeat_issue_with_distinct_run_ids(
