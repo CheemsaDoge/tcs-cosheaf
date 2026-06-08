@@ -154,6 +154,44 @@ Do not assume the outer `H:\ai4tcs` directory is a repository. It is the
 container for multiple repository worktrees. Run repository commands from the
 specific checkout or worktree path.
 
+## Git Index Lock Contention
+
+Do not run Git index-writing commands in parallel with other Git commands in
+the same checkout. Commands such as `git add`, `git commit`, `git merge`,
+`git switch`, `git branch -D`, and `git reset` can contend for `.git/index.lock`
+when another Git command is reading or writing repository state. Keep these
+operations serial.
+
+If Git reports:
+
+```text
+fatal: Unable to create '<repo>/.git/index.lock': File exists.
+```
+
+first check whether a Git process is still running:
+
+```powershell
+Get-Process | Where-Object {
+  $_.ProcessName -eq 'git' -or $_.ProcessName -eq 'git-remote-https'
+}
+Get-CimInstance Win32_Process |
+  Where-Object { $_.Name -like 'git*.exe' } |
+  Select-Object ProcessId,Name,CommandLine
+```
+
+If a Git process is still running, wait for it or investigate that process
+instead of deleting the lock. If no Git process remains and the lock file still
+exists, inspect the lock path and remove only that stale lock file:
+
+```powershell
+Get-Item -LiteralPath '<repo>\.git\index.lock'
+Remove-Item -LiteralPath '<repo>\.git\index.lock' -Force
+```
+
+After removing a stale lock, rerun `git status --short --branch` before
+continuing. Do not remove any other `.git` files or directories as part of this
+recovery.
+
 ## Git Commit Identity
 
 Before creating local commits in this repository family, verify the Git author
