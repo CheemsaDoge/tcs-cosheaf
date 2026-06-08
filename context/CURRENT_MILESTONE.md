@@ -2,15 +2,15 @@
 
 ## Milestone
 
-Longplan completion audit closeout.
+Post-longplan repository hygiene and v0.2.0 proposal alignment.
 
 ## Goal
 
-Keep the fixed longplan completion audit accurate after Phase 8 hardening and
-the v0.2.0 milestone proposal have landed. This closeout is
-documentation-only and must not change framework behavior, artifact schema,
-gate semantics, verifier adapters, accepted-promotion policy, public KB
-content, workspace-template behavior, or runtime dependencies.
+Keep repository-facing status docs aligned after Phase 8 hardening, the
+longplan completion audit, and the v0.2.0 milestone proposal have landed. This
+closeout is documentation-only and must not change framework behavior,
+artifact schema, gate semantics, verifier adapters, accepted-promotion policy,
+public KB content, workspace-template behavior, or runtime dependencies.
 
 ## Current Baseline
 
@@ -18,6 +18,10 @@ content, workspace-template behavior, or runtime dependencies.
 - Remote tag `v0.1.1` exists and remains the downstream formal-link metadata
   baseline. Current `main` also contains later hardening work that is not part
   of that tag.
+- The current `main` branch has completed the fixed longplan audit through
+  Phase 8, except for the explicitly gated hosted-provider adapter task.
+- `v0.2.0` is a proposed next local-MVP release scope, not an existing release
+  tag and not a production-ready claim.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
   index/query, context packs, local task/orchestrator dry-runs, verifier
   adapters, evaluation, and observability scaffolding.
@@ -85,8 +89,12 @@ Explicit non-goals:
 
 ## Completion Criteria
 
+- README, PROJECT_STATE, and this milestone file consistently distinguish the
+  existing `v0.1.1` tag, current hardened `main`, and proposed `v0.2.0` scope.
 - `docs/LONGPLAN_COMPLETION_AUDIT.md` records accurate merged-PR evidence for
   every fixed-plan task through Phase 8.
+- `docs/LONGPLAN_COMPLETION_AUDIT.md` continues to state that the audit is not
+  a production-ready claim.
 - The audit keeps Phase 5 Task 5.3 as gated and unimplemented unless the
   maintainer explicitly approves a hosted provider dependency.
 - Workflow docs remain aligned with the maintainer override: no `codex`
@@ -97,11 +105,11 @@ Explicit non-goals:
 
 ## Next Focus
 
-After this closeout lands and verification passes, the fixed longplan objective
-can be treated as complete except for the explicitly gated Phase 5 Task 5.3.
-Future work should proceed from the bounded v0.2.0 proposal, or from a separate
+After this hygiene closeout lands and verification passes, future work should
+proceed from the bounded v0.2.0 proposal, or from a separate
 maintainer-approved hosted-provider issue if Phase 5 Task 5.3 is later
-unblocked.
+unblocked. Do not treat the current `main` branch as a released v0.2.0 artifact
+until a release audit and tag are created.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
