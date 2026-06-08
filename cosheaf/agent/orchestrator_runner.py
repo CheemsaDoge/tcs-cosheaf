@@ -30,6 +30,7 @@ from cosheaf.agent.orchestrator_state import (
     WorkerCall,
 )
 from cosheaf.agent.orchestrator_stub import OrchestratorStub, TaskHarnessError
+from cosheaf.agent.run_logging import write_orchestrator_run_log
 from cosheaf.agent.task import AgentTask
 from cosheaf.agent.worker_bundle_v2 import (
     WorkerBundleV2Error,
@@ -81,6 +82,7 @@ class OrchestratorLocalRunResult:
     run: OrchestratorRun
     run_root: Path
     record_path: Path
+    log_path: Path
 
 
 class OrchestratorLocalRunner:
@@ -111,6 +113,7 @@ class OrchestratorLocalRunner:
             / run_id
         )
         record_path = run_root / "run.yaml"
+        log_path = run_root / "run_log.json"
         if run_root.exists():
             raise OrchestratorLocalRunError(
                 f"orchestrator run already exists: {run_id}"
@@ -223,10 +226,12 @@ class OrchestratorLocalRunner:
             stop_conditions=stop_conditions,
         )
         write_yaml_deterministic(record_path, final_run)
+        write_orchestrator_run_log(log_path, final_run)
         return OrchestratorLocalRunResult(
             run=final_run,
             run_root=run_root,
             record_path=record_path,
+            log_path=log_path,
         )
 
     def _ensure_task_for_node(

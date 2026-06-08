@@ -167,9 +167,10 @@
   creates issue-scoped local task records for the planned nodes, executes
   explicit local argv commands through the existing local worker runner,
   validates worker bundle v2 manifests, reduces them into reducer records,
-  writes an inspectable run record under `.cosheaf/orchestrator/`, and does
-  not call hosted LLMs, use network services, run gates, request human review,
-  write accepted knowledge, or promote artifacts.
+  writes an inspectable run record and structured `run_log.json` under
+  `.cosheaf/orchestrator/`, and does not call hosted LLMs, use network
+  services, run gates, request human review, write accepted knowledge, or
+  promote artifacts.
 - `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only --timeout-seconds <seconds>`:
   enforces a positive timeout for each local worker command.
 - `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only --repo-root <path>`:
@@ -958,10 +959,15 @@ review, promotion, proof, or public/private policy bypasses.
 - `cosheaf.agent.worker_bundle_v2.validate_worker_bundle_v2(context: RepoContext, bundle_path: str | Path) -> WorkerBundleV2`: loads and validates a worker bundle v2 manifest without executing workers, writing files, requesting review, or promoting accepted knowledge. It rejects non-repository-local bundle paths, non-repository-local proposed artifact paths, accepted-KB proposals, schema-invalid existing proposed artifacts, and worker-created `human_reviewed` or `accepted` review states.
 - `cosheaf.agent.worker_bundle_v2.reduce_worker_bundle_v2(context: RepoContext, bundle_path: str | Path, *, reducer_id: str) -> ReducerResult`: validates a worker bundle v2 manifest and returns a deterministic `ReducerResult`, preserving failures, risk flags, and confidence as warnings.
 - `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunConfig`: dataclass for one local-only orchestrator dry-run with fields `issue_id`, `timeout_seconds`, optional `worker_command`, optional `proposal_path`, optional `run_id`, and optional `now`.
-- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunResult`: dataclass containing the final `OrchestratorRun`, run root, and run record path.
-- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunner`: local-only orchestrator runner that converts a deterministic plan into local task records, runs explicit argv commands through `LocalWorkerRunner`, validates worker bundle v2 outputs, reduces them into `ReducerResult` records, and writes the final run record. It does not call hosted LLMs, make network calls, run gates, request human review, write accepted knowledge, or promote artifacts.
+- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunResult`: dataclass containing the final `OrchestratorRun`, run root, run record path, and structured run-log path.
+- `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunner`: local-only orchestrator runner that converts a deterministic plan into local task records, runs explicit argv commands through `LocalWorkerRunner`, validates worker bundle v2 outputs, reduces them into `ReducerResult` records, and writes the final run record plus sanitized structured `run_log.json`. It does not call hosted LLMs, make network calls, run gates, request human review, write accepted knowledge, or promote artifacts.
 - `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunner.run_issue(config: OrchestratorLocalRunConfig) -> OrchestratorLocalRunResult`: runs one issue-scoped local-only dry-run and returns the final persisted run metadata.
 - `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunError`: expected local orchestrator run failure, including invalid configuration, missing issue records, duplicate run IDs, and local runner boundary failures.
+- `cosheaf.agent.run_logging.StructuredRunLog`: strict Pydantic v2 JSON DTO for local run observability with run/task/artifact/bundle IDs, timing, status, stop reason, and sanitized worker-call metadata.
+- `cosheaf.agent.run_logging.RunLogWorkerCall`: strict Pydantic v2 DTO for sanitized worker-call metadata. It records redacted command argv but does not inline stdout or stderr contents.
+- `cosheaf.agent.run_logging.structured_log_from_orchestrator_run(run: OrchestratorRun) -> StructuredRunLog`: derives a structured local run log from an orchestrator run DTO.
+- `cosheaf.agent.run_logging.write_orchestrator_run_log(path: Path, run: OrchestratorRun) -> StructuredRunLog`: writes deterministic `run_log.json` for a local orchestrator run.
+- `cosheaf.agent.run_logging.redact_command(command: list[str]) -> list[str]`: redacts common secret flags and token-like values from command argv metadata before logging.
 - `cosheaf.agent.dry_run_workers.dry_run_worker_command(...) -> list[str]`: returns the explicit local argv used by the orchestrator runner's default fake dry-run worker. The command writes a worker bundle v2 manifest only; it does not call hosted LLMs, use network services, run gates, request review, write proposal artifacts, write accepted knowledge, or promote artifacts.
 - `cosheaf.agent.dry_run_workers.build_dry_run_bundle(...) -> dict[str, object]`: builds a role-aware fake worker bundle mapping for orchestrator, reasoner, or verifier dry-runs. Reasoner bundles are draft proposal context only, verifier bundles record that no real gate/Lean/SAT/SMT/promotion result was produced, and all bundles remain low-confidence dry-run output.
 - `cosheaf.agent.dry_run_workers.main(argv: list[str] | None = None) -> int`: CLI entry point invoked by the local runner command to write one deterministic dry-run worker bundle.
