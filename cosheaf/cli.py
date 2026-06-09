@@ -4,6 +4,7 @@ import json
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import typer
 from pydantic import ValidationError
@@ -30,7 +31,7 @@ from cosheaf.agent.task import WorkerType
 from cosheaf.config.workspace import KbRootConfig, WorkspaceConfigError
 from cosheaf.core.artifact import BaseArtifact, is_external_dependency_ref
 from cosheaf.core.ids import validate_artifact_id
-from cosheaf.core.paths import lifecycle_artifact_path
+from cosheaf.core.paths import lifecycle_artifact_path, repo_relative_posix
 from cosheaf.core.status import (
     ArtifactStatus,
     ArtifactType,
@@ -65,6 +66,7 @@ from cosheaf.memory import (
     ArtifactCardStatus,
     MemoryCardError,
     MemoryGraphError,
+    MemoryRootScope,
     MemorySearchError,
     RetrievalRole,
     build_memory_graph,
@@ -80,6 +82,18 @@ from cosheaf.services import (
     TaskService,
     ValidationService,
     WorkspaceService,
+)
+from cosheaf.services.models import (
+    AgentAccessModel,
+    AgentKbRoot,
+    ContextBuildResult,
+    ErrorResult,
+    GateRunResult,
+    KbRootPolicy,
+    ValidateResult,
+)
+from cosheaf.services.models import (
+    WorkspaceInfoResult as AgentWorkspaceInfoResult,
 )
 from cosheaf.storage.index import rebuild_index
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
@@ -171,8 +185,23 @@ memory_app.add_typer(memory_graph_app, name="graph")
 
 
 @app.command()
-def version() -> None:
+def version(
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
     """Print the TCS-Cosheaf version."""
+    if json_output:
+        _emit_json(
+            {
+                "schema_version": 1,
+                "package": "tcs-cosheaf",
+                "version": __version__,
+            }
+        )
+        return
     Console().print(f"tcs-cosheaf {__version__}")
 
 
@@ -183,16 +212,35 @@ def workspace_info(
         "--repo-root",
         help="Repository root to inspect.",
     ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
 ) -> None:
     """Show workspace configuration and KB roots."""
     console = Console(width=120, markup=False)
     try:
         context = RepoContext(repo_root)
     except WorkspaceConfigError as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code="workspace_config_failed",
+                    message=str(exc),
+                    remediation="Fix cosheaf.toml and rerun workspace info.",
+                    blocking=True,
+                    related_path="cosheaf.toml",
+                )
+            )
+            raise typer.Exit(code=1) from None
         console.print(f"Workspace config failed: {exc}")
         raise typer.Exit(code=1) from None
 
     info = WorkspaceService(context).info()
+    if json_output:
+        _emit_model(_workspace_info_to_agent_result(context, info))
+        return
     console.print(f"Workspace: {info.name}")
     console.print(f"- repo_root: {info.repo_root}")
     console.print(f"- mode: {info.mode}")
@@ -217,6 +265,11 @@ def validate(
         "--debug",
         help="Show tracebacks for unexpected validation errors.",
     ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
 ) -> None:
     """Validate repository YAML records and implemented invariants."""
     context = RepoContext(repo_root)
@@ -225,6 +278,7 @@ def validate(
         success_message="Validation passed",
         failure_message="Validation failed",
         debug=debug,
+        json_output=json_output,
     )
 
 
@@ -489,6 +543,11 @@ def gate(
         "--pr-checklist",
         help="Local PR checklist markdown file to validate with G8.",
     ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
 ) -> None:
     """Run the gatekeeper when no gate subcommand is provided."""
     if ctx.invoked_subcommand is None:
@@ -496,6 +555,7 @@ def gate(
             repo_root=repo_root,
             persist_review=persist_review,
             pr_checklist=pr_checklist,
+            json_output=json_output,
         )
 
 
@@ -516,12 +576,18 @@ def gate_run(
         "--pr-checklist",
         help="Local PR checklist markdown file to validate with G8.",
     ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
 ) -> None:
     """Run gatekeeper checks and write JSON/Markdown reports."""
     _run_gatekeeper_cli(
         repo_root=repo_root,
         persist_review=persist_review,
         pr_checklist=pr_checklist,
+        json_output=json_output,
     )
 
 
@@ -555,11 +621,17 @@ def context_build(
         "--public-only",
         help="Exclude private cards and private artifact IDs from audit output.",
     ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
 ) -> None:
     """Build a bounded deterministic context pack for an issue."""
     console = Console(width=120, markup=False)
+    context = RepoContext(repo_root)
     try:
-        result = ContextPackService(RepoContext(repo_root)).build(
+        result = ContextPackService(context).build(
             issue_id,
             role=role,
             max_cards=max_cards,
@@ -567,8 +639,23 @@ def context_build(
             public_only=public_only,
         )
     except ContextPackError as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code="context_build_failed",
+                    message=str(exc),
+                    remediation="Check the issue ID and repository records.",
+                    blocking=True,
+                    related_artifact=_valid_related_artifact(issue_id),
+                )
+            )
+            raise typer.Exit(code=1) from None
         console.print(f"Context pack failed: {exc}")
         raise typer.Exit(code=1) from None
+
+    if json_output:
+        _emit_model(_context_build_to_result(context, result, public_only=public_only))
+        return
 
     console.print(f"Context pack built: {result.task_dir}")
     for path in result.files:
@@ -605,11 +692,18 @@ def context_show(
         "--public-only",
         help="Exclude private cards and private artifact IDs from audit output.",
     ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
 ) -> None:
     """Build and print the main context document for an issue."""
     console = Console(width=120, markup=False)
+    context = RepoContext(repo_root)
     try:
-        rendered = ContextPackService(RepoContext(repo_root)).show(
+        service = ContextPackService(context)
+        rendered = service.show(
             issue_id,
             role=role,
             max_cards=max_cards,
@@ -617,8 +711,38 @@ def context_show(
             public_only=public_only,
         )
     except ContextPackError as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code="context_show_failed",
+                    message=str(exc),
+                    remediation="Check the issue ID and repository records.",
+                    blocking=True,
+                    related_artifact=_valid_related_artifact(issue_id),
+                )
+            )
+            raise typer.Exit(code=1) from None
         console.print(f"Context pack failed: {exc}")
         raise typer.Exit(code=1) from None
+
+    if json_output:
+        task_dir = context.repo_root / "context" / "TASKS" / issue_id
+        files = [
+            repo_relative_posix(context.repo_root, task_dir / filename)
+            for filename in ("CONTEXT.md",)
+        ]
+        _emit_json(
+            {
+                "schema_version": 1,
+                "issue_id": issue_id,
+                "task_dir": repo_relative_posix(context.repo_root, task_dir),
+                "files": files,
+                "public_only": public_only,
+                "private_context_included": _context_private_included(task_dir),
+                "content": rendered,
+            }
+        )
+        return
 
     typer.echo(rendered, nl=False)
 
@@ -654,6 +778,20 @@ def memory_cards(
             status=status,
         )
     except MemoryCardError as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code="memory_cards_failed",
+                    message=str(exc),
+                    remediation=(
+                        "Check the issue ID, status filter, and repository "
+                        "records."
+                    ),
+                    blocking=True,
+                    related_artifact=_valid_related_artifact(issue),
+                )
+            )
+            raise typer.Exit(code=1) from None
         console.print(f"Memory cards failed: {exc}")
         raise typer.Exit(code=1) from None
 
@@ -740,6 +878,20 @@ def memory_search(
             include_obsolete=include_obsolete,
         )
     except MemorySearchError as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code="memory_search_failed",
+                    message=str(exc),
+                    remediation=(
+                        "Check the query, issue ID, filters, and repository "
+                        "records."
+                    ),
+                    blocking=True,
+                    related_artifact=_valid_related_artifact(issue),
+                )
+            )
+            raise typer.Exit(code=1) from None
         console.print(f"Memory search failed: {exc}")
         raise typer.Exit(code=1) from None
 
@@ -1032,11 +1184,22 @@ def orchestrator_plan(
     try:
         plan = plan_for_issue(RepoContext(repo_root), issue)
     except OrchestratorPlannerError as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code="orchestrator_plan_failed",
+                    message=str(exc),
+                    remediation="Check the issue ID and repository records.",
+                    blocking=True,
+                    related_artifact=_valid_related_artifact(issue),
+                )
+            )
+            raise typer.Exit(code=1) from None
         console.print(f"Orchestrator plan failed: {exc}")
         raise typer.Exit(code=1) from None
 
     if json_output:
-        typer.echo(plan.to_json(), nl=False)
+        _emit_json({"schema_version": 1, **plan.to_dict()})
         return
 
     console.print(f"Plan: {plan.plan_id}")
@@ -1288,11 +1451,22 @@ def _run_validation(
     success_message: str,
     failure_message: str,
     debug: bool,
+    json_output: bool = False,
 ) -> None:
     console = Console(width=120)
     try:
         report = report_factory()
     except Exception:
+        if json_output and not debug:
+            _emit_error(
+                ErrorResult(
+                    code="validation_unexpected_error",
+                    message="Unexpected validation error.",
+                    remediation="Rerun without --json and with --debug for traceback.",
+                    blocking=True,
+                )
+            )
+            raise typer.Exit(code=2) from None
         if debug:
             console.print_exception()
         else:
@@ -1302,6 +1476,12 @@ def _run_validation(
             )
         raise typer.Exit(code=2) from None
 
+    if json_output:
+        _emit_model(_validation_report_to_result(report))
+        if not report.ok:
+            raise typer.Exit(code=1)
+        return
+
     _print_validation_report(
         console=console,
         report=report,
@@ -1310,6 +1490,182 @@ def _run_validation(
     )
     if not report.ok:
         raise typer.Exit(code=1)
+
+
+def _emit_json(payload: dict[str, Any] | list[Any]) -> None:
+    typer.echo(json.dumps(payload, ensure_ascii=True, indent=2))
+
+
+def _emit_model(model: AgentAccessModel) -> None:
+    typer.echo(model.to_json(), nl=False)
+
+
+def _emit_error(error: ErrorResult) -> None:
+    _emit_model(error)
+
+
+def _workspace_info_to_agent_result(
+    context: RepoContext,
+    info: Any,
+) -> AgentWorkspaceInfoResult:
+    return AgentWorkspaceInfoResult(
+        workspace_name=info.name,
+        repo_root=str(context.repo_root),
+        mode=info.mode,
+        kb_roots=[
+            AgentKbRoot(
+                name=root.name,
+                path=root.path,
+                scope=_kb_root_scope(root),
+                readonly=root.readonly,
+                priority=root.priority,
+            )
+            for root in info.kb_roots
+        ],
+        policy=KbRootPolicy(
+            private_can_depend_on_public=(
+                context.workspace_config.policy.private_can_depend_on_public
+            ),
+            public_can_depend_on_private=(
+                context.workspace_config.policy.public_can_depend_on_private
+            ),
+            accepted_requires_source=(
+                context.workspace_config.policy.accepted_requires_source
+            ),
+        ),
+    )
+
+
+def _kb_root_scope(root: KbRootConfig) -> MemoryRootScope:
+    name = root.name.lower()
+    if name == "public":
+        return MemoryRootScope.PUBLIC
+    if name == "private":
+        return MemoryRootScope.PRIVATE
+    if name == "framework":
+        return MemoryRootScope.FRAMEWORK
+    return MemoryRootScope.WORKSPACE
+
+
+def _validation_report_to_result(report: ValidationReport) -> ValidateResult:
+    return ValidateResult(
+        ok=report.ok,
+        checked_count=report.checked_count,
+        failures=[
+            _validation_failure_to_error(failure)
+            for failure in report.failures
+        ],
+    )
+
+
+def _validation_failure_to_error(failure: Any) -> ErrorResult:
+    return ErrorResult(
+        code="validation_failed",
+        message=f"{failure.gate}: {failure.message}",
+        remediation="Fix the referenced YAML record and rerun validation.",
+        blocking=True,
+        related_path=_valid_related_path(failure.source_path),
+        related_artifact=_valid_related_artifact(failure.artifact_id),
+        details={"gate": failure.gate},
+    )
+
+
+def _gate_run_to_result(
+    context: RepoContext,
+    result: GatekeeperRunResult,
+) -> GateRunResult:
+    return GateRunResult(
+        verdict=result.report.verdict,
+        report_json_path=repo_relative_posix(context.repo_root, result.json_path),
+        report_markdown_path=repo_relative_posix(
+            context.repo_root,
+            result.markdown_path,
+        ),
+        blocking_issues=[
+            _gate_issue_to_error(issue)
+            for issue in result.report.blocking_issues
+        ],
+        nonblocking_issues=[
+            _gate_issue_to_error(issue)
+            for issue in result.report.nonblocking_issues
+        ],
+    )
+
+
+def _gate_issue_to_error(issue: Any) -> ErrorResult:
+    return ErrorResult(
+        code="gate_issue",
+        message=f"{issue.gate_id} {issue.gate_name}: {issue.message}",
+        remediation="Fix the gate issue and rerun `cosheaf gate run`.",
+        blocking=issue.severity == "blocking",
+        related_path=_valid_related_path(issue.source_path),
+        related_artifact=_valid_related_artifact(issue.artifact_id),
+        details={
+            "gate_id": issue.gate_id,
+            "gate_name": issue.gate_name,
+            "severity": issue.severity,
+        },
+    )
+
+
+def _context_build_to_result(
+    context: RepoContext,
+    result: Any,
+    *,
+    public_only: bool,
+) -> ContextBuildResult:
+    return ContextBuildResult(
+        issue_id=result.issue_id,
+        task_dir=repo_relative_posix(context.repo_root, result.task_dir),
+        files=[
+            repo_relative_posix(context.repo_root, path)
+            for path in result.files
+        ],
+        public_only=public_only,
+        private_context_included=_context_private_included(result.task_dir),
+    )
+
+
+def _context_private_included(task_dir: Path) -> bool:
+    audit_path = task_dir / "RETRIEVAL_AUDIT.json"
+    try:
+        payload = json.loads(audit_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return False
+
+    cards = payload.get("retrieval", {}).get("cards", [])
+    if any(card.get("root_scope") == MemoryRootScope.PRIVATE.value for card in cards):
+        return True
+    pulls = payload.get("full_artifact_pulls", [])
+    return any(
+        pull.get("root_scope") == MemoryRootScope.PRIVATE.value
+        for pull in pulls
+    )
+
+
+def _valid_related_path(value: str | None) -> str | None:
+    if not value:
+        return None
+    try:
+        ErrorResult(
+            code="path_probe",
+            message="Path probe.",
+            remediation="Path probe.",
+            blocking=False,
+            related_path=value,
+        )
+    except ValidationError:
+        return None
+    return value
+
+
+def _valid_related_artifact(value: str | None) -> str | None:
+    if not value:
+        return None
+    try:
+        return validate_artifact_id(value.strip())
+    except ValueError:
+        return None
 
 
 def _print_validation_report(
@@ -1343,12 +1699,20 @@ def _run_gatekeeper_cli(
     repo_root: Path,
     persist_review: bool,
     pr_checklist: Path | None,
+    json_output: bool = False,
 ) -> None:
     console = Console(width=120)
-    result = GateService(RepoContext(repo_root)).run(
+    context = RepoContext(repo_root)
+    result = GateService(context).run(
         persist_review=persist_review,
         pr_checklist_path=pr_checklist,
     )
+    if json_output:
+        _emit_model(_gate_run_to_result(context, result))
+        if result.report.blocking_issues:
+            raise typer.Exit(code=1)
+        return
+
     _print_gatekeeper_result(console, result)
     if result.report.blocking_issues:
         raise typer.Exit(code=1)

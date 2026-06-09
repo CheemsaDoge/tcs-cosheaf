@@ -71,8 +71,8 @@ target direction is:
 
 - CLI is the primary agent interface for coding agents and the stable oracle
   for humans and CI.
-- Core agent-facing CLI commands should gain stable `--json` output and stable
-  error codes where needed.
+- Core read-only agent-facing CLI commands provide stable `--json` output and
+  stable error codes where needed.
 - Service-layer functions are the shared implementation boundary for CLI,
   hosted workers, internal orchestrator code, and optional future MCP.
 - Hosted provider support is scheduled capability, implemented through an

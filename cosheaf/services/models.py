@@ -142,12 +142,18 @@ AGENT_ACCESS_STABLE_ERROR_CODES: tuple[str, ...] = (
     "artifact_id_exists",
     "artifact_model_validation_failed",
     "artifact_path_exists",
+    "context_build_failed",
+    "context_show_failed",
     "draft_write_failed",
+    "gate_issue",
     "invalid_artifact_id",
     "invalid_artifact_target_path",
     "invalid_timestamp",
+    "memory_cards_failed",
+    "memory_search_failed",
     "missing_required_domain",
     "no_writable_kb_root",
+    "orchestrator_plan_failed",
     "private_context_requires_consent",
     "private_context_requires_policy",
     "provider_context_preview_failed",
@@ -155,6 +161,9 @@ AGENT_ACCESS_STABLE_ERROR_CODES: tuple[str, ...] = (
     "repository_load_failed",
     "timestamp_missing_timezone",
     "unknown_context_policy_mode",
+    "validation_failed",
+    "validation_unexpected_error",
+    "workspace_config_failed",
 )
 
 
