@@ -63,7 +63,7 @@ MCP, internal orchestrator, and provider workers.
 
 Service functions should:
 
-- accept typed request objects;
+- accept typed request objects where public agent-access schemas are available;
 - return typed results that are usable outside terminal rendering;
 - preserve existing CLI semantics;
 - avoid network access unless the specific provider or integration policy
@@ -76,6 +76,14 @@ Service functions should:
 MCP and provider code must not shell out to the CLI as their core
 implementation. The CLI may render service results for humans and CI, while
 the service layer remains the reusable logic boundary.
+
+The public agent-access DTOs live in `cosheaf.services.models`, and their JSON
+Schema files live under `schemas/agent_access/`. These DTOs are versioned with
+`schema_version: 1` and cover workspace info, validation, gate runs, memory
+search, context builds, task creation, worker-bundle submission, draft artifact
+writes, provider model calls, provider run records, and standard error
+results. They are serialization contracts for future MCP and provider surfaces;
+they do not by themselves execute MCP tools or hosted API calls.
 
 ## MCP Boundary
 
@@ -169,8 +177,9 @@ Required mitigations:
 
 ## Current Status
 
-As of this document, the repository has not implemented the future MCP server,
-service-layer extraction, hosted provider gateway, or Skill package described
-here. Existing local CLI, validation, gate, index, retrieval, context-pack,
-task, orchestrator dry-run, fake provider, and optional verifier surfaces keep
-their current behavior.
+As of this document, the repository has a thin typed service layer and
+versioned agent-access DTO/JSON Schema contracts. The repository has not
+implemented the future MCP server, hosted provider gateway, or Skill package
+described here. Existing local CLI, validation, gate, index, retrieval,
+context-pack, task, orchestrator dry-run, fake provider, and optional verifier
+surfaces keep their current behavior.

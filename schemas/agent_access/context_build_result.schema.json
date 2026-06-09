@@ -1,0 +1,46 @@
+{
+  "additionalProperties": false,
+  "description": "Result of building a bounded context pack.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "issue_id": {
+      "title": "Issue Id",
+      "type": "string"
+    },
+    "task_dir": {
+      "title": "Task Dir",
+      "type": "string"
+    },
+    "files": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Files",
+      "type": "array"
+    },
+    "public_only": {
+      "title": "Public Only",
+      "type": "boolean"
+    },
+    "private_context_included": {
+      "default": false,
+      "title": "Private Context Included",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "issue_id",
+    "task_dir",
+    "files",
+    "public_only"
+  ],
+  "title": "ContextBuildResult",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/agent_access/context_build_result.schema.json"
+}

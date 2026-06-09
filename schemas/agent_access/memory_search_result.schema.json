@@ -1,0 +1,179 @@
+{
+  "$defs": {
+    "AgentArtifactCard": {
+      "additionalProperties": false,
+      "description": "Public DTO for compact artifact search/context results.",
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "artifact_id": {
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ArtifactCardStatus"
+        },
+        "root_scope": {
+          "$ref": "#/$defs/MemoryRootScope"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "risk_flags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Risk Flags",
+          "type": "array"
+        }
+      },
+      "required": [
+        "artifact_id",
+        "title",
+        "status",
+        "root_scope",
+        "path"
+      ],
+      "title": "AgentArtifactCard",
+      "type": "object"
+    },
+    "ArtifactCardStatus": {
+      "description": "Lifecycle/trust status for a memory card.",
+      "enum": [
+        "raw",
+        "draft",
+        "locally_tested",
+        "adversarially_tested",
+        "machine_checked",
+        "human_reviewed",
+        "accepted",
+        "refuted",
+        "obsolete",
+        "superseded"
+      ],
+      "title": "ArtifactCardStatus",
+      "type": "string"
+    },
+    "MemoryRootScope": {
+      "description": "Repository or workspace scope for a memory card.",
+      "enum": [
+        "public",
+        "private",
+        "workspace",
+        "framework"
+      ],
+      "title": "MemoryRootScope",
+      "type": "string"
+    },
+    "MemorySearchRequest": {
+      "additionalProperties": false,
+      "description": "Bounded memory-search request.",
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "query": {
+          "title": "Query",
+          "type": "string"
+        },
+        "issue_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Issue Id"
+        },
+        "allowed_scopes": {
+          "items": {
+            "$ref": "#/$defs/MemoryRootScope"
+          },
+          "title": "Allowed Scopes",
+          "type": "array"
+        },
+        "allowed_statuses": {
+          "items": {
+            "$ref": "#/$defs/ArtifactCardStatus"
+          },
+          "title": "Allowed Statuses",
+          "type": "array"
+        },
+        "public_only": {
+          "default": true,
+          "title": "Public Only",
+          "type": "boolean"
+        },
+        "include_refuted": {
+          "default": false,
+          "title": "Include Refuted",
+          "type": "boolean"
+        },
+        "include_obsolete": {
+          "default": false,
+          "title": "Include Obsolete",
+          "type": "boolean"
+        },
+        "max_cards": {
+          "default": 20,
+          "title": "Max Cards",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "title": "MemorySearchRequest",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Stable memory-search response.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "request": {
+      "$ref": "#/$defs/MemorySearchRequest"
+    },
+    "cards": {
+      "items": {
+        "$ref": "#/$defs/AgentArtifactCard"
+      },
+      "title": "Cards",
+      "type": "array"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "request"
+  ],
+  "title": "MemorySearchResult",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/agent_access/memory_search_result.schema.json"
+}

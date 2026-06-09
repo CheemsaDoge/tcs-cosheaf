@@ -178,6 +178,72 @@
 
 ### Python API
 
+#### Agent Access DTOs
+
+- `cosheaf.services.models.AgentAccessModel`: strict Pydantic v2 base class for
+  versioned agent-access DTOs with deterministic `to_dict()` and `to_json()`.
+- `cosheaf.services.models.WorkspaceInfoResult`: public workspace-info DTO with
+  `schema_version`, workspace name, repository root, configured/legacy mode,
+  ordered KB roots, public/private root scopes, readonly flags, priorities, and
+  workspace policy fields.
+- `cosheaf.services.models.ValidateResult`: public validation DTO with
+  checked-record count and structured failures.
+- `cosheaf.services.models.GateRunResult`: public gate-run DTO with verdict,
+  report paths, blocking issues, and nonblocking issues.
+- `cosheaf.services.models.MemorySearchRequest`: public memory-search request
+  DTO with query, issue, allowed scopes, allowed statuses, public-only flag,
+  refuted/obsolete inclusion flags, and card budget.
+- `cosheaf.services.models.MemorySearchResult`: public memory-search response
+  DTO with request, compact artifact cards, and warnings.
+- `cosheaf.services.models.ContextBuildRequest`: public context-build request
+  DTO with issue, role, card/full-artifact budgets, policy mode, public-only
+  flag, and private-context permission flag.
+- `cosheaf.services.models.ContextBuildResult`: public context-build response
+  DTO with issue, task directory, written files, public-only flag, and private
+  context inclusion flag.
+- `cosheaf.services.models.CreateTaskRequest` and
+  `cosheaf.services.models.CreateTaskResult`: public task-creation DTOs.
+- `cosheaf.services.models.WorkerBundleSubmitRequest` and
+  `cosheaf.services.models.WorkerBundleSubmitResult`: public worker-bundle
+  validation/submission DTOs that preserve review-only output semantics.
+- `cosheaf.services.models.DraftArtifactWriteRequest` and
+  `cosheaf.services.models.DraftArtifactWriteResult`: public draft-write DTOs
+  that reject accepted artifact writes.
+- `cosheaf.services.models.ProviderConsent`: public provider-send consent DTO
+  with consent required/granted flags, private-context permission, and policy
+  scope.
+- `cosheaf.services.models.ModelCallRequest` and
+  `cosheaf.services.models.ModelCallResult`: public provider-neutral model-call
+  DTOs for future hosted workers.
+- `cosheaf.services.models.ProviderRunRecord`: public provider-run audit DTO
+  with provider/model, policy scope, consent, private-context-sent flag,
+  status, timestamps, request fingerprint, and optional repository-local log
+  path.
+- `cosheaf.services.models.ErrorResult`: public standard error DTO with code,
+  message, remediation, blocking flag, and details.
+- `cosheaf.services.models.AGENT_ACCESS_SCHEMA_MODELS`: mapping used to
+  generate the versioned JSON Schema files under `schemas/agent_access/`.
+
+#### Agent Access JSON Schemas
+
+- `schemas/agent_access/workspace_info_result.schema.json`
+- `schemas/agent_access/validate_result.schema.json`
+- `schemas/agent_access/gate_run_result.schema.json`
+- `schemas/agent_access/memory_search_request.schema.json`
+- `schemas/agent_access/memory_search_result.schema.json`
+- `schemas/agent_access/context_build_request.schema.json`
+- `schemas/agent_access/context_build_result.schema.json`
+- `schemas/agent_access/create_task_request.schema.json`
+- `schemas/agent_access/create_task_result.schema.json`
+- `schemas/agent_access/worker_bundle_submit_request.schema.json`
+- `schemas/agent_access/worker_bundle_submit_result.schema.json`
+- `schemas/agent_access/draft_artifact_write_request.schema.json`
+- `schemas/agent_access/draft_artifact_write_result.schema.json`
+- `schemas/agent_access/model_call_request.schema.json`
+- `schemas/agent_access/model_call_result.schema.json`
+- `schemas/agent_access/provider_run_record.schema.json`
+- `schemas/agent_access/error_result.schema.json`
+
 #### Service Layer
 
 - `cosheaf.services.WorkspaceService`: typed service for workspace inspection.

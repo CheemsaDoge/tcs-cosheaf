@@ -1,0 +1,173 @@
+{
+  "$defs": {
+    "ContextPolicyMode": {
+      "description": "Context exposure policy mode.",
+      "enum": [
+        "public",
+        "private_research"
+      ],
+      "title": "ContextPolicyMode",
+      "type": "string"
+    },
+    "ProviderConsent": {
+      "additionalProperties": false,
+      "description": "Consent and scope metadata for provider-send flows.",
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "consent_required": {
+          "title": "Consent Required",
+          "type": "boolean"
+        },
+        "consent_granted": {
+          "title": "Consent Granted",
+          "type": "boolean"
+        },
+        "allow_private_context": {
+          "title": "Allow Private Context",
+          "type": "boolean"
+        },
+        "policy_scope": {
+          "$ref": "#/$defs/ContextPolicyMode"
+        },
+        "operator_note": {
+          "default": "",
+          "title": "Operator Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "consent_required",
+        "consent_granted",
+        "allow_private_context",
+        "policy_scope"
+      ],
+      "title": "ProviderConsent",
+      "type": "object"
+    },
+    "ProviderName": {
+      "description": "Provider-neutral model provider identifiers.",
+      "enum": [
+        "fake",
+        "openai",
+        "anthropic",
+        "google",
+        "local"
+      ],
+      "title": "ProviderName",
+      "type": "string"
+    },
+    "ProviderRunStatus": {
+      "description": "Normalized provider run status.",
+      "enum": [
+        "completed",
+        "failed",
+        "error",
+        "skipped"
+      ],
+      "title": "ProviderRunStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Audit record for one provider call attempt.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "provider": {
+      "$ref": "#/$defs/ProviderName"
+    },
+    "model": {
+      "title": "Model",
+      "type": "string"
+    },
+    "policy_scope": {
+      "$ref": "#/$defs/ContextPolicyMode"
+    },
+    "consent": {
+      "$ref": "#/$defs/ProviderConsent"
+    },
+    "private_context_sent": {
+      "title": "Private Context Sent",
+      "type": "boolean"
+    },
+    "status": {
+      "$ref": "#/$defs/ProviderRunStatus"
+    },
+    "started_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Started At"
+    },
+    "ended_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Ended At"
+    },
+    "request_fingerprint": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Request Fingerprint"
+    },
+    "log_path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Log Path"
+    }
+  },
+  "required": [
+    "run_id",
+    "provider",
+    "model",
+    "policy_scope",
+    "consent",
+    "private_context_sent",
+    "status"
+  ],
+  "title": "ProviderRunRecord",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/agent_access/provider_run_record.schema.json"
+}

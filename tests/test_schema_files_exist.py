@@ -43,6 +43,23 @@ SCHEMA_FILES = [
     "schemas/orchestrator_run.schema.json",
     "schemas/worker_bundle_v2.schema.json",
     "schemas/formal_library.schema.json",
+    "schemas/agent_access/context_build_request.schema.json",
+    "schemas/agent_access/context_build_result.schema.json",
+    "schemas/agent_access/create_task_request.schema.json",
+    "schemas/agent_access/create_task_result.schema.json",
+    "schemas/agent_access/draft_artifact_write_request.schema.json",
+    "schemas/agent_access/draft_artifact_write_result.schema.json",
+    "schemas/agent_access/error_result.schema.json",
+    "schemas/agent_access/gate_run_result.schema.json",
+    "schemas/agent_access/memory_search_request.schema.json",
+    "schemas/agent_access/memory_search_result.schema.json",
+    "schemas/agent_access/model_call_request.schema.json",
+    "schemas/agent_access/model_call_result.schema.json",
+    "schemas/agent_access/provider_run_record.schema.json",
+    "schemas/agent_access/validate_result.schema.json",
+    "schemas/agent_access/worker_bundle_submit_request.schema.json",
+    "schemas/agent_access/worker_bundle_submit_result.schema.json",
+    "schemas/agent_access/workspace_info_result.schema.json",
 ]
 
 EXAMPLE_FILES = [
