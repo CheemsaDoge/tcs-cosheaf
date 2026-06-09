@@ -37,6 +37,7 @@ Agent access does not expand accepted-knowledge authority.
 Allowed controlled-write outputs are limited to:
 
 - draft artifacts or draft proposals;
+- staged source notes under review-only paths;
 - worker output bundles;
 - task or run records under runtime sidecar directories;
 - review context that still requires the ordinary review path.
@@ -80,6 +81,20 @@ context build/show, and orchestrator planning. JSON mode emits no Rich or ANSI
 markup, keeps public/private root scope visible where retrieval or context is
 involved, and uses `ErrorResult` for expected machine-readable errors. MCP
 remains optional and is not required for ordinary CLI-first agent workflows.
+
+Controlled write commands are deliberately narrow and require explicit JSON
+input:
+
+- `cosheaf draft write-artifact --input-json <path> --json`
+- `cosheaf draft write-source-note --input-json <path> --json`
+- `cosheaf bundle submit --input-json <path> --json`
+- `cosheaf review request --input-json <path> --json`
+
+Each command also supports `--dry-run`, which validates and reports target
+paths without writing files. These commands refuse accepted paths, readonly KB
+roots, accepted artifact status, and `human_reviewed` review spoofing. They do
+not run promotion, do not create human review, do not call hosted providers,
+and do not change gate or verifier results.
 
 ## Service-Layer Boundary
 
@@ -130,12 +145,17 @@ The stable error-code list is exported as
 - `artifact_id_exists`
 - `artifact_model_validation_failed`
 - `artifact_path_exists`
+- `bundle_complete_forbidden`
+- `bundle_submit_failed`
 - `context_build_failed`
 - `context_show_failed`
 - `draft_write_failed`
 - `gate_issue`
+- `human_review_forbidden`
 - `invalid_artifact_id`
 - `invalid_artifact_target_path`
+- `invalid_input_json`
+- `invalid_staging_path`
 - `invalid_timestamp`
 - `memory_cards_failed`
 - `memory_search_failed`
@@ -146,7 +166,10 @@ The stable error-code list is exported as
 - `private_context_requires_policy`
 - `provider_context_preview_failed`
 - `provider_context_scope_violation`
+- `readonly_kb_root`
 - `repository_load_failed`
+- `review_request_failed`
+- `source_note_write_failed`
 - `timestamp_missing_timezone`
 - `unknown_context_policy_mode`
 - `validation_failed`
@@ -270,9 +293,10 @@ Required mitigations:
 
 As of this document, the repository has a thin typed service layer, versioned
 agent-access DTO/JSON Schema contracts, a provider-send context preview policy
-service, deterministic JSON output for core read-only CLI commands, and a
-minimal read-only stdio MCP surface that is optional adapter code. The
-repository has not implemented the hosted provider gateway, controlled-write
-MCP tools, or Skill package described here. Existing local CLI, validation,
-gate, index, retrieval, context-pack, task, orchestrator dry-run, fake
-provider, and optional verifier surfaces keep their current behavior.
+service, deterministic JSON output for core read-only CLI commands, controlled
+CLI draft/staging write commands, and a minimal read-only stdio MCP surface
+that is optional adapter code. The repository has not implemented the hosted
+provider gateway, controlled-write MCP tools, or Skill package described here.
+Existing local CLI, validation, gate, index, retrieval, context-pack, task,
+orchestrator dry-run, fake provider, and optional verifier surfaces keep their
+current behavior.

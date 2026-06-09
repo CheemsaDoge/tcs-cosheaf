@@ -73,6 +73,9 @@ target direction is:
   for humans and CI.
 - Core read-only agent-facing CLI commands provide stable `--json` output and
   stable error codes where needed.
+- Controlled CLI write commands may create only draft/staging artifacts,
+  staged source notes, bundle-review submissions, and draft informational
+  review requests.
 - Service-layer functions are the shared implementation boundary for CLI,
   hosted workers, internal orchestrator code, and optional future MCP.
 - Hosted provider support is scheduled capability, implemented through an
@@ -141,8 +144,9 @@ The agent-access direction does not weaken knowledge governance:
 
 ## Next Focus
 
-After this documentation alignment lands, continue with Phase R / Task R.3:
-workspace-template pin correction audit on branch `workspace-pin-v020-audit`.
+After the controlled draft-write CLI commands land, continue with Phase C /
+Task C.1 from `longplan_v3_fixed_cli_first.md`: document the CLI agent operator
+contract on branch `cli-agent-operator-contract`.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

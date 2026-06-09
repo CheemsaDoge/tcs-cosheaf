@@ -61,6 +61,44 @@
 - `cosheaf ingest convert <path> --out <dir>`: writes staged Markdown and provenance metadata under an explicit repository-local output directory. Accepted KB paths such as `kb/accepted/` or `kb/public/accepted/` are rejected.
 - `cosheaf ingest convert <path> --metadata-json`: emits deterministic conversion provenance JSON to stdout.
 - `cosheaf ingest convert <path> --repo-root <path>`: resolves the source and output paths against an explicit repository root.
+- `cosheaf draft write-artifact --input-json <path>`: writes a controlled
+  draft/pre-accepted artifact from an explicit JSON request through the
+  service layer. It refuses accepted status, accepted paths, readonly KB roots,
+  duplicate IDs, and schema-invalid artifact payloads.
+- `cosheaf draft write-artifact --input-json <path> --json`: emits
+  deterministic JSON with `schema_version`, `kind`, target `path`,
+  `written_paths`, `dry_run`, `accepted_write_performed`, and `record_id`.
+  Expected failures emit `ErrorResult`.
+- `cosheaf draft write-artifact --input-json <path> --dry-run`: validates the
+  request and reports the target path without writing files.
+- `cosheaf draft write-artifact --input-json <path> --repo-root <path>`:
+  performs the controlled draft-artifact write for an explicit repository root.
+- `cosheaf draft write-source-note --input-json <path>`: writes a staged draft
+  source-note YAML record, normally under `sources/notes/`, with nested
+  `SourceMetadata` validation. It is staging metadata only and is not loaded as
+  an accepted artifact.
+- `cosheaf draft write-source-note --input-json <path> --json`: emits the same
+  deterministic controlled-write JSON shape as `write-artifact` and uses
+  `ErrorResult` for expected failures.
+- `cosheaf draft write-source-note --input-json <path> --dry-run`: validates
+  the source-note request and reports the target path without writing files.
+- `cosheaf bundle submit --input-json <path>`: validates a worker bundle v2
+  manifest for review using `WorkerBundleSubmitRequest`. It does not complete
+  tasks, merge outputs, run promotion, write accepted knowledge, or create
+  human review.
+- `cosheaf bundle submit --input-json <path> --json`: emits
+  `WorkerBundleSubmitResult` with bundle ID, task ID, review-acceptance flag,
+  proposed output paths, and warnings.
+- `cosheaf bundle submit --input-json <path> --dry-run`: validates the bundle
+  and reports review-submission output without changing task state.
+- `cosheaf review request --input-json <path>`: writes a draft informational
+  review-request record under `reviews/requests/`. It refuses
+  `human_reviewed`, `accepted`, approval, rejection, and changes-requested
+  decisions through this controlled surface.
+- `cosheaf review request --input-json <path> --json`: emits the deterministic
+  controlled-write JSON shape and uses `ErrorResult` for expected failures.
+- `cosheaf review request --input-json <path> --dry-run`: validates the review
+  request and reports the target path without writing files.
 - `cosheaf eval retrieval`: runs the default deterministic retrieval
   regression suite from `evals/retrieval/cases.yaml`.
 - `cosheaf eval retrieval --repo-root <path>`: runs retrieval evals against an
@@ -273,16 +311,19 @@
   currently stable machine-readable agent-access error codes. Current values:
   `accepted_write_forbidden`, `artifact_file_validation_failed`,
   `artifact_id_exists`, `artifact_model_validation_failed`,
-  `artifact_path_exists`, `context_build_failed`, `context_show_failed`,
-  `draft_write_failed`, `gate_issue`, `invalid_artifact_id`,
-  `invalid_artifact_target_path`, `invalid_timestamp`, `memory_cards_failed`,
-  `memory_search_failed`, `missing_required_domain`, `no_writable_kb_root`,
-  `orchestrator_plan_failed`, `private_context_requires_consent`,
-  `private_context_requires_policy`, `provider_context_preview_failed`,
-  `provider_context_scope_violation`, `repository_load_failed`,
-  `timestamp_missing_timezone`, `unknown_context_policy_mode`,
-  `validation_failed`, `validation_unexpected_error`, and
-  `workspace_config_failed`.
+  `artifact_path_exists`, `bundle_complete_forbidden`,
+  `bundle_submit_failed`, `context_build_failed`, `context_show_failed`,
+  `draft_write_failed`, `gate_issue`, `human_review_forbidden`,
+  `invalid_artifact_id`, `invalid_artifact_target_path`,
+  `invalid_input_json`, `invalid_staging_path`, `invalid_timestamp`,
+  `memory_cards_failed`, `memory_search_failed`, `missing_required_domain`,
+  `no_writable_kb_root`, `orchestrator_plan_failed`,
+  `private_context_requires_consent`, `private_context_requires_policy`,
+  `provider_context_preview_failed`, `provider_context_scope_violation`,
+  `readonly_kb_root`, `repository_load_failed`, `review_request_failed`,
+  `source_note_write_failed`, `timestamp_missing_timezone`,
+  `unknown_context_policy_mode`, `validation_failed`,
+  `validation_unexpected_error`, and `workspace_config_failed`.
 - `cosheaf.services.models.AGENT_ACCESS_SCHEMA_MODELS`: mapping used to
   generate the versioned JSON Schema files under `schemas/agent_access/`.
 
@@ -365,11 +406,23 @@
   validates a worker bundle v2 manifest.
 - `cosheaf.services.BundleValidationService.reduce(path, *, reducer_id) -> ReducerResult`:
   validates and reduces a worker bundle v2 manifest into review context.
+- `cosheaf.services.BundleValidationService.submit(request, *, dry_run=False) -> WorkerBundleSubmitResult`:
+  validates a worker bundle v2 manifest for review without completing tasks,
+  merging outputs, writing accepted knowledge, or promoting artifacts.
 - `cosheaf.services.DraftWriteService`: controlled draft/pre-accepted
   lifecycle artifact write service.
 - `cosheaf.services.DraftWriteService.create_artifact(...) -> ArtifactWriteResult`:
   creates deterministic draft/pre-accepted artifact YAML and refuses direct
   accepted artifact creation.
+- `cosheaf.services.DraftWriteService.write_artifact_request(request, *, dry_run=False) -> ControlledWriteResult`:
+  writes or previews a controlled draft artifact request and reports exact
+  target/written paths.
+- `cosheaf.services.DraftWriteService.write_source_note(request, *, dry_run=False) -> ControlledWriteResult`:
+  writes or previews a staged draft source-note record with nested
+  `SourceMetadata` validation.
+- `cosheaf.services.DraftWriteService.write_review_request(request, *, dry_run=False) -> ControlledWriteResult`:
+  writes or previews a draft informational review-request record and refuses
+  human-review spoofing.
 - `cosheaf.services.ServiceError`: expected service-layer failure base class
   with stable `code`, `remediation`, `blocking`, `details`, and
   `to_error_result() -> ErrorResult`.
@@ -379,6 +432,9 @@
 - `cosheaf.services.WorkspaceInfoResult`, `KbRootInfo`, and
   `ArtifactWriteResult`: frozen dataclass result DTOs returned by service
   methods.
+- `cosheaf.services.ControlledWriteResult`: frozen dataclass result for
+  controlled draft/staging write commands with `kind`, `relative_path`,
+  `written_paths`, `dry_run`, `accepted_write_performed`, and `record_id`.
 
 #### MCP Server
 

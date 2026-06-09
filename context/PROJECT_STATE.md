@@ -5,6 +5,24 @@ must not override the current status recorded at the top of the file.
 
 ## CLI-First Direction Alignment - 2026-06-09
 
+Issue 201 adds the first controlled CLI write surface for external coding
+agents. `cosheaf draft write-artifact --input-json <path> --json`,
+`cosheaf draft write-source-note --input-json <path> --json`,
+`cosheaf bundle submit --input-json <path> --json`, and
+`cosheaf review request --input-json <path> --json` now route through the
+service layer, support dry-run previews, report exact target/written paths,
+and use structured `ErrorResult` payloads for expected failures. These
+commands are deliberately narrow: they reject accepted writes, readonly KB
+roots, accepted artifact status, and `human_reviewed` review spoofing. They do
+not promote artifacts, do not create human review, do not complete tasks, do
+not call hosted providers, and do not implement MCP writes.
+
+Issue 199 stabilized deterministic JSON output for the core read-only
+agent-facing CLI commands: version, workspace info, validation, gate runs,
+memory cards/search, context build/show, and orchestrator planning. JSON mode
+keeps Rich markup out of stdout and preserves structured error responses for
+expected failures.
+
 Issue 193 aligns the durable post-`v0.2.0` direction with
 `longplan_v3_fixed_cli_first.md`. The current roadmap now treats CLI as the
 first agent interface, the service layer as the shared implementation boundary,
