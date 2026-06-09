@@ -25,7 +25,8 @@ from cosheaf.agent.local_runner import (
     LocalWorkerRunner,
     LocalWorkerRunResult,
 )
-from cosheaf.agent.orchestrator_state import ReducerResult
+from cosheaf.agent.orchestrator_planner import plan_for_issue
+from cosheaf.agent.orchestrator_state import Plan, ReducerResult
 from cosheaf.agent.orchestrator_stub import OrchestratorStub, TaskCompletionResult
 from cosheaf.agent.task import AgentTask, WorkerType
 from cosheaf.agent.worker_bundle_v2 import (
@@ -180,6 +181,7 @@ class MemorySearchService:
         *,
         issue_id: str | None = None,
         status: ArtifactCardStatus | None = None,
+        max_cards: int = CONTEXT_MAX_CARDS,
         seed_artifacts: Sequence[str] = (),
         pinned_artifacts: Sequence[str] = (),
         include_refuted: bool = False,
@@ -191,6 +193,7 @@ class MemorySearchService:
             query=query,
             issue_id=issue_id,
             status=status,
+            max_cards=max_cards,
             seed_artifacts=tuple(seed_artifacts),
             pinned_artifacts=tuple(pinned_artifacts),
             include_refuted=include_refuted,
@@ -241,6 +244,17 @@ class ContextPackService:
             max_full_artifacts=max_full_artifacts,
             public_only=public_only,
         )
+
+
+class OrchestratorPlanService:
+    """Service for deterministic issue-scoped orchestrator plans."""
+
+    def __init__(self, context: RepoContext) -> None:
+        self.context = context
+
+    def plan_for_issue(self, issue_id: str) -> Plan:
+        """Create a deterministic plan for an existing issue without execution."""
+        return plan_for_issue(self.context, issue_id)
 
 
 class TaskService:
@@ -489,6 +503,7 @@ __all__ = [
     "GateService",
     "KbRootInfo",
     "MemorySearchService",
+    "OrchestratorPlanService",
     "TaskService",
     "ValidationService",
     "WorkspaceInfoResult",

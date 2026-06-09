@@ -2,19 +2,62 @@
 
 ## Purpose
 
-This document defines the planned TCS-Cosheaf MCP server boundary before
-runtime implementation. It is design and security guidance only. It does not
-implement an MCP server, add dependencies, change CLI behavior, change gates,
-or create new write authority.
+This document defines the TCS-Cosheaf MCP server boundary and current
+implementation status. The first implementation is a minimal read-only stdio
+JSON-RPC surface. It does not add external dependencies, change gates, create
+write authority, call hosted providers, or implement prompts.
 
-The MCP server is the planned machine interface for external agents. It should
-expose typed, whitelisted service calls over MCP resources, prompts, and tools.
-It must not expose arbitrary shell, arbitrary filesystem access, direct
-accepted promotion, or private KB context outside an explicit policy scope.
+The MCP server is the planned machine interface for external agents. The
+current server exposes typed, whitelisted service calls over MCP-style
+resources and tools. It must not expose arbitrary shell, arbitrary filesystem
+access, direct accepted promotion, or private KB context outside an explicit
+policy scope.
+
+## Current Status
+
+Available commands:
+
+```bash
+cosheaf mcp list-tools
+cosheaf mcp serve --stdio
+```
+
+`cosheaf mcp serve --stdio` reads one line-delimited JSON-RPC request from
+stdin and writes one JSON-RPC response to stdout for each request. It is a
+minimal local stdio surface, not an HTTP server and not a hosted service.
+
+Current read-only tools:
+
+- `workspace_info`
+- `validate`
+- `gate_run`
+- `memory_search`
+- `context_build`
+- `context_show`
+- `orchestrator_plan`
+
+Current read-only resources:
+
+- `cosheaf://workspace`
+- `cosheaf://issues/{issue_id}`
+- `cosheaf://artifacts/{artifact_id}/card`
+- `cosheaf://context/{issue_id}`
+- `cosheaf://gate/latest`
+
+The current tools call the Python service layer directly. They do not shell out
+to the CLI. `gate_run` may write deterministic runtime reports under ignored
+runtime directories such as `.cosheaf/`, and `context_build` may write a
+deterministic context pack under `context/TASKS/`. They do not modify
+source-of-truth artifact YAML, write accepted knowledge, promote artifacts,
+create drafts, or mark human review.
+
+Public-mode MCP resources and search results do not expose private artifact
+cards. Private artifact-card resource requests return a structured
+`private_resource_denied` error.
 
 ## Transport
 
-The first MCP transport must be stdio.
+The first MCP transport is stdio.
 
 Stdio-first keeps the initial server local, operator-launched, easy to test in
 CI with fake clients, and free from network listener security questions. HTTP
@@ -60,13 +103,18 @@ credentials, environment dumps, or secrets.
 
 ### Read-Only Tools
 
-Read-only tools may be enabled first and may include:
+Implemented read-only tools include:
 
-- `workspace.info`: returns workspace and KB root policy metadata.
-- `validate.repository`: runs or returns validation results.
-- `gate.run`: runs gatekeeper and returns structured report metadata.
-- `memory.search`: searches bounded artifact cards with explicit scope filters.
-- `context.build`: builds an issue-scoped context pack with explicit budgets.
+- `workspace_info`: returns workspace and KB root policy metadata.
+- `validate`: runs or returns validation results.
+- `gate_run`: runs gatekeeper and returns structured report metadata.
+- `memory_search`: searches bounded public artifact cards.
+- `context_build`: builds an issue-scoped public-only context pack.
+- `context_show`: builds and returns public-only context text.
+- `orchestrator_plan`: creates a deterministic plan without executing workers.
+
+Later read-only tools may include:
+
 - `context.preview_provider_send`: returns provider-send preview metadata only.
 - `task.list`: lists local task records.
 - `bundle.validate`: validates a worker bundle without merging outputs.

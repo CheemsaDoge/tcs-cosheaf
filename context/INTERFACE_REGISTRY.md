@@ -4,13 +4,13 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- `docs/MCP_SERVER.md`: planned MCP server boundary and security model. This is
-  documentation only; the repository does not yet expose an MCP runtime,
-  server entry point, MCP transport, MCP resources, MCP prompts, or MCP tools.
-- `docs/ADR/0017-mcp-agent-interface.md`: proposed ADR for the future MCP
-  agent interface. It records stdio-first transport, resource/tool/prompt
-  boundaries, controlled-write requirements, forbidden tools, and private KB
-  policy constraints without changing runtime behavior.
+- MCP prompts are not implemented yet.
+- MCP controlled-write tools are not implemented yet.
+- Hosted-provider MCP tools are not implemented yet.
+- `docs/ADR/0017-mcp-agent-interface.md`: ADR for the MCP agent interface. It
+  records stdio-first transport, resource/tool/prompt boundaries,
+  controlled-write requirements, forbidden tools, and private KB policy
+  constraints. The current runtime implements only the read-only stdio subset.
 
 ### CLI Entry Point
 
@@ -152,6 +152,15 @@
   explicit repository root.
 - `cosheaf memory graph pagerank --json`: emits a deterministic
   `PageRankResult` JSON payload.
+- `cosheaf mcp list-tools`: prints the read-only MCP tool whitelist, one tool
+  name per line.
+- `cosheaf mcp list-tools --repo-root <path>`: validates command context
+  against an explicit repository root before listing the same tool whitelist.
+- `cosheaf mcp serve --stdio`: starts the minimal read-only stdio JSON-RPC MCP
+  surface for the current repository. It reads one JSON-RPC request per input
+  line and writes one JSON-RPC response per output line.
+- `cosheaf mcp serve --stdio --repo-root <path>`: serves the same read-only
+  MCP surface for an explicit repository root.
 - `cosheaf task create --issue <issue-id> --worker <worker-type>`: creates an open local agent task under `.cosheaf/tasks/` after confirming the issue exists.
 - `cosheaf task create --issue <issue-id> --worker <worker-type> --repo-root <path>`: creates the task for an explicit repository root.
 - `cosheaf task list`: lists local task records in deterministic task ID order.
@@ -284,6 +293,12 @@
   content.
 - `cosheaf.services.MemorySearchService.search(...) -> RetrievalResult`:
   returns deterministic card-search results with retrieval audit metadata.
+- `cosheaf.services.OrchestratorPlanService`: typed service for deterministic
+  issue-scoped orchestrator plans.
+- `cosheaf.services.OrchestratorPlanService.plan_for_issue(issue_id) -> Plan`:
+  creates a deterministic plan for an existing issue without executing
+  workers, calling hosted providers, running gates, writing accepted knowledge,
+  or promoting artifacts.
 - `cosheaf.services.ContextPackService`: typed service for bounded
   issue-scoped context packs.
 - `cosheaf.services.ContextPackService.build(...) -> ContextPackResult`:
@@ -325,6 +340,33 @@
 - `cosheaf.services.WorkspaceInfoResult`, `KbRootInfo`, and
   `ArtifactWriteResult`: frozen dataclass result DTOs returned by service
   methods.
+
+#### MCP Server
+
+- `cosheaf.mcp.READ_ONLY_TOOL_NAMES`: ordered read-only MCP tool whitelist:
+  `workspace_info`, `validate`, `gate_run`, `memory_search`, `context_build`,
+  `context_show`, and `orchestrator_plan`.
+- `cosheaf.mcp.tool_definitions() -> list[dict[str, Any]]`: returns
+  deterministic MCP-style tool metadata and JSON schemas for the read-only
+  whitelist.
+- `cosheaf.mcp.resource_definitions() -> list[dict[str, str]]`: returns
+  deterministic MCP-style resource metadata for `cosheaf://workspace`,
+  `cosheaf://issues/{issue_id}`, `cosheaf://artifacts/{artifact_id}/card`,
+  `cosheaf://context/{issue_id}`, and `cosheaf://gate/latest`.
+- `cosheaf.mcp.ReadOnlyMcpServer`: protocol-level read-only JSON-RPC handler
+  over the shared service layer. It exposes `tools/list`, `tools/call`,
+  `resources/list`, `resources/read`, and `initialize`.
+- `cosheaf.mcp.ReadOnlyMcpServer.handle(request) -> dict[str, Any]`: handles
+  one JSON-RPC request mapping and returns one JSON-RPC response mapping.
+- `cosheaf.mcp.serve_stdio(context, ...) -> None`: serves line-delimited
+  JSON-RPC requests over stdio streams.
+
+The read-only MCP surface does not expose arbitrary shell, draft writes,
+accepted writes, artifact promotion, hosted provider calls, environment dumps,
+or unrestricted filesystem access. Public-mode artifact-card resources deny
+private artifact cards with a structured `private_resource_denied` error.
+`gate_run` and `context_build` may write deterministic runtime sidecars, but
+they do not modify source-of-truth artifact YAML or accepted knowledge.
 
 #### Source Ingestion
 

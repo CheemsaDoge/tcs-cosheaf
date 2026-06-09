@@ -59,6 +59,7 @@ from cosheaf.gates.gatekeeper import (
 from cosheaf.gates.source_metadata_gate import missing_required_source_metadata
 from cosheaf.graph.claim_graph import DependencyGraph, build_dependency_graph
 from cosheaf.ingest import IngestError, MarkItDownIngestAdapter
+from cosheaf.mcp import READ_ONLY_TOOL_NAMES, serve_stdio
 from cosheaf.memory import (
     MEMORY_GRAPH_SIDECAR,
     ArtifactCardStatus,
@@ -149,6 +150,11 @@ memory_graph_app = typer.Typer(
     help="Deterministic memory graph commands.",
     no_args_is_help=True,
 )
+mcp_app = typer.Typer(
+    add_completion=False,
+    help="Read-only MCP server commands.",
+    no_args_is_help=True,
+)
 app.add_typer(artifact_app, name="artifact")
 app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
@@ -160,6 +166,7 @@ app.add_typer(workspace_app, name="workspace")
 app.add_typer(ingest_app, name="ingest")
 app.add_typer(eval_app, name="eval")
 app.add_typer(memory_app, name="memory")
+app.add_typer(mcp_app, name="mcp")
 memory_app.add_typer(memory_graph_app, name="graph")
 
 
@@ -970,6 +977,40 @@ def memory_graph_pagerank(
             f"{row.rank}. {row.node_id} | score={row.score:.12f} | "
             f"{row.kind} | {row.record_id}"
         )
+
+
+@mcp_app.command("list-tools")
+def mcp_list_tools(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for command consistency.",
+    ),
+) -> None:
+    """List read-only MCP tool names."""
+    RepoContext(repo_root)
+    for tool_name in READ_ONLY_TOOL_NAMES:
+        typer.echo(tool_name)
+
+
+@mcp_app.command("serve")
+def mcp_serve(
+    stdio: bool = typer.Option(
+        False,
+        "--stdio",
+        help="Serve line-delimited JSON-RPC over stdio.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to expose through read-only MCP tools.",
+    ),
+) -> None:
+    """Serve the read-only MCP JSON-RPC surface."""
+    if not stdio:
+        Console(width=120, markup=False).print("MCP serve failed: --stdio is required")
+        raise typer.Exit(code=1)
+    serve_stdio(RepoContext(repo_root))
 
 
 @orchestrator_app.command("plan")
