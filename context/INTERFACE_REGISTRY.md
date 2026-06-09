@@ -4,7 +4,6 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- MCP prompts are not implemented yet.
 - MCP controlled-write tools are not implemented yet.
 - Hosted-provider MCP tools are not implemented yet.
 - `docs/ADR/0017-mcp-agent-interface.md`: ADR for the MCP agent interface. It
@@ -346,16 +345,26 @@
 - `cosheaf.mcp.READ_ONLY_TOOL_NAMES`: ordered read-only MCP tool whitelist:
   `workspace_info`, `validate`, `gate_run`, `memory_search`, `context_build`,
   `context_show`, and `orchestrator_plan`.
+- `cosheaf.mcp.READ_ONLY_PROMPT_NAMES`: ordered governance-safe MCP prompt
+  whitelist: `start_issue_work`, `reason_about_issue`, `verify_draft`,
+  `prepare_review_bundle`, and `public_kb_contribution_check`.
 - `cosheaf.mcp.tool_definitions() -> list[dict[str, Any]]`: returns
   deterministic MCP-style tool metadata and JSON schemas for the read-only
   whitelist.
+- `cosheaf.mcp.prompt_definitions() -> list[dict[str, Any]]`: returns
+  deterministic MCP-style prompt metadata for the governance-safe prompt
+  whitelist.
 - `cosheaf.mcp.resource_definitions() -> list[dict[str, str]]`: returns
   deterministic MCP-style resource metadata for `cosheaf://workspace`,
-  `cosheaf://issues/{issue_id}`, `cosheaf://artifacts/{artifact_id}/card`,
-  `cosheaf://context/{issue_id}`, and `cosheaf://gate/latest`.
+  `cosheaf://issues/{issue_id}`,
+  `cosheaf://artifacts/public/{artifact_id}/card`,
+  `cosheaf://artifacts/private/{artifact_id}/card`,
+  `cosheaf://context/public/{issue_id}`,
+  `cosheaf://context/private/{issue_id}`, and `cosheaf://gate/latest`.
 - `cosheaf.mcp.ReadOnlyMcpServer`: protocol-level read-only JSON-RPC handler
   over the shared service layer. It exposes `tools/list`, `tools/call`,
-  `resources/list`, `resources/read`, and `initialize`.
+  `resources/list`, `resources/read`, `prompts/list`, `prompts/get`, and
+  `initialize`.
 - `cosheaf.mcp.ReadOnlyMcpServer.handle(request) -> dict[str, Any]`: handles
   one JSON-RPC request mapping and returns one JSON-RPC response mapping.
 - `cosheaf.mcp.serve_stdio(context, ...) -> None`: serves line-delimited
@@ -367,6 +376,9 @@ or unrestricted filesystem access. Public-mode artifact-card resources deny
 private artifact cards with a structured `private_resource_denied` error.
 `gate_run` and `context_build` may write deterministic runtime sidecars, but
 they do not modify source-of-truth artifact YAML or accepted knowledge.
+Prompt templates are static governance guidance. They do not read or include
+private KB content, artifact statements, provider credentials, or environment
+data.
 
 #### Source Ingestion
 

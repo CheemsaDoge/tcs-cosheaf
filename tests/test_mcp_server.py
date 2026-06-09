@@ -8,7 +8,11 @@ import yaml  # type: ignore[import-untyped]
 from typer.testing import CliRunner
 
 from cosheaf.cli import app
-from cosheaf.mcp.server import READ_ONLY_TOOL_NAMES, ReadOnlyMcpServer
+from cosheaf.mcp.server import (
+    READ_ONLY_PROMPT_NAMES,
+    READ_ONLY_TOOL_NAMES,
+    ReadOnlyMcpServer,
+)
 from cosheaf.storage.repo import RepoContext
 
 runner = CliRunner()
@@ -242,6 +246,73 @@ def test_mcp_context_build_is_public_only(tmp_path: Path) -> None:
         / "issue.fixture.mcp"
         / "RETRIEVAL_AUDIT.json"
     ).read_text(encoding="utf-8")
+
+
+def test_mcp_prompts_list_and_get_governance_safe_templates(
+    tmp_path: Path,
+) -> None:
+    server = ReadOnlyMcpServer(_fixture_repo(tmp_path))
+
+    list_response = server.handle(_request("prompts/list"))
+
+    prompt_names = [prompt["name"] for prompt in list_response["result"]["prompts"]]
+    assert prompt_names == list(READ_ONLY_PROMPT_NAMES)
+
+    get_response = server.handle(
+        _request(
+            "prompts/get",
+            {
+                "name": "start_issue_work",
+                "arguments": {"issue_id": "issue.fixture.mcp"},
+            },
+        )
+    )
+
+    text = get_response["result"]["messages"][0]["content"]["text"]
+    assert "accepted" in text
+    assert "draft" in text
+    assert "artifact IDs" in text
+    assert "Do not write accepted knowledge" in text
+    assert "make validate" in text
+    assert "make gate" in text
+    assert "make test" in text
+    assert "private-secret" not in text
+    assert "claim.fixture.mcp-private" not in text
+
+
+def test_mcp_resources_list_scope_aware_templates(tmp_path: Path) -> None:
+    server = ReadOnlyMcpServer(_fixture_repo(tmp_path))
+
+    response = server.handle(_request("resources/list"))
+
+    uris = [resource["uri"] for resource in response["result"]["resources"]]
+    assert "cosheaf://workspace" in uris
+    assert "cosheaf://artifacts/public/{artifact_id}/card" in uris
+    assert "cosheaf://artifacts/private/{artifact_id}/card" in uris
+    assert "cosheaf://context/public/{issue_id}" in uris
+    assert "cosheaf://context/private/{issue_id}" in uris
+
+
+def test_mcp_private_scoped_resources_require_policy_permission(
+    tmp_path: Path,
+) -> None:
+    server = ReadOnlyMcpServer(_fixture_repo(tmp_path))
+
+    artifact_response = server.handle(
+        _request(
+            "resources/read",
+            {"uri": "cosheaf://artifacts/private/claim.fixture.mcp-private/card"},
+        )
+    )
+    context_response = server.handle(
+        _request(
+            "resources/read",
+            {"uri": "cosheaf://context/private/issue.fixture.mcp"},
+        )
+    )
+
+    assert artifact_response["error"]["data"]["code"] == "private_resource_denied"
+    assert context_response["error"]["data"]["code"] == "private_resource_denied"
 
 
 def test_mcp_cli_list_tools_and_stdio_tools_list(tmp_path: Path) -> None:
