@@ -7,6 +7,8 @@ import pytest
 from pydantic import ValidationError
 
 from cosheaf.services.models import (
+    AGENT_ACCESS_SCHEMA_MODELS,
+    AGENT_ACCESS_STABLE_ERROR_CODES,
     ContextBuildRequest,
     DraftArtifactWriteRequest,
     ErrorResult,
@@ -67,6 +69,8 @@ def test_error_result_requires_remediation_and_blocking_flag() -> None:
         message="Private KB context cannot be sent without consent.",
         remediation="Set policy_mode=private_research and grant consent.",
         blocking=True,
+        related_path="kb/private/claims/claim.fixture.yaml",
+        related_artifact="claim.fixture.agent-access",
     )
 
     assert result.to_dict() == {
@@ -75,6 +79,25 @@ def test_error_result_requires_remediation_and_blocking_flag() -> None:
         "message": "Private KB context cannot be sent without consent.",
         "remediation": "Set policy_mode=private_research and grant consent.",
         "blocking": True,
+        "related_path": "kb/private/claims/claim.fixture.yaml",
+        "related_artifact": "claim.fixture.agent-access",
+        "details": {},
+    }
+
+    legacy_payload = {
+        "code": "legacy_error",
+        "message": "Older callers may omit optional correlation fields.",
+        "remediation": "Inspect the message and details.",
+        "blocking": False,
+    }
+    assert ErrorResult.model_validate(legacy_payload).to_dict() == {
+        "schema_version": 1,
+        "code": "legacy_error",
+        "message": "Older callers may omit optional correlation fields.",
+        "remediation": "Inspect the message and details.",
+        "blocking": False,
+        "related_path": None,
+        "related_artifact": None,
         "details": {},
     }
 
@@ -85,6 +108,40 @@ def test_error_result_requires_remediation_and_blocking_flag() -> None:
             remediation="",
             blocking=True,
         )
+
+    with pytest.raises(ValidationError):
+        ErrorResult(
+            code="bad_path",
+            message="Absolute paths must not leak through agent errors.",
+            remediation="Use a repository-local path.",
+            blocking=True,
+            related_path="C:/tmp/private.yaml",
+        )
+
+    with pytest.raises(ValidationError):
+        ErrorResult(
+            code="bad_artifact",
+            message="Artifact links must use artifact IDs.",
+            remediation="Use a valid artifact ID.",
+            blocking=True,
+            related_artifact="../claim",
+        )
+
+
+def test_stable_agent_access_error_code_list_exists() -> None:
+    assert AGENT_ACCESS_STABLE_ERROR_CODES == tuple(
+        sorted(AGENT_ACCESS_STABLE_ERROR_CODES)
+    )
+    assert len(AGENT_ACCESS_STABLE_ERROR_CODES) == len(
+        set(AGENT_ACCESS_STABLE_ERROR_CODES)
+    )
+    assert {
+        "accepted_write_forbidden",
+        "artifact_id_exists",
+        "private_context_requires_consent",
+        "provider_context_scope_violation",
+        "repository_load_failed",
+    }.issubset(AGENT_ACCESS_STABLE_ERROR_CODES)
 
 
 def test_request_models_include_scope_and_consent_fields() -> None:
@@ -215,6 +272,19 @@ def test_required_agent_access_schema_files_exist_and_match_model_titles() -> No
         assert schema["type"] == "object"
 
 
+def test_agent_access_schema_files_match_public_dtos() -> None:
+    for name, model in AGENT_ACCESS_SCHEMA_MODELS.items():
+        path = ROOT / "schemas" / "agent_access" / f"{name}.schema.json"
+        expected = model.model_json_schema(mode="validation")
+        expected["$schema"] = "https://json-schema.org/draft/2020-12/schema"
+        expected["$id"] = (
+            f"https://tcs-cosheaf.local/schemas/agent_access/{name}.schema.json"
+        )
+        actual = json.loads(path.read_text(encoding="utf-8"))
+
+        assert actual == expected
+
+
 def test_schema_properties_expose_policy_and_consent_contracts() -> None:
     workspace_schema = json.loads(
         (ROOT / "schemas" / "agent_access" / "workspace_info_result.schema.json")
@@ -238,6 +308,8 @@ def test_schema_properties_expose_policy_and_consent_contracts() -> None:
         "remediation",
         "blocking",
     }
+    assert "related_path" in error_schema["properties"]
+    assert "related_artifact" in error_schema["properties"]
 
 
 def test_placeholder_result_models_are_importable() -> None:

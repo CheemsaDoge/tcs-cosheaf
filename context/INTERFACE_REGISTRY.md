@@ -251,7 +251,19 @@
   status, timestamps, request fingerprint, and optional repository-local log
   path.
 - `cosheaf.services.models.ErrorResult`: public standard error DTO with code,
-  message, remediation, blocking flag, and details.
+  message, remediation, blocking flag, optional repository-local
+  `related_path`, optional `related_artifact`, and string-to-string details.
+- `cosheaf.services.models.AGENT_ACCESS_STABLE_ERROR_CODES`: sorted tuple of
+  currently stable machine-readable agent-access error codes. Current values:
+  `accepted_write_forbidden`, `artifact_file_validation_failed`,
+  `artifact_id_exists`, `artifact_model_validation_failed`,
+  `artifact_path_exists`, `draft_write_failed`, `invalid_artifact_id`,
+  `invalid_artifact_target_path`, `invalid_timestamp`,
+  `missing_required_domain`, `no_writable_kb_root`,
+  `private_context_requires_consent`, `private_context_requires_policy`,
+  `provider_context_preview_failed`, `provider_context_scope_violation`,
+  `repository_load_failed`, `timestamp_missing_timezone`, and
+  `unknown_context_policy_mode`.
 - `cosheaf.services.models.AGENT_ACCESS_SCHEMA_MODELS`: mapping used to
   generate the versioned JSON Schema files under `schemas/agent_access/`.
 
@@ -343,12 +355,8 @@
   with stable `code`, `remediation`, `blocking`, `details`, and
   `to_error_result() -> ErrorResult`.
 - `cosheaf.services.DraftWriteServiceError`: expected error for controlled
-  draft-write failures. Current stable codes include
-  `accepted_write_forbidden`, `missing_required_domain`, `invalid_artifact_id`,
-  `invalid_artifact_target_path`, `artifact_path_exists`,
-  `artifact_model_validation_failed`, `artifact_file_validation_failed`,
-  `invalid_timestamp`, `timestamp_missing_timezone`, `no_writable_kb_root`,
-  `artifact_id_exists`, and `repository_load_failed`.
+  draft-write failures. Current stable codes are included in
+  `AGENT_ACCESS_STABLE_ERROR_CODES`.
 - `cosheaf.services.WorkspaceInfoResult`, `KbRootInfo`, and
   `ArtifactWriteResult`: frozen dataclass result DTOs returned by service
   methods.
