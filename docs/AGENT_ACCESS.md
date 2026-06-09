@@ -85,6 +85,16 @@ writes, provider model calls, provider run records, and standard error
 results. They are serialization contracts for future MCP and provider surfaces;
 they do not by themselves execute MCP tools or hosted API calls.
 
+`ContextSendPolicyService` is the provider-send preview boundary. It accepts a
+`ContextBuildRequest` and returns either a safe `ProviderContextPreview` or a
+structured `ErrorResult`. Public-mode previews use public KB scope only.
+Private KB context is previewable only with `policy_mode=private_research`,
+`public_only=false`, and explicit private-context permission. The preview lists
+issue id, artifact ids, root scopes, estimated token counts, and risk flags; it
+does not include full artifact text, issue text, provider credentials, API
+keys, or secrets. The preview is not a provider call and does not authorize a
+provider call by itself.
+
 ## MCP Boundary
 
 MCP is the primary external-agent machine interface.
@@ -178,8 +188,9 @@ Required mitigations:
 ## Current Status
 
 As of this document, the repository has a thin typed service layer and
-versioned agent-access DTO/JSON Schema contracts. The repository has not
-implemented the future MCP server, hosted provider gateway, or Skill package
-described here. Existing local CLI, validation, gate, index, retrieval,
-context-pack, task, orchestrator dry-run, fake provider, and optional verifier
-surfaces keep their current behavior.
+versioned agent-access DTO/JSON Schema contracts plus a provider-send context
+preview policy service. The repository has not implemented the future MCP
+server, hosted provider gateway, or Skill package described here. Existing
+local CLI, validation, gate, index, retrieval, context-pack, task, orchestrator
+dry-run, fake provider, and optional verifier surfaces keep their current
+behavior.
