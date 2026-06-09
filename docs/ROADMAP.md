@@ -19,37 +19,39 @@ Completed release work includes:
 - Workspace-template install/pin verification against the tag.
 - Public KB validation/gate regression against the tag.
 - A post-`v0.2.0` rollback audit that identified no code or KB revert scope,
-  but did identify local-only roadmap language that needed rewrite.
+  but did identify MCP-first roadmap language that needed rewrite.
 
-## Next Focus: v0.2.1 Agent Access
+## Next Focus: v0.2.1 CLI Agent Access
 
-The next implementation direction is `v0.2.1` Agent Access + Hosted API
-Provider + MCP/Skill.
+The next implementation direction is `v0.2.1` CLI Agent Access + Hosted
+Provider Gateway.
 
 This does not mean turning the project into a production hosted multi-agent
-platform. It means adding a controlled access layer around the existing
-deterministic substrate:
+platform. It means adding a controlled agent-facing access layer around the
+existing deterministic substrate:
 
-- MCP becomes the first-class external-agent machine interface.
-- Skill becomes an optional operator guide for tools such as Codex, not a
-  source of truth and not an authority expansion.
-- Hosted model API/provider support becomes scheduled provider-gateway work,
+- CLI is the primary agent interface for coding agents.
+- CLI output for agent-facing commands should become stable, structured, and
+  machine-readable where needed.
+- The service layer is the shared implementation boundary for CLI, hosted
+  provider workers, internal orchestrator code, and optional future MCP.
+- Hosted model API/provider support is scheduled provider-gateway work,
   implemented behind explicit configuration, consent, policy scope, fake or
   mocked tests, and no-real-API-in-CI rules.
-- Local-only execution remains the fallback, offline, and CI/testing mode. It
-  is not the permanent product boundary.
-- External agents may orchestrate or perform bounded worker roles through MCP
-  and service-layer interfaces.
+- Local-only execution remains fallback, offline, and CI/testing mode. It is
+  not the permanent product boundary.
+- External agents can operate Cosheaf through CLI first.
 - The internal orchestrator may call hosted API workers only when policy,
   configuration, consent, and context-sending rules permit.
-- CLI remains the human and CI oracle.
-- Service-layer functions should become the shared implementation boundary for
-  CLI, MCP, internal orchestrator, and provider-backed workers.
+- MCP is an optional adapter for assistants that need resources/tools rather
+  than shell access. It is not required for `v0.2.1`.
+- Skill is an optional operator runbook, not a source of truth and not an
+  authority expansion.
 
-Real API calls are supported by design as a planned capability, but they must
-not run in CI. CI and default tests must use fake or mocked providers. Missing
-credentials or unavailable optional tools must be reported as unavailable or
-skipped, never as pass.
+Real API calls are planned by design, but they must not run in CI. CI and
+default tests must use fake or mocked providers. Missing credentials or
+unavailable optional tools must be reported as unavailable or skipped, never as
+pass.
 
 ADR 0015 records this direction change.
 
@@ -87,6 +89,8 @@ Completed framework scaffold pieces include:
 - Optional Headroom experiment scaffold and CodeGraph developer-tool probe.
 - Retrieval/context evaluation harnesses, structured run logging, and optional
   OpenTelemetry run-log export scaffolding.
+- Read-only MCP stdio surface. This exists as optional adapter work and must
+  not be treated as the primary agent path or a release blocker.
 - Graph-theory, SAT/CNF, and formal-link pilot workflows that remain draft or
   example material and do not bypass review or promotion.
 - GitHub Actions CI and collaboration templates.
@@ -95,12 +99,13 @@ Completed framework scaffold pieces include:
 
 Agent access must preserve existing governance:
 
-- MCP read-only tools may be default-safe; controlled write tools must be
-  explicit and limited to draft/proposal/bundle surfaces.
-- MCP must not expose arbitrary shell, direct promotion, or accepted-path
-  writes.
-- Skill is an operator manual. It must not widen permissions or become a source
-  of truth.
+- CLI commands are the first path for external coding agents.
+- Controlled write surfaces must be explicit and limited to
+  draft/proposal/bundle/task/run surfaces.
+- MCP, if used, must not expose arbitrary shell, direct promotion, or
+  accepted-path writes.
+- Skill is an operator manual. It must not widen permissions or become a
+  source of truth.
 - Hosted workers may return worker bundles, typed sub-results, or draft
   proposals only.
 - External agents must not directly edit accepted paths.
@@ -154,24 +159,9 @@ Near-term public KB work should remain:
 
 ### v0.2.0 Local MVP
 
-`v0.2.0` is the bounded local-MVP milestone after Phase 8 hardening. It turns
+`v0.2.0` is the bounded local-MVP milestone after release hardening. It turns
 the existing local, deterministic surfaces into a coherent pin-able framework
-version without changing the knowledge-governance boundary. The scope is:
-
-- Librarian v1: deterministic artifact-card retrieval, public/private
-  filtering, audit records, and clear CLI/docs for issue-scoped context
-  assembly.
-- Context pack v2: bounded, card-first context packs with explicit
-  full-artifact pull budgets and policy-safe public-only behavior.
-- Local orchestrator state machine: replayable issue-scoped plans, task DAGs,
-  reducers, and local dry-run ergonomics without hosted LLM defaults.
-- Fake provider model interface: deterministic provider-neutral tests and
-  capability negotiation before hosted providers.
-- Retrieval evaluation harness: regression metrics for relevance, forbidden
-  hits, private leakage, and accepted-priority behavior.
-- Optional external Lean `#check` ergonomics only if the current checker remains
-  stable and optional. A passing `#check` remains symbol/import resolution, not
-  informal/formal alignment.
+version without changing the knowledge-governance boundary.
 
 Out of scope for `v0.2.0`:
 
@@ -184,32 +174,30 @@ Out of scope for `v0.2.0`:
 
 ADR 0014 records this scope decision.
 
-### v0.2.1 Agent Access + Provider Gateway
+### v0.2.1 CLI Agent Access + Hosted Provider Gateway
 
 `v0.2.1` targets the access layer around the existing local-MVP substrate:
 
-- Durable longplan v3 installation as current project memory.
-- Agent-access ADR and threat model.
-- Shared service layer used by CLI, future MCP server, internal orchestrator,
-  and provider-backed workers.
-- Public agent-access schemas for requests, responses, context previews, task
-  creation, bundle validation, and draft writes.
-- Context send policy and provider preview for public/private scope control.
-- MCP server design and read-only MCP tool surface before any write tools.
-- Controlled MCP write tools for draft/proposal/bundle surfaces only.
+- Fixed CLI-first execution plan installation as current project memory.
+- Workspace-template pin audit against the `v0.2.0` baseline.
+- Shared service layer used by CLI first, then hosted workers and optional MCP.
+- Stable JSON/error contracts for agent-facing CLI commands.
+- Controlled draft/proposal/bundle write CLI surfaces.
+- CLI operator workflow docs and demo.
 - Provider gateway design, fake/mocked test surface, and OpenAI-compatible
   transport behind explicit opt-in.
 - Hosted worker contracts and execution service that produce validated worker
   bundles, not accepted knowledge.
-- Skill/operator package that instructs external agents how to use MCP first
-  and CLI as a fallback while preserving repository governance.
+- Skill/operator package that instructs agents how to use CLI first and MCP as
+  optional adapter.
+- Optional MCP adapter work after CLI/provider stabilization.
 
 Out of scope for `v0.2.1` unless separately approved:
 
 - Default-on hosted API calls.
 - CI that requires network access, API keys, or real provider calls.
-- Direct accepted writes by MCP tools, hosted workers, external agents, or the
-  internal orchestrator.
+- Direct accepted writes by CLI draft tools, MCP tools, hosted workers,
+  external agents, or the internal orchestrator.
 - Replacing human review with AI review.
 - Web UI, SaaS behavior, multi-user auth, or production operations.
 

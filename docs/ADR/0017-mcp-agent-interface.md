@@ -1,37 +1,36 @@
-# ADR 0017: MCP Agent Interface And Security Model
+# ADR 0017: Optional MCP Adapter Interface And Security Model
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
-ADR 0015 sets the post-`v0.2.0` direction toward agent access through MCP,
-Skill guidance, and hosted API workers. ADR 0016 defines the general
-agent-access authority model and threat model. The repository now has a thin
-service layer, agent-access DTOs, and a provider-send context preview policy
-service. Before implementing an MCP server, the project needs a durable MCP
-boundary that preserves public/private KB policy, accepted-promotion policy,
-and the CLI/gate review model.
+ADR 0015 and ADR 0016 make CLI the first agent interface. The repository also
+has an already-merged minimal read-only stdio MCP surface. The fixed plan does
+not require reverting that code, but it reclassifies MCP as an optional adapter
+over services rather than the primary `v0.2.1` path.
 
-MCP should make TCS-Cosheaf easier for external agents to use. It must not
-turn external agents into trusted maintainers, proof checkers, human reviewers,
-or arbitrary shell operators.
+MCP can make TCS-Cosheaf easier for assistants that support resources/tools but
+do not have shell access. It must not turn external agents into trusted
+maintainers, proof checkers, human reviewers, or arbitrary shell operators.
 
 ## Decision
 
-Adopt an MCP server design with these constraints:
+Treat MCP as an optional adapter with these constraints:
 
-1. The first MCP server mode is stdio.
+1. The current MCP server mode is stdio and local.
 2. MCP resources expose context and data, not authority.
 3. MCP tools are whitelisted typed service calls, not shell commands.
 4. MCP prompts are workflow templates and cannot override repository policy.
-5. Controlled-write tools require both server allow-write configuration and
-   human confirmation or explicit per-call approval.
+5. Controlled-write tools, if added later, require explicit allow-write server
+   configuration and human confirmation or explicit per-call approval.
 6. Direct accepted promotion and direct accepted-path writes remain forbidden.
 7. Tool outputs use structured content where possible.
 8. Private KB exposure requires request-level policy mode and a configured
    private-root allowlist.
+9. MCP is not required for CLI agent workflows, hosted provider work, or the
+   `v0.2.1` release candidate.
 
 ## Resource Boundary
 
@@ -51,12 +50,11 @@ secrets.
 ## Tool Boundary
 
 Read-only tools may call existing services for workspace inspection,
-validation, gate execution, memory search, context build, provider context
-preview, task listing, and bundle validation. These tools may produce runtime
-reports under ignored sidecar directories, but they must not change
-source-of-truth artifacts.
+validation, gate execution, memory search, context build, context display, and
+orchestrator planning. These tools may produce runtime reports under ignored
+sidecar directories, but they must not change source-of-truth artifacts.
 
-Controlled-write tools are later-phase additions. They may create draft
+Controlled-write tools are later optional additions. They may create draft
 artifacts, task records, worker bundles, proposal records, or reducer/review
 context only when the server is configured for write tools and the operator
 confirms the specific action.
@@ -90,22 +88,20 @@ passes.
 
 ## Consequences
 
-The MCP implementation should start with a read-only stdio server and a small
-tool/resource set. Controlled-write tools should be implemented only after
-read-only behavior and security regression tests are stable.
+The already-merged read-only MCP surface may stay as optional adapter code if
+it remains constrained and tested. Controlled-write MCP should wait until CLI
+agent workflows and provider boundaries are stable, unless the maintainer
+explicitly approves a narrower earlier task.
 
 MCP code should call the service layer directly. It should not shell out to the
 CLI for core behavior, expose arbitrary shell, or create a second policy path.
-
-This ADR does not implement the MCP server. It records the design boundary for
-future tasks.
 
 ## Non-Goals
 
 This ADR does not:
 
-- implement MCP runtime code;
-- add MCP dependencies;
+- make MCP the primary agent interface;
+- make MCP a `v0.2.1` blocker;
 - add hosted provider transport;
 - add network listeners;
 - add controlled-write tools;
@@ -113,4 +109,3 @@ This ADR does not:
 - change validation, gate, verifier, review, or accepted-promotion behavior;
 - permit MCP to write accepted knowledge;
 - make AI or MCP output count as human review.
-

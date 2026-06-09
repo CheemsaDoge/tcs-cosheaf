@@ -296,18 +296,19 @@ outputs, write accepted artifacts, or promote accepted knowledge.
 
 ### Service Layer
 
-Provides typed Python service entry points shared by the CLI and future
-agent-access surfaces. The current service layer is intentionally thin: it
-wraps existing workspace, validation, gate, memory search, context-pack, task,
+Provides typed Python service entry points shared by the CLI and other
+agent-access surfaces such as optional MCP adapters and future hosted provider
+workers. The current service layer is intentionally thin: it wraps existing
+workspace, validation, gate, memory search, context-pack, task,
 bundle-validation, and draft-write logic while returning typed results instead
 of terminal-only output.
 
-The service layer does not implement MCP, hosted provider calls, arbitrary
-shell access, automatic review, or accepted-promotion authority. Controlled
-write services are limited to draft/pre-accepted artifact creation, task or run
-records, worker bundles, and review context surfaces. Accepted promotion
-remains the existing explicit lifecycle path and is not exposed as an
-agent-authority service.
+The service layer does not grant MCP authority, run hosted provider calls,
+expose arbitrary shell access, mark automatic review, or create
+accepted-promotion authority. Controlled write services are limited to
+draft/pre-accepted artifact creation, task or run records, worker bundles, and
+review context surfaces. Accepted promotion remains the existing explicit
+lifecycle path and is not exposed as an agent-authority service.
 
 ### CLI Layer
 

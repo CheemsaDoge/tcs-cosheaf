@@ -2,17 +2,24 @@
 
 ## Milestone
 
-Post-`v0.2.0` direction correction toward `v0.2.1` Agent Access,
-Hosted API Provider, MCP, and Skill.
+Post-`v0.2.0` direction correction toward CLI-first agent access and hosted
+provider work.
 
 ## Goal
 
-Replace local-only next-focus language with the post-`v0.2.0` architecture
-direction recorded in `longplan_v3.md` and
-`docs/POST_V020_ROLLBACK_AUDIT.md`. The next milestone is not a permanent
-local-only orchestrator hardening track. It is a controlled agent-access track
-that keeps the deterministic local workflow as the baseline while designing
-safe MCP, Skill, service-layer, and hosted model API worker access.
+Replace stale MCP-first roadmap language with the fixed CLI-first direction
+recorded in `docs/CODEX_DEVELOPMENT_PLAN_V3.md` and
+`docs/POST_V020_ROLLBACK_AUDIT.md`.
+
+The next milestone is not a local-only orchestrator hardening track and not an
+MCP-first access track. It is a controlled agent-access track where:
+
+- CLI is the first agent interface and the human/CI oracle.
+- Typed services are the shared implementation boundary.
+- Hosted provider support is planned, controlled, default-off, and fake or
+  mocked in tests.
+- MCP is an optional adapter, not a `v0.2.1` blocker.
+- Skill is an operator runbook, not a source of truth or permission expansion.
 
 This milestone update is documentation only. It does not add runtime behavior,
 change artifact schema, change gate semantics, change verifier adapter
@@ -22,8 +29,8 @@ workspace-template behavior, or add runtime dependencies.
 ## Current Baseline
 
 - Framework package metadata and `cosheaf.__version__` record `0.2.0`.
-- Remote tag `v0.1.1` exists and remains the downstream formal-link metadata
-  baseline.
+- Remote tag `v0.1.1` exists and remains the downstream Formal Link Layer
+  metadata baseline.
 - Remote tag `v0.2.0` exists as the bounded local-MVP framework release. It is
   published as a prerelease on GitHub to avoid production-readiness
   overclaiming.
@@ -36,9 +43,9 @@ workspace-template behavior, or add runtime dependencies.
   source-reviewed, and human-reviewed before accepted knowledge is added.
 - `tcs-cosheaf-workspace-template` is the user-facing entry point with readonly
   public KB plus writable private KB overlay.
-- The post-`v0.2.0` rollback audit identifies `context/CURRENT_MILESTONE.md`
-  and `docs/ROADMAP.md` as the documents that needed direction rewrite. It did
-  not identify code, schema, KB, verifier, gate, or promotion behavior that
+- The fixed post-`v0.2.0` rollback audit identifies roadmap, milestone, ADR,
+  plan, and agent-access docs that needed direction rewrite. It did not
+  identify code, schema, KB, verifier, gate, or promotion behavior that
   required revert.
 
 ## v0.2.0 Baseline Scope
@@ -59,28 +66,30 @@ CSLib/mathlib ingestion, or semantic-alignment automation.
 
 ## v0.2.1 Direction
 
-The next target is `v0.2.1` Agent Access + Hosted API Provider + MCP/Skill.
-The target direction is:
+The next target is `v0.2.1` CLI Agent Access + Hosted Provider Gateway. The
+target direction is:
 
-- MCP is the first-class external-agent machine interface.
-- Skill is an optional operator guide, not a source of truth and not an
-  authority expansion.
-- Hosted model API/provider support is a scheduled capability, implemented
-  through explicit provider-gateway and worker contracts.
-- Local-only execution remains the fallback and CI/testing mode. It is not the
-  permanent product boundary.
-- External agents may act as orchestrators or workers through controlled MCP
-  and service-layer interfaces.
+- CLI is the primary agent interface for coding agents and the stable oracle
+  for humans and CI.
+- Core agent-facing CLI commands should gain stable `--json` output and stable
+  error codes where needed.
+- Service-layer functions are the shared implementation boundary for CLI,
+  hosted workers, internal orchestrator code, and optional future MCP.
+- Hosted provider support is scheduled capability, implemented through an
+  explicit provider gateway and fake/mocked tests first.
+- Local-only execution remains fallback, offline, and CI/testing mode. It is
+  not the permanent product boundary.
 - The internal orchestrator may call hosted API workers only when policy,
   configuration, consent, and context-sending rules permit.
-- CLI remains the human and CI oracle.
-- Service-layer functions should become the shared implementation boundary for
-  CLI, MCP, internal orchestrator, and provider-backed workers.
+- External coding agents can operate Cosheaf through CLI first.
+- MCP remains optional adapter work for assistants that benefit from
+  resources/tools and should not block CLI/provider stabilization.
+- Skill remains an optional operator runbook and must not widen authority.
 
 ## API And CI Boundary
 
-Real hosted API calls are supported by design as a planned capability, but they
-must not run in CI. CI and default tests must use fake or mocked providers.
+Real hosted API calls are planned, but they must not run in CI. CI and default
+tests must use fake or mocked providers.
 
 Hosted provider behavior must remain:
 
@@ -114,31 +123,26 @@ The agent-access direction does not weaken knowledge governance:
 
 ## Completion Criteria
 
-- `context/CURRENT_MILESTONE.md` no longer says the next focus is only local
-  orchestrator hardening.
-- `docs/ROADMAP.md` schedules API/provider integration as controlled v0.2.1
-  work rather than deferring it indefinitely.
-- `docs/ADR/0015-agent-api-mcp-direction.md` records the direction change.
-- `docs/CODEX_DEVELOPMENT_PLAN_V3.md` is installed as the current durable
-  execution plan.
+- `context/CURRENT_MILESTONE.md` says the next direction is CLI-first agent
+  access with hosted provider work scheduled and MCP optional.
+- `docs/ROADMAP.md` no longer says MCP is the first-class or primary external
+  agent interface.
+- ADR 0015, ADR 0016, and ADR 0017 preserve useful boundaries while
+  reclassifying MCP as optional.
+- `docs/CODEX_DEVELOPMENT_PLAN_V3.md` is the fixed CLI-first durable execution
+  plan.
 - `docs/CODEX_DEVELOPMENT_PLAN.md` is clearly marked historical and
   superseded.
 - Documentation preserves gate, review, promotion, public/private KB, and
   skipped-not-pass boundaries.
-- Documentation states that real API calls are supported by design but not used
+- Documentation states that real API calls are planned by design but not used
   in CI.
 - Required local commands are run and reported honestly.
 
 ## Next Focus
 
-After this execution-plan installation lands, Phase R is complete. Continue
-with Phase A / Task A.1: document the agent-access architecture and threat
-model before implementing service-layer, MCP, or hosted-provider code.
-
-The current durable execution plan is
-[`docs/CODEX_DEVELOPMENT_PLAN_V3.md`](../docs/CODEX_DEVELOPMENT_PLAN_V3.md).
-The older `docs/CODEX_DEVELOPMENT_PLAN.md` file is historical only and must not
-override v3 task order or direction.
+After this documentation alignment lands, continue with Phase R / Task R.3:
+workspace-template pin correction audit on branch `workspace-pin-v020-audit`.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

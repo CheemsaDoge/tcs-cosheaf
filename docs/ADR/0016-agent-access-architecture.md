@@ -1,16 +1,16 @@
-# ADR 0016: Agent Access Architecture And Threat Model
+# ADR 0016: CLI-First Agent Access Architecture And Threat Model
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
 ADR 0015 records the post-`v0.2.0` direction change: TCS-Cosheaf should support
-agent access through MCP, Skill guidance, and hosted API workers while keeping
-the deterministic local workflow as the baseline. Before implementing service
-extraction, MCP tools, provider transports, or hosted workers, the repository
-needs a durable authority model and threat model.
+agent access through CLI first, hosted provider workers when explicitly
+configured, and optional MCP adapters later. The repository needs a durable
+authority model and threat model before expanding CLI JSON, provider gateway,
+Skill, or optional MCP surfaces.
 
 The main risk is not that agents or hosted providers exist. The main risk is
 letting any agent-access path bypass the repository's existing truth boundary:
@@ -21,13 +21,14 @@ explicit accepted promotion.
 
 Adopt this agent-access architecture:
 
-1. MCP is the primary external-agent machine interface.
-2. Skill is an optional operator guide. It is not a source of truth and grants
+1. CLI is the primary external-agent interface.
+2. Service layer is the shared implementation boundary.
+3. Hosted API provider support is a planned worker capability, default-off and
+   fake/mocked in tests.
+4. MCP is an optional adapter over services, not the primary path and not a
+   release blocker.
+5. Skill is an optional operator guide. It is not a source of truth and grants
    no permission by itself.
-3. Hosted API provider support is a planned core worker capability.
-4. CLI remains the human and CI oracle.
-5. The future service layer is shared by CLI, MCP, internal orchestrator, and
-   provider-backed workers.
 6. Controlled writes are limited to draft, proposal, task, run, and bundle
    surfaces.
 7. Accepted promotion remains outside agent authority.
@@ -37,15 +38,10 @@ Adopt this agent-access architecture:
 The intended control flow is:
 
 ```text
-human / CI
+human / CI / coding agent
   -> CLI
   -> service layer
   -> storage / validation / gate / retrieval / context / task / verifier logic
-
-external agent
-  -> MCP tools and resources
-  -> service layer
-  -> same bounded logic
 
 internal orchestrator
   -> service layer
@@ -56,32 +52,36 @@ hosted provider worker
   -> provider gateway
   -> explicit policy and consent boundary
   -> worker bundle / draft proposal / review context
+
+optional MCP adapter
+  -> whitelisted service calls
+  -> same bounded logic
 ```
 
-The CLI is still the oracle used by humans and CI. MCP and provider paths
-should reuse typed services rather than shelling out to the CLI as their core
-implementation. The Skill package should describe how an operator or external
-agent should use MCP and CLI safely, but repository files and typed interfaces
-remain authoritative.
+The CLI is the first oracle used by humans, CI, and coding agents. Optional MCP
+and provider paths should reuse typed services rather than shelling out to the
+CLI as their core implementation. The Skill package should describe how an
+operator or external agent should use CLI first, and MCP only when the adapter
+is appropriate, but repository files and typed interfaces remain authoritative.
 
 ## Threat Model
 
-### MCP
+### CLI Agent
 
 Risks:
 
-- arbitrary shell or filesystem access through over-broad tools;
-- direct accepted writes or direct promotion;
-- resource reads exposing private KB records by default;
-- tool outputs being treated as human review or proof.
+- broad repository dumps;
+- direct edits to accepted paths;
+- false claims that validation/gate output is human review;
+- malformed draft or bundle writes.
 
 Mitigations:
 
-- expose whitelisted service calls only;
-- add read-only MCP tools before controlled-write tools;
-- make write tools typed and limited to draft/proposal/bundle surfaces;
-- preserve public/private scope metadata in resources and results;
-- never expose direct accepted promotion or accepted-path writes through MCP.
+- stable bounded `--json` outputs for agent-facing commands;
+- explicit controlled write commands for draft/proposal/bundle surfaces;
+- repository-local path validation;
+- refusal of accepted-path writes;
+- final validation/gate/test reporting.
 
 ### Hosted Provider
 
@@ -103,6 +103,23 @@ Mitigations:
 - provider output can create worker bundles, draft proposals, or review
   context only.
 
+### Optional MCP
+
+Risks:
+
+- arbitrary shell or filesystem access through over-broad tools;
+- direct accepted writes or direct promotion;
+- resource reads exposing private KB records by default;
+- tool outputs being treated as human review or proof.
+
+Mitigations:
+
+- expose whitelisted service calls only;
+- keep MCP optional and adapter-scoped;
+- make write tools typed and limited to draft/proposal/bundle surfaces;
+- preserve public/private scope metadata in resources and results;
+- never expose direct accepted promotion or accepted-path writes through MCP.
+
 ### Skill
 
 Risks:
@@ -114,35 +131,19 @@ Risks:
 Mitigations:
 
 - treat Skill as guidance only;
-- keep repository docs, schemas, service contracts, CLI, MCP definitions, and
-  gate behavior authoritative;
+- keep repository docs, schemas, service contracts, CLI behavior, optional MCP
+  definitions, and gate behavior authoritative;
 - make forbidden actions explicit in the Skill package;
 - require Skill examples to preserve accepted-promotion and private-KB
   boundaries.
-
-### External Agent
-
-Risks:
-
-- hallucinated capabilities or false verification claims;
-- accidental private/public KB mixing;
-- oversized context pulls;
-- generated content entering accepted knowledge without review.
-
-Mitigations:
-
-- require typed, bounded service/MCP calls;
-- keep context packs issue-scoped and budgeted;
-- make public-only context explicit;
-- preserve validation, gate, review, and promotion as separate steps;
-- do not allow AI review to satisfy human-review policy.
 
 ### Private KB Leakage
 
 Risks:
 
-- retrieval, context packs, MCP resources, provider requests, logs, PR
-  summaries, or generated review context leak private artifact text or IDs;
+- retrieval, context packs, CLI JSON, optional MCP resources, provider
+  requests, logs, PR summaries, or generated review context leak private
+  artifact text or IDs;
 - private artifacts are copied into public KB roots;
 - public artifacts begin depending on private artifacts.
 
@@ -159,9 +160,10 @@ Mitigations:
 
 ## Consequences
 
-Future tasks should extract typed services before implementing MCP or hosted
-providers. MCP tools and provider workers should call those services, not
-duplicate CLI logic or invoke arbitrary shell commands.
+Future tasks should stabilize typed services and CLI JSON before broad
+provider or optional MCP behavior. Provider workers and optional MCP tools
+should call services, not duplicate CLI logic or invoke arbitrary shell
+commands.
 
 This ADR authorizes architecture direction only. It does not implement runtime
 behavior, add public interfaces, change artifact schema, change gates, change
@@ -172,12 +174,11 @@ dependencies.
 
 This ADR does not:
 
-- implement an MCP server;
 - implement provider transport;
-- implement a service layer;
-- define final request/response schemas;
+- implement controlled draft-write CLI;
 - package a Skill;
 - run hosted API calls;
+- require MCP for `v0.2.1`;
 - add production multi-user permissions;
 - add automatic theorem proving, autoformalization, or semantic-alignment
   automation.
