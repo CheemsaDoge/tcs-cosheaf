@@ -2,6 +2,16 @@
 
 ## Current Public Python Interfaces
 
+### Planned Interfaces Not Yet Implemented
+
+- `docs/MCP_SERVER.md`: planned MCP server boundary and security model. This is
+  documentation only; the repository does not yet expose an MCP runtime,
+  server entry point, MCP transport, MCP resources, MCP prompts, or MCP tools.
+- `docs/ADR/0017-mcp-agent-interface.md`: proposed ADR for the future MCP
+  agent interface. It records stdio-first transport, resource/tool/prompt
+  boundaries, controlled-write requirements, forbidden tools, and private KB
+  policy constraints without changing runtime behavior.
+
 ### CLI Entry Point
 
 - Entry point: `cosheaf`
