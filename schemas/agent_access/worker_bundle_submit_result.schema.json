@@ -1,0 +1,47 @@
+{
+  "additionalProperties": false,
+  "description": "Result of worker bundle validation/submission.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "task_id": {
+      "title": "Task Id",
+      "type": "string"
+    },
+    "bundle_id": {
+      "title": "Bundle Id",
+      "type": "string"
+    },
+    "accepted_for_review": {
+      "title": "Accepted For Review",
+      "type": "boolean"
+    },
+    "output_paths": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Output Paths",
+      "type": "array"
+    },
+    "warnings": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Warnings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "task_id",
+    "bundle_id",
+    "accepted_for_review"
+  ],
+  "title": "WorkerBundleSubmitResult",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/agent_access/worker_bundle_submit_result.schema.json"
+}

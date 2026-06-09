@@ -1,0 +1,96 @@
+{
+  "$defs": {
+    "ErrorResult": {
+      "additionalProperties": false,
+      "description": "Standard machine-readable error response.",
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "remediation": {
+          "title": "Remediation",
+          "type": "string"
+        },
+        "blocking": {
+          "title": "Blocking",
+          "type": "boolean"
+        },
+        "details": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Details",
+          "type": "object"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "remediation",
+        "blocking"
+      ],
+      "title": "ErrorResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Stable gatekeeper run response.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "verdict": {
+      "enum": [
+        "pass",
+        "fail"
+      ],
+      "title": "Verdict",
+      "type": "string"
+    },
+    "report_json_path": {
+      "title": "Report Json Path",
+      "type": "string"
+    },
+    "report_markdown_path": {
+      "title": "Report Markdown Path",
+      "type": "string"
+    },
+    "blocking_issues": {
+      "items": {
+        "$ref": "#/$defs/ErrorResult"
+      },
+      "title": "Blocking Issues",
+      "type": "array"
+    },
+    "nonblocking_issues": {
+      "items": {
+        "$ref": "#/$defs/ErrorResult"
+      },
+      "title": "Nonblocking Issues",
+      "type": "array"
+    }
+  },
+  "required": [
+    "verdict",
+    "report_json_path",
+    "report_markdown_path"
+  ],
+  "title": "GateRunResult",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/agent_access/gate_run_result.schema.json"
+}

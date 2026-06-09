@@ -1,0 +1,80 @@
+{
+  "$defs": {
+    "ErrorResult": {
+      "additionalProperties": false,
+      "description": "Standard machine-readable error response.",
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "remediation": {
+          "title": "Remediation",
+          "type": "string"
+        },
+        "blocking": {
+          "title": "Blocking",
+          "type": "boolean"
+        },
+        "details": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Details",
+          "type": "object"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "remediation",
+        "blocking"
+      ],
+      "title": "ErrorResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Stable validation response.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "ok": {
+      "title": "Ok",
+      "type": "boolean"
+    },
+    "checked_count": {
+      "title": "Checked Count",
+      "type": "integer"
+    },
+    "failures": {
+      "items": {
+        "$ref": "#/$defs/ErrorResult"
+      },
+      "title": "Failures",
+      "type": "array"
+    }
+  },
+  "required": [
+    "ok",
+    "checked_count"
+  ],
+  "title": "ValidateResult",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/agent_access/validate_result.schema.json"
+}

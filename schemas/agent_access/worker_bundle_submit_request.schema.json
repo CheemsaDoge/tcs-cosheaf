@@ -1,0 +1,33 @@
+{
+  "additionalProperties": false,
+  "description": "Request to validate or submit a worker bundle for review.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "task_id": {
+      "title": "Task Id",
+      "type": "string"
+    },
+    "bundle_path": {
+      "title": "Bundle Path",
+      "type": "string"
+    },
+    "complete_task": {
+      "default": false,
+      "title": "Complete Task",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "task_id",
+    "bundle_path"
+  ],
+  "title": "WorkerBundleSubmitRequest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/agent_access/worker_bundle_submit_request.schema.json"
+}

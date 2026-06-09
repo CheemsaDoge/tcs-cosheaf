@@ -1,0 +1,57 @@
+{
+  "$defs": {
+    "ArtifactStatus": {
+      "description": "Supported artifact lifecycle states.",
+      "enum": [
+        "raw",
+        "draft",
+        "locally_tested",
+        "adversarially_tested",
+        "machine_checked",
+        "human_reviewed",
+        "accepted",
+        "refuted",
+        "obsolete",
+        "superseded"
+      ],
+      "title": "ArtifactStatus",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Result of writing a draft/pre-accepted artifact proposal.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "artifact_id": {
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ArtifactStatus"
+    },
+    "path": {
+      "title": "Path",
+      "type": "string"
+    },
+    "accepted_write_performed": {
+      "const": false,
+      "default": false,
+      "title": "Accepted Write Performed",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "artifact_id",
+    "status",
+    "path"
+  ],
+  "title": "DraftArtifactWriteResult",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/agent_access/draft_artifact_write_result.schema.json"
+}

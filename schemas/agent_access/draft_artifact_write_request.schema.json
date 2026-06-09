@@ -1,0 +1,123 @@
+{
+  "$defs": {
+    "ArtifactStatus": {
+      "description": "Supported artifact lifecycle states.",
+      "enum": [
+        "raw",
+        "draft",
+        "locally_tested",
+        "adversarially_tested",
+        "machine_checked",
+        "human_reviewed",
+        "accepted",
+        "refuted",
+        "obsolete",
+        "superseded"
+      ],
+      "title": "ArtifactStatus",
+      "type": "string"
+    },
+    "ArtifactType": {
+      "description": "Supported artifact type names.",
+      "enum": [
+        "definition",
+        "claim",
+        "theorem",
+        "conjecture",
+        "proof",
+        "proof_attempt",
+        "construction",
+        "algorithm",
+        "reduction",
+        "counterexample",
+        "experiment",
+        "review",
+        "verifier",
+        "issue"
+      ],
+      "title": "ArtifactType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Request to write a draft/pre-accepted artifact proposal.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "artifact_id": {
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "artifact_type": {
+      "$ref": "#/$defs/ArtifactType"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "domain": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Domain",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/ArtifactStatus",
+      "default": "draft"
+    },
+    "statement": {
+      "title": "Statement",
+      "type": "string"
+    },
+    "authors": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Authors",
+      "type": "array"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "depends_on": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Depends On",
+      "type": "array"
+    },
+    "supersedes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Supersedes",
+      "type": "array"
+    },
+    "target_surface": {
+      "const": "draft",
+      "default": "draft",
+      "title": "Target Surface",
+      "type": "string"
+    }
+  },
+  "required": [
+    "artifact_id",
+    "artifact_type",
+    "title",
+    "domain",
+    "statement"
+  ],
+  "title": "DraftArtifactWriteRequest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/agent_access/draft_artifact_write_request.schema.json"
+}

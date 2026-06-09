@@ -1,0 +1,58 @@
+{
+  "$defs": {
+    "WorkerType": {
+      "description": "Protocol-level worker roles supported by the agent harness.",
+      "enum": [
+        "reasoner",
+        "verifier",
+        "counterexampleer",
+        "construction_searcher",
+        "formalizer",
+        "literature_scout",
+        "orchestrator"
+      ],
+      "title": "WorkerType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Result of creating a local task record.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "task_id": {
+      "title": "Task Id",
+      "type": "string"
+    },
+    "issue_id": {
+      "title": "Issue Id",
+      "type": "string"
+    },
+    "worker_type": {
+      "$ref": "#/$defs/WorkerType"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "task_path": {
+      "title": "Task Path",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_id",
+    "issue_id",
+    "worker_type",
+    "status",
+    "task_path"
+  ],
+  "title": "CreateTaskResult",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/agent_access/create_task_result.schema.json"
+}

@@ -1,0 +1,77 @@
+{
+  "$defs": {
+    "ContextPolicyMode": {
+      "description": "Context exposure policy mode.",
+      "enum": [
+        "public",
+        "private_research"
+      ],
+      "title": "ContextPolicyMode",
+      "type": "string"
+    },
+    "RetrievalRole": {
+      "description": "Caller role for bounded retrieval requests.",
+      "enum": [
+        "librarian",
+        "orchestrator",
+        "reasoner",
+        "verifier",
+        "formalizer",
+        "literature_scout",
+        "counterexampleer",
+        "construction_searcher"
+      ],
+      "title": "RetrievalRole",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Request to build a bounded context pack.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "issue_id": {
+      "title": "Issue Id",
+      "type": "string"
+    },
+    "role": {
+      "$ref": "#/$defs/RetrievalRole",
+      "default": "orchestrator"
+    },
+    "max_cards": {
+      "default": 20,
+      "title": "Max Cards",
+      "type": "integer"
+    },
+    "max_full_artifacts": {
+      "default": 0,
+      "title": "Max Full Artifacts",
+      "type": "integer"
+    },
+    "policy_mode": {
+      "$ref": "#/$defs/ContextPolicyMode",
+      "default": "public"
+    },
+    "public_only": {
+      "default": true,
+      "title": "Public Only",
+      "type": "boolean"
+    },
+    "allow_private_context": {
+      "default": false,
+      "title": "Allow Private Context",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "issue_id"
+  ],
+  "title": "ContextBuildRequest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/agent_access/context_build_request.schema.json"
+}

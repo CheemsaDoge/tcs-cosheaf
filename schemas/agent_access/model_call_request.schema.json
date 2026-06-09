@@ -1,0 +1,227 @@
+{
+  "$defs": {
+    "ContextPolicyMode": {
+      "description": "Context exposure policy mode.",
+      "enum": [
+        "public",
+        "private_research"
+      ],
+      "title": "ContextPolicyMode",
+      "type": "string"
+    },
+    "MemoryRootScope": {
+      "description": "Repository or workspace scope for a memory card.",
+      "enum": [
+        "public",
+        "private",
+        "workspace",
+        "framework"
+      ],
+      "title": "MemoryRootScope",
+      "type": "string"
+    },
+    "NetworkPolicy": {
+      "description": "Provider-neutral network access policy.",
+      "enum": [
+        "disabled",
+        "explicit_allow"
+      ],
+      "title": "NetworkPolicy",
+      "type": "string"
+    },
+    "ProviderConsent": {
+      "additionalProperties": false,
+      "description": "Consent and scope metadata for provider-send flows.",
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "consent_required": {
+          "title": "Consent Required",
+          "type": "boolean"
+        },
+        "consent_granted": {
+          "title": "Consent Granted",
+          "type": "boolean"
+        },
+        "allow_private_context": {
+          "title": "Allow Private Context",
+          "type": "boolean"
+        },
+        "policy_scope": {
+          "$ref": "#/$defs/ContextPolicyMode"
+        },
+        "operator_note": {
+          "default": "",
+          "title": "Operator Note",
+          "type": "string"
+        }
+      },
+      "required": [
+        "consent_required",
+        "consent_granted",
+        "allow_private_context",
+        "policy_scope"
+      ],
+      "title": "ProviderConsent",
+      "type": "object"
+    },
+    "ProviderName": {
+      "description": "Provider-neutral model provider identifiers.",
+      "enum": [
+        "fake",
+        "openai",
+        "anthropic",
+        "google",
+        "local"
+      ],
+      "title": "ProviderName",
+      "type": "string"
+    },
+    "ReasoningEffort": {
+      "description": "Provider-neutral reasoning effort hint.",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "title": "ReasoningEffort",
+      "type": "string"
+    },
+    "ToolPolicy": {
+      "description": "Provider-neutral tool-use policy.",
+      "enum": [
+        "none",
+        "read_only",
+        "local_tools",
+        "verifier_tools"
+      ],
+      "title": "ToolPolicy",
+      "type": "string"
+    },
+    "WorkerType": {
+      "description": "Protocol-level worker roles supported by the agent harness.",
+      "enum": [
+        "reasoner",
+        "verifier",
+        "counterexampleer",
+        "construction_searcher",
+        "formalizer",
+        "literature_scout",
+        "orchestrator"
+      ],
+      "title": "WorkerType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Provider-neutral model call request for future hosted workers.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "provider": {
+      "$ref": "#/$defs/ProviderName",
+      "default": "fake"
+    },
+    "model": {
+      "title": "Model",
+      "type": "string"
+    },
+    "worker_role": {
+      "$ref": "#/$defs/WorkerType"
+    },
+    "prompt": {
+      "title": "Prompt",
+      "type": "string"
+    },
+    "context_artifact_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Context Artifact Ids",
+      "type": "array"
+    },
+    "root_scopes": {
+      "items": {
+        "$ref": "#/$defs/MemoryRootScope"
+      },
+      "title": "Root Scopes",
+      "type": "array"
+    },
+    "consent": {
+      "$ref": "#/$defs/ProviderConsent"
+    },
+    "temperature": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Temperature"
+    },
+    "top_p": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Top P"
+    },
+    "reasoning_effort": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReasoningEffort"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "max_output_tokens": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Output Tokens"
+    },
+    "tool_policy": {
+      "$ref": "#/$defs/ToolPolicy",
+      "default": "none"
+    },
+    "network_policy": {
+      "$ref": "#/$defs/NetworkPolicy",
+      "default": "disabled"
+    }
+  },
+  "required": [
+    "model",
+    "worker_role",
+    "prompt",
+    "consent"
+  ],
+  "title": "ModelCallRequest",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/agent_access/model_call_request.schema.json"
+}

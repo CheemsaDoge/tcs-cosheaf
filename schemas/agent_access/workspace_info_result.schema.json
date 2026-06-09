@@ -1,0 +1,133 @@
+{
+  "$defs": {
+    "AgentKbRoot": {
+      "additionalProperties": false,
+      "description": "Machine-readable KB root metadata.",
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "scope": {
+          "$ref": "#/$defs/MemoryRootScope"
+        },
+        "readonly": {
+          "title": "Readonly",
+          "type": "boolean"
+        },
+        "priority": {
+          "title": "Priority",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "path",
+        "scope",
+        "readonly",
+        "priority"
+      ],
+      "title": "AgentKbRoot",
+      "type": "object"
+    },
+    "KbRootPolicy": {
+      "additionalProperties": false,
+      "description": "Public/private policy fields for an active workspace.",
+      "properties": {
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "private_can_depend_on_public": {
+          "title": "Private Can Depend On Public",
+          "type": "boolean"
+        },
+        "public_can_depend_on_private": {
+          "title": "Public Can Depend On Private",
+          "type": "boolean"
+        },
+        "accepted_requires_source": {
+          "title": "Accepted Requires Source",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "private_can_depend_on_public",
+        "public_can_depend_on_private",
+        "accepted_requires_source"
+      ],
+      "title": "KbRootPolicy",
+      "type": "object"
+    },
+    "MemoryRootScope": {
+      "description": "Repository or workspace scope for a memory card.",
+      "enum": [
+        "public",
+        "private",
+        "workspace",
+        "framework"
+      ],
+      "title": "MemoryRootScope",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Stable workspace information response for agent callers.",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "workspace_name": {
+      "title": "Workspace Name",
+      "type": "string"
+    },
+    "repo_root": {
+      "title": "Repo Root",
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "configured",
+        "legacy"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "kb_roots": {
+      "items": {
+        "$ref": "#/$defs/AgentKbRoot"
+      },
+      "title": "Kb Roots",
+      "type": "array"
+    },
+    "policy": {
+      "$ref": "#/$defs/KbRootPolicy"
+    }
+  },
+  "required": [
+    "workspace_name",
+    "repo_root",
+    "mode",
+    "kb_roots",
+    "policy"
+  ],
+  "title": "WorkspaceInfoResult",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/agent_access/workspace_info_result.schema.json"
+}
