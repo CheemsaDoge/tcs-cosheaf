@@ -75,12 +75,48 @@ External coding agents should use CLI first:
 6. Re-run the required validation/test/gate commands.
 7. Produce a PR summary with exact commands and limitations.
 
+The normative operator contract is recorded in
+[`docs/ADR/0018-cli-agent-operator-contract.md`](ADR/0018-cli-agent-operator-contract.md).
+For a Codex-style repository task, the concrete sequence is:
+
+1. Read policy and scope: `AGENTS.md`, `context/CURRENT_MILESTONE.md`, the
+   issue, and any generated context pack referenced by the issue.
+2. Inspect the workspace:
+   `cosheaf workspace info --json`.
+3. Establish a baseline:
+   `cosheaf validate --json` and `cosheaf gate run --json`.
+4. Search bounded memory:
+   `cosheaf memory search "<query>" --issue <issue-id> --json`.
+5. Build and read context:
+   `cosheaf context build <issue-id> --json`, then read
+   `context/TASKS/<issue-id>/CONTEXT.md` and related pack files when present.
+6. Make only issue-scoped edits. Use controlled write commands for
+   draft/proposal/source-note/bundle/review-staging outputs when the issue
+   permits those writes.
+7. Re-run the task-required tests, validation, and gates.
+8. Summarize changed files, commands, pass/fail/skipped results, runtime
+   outputs, limitations, public/private scope handling, and non-goals.
+
 Core read-only agent-facing CLI commands provide deterministic `--json` output
 for version, workspace info, validation, gate runs, memory cards/search,
 context build/show, and orchestrator planning. JSON mode emits no Rich or ANSI
 markup, keeps public/private root scope visible where retrieval or context is
 involved, and uses `ErrorResult` for expected machine-readable errors. MCP
 remains optional and is not required for ordinary CLI-first agent workflows.
+
+### Allowed Agent Commands
+
+Agent-safe read/check commands include:
+
+- `cosheaf version --json`
+- `cosheaf workspace info --json`
+- `cosheaf validate --json`
+- `cosheaf gate run --json`
+- `cosheaf memory cards --json`
+- `cosheaf memory search "<query>" --issue <issue-id> --json`
+- `cosheaf context build <issue-id> --json`
+- `cosheaf context show <issue-id> --json`
+- `cosheaf orchestrator plan --issue <issue-id> --json`
 
 Controlled write commands are deliberately narrow and require explicit JSON
 input:
@@ -95,6 +131,24 @@ paths without writing files. These commands refuse accepted paths, readonly KB
 roots, accepted artifact status, and `human_reviewed` review spoofing. They do
 not run promotion, do not create human review, do not call hosted providers,
 and do not change gate or verifier results.
+
+### Forbidden Agent Actions
+
+External coding agents must not:
+
+- write directly to `kb/accepted/`;
+- run accepted promotion unless the issue explicitly asks for the existing
+  promotion workflow and all review/gate requirements are satisfied;
+- mark `review.state: human_reviewed` or create approval/rejection decisions
+  as an AI agent;
+- treat validation, gate, verifier, Lean, SAT, SMT, provider, MCP, memory, or
+  context output as human review;
+- treat skipped verifier/provider/tool results as passes;
+- write into readonly public KB roots;
+- copy private artifacts into public KB or readonly roots;
+- send private KB context to hosted providers without explicit policy,
+  preview, configuration, and operator consent;
+- require MCP for ordinary CLI-first work.
 
 ## Service-Layer Boundary
 
@@ -288,6 +342,11 @@ Required mitigations:
 - avoid logging hidden reasoning or full private context unless the selected
   audit policy explicitly permits it;
 - never copy private artifacts into `tcs-kb-public` or readonly public roots.
+
+When an agent uses context or memory results that include private-root scope,
+the final PR summary must keep that scope visible and must not restate private
+artifact text in public issue or PR bodies unless the task explicitly permits
+private research disclosure.
 
 ## Current Status
 

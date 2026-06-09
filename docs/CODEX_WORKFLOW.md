@@ -183,6 +183,67 @@ After any controlled write, run validation and gate commands required by the
 task. Validation and gate success remain evidence for review, not a substitute
 for human review or promotion.
 
+## CLI Agent Operator Contract
+
+For Codex-style execution, use the CLI as the first machine interface and the
+human/CI oracle. MCP is optional and is not required for ordinary repository
+work.
+
+Follow this sequence for nontrivial issue work:
+
+1. Read `AGENTS.md`, `context/CURRENT_MILESTONE.md`, this workflow document,
+   and the GitHub issue.
+2. Inspect workspace state:
+   `cosheaf workspace info --json`.
+3. Establish the pre-change baseline:
+   `cosheaf validate --json` and `cosheaf gate run --json`.
+4. Search issue-scoped memory:
+   `cosheaf memory search "<query>" --issue <issue-id> --json`.
+5. Build bounded context:
+   `cosheaf context build <issue-id> --json`.
+6. Read `context/TASKS/<issue-id>/CONTEXT.md`,
+   `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, `COMMANDS.md`, and
+   `ACCEPTANCE.md` when present.
+7. Make only issue-scoped changes. If the task permits generated research
+   outputs, write only draft/proposal/source-note/bundle/review-staging
+   records through the controlled commands above.
+8. Re-run task-required checks, including `make lint`, `make typecheck`,
+   `make test`, `make validate`, `make gate`, and `git diff --check` unless
+   the issue narrows the required command set.
+9. Open one PR with a summary that records changed files, exact commands,
+   results, runtime outputs, limitations, interface/docs/schema changes, and
+   gate verdict.
+
+Allowed agent-facing command families are:
+
+- read/check: `version`, `workspace info`, `validate`, `gate run`,
+  `memory cards`, `memory search`, `context build`, `context show`, and
+  `orchestrator plan`, preferably with `--json` for machine consumers;
+- controlled write: `draft write-artifact`, `draft write-source-note`,
+  `bundle submit`, and `review request`, preferably with `--dry-run --json`
+  before real writes;
+- ordinary repository verification: `make lint`, `make typecheck`,
+  `make test`, `make validate`, `make gate`, and `git diff --check`.
+
+Forbidden agent actions are:
+
+- direct writes to `kb/accepted/`;
+- direct accepted promotion unless the issue explicitly asks for the existing
+  promotion workflow and all review/gate requirements are satisfied;
+- marking AI output or agent review as `human_reviewed`;
+- treating validation, gate, verifier, Lean, SAT, SMT, provider, MCP, memory,
+  or context output as human review;
+- treating skipped verifier/provider/tool results as passes;
+- writing into readonly public KB roots;
+- copying private artifacts into public KB or readonly roots;
+- requiring MCP for CLI-first work;
+- sending private KB context to hosted providers without explicit policy,
+  configuration, preview, and operator consent.
+
+If private-root scope appears in workspace, memory, or context output, preserve
+that scope label in the PR summary and avoid quoting private artifact text in
+public GitHub surfaces unless the task explicitly permits it.
+
 ## Local Task Runner
 
 Use `cosheaf task run <task-id> -- <command> [args...]` only for explicit local
