@@ -8,13 +8,23 @@ This audit records the current evidence for the fixed longplan work across the
 three-repository TCS-Cosheaf ecosystem. It is a documentation and code-surface
 audit, not a release tag and not a claim that the project is production-ready.
 
+Supersession note: this document is a historical audit of the older
+`longplan_fixed.md` execution plan. Future task ordering is now governed by the
+CLI-first direction in `docs/CODEX_DEVELOPMENT_PLAN_V3.md` and
+`longplan_v3_fixed_cli_first.md`, where hosted provider work is planned,
+explicit, default-off, and fake/mocked in tests. The Phase 5 Task 5.3 gating
+language below records the old audit state and must not be used to defer or
+override the current CLI-first hosted-provider plan.
+
 ## Summary
 
 All fixed-plan tasks through Phase 8 have merged evidence except Phase 5 Task
-5.3. Task 5.3 is intentionally not implemented because the task itself has an
-unmet precondition: the maintainer must explicitly approve adding a hosted
-provider dependency. The maintainer has allowed direct PR merges after CI, but
-that is not equivalent to approving a new hosted provider dependency or SDK.
+5.3. Under the older `longplan_fixed.md` plan, Task 5.3 was not implemented
+because the task itself had an unmet precondition around provider-adapter
+approval. That historical gating language is superseded for future
+task ordering by the current CLI-first plan, which schedules hosted provider
+work while preserving explicit configuration, default-off behavior, fake or
+mocked tests, and the ban on accepted writes or review/gate/promotion bypass.
 
 Current ecosystem state at the audit point:
 
@@ -60,7 +70,7 @@ Current ecosystem state at the audit point:
 | 4.6 CodeGraph dev-only tooling | Complete | `tcs-cosheaf` PR #106. |
 | 5.1 Provider-neutral model interface | Complete | `tcs-cosheaf` PR #108, ADR 0013. |
 | 5.2 Role prompt contracts | Complete | `tcs-cosheaf` PR #110, `docs/AGENT_ROLES.md`. |
-| 5.3 Hosted provider adapter behind explicit flag | Gated, not implemented | The plan requires explicit maintainer approval before adding a hosted provider dependency. No such dependency approval has been given. Current code intentionally keeps only `FakeModelProvider`; hosted execution is not enabled. |
+| 5.3 Hosted provider adapter behind explicit flag | Historical gated state, not implemented in this audit | Under `longplan_fixed.md`, this remained gated by provider-adapter approval. Future scheduling is superseded by the CLI-first plan; current code at this audit point intentionally kept only `FakeModelProvider`, and hosted execution was not enabled. |
 | 5.4 Headroom default-off scaffold | Complete | `tcs-cosheaf` PR #112. |
 | 6.1 Formal library manifest audit | Complete | `tcs-cosheaf` PR #114. |
 | 6.2 Lean external library `#check` adapter | Complete | `tcs-cosheaf` PR #116. |
@@ -96,10 +106,11 @@ The current framework code surface matches the conservative plan boundaries:
 
 ## Gated Follow-Up
 
-If the maintainer later wants Phase 5 Task 5.3, open a new issue and branch
-only after explicitly approving the hosted provider dependency or SDK choice.
-That task must stay opt-in, default-off, fake-transport-tested, network-free in
-tests, and unable to write accepted knowledge or bypass review/gate/promotion.
+Future hosted provider work should follow `docs/CODEX_DEVELOPMENT_PLAN_V3.md`
+and `longplan_v3_fixed_cli_first.md`, not this historical audit's old task
+ordering. That work must stay explicit, opt-in, default-off,
+fake-transport-tested, network-free in tests, and unable to write accepted
+knowledge or bypass review/gate/promotion.
 
 ## Verification Expectation
 

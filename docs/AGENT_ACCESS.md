@@ -3,9 +3,9 @@
 ## Purpose
 
 Agent access is the post-`v0.2.0` architecture direction for making
-TCS-Cosheaf usable by external agents, operator skills, internal orchestrator
-runs, and hosted model workers without weakening the Git-backed knowledge
-governance model.
+TCS-Cosheaf usable by external coding agents, operator skills, internal
+orchestrator runs, optional MCP adapters, and hosted model workers without
+weakening the Git-backed knowledge governance model.
 
 This document records architecture and threat-model guidance plus current
 agent-access status. It does not by itself grant authority, change gates,
@@ -13,21 +13,22 @@ implement hosted provider transport, or create write permissions.
 
 ## Access Surfaces
 
-TCS-Cosheaf has four intended access surfaces:
+TCS-Cosheaf has these intended access surfaces:
 
-- CLI: the human and CI oracle. Existing commands remain the stable way to
-  validate behavior and verify repository state.
-- Service layer: the future typed implementation boundary shared by CLI, MCP,
-  internal orchestrator runs, and provider-backed workers.
-- MCP: the primary machine interface for external agents. MCP tools must be
-  whitelisted service calls, not arbitrary shell access.
-- Skill: an optional operator guide for Codex-like agents. A Skill explains
-  how to use Cosheaf safely, but it is not a source of truth and grants no
-  authority beyond the underlying CLI, MCP, or service interface.
-
-Hosted API providers are planned core worker capabilities. They must be called
-through explicit provider-gateway and worker contracts, not through ad hoc
-agent code or direct accepted-KB writes.
+- CLI: the primary interface for coding agents, humans, and CI. Existing
+  commands remain the stable way to validate behavior and verify repository
+  state.
+- Service layer: the typed implementation boundary shared by CLI first, then
+  hosted provider workers, internal orchestrator runs, and optional MCP.
+- Hosted provider gateway: planned worker capability. Real calls must be
+  explicit, default-off, policy scoped, consented, and fake or mocked in tests.
+- MCP: optional adapter for assistants that benefit from resources/tools
+  rather than shell access. It is not required for ordinary Codex-style repo
+  work.
+- Skill: optional operator guide for Codex-like agents. A Skill explains how
+  to use Cosheaf safely, but it is not a source of truth and grants no
+  authority beyond the underlying CLI, service, provider, or optional MCP
+  interfaces.
 
 ## Authority Model
 
@@ -56,10 +57,28 @@ requires it, and explicit promotion. Validation or gate success is not human
 review. AI review is not human review. Skipped verifier or provider results
 are not passes.
 
+## CLI-First Workflow
+
+External coding agents should use CLI first:
+
+1. Read `AGENTS.md`, `context/CURRENT_MILESTONE.md`, and the relevant issue.
+2. Run `cosheaf workspace info`.
+3. Run `cosheaf validate` and `cosheaf gate run`.
+4. Use `cosheaf memory ...` and `cosheaf context build <issue-id>` to assemble
+   bounded context.
+5. Write only draft/proposal/bundle/source-note staging outputs when a task
+   explicitly permits writes.
+6. Re-run the required validation/test/gate commands.
+7. Produce a PR summary with exact commands and limitations.
+
+Agent-facing CLI commands should gain stable `--json` output and stable error
+codes where needed. Missing JSON support is a follow-up implementation task,
+not a reason to make MCP mandatory.
+
 ## Service-Layer Boundary
 
-The service layer should become the shared implementation boundary for CLI,
-MCP, internal orchestrator, and provider workers.
+The service layer should remain the shared implementation boundary for CLI,
+hosted provider workers, internal orchestrator code, and optional MCP.
 
 Service functions should:
 
@@ -73,7 +92,7 @@ Service functions should:
 - refuse accepted writes unless they are the existing explicit promotion path;
 - report skipped or unavailable optional tooling honestly.
 
-MCP and provider code must not shell out to the CLI as their core
+Optional MCP and provider code must not shell out to the CLI as their core
 implementation. The CLI may render service results for humans and CI, while
 the service layer remains the reusable logic boundary.
 
@@ -82,8 +101,9 @@ Schema files live under `schemas/agent_access/`. These DTOs are versioned with
 `schema_version: 1` and cover workspace info, validation, gate runs, memory
 search, context builds, task creation, worker-bundle submission, draft artifact
 writes, provider model calls, provider run records, and standard error
-results. They are serialization contracts for future MCP and provider surfaces;
-they do not by themselves execute MCP tools or hosted API calls.
+results. They are serialization contracts for CLI/provider/optional-MCP
+surfaces; they do not by themselves execute hosted API calls or authorize
+accepted writes.
 
 `ContextSendPolicyService` is the provider-send preview boundary. It accepts a
 `ContextBuildRequest` and returns either a safe `ProviderContextPreview` or a
@@ -94,32 +114,6 @@ issue id, artifact ids, root scopes, estimated token counts, and risk flags; it
 does not include full artifact text, issue text, provider credentials, API
 keys, or secrets. The preview is not a provider call and does not authorize a
 provider call by itself.
-
-## MCP Boundary
-
-MCP is the primary external-agent machine interface.
-
-MCP tools should initially expose read-only or inspectable operations such as
-workspace inspection, validation, gate execution, memory search, context-pack
-construction, and orchestrator planning. Controlled-write tools may be added
-only after read-only MCP behavior is stable and only for draft, proposal, task,
-or bundle surfaces.
-
-The current MCP surface is a minimal read-only stdio JSON-RPC implementation.
-It exposes whitelisted read-only tools, scope-aware resource templates, and
-governance-safe prompt templates. Prompts are static workflow guidance: they
-include accepted/draft distinctions, require artifact IDs, forbid accepted
-knowledge writes, and require final test/validate/gate checks. Prompt templates
-do not include private KB content or artifact text.
-
-MCP must not expose:
-
-- arbitrary shell execution;
-- arbitrary filesystem read or write access;
-- direct accepted promotion;
-- direct writes to accepted paths;
-- secrets, environment dumps, or provider credentials;
-- private KB context outside the selected scope.
 
 ## Hosted Provider Boundary
 
@@ -139,21 +133,44 @@ Provider behavior must be:
 A provider result can become worker output, a draft proposal, or review
 context. It cannot become accepted knowledge by itself.
 
+## Optional MCP Boundary
+
+MCP is an optional adapter, not the primary agent path.
+
+The current MCP surface is a minimal read-only stdio JSON-RPC implementation.
+It exposes whitelisted read-only tools, scope-aware resource templates, and
+governance-safe prompt templates. Prompts are static workflow guidance: they
+include accepted/draft distinctions, require artifact IDs, forbid accepted
+knowledge writes, and require final test/validate/gate checks. Prompt templates
+do not include private KB content or artifact text.
+
+MCP must not expose:
+
+- arbitrary shell execution;
+- arbitrary filesystem read or write access;
+- direct accepted promotion;
+- direct writes to accepted paths;
+- secrets, environment dumps, or provider credentials;
+- private KB context outside the selected scope.
+
+Controlled-write MCP tools remain later optional work and must require explicit
+allow-write configuration if implemented.
+
 ## Skill Boundary
 
 The Skill package is an operator guide, not a control plane.
 
 A Skill may tell an agent:
 
-- when to prefer MCP over CLI;
-- when CLI fallback is appropriate;
+- how to use CLI first;
+- when optional MCP may be appropriate;
 - how to build context safely;
 - which writes are forbidden;
 - what PR summaries and verification reports should include.
 
 A Skill must not be treated as project truth. Repository files, schemas,
-service contracts, CLI behavior, MCP tool definitions, gates, and review policy
-remain authoritative.
+service contracts, CLI behavior, optional MCP definitions, gates, and review
+policy remain authoritative.
 
 ## External-Agent Threat Model
 
@@ -164,7 +181,8 @@ knowledge authority.
 
 Required mitigations:
 
-- expose only whitelisted MCP tools;
+- keep CLI as the first auditable path;
+- expose only whitelisted optional MCP tools;
 - keep write tools narrow and typed;
 - require repository-local path validation;
 - keep accepted promotion outside agent authority;
@@ -174,14 +192,14 @@ Required mitigations:
 
 ## Private KB Leakage Threat Model
 
-Private KB data can leak through context packs, retrieval results, provider
-requests, MCP resources, logs, run records, PR summaries, or generated review
-context.
+Private KB data can leak through context packs, retrieval results, CLI JSON,
+provider requests, optional MCP resources, logs, run records, PR summaries, or
+generated review context.
 
 Required mitigations:
 
 - preserve public/private root metadata through storage, retrieval, services,
-  MCP, and provider requests;
+  CLI, optional MCP, and provider requests;
 - default provider context to the smallest issue-scoped packet that satisfies
   the requested worker role;
 - support public-only context where private context is not allowed;
@@ -196,9 +214,9 @@ Required mitigations:
 
 As of this document, the repository has a thin typed service layer, versioned
 agent-access DTO/JSON Schema contracts, a provider-send context preview policy
-service, and a minimal read-only stdio MCP surface with governance-safe
-prompts and scope-aware resources. The repository has not implemented the
-hosted provider gateway, controlled-write MCP tools, or Skill package described
-here. Existing local CLI, validation, gate, index, retrieval, context-pack,
-task, orchestrator dry-run, fake provider, and optional verifier surfaces keep
-their current behavior.
+service, and a minimal read-only stdio MCP surface that is optional adapter
+code. The repository has not implemented the hosted provider gateway,
+controlled-write MCP tools, or Skill package described here. Existing local
+CLI, validation, gate, index, retrieval, context-pack, task, orchestrator
+dry-run, fake provider, and optional verifier surfaces keep their current
+behavior.

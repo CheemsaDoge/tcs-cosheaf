@@ -1,15 +1,19 @@
-# MCP Server Design
+# Optional MCP Adapter Design
 
 ## Purpose
 
-This document defines the TCS-Cosheaf MCP server boundary and current
-implementation status. The first implementation is a minimal read-only stdio
+This document defines the TCS-Cosheaf MCP adapter boundary and current
+implementation status. The current implementation is a minimal read-only stdio
 JSON-RPC surface with governance-safe prompt templates. It does not add
 external dependencies, change gates, create write authority, call hosted
 providers, or implement controlled writes.
 
-The MCP server is the planned machine interface for external agents. The
-current server exposes typed, whitelisted service calls over MCP-style
+MCP is optional. It is not the primary agent interface and not a `v0.2.1`
+blocker. The preferred path for coding agents is CLI first, with typed services
+as the shared implementation boundary. MCP may be useful for assistants that
+support resources/tools but do not have shell access.
+
+The current adapter exposes typed, whitelisted service calls over MCP-style
 resources and tools. It must not expose arbitrary shell, arbitrary filesystem
 access, direct accepted promotion, or private KB context outside an explicit
 policy scope.
@@ -79,16 +83,16 @@ explicitly permits them.
 
 ## Transport
 
-The first MCP transport is stdio.
+The current MCP transport is stdio.
 
-Stdio-first keeps the initial server local, operator-launched, easy to test in
-CI with fake clients, and free from network listener security questions. HTTP
-or hosted transports require a later ADR and separate approval.
+Stdio keeps the adapter local, operator-launched, easy to test in CI with fake
+clients, and free from network listener security questions. HTTP or hosted
+transports require a later ADR and separate approval.
 
 ## Authority Model
 
-MCP does not create new knowledge authority. It is an access surface over the
-same service layer and repository invariants used by CLI and CI.
+MCP does not create new knowledge authority. It is an optional access surface
+over the same service layer and repository invariants used by CLI and CI.
 
 MCP resources expose context and data, not authority. Reading an artifact card,
 context pack, gate report, or workspace policy through MCP does not mark
@@ -96,8 +100,8 @@ anything reviewed, accepted, verified, or promoted.
 
 MCP tools are whitelisted service calls, not shell commands. A tool may call a
 typed service such as workspace info, validation, gate execution, memory
-search, context building, bundle validation, or draft write. It must not accept
-free-form shell commands or unrestricted filesystem paths.
+search, context building, or bundle validation. It must not accept free-form
+shell commands or unrestricted filesystem paths.
 
 MCP prompts are workflow templates. They may help an agent ask for bounded
 context, draft a PR summary, or follow review steps. Prompts do not grant
@@ -153,8 +157,9 @@ does not change source-of-truth artifacts.
 
 ### Controlled-Write Tools
 
-Controlled-write tools are later-phase tools and must require both server
-configuration and per-call confirmation or policy approval. They may include:
+Controlled-write tools are later optional adapter work. They must require both
+server configuration and per-call confirmation or policy approval. They may
+include:
 
 - creating draft or pre-accepted artifacts in writable roots;
 - creating task records;
@@ -167,7 +172,7 @@ review complete.
 
 ### Forbidden Tools
 
-The MCP server must not expose tools for:
+The MCP adapter must not expose tools for:
 
 - arbitrary shell execution;
 - arbitrary filesystem read or write;
@@ -226,7 +231,7 @@ MCP risks include:
 Required mitigations:
 
 - expose only whitelisted service calls;
-- keep stdio as the first transport;
+- keep stdio as the current transport;
 - keep controlled writes disabled unless configured;
 - require confirmation or allow-write for controlled writes;
 - preserve public/private root metadata in every relevant result;
@@ -236,11 +241,13 @@ Required mitigations:
 
 ## Implementation Sequence
 
-1. Document the boundary and ADR.
-2. Add read-only stdio MCP server skeleton with no write tools.
-3. Add read-only resources and prompts over existing service calls.
-4. Add security regression tests for private leakage and forbidden tools.
-5. Add controlled-write tools only after explicit allow-write configuration.
+MCP implementation is optional and should not block CLI/provider work.
+
+If the maintainer approves more MCP work, use this order:
+
+1. Keep the current read-only stdio adapter constrained and tested.
+2. Stabilize CLI JSON contracts and provider boundaries first.
+3. Add security regression tests for private leakage and forbidden tools.
+4. Add controlled-write tools only after explicit allow-write configuration.
 
 Each implementation step must be its own issue, branch, and PR.
-

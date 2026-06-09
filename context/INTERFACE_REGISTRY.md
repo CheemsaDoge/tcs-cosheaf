@@ -4,12 +4,17 @@
 
 ### Planned Interfaces Not Yet Implemented
 
+- CLI JSON contracts for several agent-facing commands still need to be
+  stabilized in the fixed CLI-first plan.
+- Hosted provider gateway commands and real provider transports are not
+  implemented yet.
 - MCP controlled-write tools are not implemented yet.
 - Hosted-provider MCP tools are not implemented yet.
-- `docs/ADR/0017-mcp-agent-interface.md`: ADR for the MCP agent interface. It
-  records stdio-first transport, resource/tool/prompt boundaries,
-  controlled-write requirements, forbidden tools, and private KB policy
-  constraints. The current runtime implements only the read-only stdio subset.
+- `docs/ADR/0017-mcp-agent-interface.md`: ADR for the optional MCP adapter. It
+  records stdio transport, resource/tool/prompt boundaries, controlled-write
+  requirements, forbidden tools, and private KB policy constraints. The current
+  runtime implements only the read-only stdio subset, and MCP is not required
+  for CLI-first agent workflows.
 
 ### CLI Entry Point
 
