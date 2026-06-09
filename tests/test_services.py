@@ -201,3 +201,47 @@ def test_draft_write_service_creates_draft_and_refuses_accepted(
             supersedes=[],
             created_at="2026-06-09T00:00:00Z",
         )
+
+
+def test_draft_write_service_errors_expose_stable_error_codes(
+    tmp_path: Path,
+) -> None:
+    service = DraftWriteService(RepoContext(tmp_path))
+
+    with pytest.raises(DraftWriteServiceError) as accepted_error:
+        service.create_artifact(
+            artifact_id="claim.fixture.accepted-service",
+            artifact_type=ArtifactType.CLAIM,
+            title="Accepted service claim",
+            domain=["testing"],
+            status=ArtifactStatus.ACCEPTED,
+            statement="Accepted writes are forbidden through DraftWriteService.",
+            authors=["tester"],
+            tags=[],
+            depends_on=[],
+            supersedes=[],
+            created_at="2026-06-09T00:00:00Z",
+        )
+
+    assert accepted_error.value.code == "accepted_write_forbidden"
+    accepted_result = accepted_error.value.to_error_result()
+    assert accepted_result.code == "accepted_write_forbidden"
+    assert accepted_result.blocking is True
+    assert "promotion" in accepted_result.remediation
+
+    with pytest.raises(DraftWriteServiceError) as domain_error:
+        service.create_artifact(
+            artifact_id="claim.fixture.missing-domain",
+            artifact_type=ArtifactType.CLAIM,
+            title="Missing domain claim",
+            domain=[],
+            status=ArtifactStatus.DRAFT,
+            statement="Domain is required.",
+            authors=["tester"],
+            tags=[],
+            depends_on=[],
+            supersedes=[],
+            created_at="2026-06-09T00:00:00Z",
+        )
+
+    assert domain_error.value.code == "missing_required_domain"
