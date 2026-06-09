@@ -105,6 +105,47 @@ results. They are serialization contracts for CLI/provider/optional-MCP
 surfaces; they do not by themselves execute hosted API calls or authorize
 accepted writes.
 
+`ErrorResult` is the standard machine-readable error shape for public
+agent-access responses. It contains:
+
+- `code`: stable machine-readable error code;
+- `message`: human-readable summary;
+- `remediation`: concrete next step for the caller/operator;
+- `blocking`: whether the caller must stop before proceeding;
+- `related_path`: optional repository-local path associated with the error;
+- `related_artifact`: optional artifact ID associated with the error;
+- `details`: optional string-to-string metadata for narrow diagnostics.
+
+The stable error-code list is exported as
+`cosheaf.services.models.AGENT_ACCESS_STABLE_ERROR_CODES`. Current codes are:
+
+- `accepted_write_forbidden`
+- `artifact_file_validation_failed`
+- `artifact_id_exists`
+- `artifact_model_validation_failed`
+- `artifact_path_exists`
+- `draft_write_failed`
+- `invalid_artifact_id`
+- `invalid_artifact_target_path`
+- `invalid_timestamp`
+- `missing_required_domain`
+- `no_writable_kb_root`
+- `private_context_requires_consent`
+- `private_context_requires_policy`
+- `provider_context_preview_failed`
+- `provider_context_scope_violation`
+- `repository_load_failed`
+- `timestamp_missing_timezone`
+- `unknown_context_policy_mode`
+
+Backward compatibility note: `related_path` and `related_artifact` are optional
+schema fields, so older payloads that omit them still validate. New serialized
+`ErrorResult` payloads include those keys with `null` when no correlation is
+available, so exact-key consumers should tolerate additional nullable fields.
+Adding a new error code is a compatible extension only when the remediation and
+blocking semantics remain explicit; changing the meaning of an existing code is
+a breaking interface change.
+
 `ContextSendPolicyService` is the provider-send preview boundary. It accepts a
 `ContextBuildRequest` and returns either a safe `ProviderContextPreview` or a
 structured `ErrorResult`. Public-mode previews use public KB scope only.

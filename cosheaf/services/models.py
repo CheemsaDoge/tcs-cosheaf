@@ -106,12 +106,26 @@ class ErrorResult(AgentAccessModel):
     message: str
     remediation: str
     blocking: bool
+    related_path: str | None = None
+    related_artifact: str | None = None
     details: dict[str, str] = Field(default_factory=dict)
 
     @field_validator("code", "message", "remediation")
     @classmethod
     def _non_empty_text(cls, value: str) -> str:
         return _validate_non_empty(value)
+
+    @field_validator("related_path")
+    @classmethod
+    def _related_path(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_repo_local_path(value)
+
+    @field_validator("related_artifact")
+    @classmethod
+    def _related_artifact(cls, value: str | None) -> str | None:
+        return _validate_optional_id(value)
 
     @field_validator("details")
     @classmethod
@@ -120,6 +134,28 @@ class ErrorResult(AgentAccessModel):
             _validate_non_empty(key): _validate_non_empty(value)
             for key, value in values.items()
         }
+
+
+AGENT_ACCESS_STABLE_ERROR_CODES: tuple[str, ...] = (
+    "accepted_write_forbidden",
+    "artifact_file_validation_failed",
+    "artifact_id_exists",
+    "artifact_model_validation_failed",
+    "artifact_path_exists",
+    "draft_write_failed",
+    "invalid_artifact_id",
+    "invalid_artifact_target_path",
+    "invalid_timestamp",
+    "missing_required_domain",
+    "no_writable_kb_root",
+    "private_context_requires_consent",
+    "private_context_requires_policy",
+    "provider_context_preview_failed",
+    "provider_context_scope_violation",
+    "repository_load_failed",
+    "timestamp_missing_timezone",
+    "unknown_context_policy_mode",
+)
 
 
 class WorkspaceInfoResult(AgentAccessModel):
@@ -694,6 +730,7 @@ def _validate_repo_local_path(value: str) -> str:
 
 
 __all__ = [
+    "AGENT_ACCESS_STABLE_ERROR_CODES",
     "AGENT_ACCESS_SCHEMA_MODELS",
     "AgentAccessModel",
     "AgentAccessStatus",
