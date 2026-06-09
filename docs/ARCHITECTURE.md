@@ -310,6 +310,11 @@ draft/pre-accepted artifact creation, task or run records, worker bundles, and
 review context surfaces. Accepted promotion remains the existing explicit
 lifecycle path and is not exposed as an agent-authority service.
 
+Expected service-layer failures use stable machine-readable error codes and
+can be converted to the public `ErrorResult` DTO. CLI commands may continue to
+render the human-readable error text, while provider, MCP, or agent-facing
+callers can use the structured code/remediation/blocking fields.
+
 ### CLI Layer
 
 Provides public commands for validation, gate execution, graph inspection,

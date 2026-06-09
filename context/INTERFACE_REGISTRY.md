@@ -339,8 +339,16 @@
 - `cosheaf.services.DraftWriteService.create_artifact(...) -> ArtifactWriteResult`:
   creates deterministic draft/pre-accepted artifact YAML and refuses direct
   accepted artifact creation.
+- `cosheaf.services.ServiceError`: expected service-layer failure base class
+  with stable `code`, `remediation`, `blocking`, `details`, and
+  `to_error_result() -> ErrorResult`.
 - `cosheaf.services.DraftWriteServiceError`: expected error for controlled
-  draft-write failures.
+  draft-write failures. Current stable codes include
+  `accepted_write_forbidden`, `missing_required_domain`, `invalid_artifact_id`,
+  `invalid_artifact_target_path`, `artifact_path_exists`,
+  `artifact_model_validation_failed`, `artifact_file_validation_failed`,
+  `invalid_timestamp`, `timestamp_missing_timezone`, `no_writable_kb_root`,
+  `artifact_id_exists`, and `repository_load_failed`.
 - `cosheaf.services.WorkspaceInfoResult`, `KbRootInfo`, and
   `ArtifactWriteResult`: frozen dataclass result DTOs returned by service
   methods.

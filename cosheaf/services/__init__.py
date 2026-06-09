@@ -55,6 +55,7 @@ from cosheaf.memory import (
     search_artifact_cards,
 )
 from cosheaf.services.context_policy import ContextSendPolicyService
+from cosheaf.services.models import ErrorResult
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
 from cosheaf.storage.repo import RepoContext
 from cosheaf.storage.writer import write_yaml_deterministic
@@ -88,8 +89,57 @@ class ArtifactWriteResult:
     relative_path: Path
 
 
-class DraftWriteServiceError(ValueError):
+class ServiceError(ValueError):
+    """Expected service-layer failure with a stable machine-readable code."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str,
+        remediation: str,
+        blocking: bool = True,
+        details: dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.remediation = remediation
+        self.blocking = blocking
+        self.details = dict(details or {})
+
+    def to_error_result(self) -> ErrorResult:
+        """Convert this service error to the public agent-access error DTO."""
+        return ErrorResult(
+            code=self.code,
+            message=str(self),
+            remediation=self.remediation,
+            blocking=self.blocking,
+            details=self.details,
+        )
+
+
+class DraftWriteServiceError(ServiceError):
     """Raised for expected draft-write service failures."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str = "draft_write_failed",
+        remediation: str = (
+            "Fix the draft artifact request and retry. Accepted knowledge must "
+            "enter through explicit review, gates, and promotion."
+        ),
+        blocking: bool = True,
+        details: dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            code=code,
+            remediation=remediation,
+            blocking=blocking,
+            details=details,
+        )
 
 
 class WorkspaceService:
@@ -355,17 +405,30 @@ class DraftWriteService:
     ) -> ArtifactWriteResult:
         """Create a deterministic draft/pre-accepted artifact YAML record."""
         if not domain:
-            raise DraftWriteServiceError("at least one --domain value is required")
+            raise DraftWriteServiceError(
+                "at least one --domain value is required",
+                code="missing_required_domain",
+                remediation="Provide at least one domain for the draft artifact.",
+            )
         if status is ArtifactStatus.ACCEPTED:
             raise DraftWriteServiceError(
                 "accepted artifacts must be promoted through a dedicated "
-                "gate/review workflow"
+                "gate/review workflow",
+                code="accepted_write_forbidden",
+                remediation=(
+                    "Create a draft or pre-accepted artifact first, then use the "
+                    "explicit promotion workflow after review and gates pass."
+                ),
             )
 
         try:
             validate_artifact_id(artifact_id)
         except ValueError as exc:
-            raise DraftWriteServiceError(str(exc)) from exc
+            raise DraftWriteServiceError(
+                str(exc),
+                code="invalid_artifact_id",
+                remediation="Use a dot-separated lowercase artifact id.",
+            ) from exc
 
         timestamp = _parse_artifact_timestamp(created_at)
         try:
@@ -376,13 +439,22 @@ class DraftWriteService:
                 artifact_id=artifact_id,
             )
         except ValueError as exc:
-            raise DraftWriteServiceError(str(exc)) from exc
+            raise DraftWriteServiceError(
+                str(exc),
+                code="invalid_artifact_target_path",
+                remediation=(
+                    "Choose a status and artifact type with a valid draft path."
+                ),
+            ) from exc
 
         _ensure_artifact_id_is_available(self.context, artifact_id)
         target_path = self.context.resolve(relative_path)
         if target_path.exists():
             raise DraftWriteServiceError(
-                f"artifact path already exists: {relative_path.as_posix()}"
+                f"artifact path already exists: {relative_path.as_posix()}",
+                code="artifact_path_exists",
+                remediation="Choose a new artifact id or inspect the existing path.",
+                details={"path": relative_path.as_posix()},
             )
 
         try:
@@ -406,7 +478,11 @@ class DraftWriteService:
                 }
             )
         except ValidationError as exc:
-            raise DraftWriteServiceError(_format_pydantic_errors(exc)) from exc
+            raise DraftWriteServiceError(
+                _format_pydantic_errors(exc),
+                code="artifact_model_validation_failed",
+                remediation="Fix the draft artifact fields and retry.",
+            ) from exc
 
         write_yaml_deterministic(target_path, artifact)
         report = validate_artifact_file(self.context, relative_path)
@@ -414,7 +490,11 @@ class DraftWriteService:
             return ArtifactWriteResult(artifact=artifact, relative_path=relative_path)
 
         target_path.unlink(missing_ok=True)
-        raise DraftWriteServiceError(_format_report_failures(report))
+        raise DraftWriteServiceError(
+            _format_report_failures(report),
+            code="artifact_file_validation_failed",
+            remediation="Fix validation failures before writing the draft artifact.",
+        )
 
 
 def _parse_artifact_timestamp(value: str | None) -> datetime:
@@ -425,10 +505,16 @@ def _parse_artifact_timestamp(value: str | None) -> datetime:
         parsed = datetime.fromisoformat(normalized)
     except ValueError as exc:
         raise DraftWriteServiceError(
-            f"invalid --created-at timestamp: {value}"
+            f"invalid --created-at timestamp: {value}",
+            code="invalid_timestamp",
+            remediation="Use an ISO 8601 timestamp with timezone information.",
         ) from exc
     if parsed.tzinfo is None or parsed.utcoffset() is None:
-        raise DraftWriteServiceError("--created-at must include timezone information")
+        raise DraftWriteServiceError(
+            "--created-at must include timezone information",
+            code="timestamp_missing_timezone",
+            remediation="Use an ISO 8601 timestamp with a timezone or trailing Z.",
+        )
     return parsed.astimezone(UTC).replace(microsecond=0)
 
 
@@ -460,13 +546,22 @@ def _default_writable_kb_root(context: RepoContext) -> KbRootConfig:
     for root in context.workspace_config.ordered_kb:
         if not root.readonly:
             return root
-    raise DraftWriteServiceError("no writable KB root is configured")
+    raise DraftWriteServiceError(
+        "no writable KB root is configured",
+        code="no_writable_kb_root",
+        remediation="Configure a writable private KB root before writing drafts.",
+    )
 
 
 def _ensure_artifact_id_is_available(context: RepoContext, artifact_id: str) -> None:
     records = _load_records_for_lifecycle(context)
     if any(record.id == artifact_id for record in records):
-        raise DraftWriteServiceError(f"artifact already exists: {artifact_id}")
+        raise DraftWriteServiceError(
+            f"artifact already exists: {artifact_id}",
+            code="artifact_id_exists",
+            remediation="Choose a new artifact id or update the existing draft.",
+            details={"artifact_id": artifact_id},
+        )
 
 
 def _load_records_for_lifecycle(context: RepoContext) -> tuple[LoadedRecord, ...]:
@@ -474,7 +569,9 @@ def _load_records_for_lifecycle(context: RepoContext) -> tuple[LoadedRecord, ...
         return tuple(load_artifacts(context))
     except LoadError as exc:
         raise DraftWriteServiceError(
-            f"cannot load repository records: {exc}"
+            f"cannot load repository records: {exc}",
+            code="repository_load_failed",
+            remediation="Fix repository load errors before writing new drafts.",
         ) from exc
 
 
@@ -504,6 +601,7 @@ __all__ = [
     "KbRootInfo",
     "MemorySearchService",
     "OrchestratorPlanService",
+    "ServiceError",
     "TaskService",
     "ValidationService",
     "WorkspaceInfoResult",
