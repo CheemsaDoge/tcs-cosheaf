@@ -294,11 +294,33 @@ The local orchestrator runner can now validate and reduce these bundles after
 local dry-run worker commands, but it does not run gates, request review, merge
 outputs, write accepted artifacts, or promote accepted knowledge.
 
+### Service Layer
+
+Provides typed Python service entry points shared by the CLI and future
+agent-access surfaces. The current service layer is intentionally thin: it
+wraps existing workspace, validation, gate, memory search, context-pack, task,
+bundle-validation, and draft-write logic while returning typed results instead
+of terminal-only output.
+
+The service layer does not implement MCP, hosted provider calls, arbitrary
+shell access, automatic review, or accepted-promotion authority. Controlled
+write services are limited to draft/pre-accepted artifact creation, task or run
+records, worker bundles, and review context surfaces. Accepted promotion
+remains the existing explicit lifecycle path and is not exposed as an
+agent-authority service.
+
 ### CLI Layer
 
 Provides public commands for validation, gate execution, graph inspection,
 context generation, workspace inspection, lifecycle artifact writes, and
 verifier invocation.
+
+CLI commands now call typed service functions for workspace inspection,
+repository and artifact validation, gate execution, context-pack generation,
+memory card/search operations, task operations, and draft artifact creation.
+The CLI remains the human and CI oracle: it parses command-line options,
+renders service results, preserves existing exit-code behavior, and keeps
+existing promotion and verifier boundaries intact.
 
 Lifecycle write commands are workspace-aware. In configured workspaces,
 `cosheaf artifact create` writes to the writable private KB root by default, and
@@ -310,7 +332,7 @@ KB roots.
 The intended module dependency direction is:
 
 ```text
-core -> config -> storage -> graph -> gates -> verification -> agent -> cli
+core -> config -> storage -> graph -> gates -> verification -> agent -> services -> cli
 ```
 
 Lower-level modules must not import higher-level modules. Public interface changes must be recorded in `context/INTERFACE_REGISTRY.md`.

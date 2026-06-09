@@ -178,6 +178,62 @@
 
 ### Python API
 
+#### Service Layer
+
+- `cosheaf.services.WorkspaceService`: typed service for workspace inspection.
+- `cosheaf.services.WorkspaceService.info() -> WorkspaceInfoResult`: returns
+  workspace name, resolved repository root, configured/legacy mode, and ordered
+  KB root metadata.
+- `cosheaf.services.ValidationService`: typed service for repository and
+  artifact validation.
+- `cosheaf.services.ValidationService.validate_repository() -> ValidationReport`:
+  validates discovered repository YAML records and invariants.
+- `cosheaf.services.ValidationService.validate_artifact_file(path) -> ValidationReport`:
+  validates one repository-local artifact file.
+- `cosheaf.services.GateService`: typed service for gatekeeper execution.
+- `cosheaf.services.GateService.run(...) -> GatekeeperRunResult`: runs
+  gatekeeper checks and returns report metadata and written report paths.
+- `cosheaf.services.MemorySearchService`: typed service for deterministic
+  artifact-card construction and search.
+- `cosheaf.services.MemorySearchService.cards(...) -> tuple[ArtifactCard, ...]`:
+  returns compact artifact cards without writing sidecars or full artifact
+  content.
+- `cosheaf.services.MemorySearchService.search(...) -> RetrievalResult`:
+  returns deterministic card-search results with retrieval audit metadata.
+- `cosheaf.services.ContextPackService`: typed service for bounded
+  issue-scoped context packs.
+- `cosheaf.services.ContextPackService.build(...) -> ContextPackResult`:
+  writes a deterministic context pack for an issue.
+- `cosheaf.services.ContextPackService.show(...) -> str`: builds and returns
+  the rendered `CONTEXT.md` text for an issue.
+- `cosheaf.services.TaskService`: typed service for local task records and
+  explicit local worker command runs.
+- `cosheaf.services.TaskService.create_task(...) -> AgentTask`: creates an
+  open local task for an existing issue.
+- `cosheaf.services.TaskService.list_tasks() -> tuple[AgentTask, ...]`:
+  returns local tasks in deterministic order.
+- `cosheaf.services.TaskService.complete_task(...) -> TaskCompletionResult`:
+  validates a local worker output bundle and marks the task completed without
+  merging accepted knowledge.
+- `cosheaf.services.TaskService.run_task(...) -> LocalWorkerRunResult`: runs an
+  explicit local argv command for an existing task.
+- `cosheaf.services.BundleValidationService`: typed service for worker bundle
+  v2 validation and reduction.
+- `cosheaf.services.BundleValidationService.validate(path) -> WorkerBundleV2`:
+  validates a worker bundle v2 manifest.
+- `cosheaf.services.BundleValidationService.reduce(path, *, reducer_id) -> ReducerResult`:
+  validates and reduces a worker bundle v2 manifest into review context.
+- `cosheaf.services.DraftWriteService`: controlled draft/pre-accepted
+  lifecycle artifact write service.
+- `cosheaf.services.DraftWriteService.create_artifact(...) -> ArtifactWriteResult`:
+  creates deterministic draft/pre-accepted artifact YAML and refuses direct
+  accepted artifact creation.
+- `cosheaf.services.DraftWriteServiceError`: expected error for controlled
+  draft-write failures.
+- `cosheaf.services.WorkspaceInfoResult`, `KbRootInfo`, and
+  `ArtifactWriteResult`: frozen dataclass result DTOs returned by service
+  methods.
+
 #### Source Ingestion
 
 - `cosheaf.ingest.MarkItDownIngestAdapter`: optional local source-ingestion

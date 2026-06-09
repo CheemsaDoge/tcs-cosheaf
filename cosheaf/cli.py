@@ -12,13 +12,9 @@ from rich.console import Console
 from cosheaf import __version__
 from cosheaf.agent.context_pack import (
     ContextPackError,
-    build_context_pack,
-    show_context_pack,
 )
 from cosheaf.agent.local_runner import (
-    LocalWorkerRunConfig,
     LocalWorkerRunError,
-    LocalWorkerRunner,
 )
 from cosheaf.agent.orchestrator_planner import (
     OrchestratorPlannerError,
@@ -29,7 +25,7 @@ from cosheaf.agent.orchestrator_runner import (
     OrchestratorLocalRunError,
     OrchestratorLocalRunner,
 )
-from cosheaf.agent.orchestrator_stub import OrchestratorStub, TaskHarnessError
+from cosheaf.agent.orchestrator_stub import TaskHarnessError
 from cosheaf.agent.task import WorkerType
 from cosheaf.config.workspace import KbRootConfig, WorkspaceConfigError
 from cosheaf.core.artifact import BaseArtifact, is_external_dependency_ref
@@ -70,11 +66,19 @@ from cosheaf.memory import (
     MemoryGraphError,
     MemorySearchError,
     RetrievalRole,
-    build_artifact_cards,
     build_memory_graph,
     compute_global_pagerank,
     load_memory_graph_snapshot,
-    search_artifact_cards,
+)
+from cosheaf.services import (
+    ContextPackService,
+    DraftWriteService,
+    DraftWriteServiceError,
+    GateService,
+    MemorySearchService,
+    TaskService,
+    ValidationService,
+    WorkspaceService,
 )
 from cosheaf.storage.index import rebuild_index
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
@@ -181,13 +185,12 @@ def workspace_info(
         console.print(f"Workspace config failed: {exc}")
         raise typer.Exit(code=1) from None
 
-    config = context.workspace_config
-    mode = "configured" if config.configured else "legacy"
-    console.print(f"Workspace: {config.name}")
-    console.print(f"- repo_root: {context.repo_root}")
-    console.print(f"- mode: {mode}")
+    info = WorkspaceService(context).info()
+    console.print(f"Workspace: {info.name}")
+    console.print(f"- repo_root: {info.repo_root}")
+    console.print(f"- mode: {info.mode}")
     console.print("KB roots:")
-    for root in config.ordered_kb:
+    for root in info.kb_roots:
         readonly = str(root.readonly).lower()
         console.print(
             f"- {root.name} | {root.path} | "
@@ -211,7 +214,7 @@ def validate(
     """Validate repository YAML records and implemented invariants."""
     context = RepoContext(repo_root)
     _run_validation(
-        report_factory=lambda: validate_repository(context),
+        report_factory=lambda: ValidationService(context).validate_repository(),
         success_message="Validation passed",
         failure_message="Validation failed",
         debug=debug,
@@ -235,7 +238,7 @@ def artifact_validate(
     """Validate one artifact YAML file with file-local checks."""
     context = RepoContext(repo_root)
     _run_validation(
-        report_factory=lambda: validate_artifact_file(context, path),
+        report_factory=lambda: ValidationService(context).validate_artifact_file(path),
         success_message="Artifact validation passed",
         failure_message="Artifact validation failed",
         debug=debug,
@@ -292,8 +295,7 @@ def artifact_create(
     """Create a deterministic artifact YAML record in the lifecycle tree."""
     console = Console(width=120, markup=False)
     try:
-        artifact, relative_path = _create_artifact_record(
-            context=RepoContext(repo_root),
+        result = DraftWriteService(RepoContext(repo_root)).create_artifact(
             artifact_id=artifact_id,
             artifact_type=artifact_type,
             title=title,
@@ -306,10 +308,12 @@ def artifact_create(
             supersedes=supersedes or [],
             created_at=created_at,
         )
-    except ArtifactLifecycleError as exc:
+    except DraftWriteServiceError as exc:
         console.print(f"Artifact create failed: {exc}")
         raise typer.Exit(code=1) from None
 
+    artifact = result.artifact
+    relative_path = result.relative_path
     console.print(f"Artifact created: {relative_path.as_posix()}")
     console.print(f"- id: {artifact.id}")
     console.print(f"- status: {artifact.status.value}")
@@ -548,8 +552,7 @@ def context_build(
     """Build a bounded deterministic context pack for an issue."""
     console = Console(width=120, markup=False)
     try:
-        result = build_context_pack(
-            RepoContext(repo_root),
+        result = ContextPackService(RepoContext(repo_root)).build(
             issue_id,
             role=role,
             max_cards=max_cards,
@@ -599,8 +602,7 @@ def context_show(
     """Build and print the main context document for an issue."""
     console = Console(width=120, markup=False)
     try:
-        rendered = show_context_pack(
-            RepoContext(repo_root),
+        rendered = ContextPackService(RepoContext(repo_root)).show(
             issue_id,
             role=role,
             max_cards=max_cards,
@@ -640,8 +642,7 @@ def memory_cards(
     """Build compact artifact cards from existing repository metadata."""
     console = Console(width=120, markup=False)
     try:
-        cards = build_artifact_cards(
-            RepoContext(repo_root),
+        cards = MemorySearchService(RepoContext(repo_root)).cards(
             issue_id=issue,
             status=status,
         )
@@ -722,9 +723,8 @@ def memory_search(
     """Search compact artifact cards with deterministic local scoring."""
     console = Console(width=120, markup=False)
     try:
-        result = search_artifact_cards(
-            RepoContext(repo_root),
-            query=query,
+        result = MemorySearchService(RepoContext(repo_root)).search(
+            query,
             issue_id=issue,
             status=status,
             seed_artifacts=tuple(seed_artifact or ()),
@@ -1089,7 +1089,7 @@ def task_create(
     """Create an open local agent task without invoking a worker."""
     console = Console(width=120, markup=False)
     try:
-        task = OrchestratorStub(RepoContext(repo_root)).create_task(
+        task = TaskService(RepoContext(repo_root)).create_task(
             issue_id=issue,
             worker_type=worker,
         )
@@ -1114,7 +1114,7 @@ def task_list(
     """List local agent tasks."""
     console = Console(width=120, markup=False)
     try:
-        tasks = OrchestratorStub(RepoContext(repo_root)).list_tasks()
+        tasks = TaskService(RepoContext(repo_root)).list_tasks()
     except TaskHarnessError as exc:
         console.print(f"Task list failed: {exc}")
         raise typer.Exit(code=1) from None
@@ -1147,7 +1147,7 @@ def task_complete(
     """Validate a worker output bundle and mark the task complete."""
     console = Console(width=120, markup=False)
     try:
-        result = OrchestratorStub(RepoContext(repo_root)).complete_task(
+        result = TaskService(RepoContext(repo_root)).complete_task(
             task_id=task_id,
             bundle_path=bundle,
         )
@@ -1205,14 +1205,13 @@ def task_run(
     bundle_path = complete_with_bundle or bundle
     try:
         context = RepoContext(repo_root)
-        result = LocalWorkerRunner(context).run_task(
+        service = TaskService(context)
+        result = service.run_task(
             task_id,
-            LocalWorkerRunConfig(
-                command=command,
-                timeout_seconds=timeout_seconds,
-                cwd=cwd,
-                bundle_path=bundle_path,
-            ),
+            command=command,
+            timeout_seconds=timeout_seconds,
+            cwd=cwd,
+            bundle_path=bundle_path,
         )
     except LocalWorkerRunError as exc:
         console.print(f"Task run failed: {exc}")
@@ -1221,7 +1220,7 @@ def task_run(
     task_completed = False
     if result.status == "completed" and complete_with_bundle is not None:
         try:
-            OrchestratorStub(context).complete_task(
+            service.complete_task(
                 task_id=task_id,
                 bundle_path=complete_with_bundle,
             )
@@ -1305,8 +1304,7 @@ def _run_gatekeeper_cli(
     pr_checklist: Path | None,
 ) -> None:
     console = Console(width=120)
-    result = run_gatekeeper(
-        RepoContext(repo_root),
+    result = GateService(RepoContext(repo_root)).run(
         persist_review=persist_review,
         pr_checklist_path=pr_checklist,
     )
