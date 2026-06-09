@@ -53,6 +53,7 @@ from cosheaf.memory import (
     build_artifact_cards,
     search_artifact_cards,
 )
+from cosheaf.services.context_policy import ContextSendPolicyService
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
 from cosheaf.storage.repo import RepoContext
 from cosheaf.storage.writer import write_yaml_deterministic
@@ -482,6 +483,7 @@ __all__ = [
     "ArtifactWriteResult",
     "BundleValidationService",
     "ContextPackService",
+    "ContextSendPolicyService",
     "DraftWriteService",
     "DraftWriteServiceError",
     "GateService",

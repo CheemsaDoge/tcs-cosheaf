@@ -458,6 +458,70 @@ class ProviderConsent(AgentAccessModel):
         return value.strip()
 
 
+class ProviderContextPreviewItem(AgentAccessModel):
+    """One artifact card included in a provider-send preview."""
+
+    artifact_id: str
+    root_scope: MemoryRootScope
+    status: ArtifactCardStatus
+    estimated_tokens: int
+    risk_flags: list[str] = Field(default_factory=list)
+
+    @field_validator("artifact_id")
+    @classmethod
+    def _artifact_id(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("estimated_tokens")
+    @classmethod
+    def _estimated_tokens(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("estimated_tokens must be positive")
+        return value
+
+    @field_validator("risk_flags")
+    @classmethod
+    def _risk_flags(cls, values: list[str]) -> list[str]:
+        return _normalize_text_list(values)
+
+
+class ProviderContextPreview(AgentAccessModel):
+    """Safe provider-send context preview without full text or secrets."""
+
+    issue_id: str
+    policy_mode: ContextPolicyMode
+    public_only: bool
+    private_context_requested: bool
+    private_context_included: bool
+    artifact_ids: list[str]
+    root_scopes: list[MemoryRootScope]
+    estimated_tokens: int
+    risk_flags: list[str] = Field(default_factory=list)
+    items: list[ProviderContextPreviewItem] = Field(default_factory=list)
+
+    @field_validator("issue_id")
+    @classmethod
+    def _issue_id(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("artifact_ids")
+    @classmethod
+    def _artifact_ids(cls, values: list[str]) -> list[str]:
+        return [validate_artifact_id(value.strip()) for value in values]
+
+    @field_validator("estimated_tokens")
+    @classmethod
+    def _estimated_tokens(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("estimated_tokens must be non-negative")
+        return value
+
+    @field_validator("risk_flags")
+    @classmethod
+    def _risk_flags(cls, values: list[str]) -> list[str]:
+        return _normalize_text_list(values)
+
+
 class ModelCallRequest(AgentAccessModel):
     """Provider-neutral model call request for future hosted workers."""
 
@@ -649,6 +713,8 @@ __all__ = [
     "ModelCallRequest",
     "ModelCallResult",
     "ProviderConsent",
+    "ProviderContextPreview",
+    "ProviderContextPreviewItem",
     "ProviderRunRecord",
     "ProviderRunStatus",
     "ValidateResult",

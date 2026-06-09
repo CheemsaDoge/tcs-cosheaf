@@ -212,6 +212,14 @@
 - `cosheaf.services.models.ProviderConsent`: public provider-send consent DTO
   with consent required/granted flags, private-context permission, and policy
   scope.
+- `cosheaf.services.models.ProviderContextPreviewItem`: public provider-send
+  preview item DTO with artifact id, root scope, status, estimated token count,
+  and risk flags. It does not include artifact text.
+- `cosheaf.services.models.ProviderContextPreview`: public provider-send
+  preview DTO with issue id, policy mode, public/private inclusion flags,
+  artifact ids, root scopes, estimated token count, risk flags, and preview
+  items. It does not include issue text, full artifact text, API keys, provider
+  credentials, or secrets.
 - `cosheaf.services.models.ModelCallRequest` and
   `cosheaf.services.models.ModelCallResult`: public provider-neutral model-call
   DTOs for future hosted workers.
@@ -272,6 +280,14 @@
   writes a deterministic context pack for an issue.
 - `cosheaf.services.ContextPackService.show(...) -> str`: builds and returns
   the rendered `CONTEXT.md` text for an issue.
+- `cosheaf.services.ContextSendPolicyService`: typed provider-send context
+  preview policy service.
+- `cosheaf.services.ContextSendPolicyService.provider_preview(request) -> ProviderContextPreview | ErrorResult`:
+  returns a safe provider-send preview for a `ContextBuildRequest`, or a
+  structured `ErrorResult` when policy denies the request. Public mode uses
+  public KB scope only. Private KB context requires `policy_mode=private_research`,
+  `public_only=false`, and explicit private-context permission. The method does
+  not call providers, implement MCP, include full context text, or write files.
 - `cosheaf.services.TaskService`: typed service for local task records and
   explicit local worker command runs.
 - `cosheaf.services.TaskService.create_task(...) -> AgentTask`: creates an
