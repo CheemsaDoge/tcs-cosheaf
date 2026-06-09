@@ -225,6 +225,27 @@ with their terminal status, not presented as current truth.
 Use `cosheaf context show <issue-id>` to build the pack and print the main
 context document for quick handoff into a new Codex conversation.
 
+## Agent-Facing JSON
+
+For external coding agents, prefer deterministic JSON output on core read-only
+commands when the result will be parsed by a program:
+
+- `cosheaf version --json`
+- `cosheaf workspace info --json`
+- `cosheaf validate --json`
+- `cosheaf gate run --json`
+- `cosheaf memory cards --json`
+- `cosheaf memory search "<query>" --json`
+- `cosheaf context build <issue-id> --json`
+- `cosheaf context show <issue-id> --json`
+- `cosheaf orchestrator plan --issue <issue-id> --json`
+
+JSON mode keeps human text rendering out of stdout and uses structured
+`ErrorResult` payloads for expected read-only command failures. Human output
+remains the default. JSON output does not grant write authority, does not run
+hosted providers, does not write accepted knowledge, and does not make skipped
+verifier/provider results into passes.
+
 ## Handoff
 
 User handoff messages should be written in Chinese. Project-facing documentation should remain in English unless a task explicitly requests otherwise.

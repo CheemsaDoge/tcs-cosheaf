@@ -62,8 +62,11 @@ are not passes.
 External coding agents should use CLI first:
 
 1. Read `AGENTS.md`, `context/CURRENT_MILESTONE.md`, and the relevant issue.
-2. Run `cosheaf workspace info`.
-3. Run `cosheaf validate` and `cosheaf gate run`.
+2. Run `cosheaf workspace info --json` when machine-readable workspace state
+   is needed, or `cosheaf workspace info` for human inspection.
+3. Run `cosheaf validate --json` and `cosheaf gate run --json` when an agent
+   needs structured pass/fail data, and keep the human commands available for
+   operator review.
 4. Use `cosheaf memory ...` and `cosheaf context build <issue-id>` to assemble
    bounded context.
 5. Write only draft/proposal/bundle/source-note staging outputs when a task
@@ -71,9 +74,12 @@ External coding agents should use CLI first:
 6. Re-run the required validation/test/gate commands.
 7. Produce a PR summary with exact commands and limitations.
 
-Agent-facing CLI commands should gain stable `--json` output and stable error
-codes where needed. Missing JSON support is a follow-up implementation task,
-not a reason to make MCP mandatory.
+Core read-only agent-facing CLI commands provide deterministic `--json` output
+for version, workspace info, validation, gate runs, memory cards/search,
+context build/show, and orchestrator planning. JSON mode emits no Rich or ANSI
+markup, keeps public/private root scope visible where retrieval or context is
+involved, and uses `ErrorResult` for expected machine-readable errors. MCP
+remains optional and is not required for ordinary CLI-first agent workflows.
 
 ## Service-Layer Boundary
 
@@ -124,12 +130,18 @@ The stable error-code list is exported as
 - `artifact_id_exists`
 - `artifact_model_validation_failed`
 - `artifact_path_exists`
+- `context_build_failed`
+- `context_show_failed`
 - `draft_write_failed`
+- `gate_issue`
 - `invalid_artifact_id`
 - `invalid_artifact_target_path`
 - `invalid_timestamp`
+- `memory_cards_failed`
+- `memory_search_failed`
 - `missing_required_domain`
 - `no_writable_kb_root`
+- `orchestrator_plan_failed`
 - `private_context_requires_consent`
 - `private_context_requires_policy`
 - `provider_context_preview_failed`
@@ -137,6 +149,9 @@ The stable error-code list is exported as
 - `repository_load_failed`
 - `timestamp_missing_timezone`
 - `unknown_context_policy_mode`
+- `validation_failed`
+- `validation_unexpected_error`
+- `workspace_config_failed`
 
 Backward compatibility note: `related_path` and `related_artifact` are optional
 schema fields, so older payloads that omit them still validate. New serialized
@@ -255,9 +270,9 @@ Required mitigations:
 
 As of this document, the repository has a thin typed service layer, versioned
 agent-access DTO/JSON Schema contracts, a provider-send context preview policy
-service, and a minimal read-only stdio MCP surface that is optional adapter
-code. The repository has not implemented the hosted provider gateway,
-controlled-write MCP tools, or Skill package described here. Existing local
-CLI, validation, gate, index, retrieval, context-pack, task, orchestrator
-dry-run, fake provider, and optional verifier surfaces keep their current
-behavior.
+service, deterministic JSON output for core read-only CLI commands, and a
+minimal read-only stdio MCP surface that is optional adapter code. The
+repository has not implemented the hosted provider gateway, controlled-write
+MCP tools, or Skill package described here. Existing local CLI, validation,
+gate, index, retrieval, context-pack, task, orchestrator dry-run, fake
+provider, and optional verifier surfaces keep their current behavior.

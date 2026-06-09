@@ -4,8 +4,6 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- CLI JSON contracts for several agent-facing commands still need to be
-  stabilized in the fixed CLI-first plan.
 - Hosted provider gateway commands and real provider transports are not
   implemented yet.
 - MCP controlled-write tools are not implemented yet.
@@ -26,15 +24,23 @@
 
 - `cosheaf --help`: shows CLI help.
 - `cosheaf version`: prints the package version.
+- `cosheaf version --json`: emits deterministic JSON with `schema_version`,
+  package name, and version.
 - `cosheaf workspace info`: shows the active workspace name, configured/legacy
   mode, repository root, and KB roots.
 - `cosheaf workspace info --repo-root <path>`: shows workspace configuration for
   an explicit repository root.
+- `cosheaf workspace info --json`: emits a deterministic
+  `WorkspaceInfoResult` JSON payload with KB root scope, readonly, priority,
+  and policy fields.
 - `cosheaf validate`: validates repository YAML records discovered under the
   active workspace KB roots plus `issues/` and `examples/`. Without
   `cosheaf.toml`, the KB root remains `kb/`.
 - `cosheaf validate --repo-root <path>`: validates a repository rooted at `<path>`.
 - `cosheaf validate --debug`: shows tracebacks for unexpected validation errors.
+- `cosheaf validate --json`: emits a deterministic `ValidateResult` JSON
+  payload. Expected validation failures are represented as structured
+  `ErrorResult` entries and exit nonzero without Rich markup.
 - `cosheaf artifact validate <path>`: validates one YAML file with file-local checks.
 - `cosheaf artifact validate <path> --repo-root <path>`: resolves the artifact path against an explicit repository root.
 - `cosheaf artifact validate <path> --debug`: shows tracebacks for unexpected validation errors.
@@ -77,10 +83,14 @@
 - `cosheaf gate --repo-root <path>`: runs the gatekeeper for an explicit repository root.
 - `cosheaf gate --persist-review`: also persists report copies under `reviews/gatekeeper/`.
 - `cosheaf gate --pr-checklist <path>`: validates a local PR checklist markdown file through G8 when running the default gate command.
+- `cosheaf gate --json`: emits a deterministic `GateRunResult` JSON payload.
 - `cosheaf gate run`: explicit gatekeeper run command.
 - `cosheaf gate run --repo-root <path>`: runs the gatekeeper for an explicit repository root.
 - `cosheaf gate run --persist-review`: also persists report copies under `reviews/gatekeeper/`.
 - `cosheaf gate run --pr-checklist <path>`: validates a local PR checklist markdown file through G8 without using GitHub API or network access.
+- `cosheaf gate run --json`: emits a deterministic `GateRunResult` JSON
+  payload with repository-local report paths and structured blocking and
+  nonblocking issue entries.
 - `cosheaf context build <issue-id>`: builds a bounded deterministic context
   pack under `context/TASKS/<issue-id>/`.
 - `cosheaf context build <issue-id> --repo-root <path>`: builds a context
@@ -94,6 +104,9 @@
   default is `0`, so default context is cards-only.
 - `cosheaf context build <issue-id> --public-only`: excludes private cards and
   private artifact IDs from the rendered context and retrieval audit.
+- `cosheaf context build <issue-id> --json`: emits a deterministic
+  `ContextBuildResult` JSON payload with repository-local written file paths,
+  public-only status, and whether private context was included.
 - `cosheaf context show <issue-id>`: builds the context pack and prints
   `CONTEXT.md`.
 - `cosheaf context show <issue-id> --repo-root <path>`: shows context for an
@@ -106,6 +119,9 @@
   explicit full-artifact budget option as `context build`.
 - `cosheaf context show <issue-id> --public-only`: uses the same private
   exclusion behavior as `context build`.
+- `cosheaf context show <issue-id> --json`: emits deterministic JSON with
+  issue ID, task directory, repository-local context file path, public-only
+  status, private-context-included flag, and rendered `CONTEXT.md` content.
 - `cosheaf memory cards`: builds deterministic artifact cards from existing
   repository metadata. Default output is compact text lines, not full artifact
   YAML or statements.
@@ -181,8 +197,8 @@
   local-only task-DAG plan for an existing issue and prints a compact text
   summary. It does not build context packs, execute workers, run gates, request
   review, write accepted knowledge, or promote artifacts.
-- `cosheaf orchestrator plan --issue <issue-id> --json`: emits the same
-  deterministic `Plan` payload as JSON.
+- `cosheaf orchestrator plan --issue <issue-id> --json`: emits the
+  deterministic `Plan` payload as JSON with top-level `schema_version: 1`.
 - `cosheaf orchestrator plan --issue <issue-id> --repo-root <path>`: creates
   the plan for an explicit repository root.
 - `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only`: runs a
@@ -257,13 +273,16 @@
   currently stable machine-readable agent-access error codes. Current values:
   `accepted_write_forbidden`, `artifact_file_validation_failed`,
   `artifact_id_exists`, `artifact_model_validation_failed`,
-  `artifact_path_exists`, `draft_write_failed`, `invalid_artifact_id`,
-  `invalid_artifact_target_path`, `invalid_timestamp`,
-  `missing_required_domain`, `no_writable_kb_root`,
-  `private_context_requires_consent`, `private_context_requires_policy`,
-  `provider_context_preview_failed`, `provider_context_scope_violation`,
-  `repository_load_failed`, `timestamp_missing_timezone`, and
-  `unknown_context_policy_mode`.
+  `artifact_path_exists`, `context_build_failed`, `context_show_failed`,
+  `draft_write_failed`, `gate_issue`, `invalid_artifact_id`,
+  `invalid_artifact_target_path`, `invalid_timestamp`, `memory_cards_failed`,
+  `memory_search_failed`, `missing_required_domain`, `no_writable_kb_root`,
+  `orchestrator_plan_failed`, `private_context_requires_consent`,
+  `private_context_requires_policy`, `provider_context_preview_failed`,
+  `provider_context_scope_violation`, `repository_load_failed`,
+  `timestamp_missing_timezone`, `unknown_context_policy_mode`,
+  `validation_failed`, `validation_unexpected_error`, and
+  `workspace_config_failed`.
 - `cosheaf.services.models.AGENT_ACCESS_SCHEMA_MODELS`: mapping used to
   generate the versioned JSON Schema files under `schemas/agent_access/`.
 
