@@ -40,6 +40,18 @@ READ_ONLY_TOOL_NAMES = (
     "context_show",
     "orchestrator_plan",
 )
+READ_ONLY_PROMPT_NAMES = (
+    "start_issue_work",
+    "reason_about_issue",
+    "verify_draft",
+    "prepare_review_bundle",
+    "public_kb_contribution_check",
+)
+PRIVATE_SCOPE_REMEDIATION = (
+    "Private MCP resources require an explicit private research policy mode "
+    "and operator consent; the current M.3 public surface does not grant that "
+    "permission."
+)
 
 
 class McpServerError(ValueError):
@@ -115,6 +127,10 @@ class ReadOnlyMcpServer:
                 result = {"tools": tool_definitions()}
             elif method == "resources/list":
                 result = {"resources": resource_definitions()}
+            elif method == "prompts/list":
+                result = {"prompts": prompt_definitions()}
+            elif method == "prompts/get":
+                result = self._handle_prompt_get(params)
             elif method == "tools/call":
                 result = self._handle_tool_call(params)
             elif method == "resources/read":
@@ -125,7 +141,7 @@ class ReadOnlyMcpServer:
                     f"unsupported MCP method: {method}",
                     remediation=(
                         "Use tools/list, tools/call, resources/list, "
-                        "or resources/read."
+                        "resources/read, prompts/list, or prompts/get."
                     ),
                 )
             return _success_response(request_id, result)
@@ -161,6 +177,31 @@ class ReadOnlyMcpServer:
         except McpServerError as exc:
             return _tool_error_result(exc)
 
+    def _handle_prompt_get(self, params: Mapping[str, Any]) -> dict[str, Any]:
+        name = _required_string(params, "name")
+        arguments = _optional_mapping(
+            params.get("arguments", {}),
+            field_name="arguments",
+        )
+        if name not in READ_ONLY_PROMPT_NAMES:
+            raise McpServerError(
+                "prompt_not_found",
+                f"prompt is not exposed by the read-only MCP server: {name}",
+                remediation=(
+                    "Call prompts/list and use one of the whitelisted prompt names."
+                ),
+            )
+        issue_id = _optional_string(arguments.get("issue_id"), field_name="issue_id")
+        artifact_id = _optional_string(
+            arguments.get("artifact_id"),
+            field_name="artifact_id",
+        )
+        return _prompt_get_result(
+            name,
+            issue_id=issue_id,
+            artifact_id=artifact_id,
+        )
+
     def _handle_resource_read(self, params: Mapping[str, Any]) -> dict[str, Any]:
         uri = _required_string(params, "uri")
         if uri == "cosheaf://workspace":
@@ -173,6 +214,19 @@ class ReadOnlyMcpServer:
             if "/" in issue_id or not issue_id:
                 raise _resource_not_found(uri)
             return _resource_result(uri, self._issue_payload(issue_id))
+        if uri.startswith("cosheaf://artifacts/public/") and uri.endswith("/card"):
+            artifact_id = (
+                uri.removeprefix("cosheaf://artifacts/public/")
+                .removesuffix("/card")
+            )
+            if "/" in artifact_id or not artifact_id:
+                raise _resource_not_found(uri)
+            return _resource_result(
+                uri,
+                self._public_artifact_card_payload(artifact_id),
+            )
+        if uri.startswith("cosheaf://artifacts/private/") and uri.endswith("/card"):
+            raise _private_resource_denied()
         if uri.startswith("cosheaf://artifacts/") and uri.endswith("/card"):
             artifact_id = uri.removeprefix("cosheaf://artifacts/").removesuffix("/card")
             if "/" in artifact_id or not artifact_id:
@@ -181,6 +235,14 @@ class ReadOnlyMcpServer:
                 uri,
                 self._public_artifact_card_payload(artifact_id),
             )
+        if uri.startswith("cosheaf://context/public/"):
+            issue_id = uri.removeprefix("cosheaf://context/public/")
+            if "/" in issue_id or not issue_id:
+                raise _resource_not_found(uri)
+            rendered = ContextPackService(self.context).show(issue_id, public_only=True)
+            return _text_resource_result(uri, rendered, mime_type="text/markdown")
+        if uri.startswith("cosheaf://context/private/"):
+            raise _private_resource_denied()
         if uri.startswith("cosheaf://context/"):
             issue_id = uri.removeprefix("cosheaf://context/")
             if "/" in issue_id or not issue_id:
@@ -446,6 +508,38 @@ def tool_definitions() -> list[dict[str, Any]]:
     ]
 
 
+def prompt_definitions() -> list[dict[str, Any]]:
+    """Return deterministic governance-safe MCP prompt definitions."""
+    descriptions = {
+        "start_issue_work": "Start bounded issue work from public context.",
+        "reason_about_issue": "Reason about an issue without changing knowledge state.",
+        "verify_draft": "Check a draft or proposal before review.",
+        "prepare_review_bundle": "Prepare review material without claiming review.",
+        "public_kb_contribution_check": (
+            "Check whether a public KB contribution is policy-ready."
+        ),
+    }
+    return [
+        {
+            "name": name,
+            "description": descriptions[name],
+            "arguments": [
+                {
+                    "name": "issue_id",
+                    "description": "Optional issue ID to keep work scoped.",
+                    "required": False,
+                },
+                {
+                    "name": "artifact_id",
+                    "description": "Optional artifact ID to keep work scoped.",
+                    "required": False,
+                },
+            ],
+        }
+        for name in READ_ONLY_PROMPT_NAMES
+    ]
+
+
 def resource_definitions() -> list[dict[str, str]]:
     """Return deterministic read-only MCP resource examples."""
     return [
@@ -460,13 +554,23 @@ def resource_definitions() -> list[dict[str, str]]:
             "mimeType": "application/json",
         },
         {
-            "uri": "cosheaf://artifacts/{artifact_id}/card",
-            "name": "artifact card",
+            "uri": "cosheaf://artifacts/public/{artifact_id}/card",
+            "name": "public artifact card",
             "mimeType": "application/json",
         },
         {
-            "uri": "cosheaf://context/{issue_id}",
+            "uri": "cosheaf://artifacts/private/{artifact_id}/card",
+            "name": "private artifact card",
+            "mimeType": "application/json",
+        },
+        {
+            "uri": "cosheaf://context/public/{issue_id}",
             "name": "public context pack",
+            "mimeType": "text/markdown",
+        },
+        {
+            "uri": "cosheaf://context/private/{issue_id}",
+            "name": "private context pack",
             "mimeType": "text/markdown",
         },
         {
@@ -475,6 +579,95 @@ def resource_definitions() -> list[dict[str, str]]:
             "mimeType": "application/json",
         },
     ]
+
+
+def _prompt_get_result(
+    name: str,
+    *,
+    issue_id: str | None,
+    artifact_id: str | None,
+) -> dict[str, Any]:
+    text = _render_prompt(name, issue_id=issue_id, artifact_id=artifact_id)
+    return {
+        "description": f"TCS-Cosheaf prompt: {name}",
+        "messages": [
+            {
+                "role": "user",
+                "content": {
+                    "type": "text",
+                    "text": text,
+                },
+            }
+        ],
+    }
+
+
+def _render_prompt(
+    name: str,
+    *,
+    issue_id: str | None,
+    artifact_id: str | None,
+) -> str:
+    scope_lines = [
+        f"- Issue ID: {issue_id}" if issue_id else "- Issue ID: not provided",
+        f"- Artifact ID: {artifact_id}"
+        if artifact_id
+        else "- Artifact ID: not provided",
+    ]
+    base_rules = [
+        "Use artifact IDs when referring to repository knowledge.",
+        "Keep accepted and draft knowledge distinct.",
+        "Accepted knowledge requires validation, gates, and human review.",
+        "Drafts, proposals, proof attempts, and worker outputs are not "
+        "accepted knowledge.",
+        "Do not write accepted knowledge.",
+        "Do not promote artifacts or mark human review complete.",
+        "Do not include private KB content unless an explicit private policy "
+        "permits it.",
+        "Formal links are metadata unless a real checker verifies them.",
+        "Before final handoff, run make test, make validate, and make gate.",
+    ]
+    task_guidance = {
+        "start_issue_work": [
+            "Build or request a bounded context pack before reasoning broadly.",
+            "Prefer public accepted artifacts, and label drafts explicitly.",
+            "Record uncertainties and required follow-up checks.",
+        ],
+        "reason_about_issue": [
+            "State assumptions and dependencies by artifact ID.",
+            "Separate conjecture, proof attempt, counterexample, and source evidence.",
+            "Do not treat model output as proof or human review.",
+        ],
+        "verify_draft": [
+            "Check schema, dependency, source, and evidence expectations.",
+            "Report skipped verifier results as skipped, not pass.",
+            "Do not upgrade draft status without explicit review workflow.",
+        ],
+        "prepare_review_bundle": [
+            "Prepare review context and commands; do not perform human review.",
+            "List changed artifact IDs and source metadata that require inspection.",
+            "Keep validation/gate results separate from human-review decisions.",
+        ],
+        "public_kb_contribution_check": [
+            "Confirm the material is public, citable, and source-reviewed.",
+            "Reject private conjectures, unpublished ideas, and LLM-only content.",
+            "Require source metadata and a human review record for accepted "
+            "public KB artifacts.",
+        ],
+    }
+    lines = [
+        f"# {name}",
+        "",
+        "Scope:",
+        *scope_lines,
+        "",
+        "Governance rules:",
+        *(f"- {line}" for line in base_rules),
+        "",
+        "Task guidance:",
+        *(f"- {line}" for line in task_guidance[name]),
+    ]
+    return "\n".join(lines) + "\n"
 
 
 def serve_stdio(
@@ -693,6 +886,14 @@ def _resource_not_found(uri: str) -> McpServerError:
         "MCP resource was not found",
         remediation="Use resources/list and a supported cosheaf:// URI.",
         details={"uri": uri},
+    )
+
+
+def _private_resource_denied() -> McpServerError:
+    return McpServerError(
+        "private_resource_denied",
+        "private resources are not available through public read-only MCP mode",
+        remediation=PRIVATE_SCOPE_REMEDIATION,
     )
 
 

@@ -4,8 +4,9 @@
 
 This document defines the TCS-Cosheaf MCP server boundary and current
 implementation status. The first implementation is a minimal read-only stdio
-JSON-RPC surface. It does not add external dependencies, change gates, create
-write authority, call hosted providers, or implement prompts.
+JSON-RPC surface with governance-safe prompt templates. It does not add
+external dependencies, change gates, create write authority, call hosted
+providers, or implement controlled writes.
 
 The MCP server is the planned machine interface for external agents. The
 current server exposes typed, whitelisted service calls over MCP-style
@@ -40,9 +41,29 @@ Current read-only resources:
 
 - `cosheaf://workspace`
 - `cosheaf://issues/{issue_id}`
+- `cosheaf://artifacts/public/{artifact_id}/card`
+- `cosheaf://artifacts/private/{artifact_id}/card`
+- `cosheaf://context/public/{issue_id}`
+- `cosheaf://context/private/{issue_id}`
+- `cosheaf://gate/latest`
+
+Legacy public aliases remain available for compatibility:
+
 - `cosheaf://artifacts/{artifact_id}/card`
 - `cosheaf://context/{issue_id}`
-- `cosheaf://gate/latest`
+
+Current prompts:
+
+- `start_issue_work`
+- `reason_about_issue`
+- `verify_draft`
+- `prepare_review_bundle`
+- `public_kb_contribution_check`
+
+Prompt templates contain governance instructions only. They include the
+accepted/draft distinction, instruct agents to use artifact IDs, forbid
+accepted knowledge writes and promotion, and require final test/validate/gate
+checks. Prompt templates do not include artifact text or private KB content.
 
 The current tools call the Python service layer directly. They do not shell out
 to the CLI. `gate_run` may write deterministic runtime reports under ignored
@@ -52,8 +73,9 @@ source-of-truth artifact YAML, write accepted knowledge, promote artifacts,
 create drafts, or mark human review.
 
 Public-mode MCP resources and search results do not expose private artifact
-cards. Private artifact-card resource requests return a structured
-`private_resource_denied` error.
+cards. Private-scoped artifact-card or context resource requests return a
+structured `private_resource_denied` error unless a later private policy mode
+explicitly permits them.
 
 ## Transport
 
@@ -81,6 +103,11 @@ MCP prompts are workflow templates. They may help an agent ask for bounded
 context, draft a PR summary, or follow review steps. Prompts do not grant
 permission and do not override repository policy, gates, human review, or
 promotion requirements.
+
+Implemented prompts are static templates. They may include caller-provided
+`issue_id` or `artifact_id` values, but they do not read issue text, artifact
+statements, private KB records, provider credentials, environment variables, or
+other repository content.
 
 ## Resource Taxonomy
 

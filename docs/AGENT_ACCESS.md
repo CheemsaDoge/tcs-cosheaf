@@ -7,9 +7,9 @@ TCS-Cosheaf usable by external agents, operator skills, internal orchestrator
 runs, and hosted model workers without weakening the Git-backed knowledge
 governance model.
 
-This document is architecture and threat-model guidance only. It does not
-implement an MCP server, hosted provider transport, service layer, new schema,
-or runtime behavior.
+This document records architecture and threat-model guidance plus current
+agent-access status. It does not by itself grant authority, change gates,
+implement hosted provider transport, or create write permissions.
 
 ## Access Surfaces
 
@@ -105,6 +105,13 @@ construction, and orchestrator planning. Controlled-write tools may be added
 only after read-only MCP behavior is stable and only for draft, proposal, task,
 or bundle surfaces.
 
+The current MCP surface is a minimal read-only stdio JSON-RPC implementation.
+It exposes whitelisted read-only tools, scope-aware resource templates, and
+governance-safe prompt templates. Prompts are static workflow guidance: they
+include accepted/draft distinctions, require artifact IDs, forbid accepted
+knowledge writes, and require final test/validate/gate checks. Prompt templates
+do not include private KB content or artifact text.
+
 MCP must not expose:
 
 - arbitrary shell execution;
@@ -187,10 +194,11 @@ Required mitigations:
 
 ## Current Status
 
-As of this document, the repository has a thin typed service layer and
-versioned agent-access DTO/JSON Schema contracts plus a provider-send context
-preview policy service. The repository has not implemented the future MCP
-server, hosted provider gateway, or Skill package described here. Existing
-local CLI, validation, gate, index, retrieval, context-pack, task, orchestrator
-dry-run, fake provider, and optional verifier surfaces keep their current
-behavior.
+As of this document, the repository has a thin typed service layer, versioned
+agent-access DTO/JSON Schema contracts, a provider-send context preview policy
+service, and a minimal read-only stdio MCP surface with governance-safe
+prompts and scope-aware resources. The repository has not implemented the
+hosted provider gateway, controlled-write MCP tools, or Skill package described
+here. Existing local CLI, validation, gate, index, retrieval, context-pack,
+task, orchestrator dry-run, fake provider, and optional verifier surfaces keep
+their current behavior.
