@@ -161,6 +161,28 @@ direct `cosheaf artifact move-status <artifact-id> accepted` remain refused.
 Issue, task, and review records are not lifecycle artifacts and must not be
 promoted with `artifact promote`.
 
+## Controlled Agent Writes
+
+Use controlled write commands only when a task explicitly permits draft or
+review-staging writes:
+
+- `cosheaf draft write-artifact --input-json <path> --json`
+- `cosheaf draft write-source-note --input-json <path> --json`
+- `cosheaf bundle submit --input-json <path> --json`
+- `cosheaf review request --input-json <path> --json`
+
+Prefer `--dry-run` before a real write when an agent is proposing changes.
+These commands validate the JSON request, report exact target paths, and refuse
+accepted paths, readonly KB roots, accepted artifact status, and
+`human_reviewed` review spoofing. `bundle submit` validates worker bundle v2
+manifests for review only; it does not complete tasks, merge outputs, promote
+artifacts, or write accepted knowledge. `review request` writes draft
+informational review-request records only; it does not create human review.
+
+After any controlled write, run validation and gate commands required by the
+task. Validation and gate success remain evidence for review, not a substitute
+for human review or promotion.
+
 ## Local Task Runner
 
 Use `cosheaf task run <task-id> -- <command> [args...]` only for explicit local
@@ -239,10 +261,14 @@ commands when the result will be parsed by a program:
 - `cosheaf context build <issue-id> --json`
 - `cosheaf context show <issue-id> --json`
 - `cosheaf orchestrator plan --issue <issue-id> --json`
+- `cosheaf draft write-artifact --input-json <path> --json --dry-run`
+- `cosheaf draft write-source-note --input-json <path> --json --dry-run`
+- `cosheaf bundle submit --input-json <path> --json --dry-run`
+- `cosheaf review request --input-json <path> --json --dry-run`
 
 JSON mode keeps human text rendering out of stdout and uses structured
-`ErrorResult` payloads for expected read-only command failures. Human output
-remains the default. JSON output does not grant write authority, does not run
+`ErrorResult` payloads for expected command failures. Human output remains the
+default. JSON output does not grant accepted-write authority, does not run
 hosted providers, does not write accepted knowledge, and does not make skipped
 verifier/provider results into passes.
 

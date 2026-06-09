@@ -7,12 +7,15 @@ promotion boundaries as the CLI.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
+from typing import Any
 
+import yaml  # type: ignore[import-untyped]
 from pydantic import ValidationError
+from yaml import YAMLError
 
 from cosheaf.agent.context_pack import (
     CONTEXT_MAX_CARDS,
@@ -31,13 +34,14 @@ from cosheaf.agent.orchestrator_stub import OrchestratorStub, TaskCompletionResu
 from cosheaf.agent.task import AgentTask, WorkerType
 from cosheaf.agent.worker_bundle_v2 import (
     WorkerBundleV2,
+    WorkerBundleV2Error,
     reduce_worker_bundle_v2,
     validate_worker_bundle_v2,
 )
 from cosheaf.config.workspace import KbRootConfig
-from cosheaf.core.artifact import BaseArtifact
+from cosheaf.core.artifact import BaseArtifact, SourceMetadata
 from cosheaf.core.ids import validate_artifact_id
-from cosheaf.core.paths import lifecycle_artifact_path
+from cosheaf.core.paths import lifecycle_artifact_path, normalize_repo_path
 from cosheaf.core.status import ArtifactStatus, ArtifactType
 from cosheaf.gates.gatekeeper import (
     GatekeeperRunResult,
@@ -55,8 +59,13 @@ from cosheaf.memory import (
     search_artifact_cards,
 )
 from cosheaf.services.context_policy import ContextSendPolicyService
-from cosheaf.services.models import ErrorResult
-from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
+from cosheaf.services.models import (
+    DraftArtifactWriteRequest,
+    ErrorResult,
+    WorkerBundleSubmitRequest,
+    WorkerBundleSubmitResult,
+)
+from cosheaf.storage.loader import LoadedRecord, LoadError, ReviewRecord, load_artifacts
 from cosheaf.storage.repo import RepoContext
 from cosheaf.storage.writer import write_yaml_deterministic
 
@@ -87,6 +96,18 @@ class ArtifactWriteResult:
 
     artifact: BaseArtifact
     relative_path: Path
+
+
+@dataclass(frozen=True)
+class ControlledWriteResult:
+    """Result of a controlled staging write or dry-run preview."""
+
+    kind: str
+    relative_path: Path
+    written_paths: tuple[Path, ...]
+    dry_run: bool
+    accepted_write_performed: bool = False
+    record_id: str = ""
 
 
 class ServiceError(ValueError):
@@ -381,6 +402,67 @@ class BundleValidationService:
             reducer_id=reducer_id,
         )
 
+    def submit(
+        self,
+        request: WorkerBundleSubmitRequest,
+        *,
+        dry_run: bool = False,
+    ) -> WorkerBundleSubmitResult:
+        """Validate a worker bundle for review without promotion or task closure."""
+        if request.complete_task:
+            raise ServiceError(
+                "bundle submit does not complete tasks in this controlled surface",
+                code="bundle_complete_forbidden",
+                remediation=(
+                    "Submit the bundle for review first. Complete task records "
+                    "through the explicit task workflow when that is intended."
+                ),
+                blocking=True,
+            )
+
+        try:
+            bundle = self.validate(request.bundle_path)
+        except WorkerBundleV2Error as exc:
+            raise ServiceError(
+                str(exc),
+                code="bundle_submit_failed",
+                remediation=(
+                    "Fix the worker bundle v2 manifest and keep proposed outputs "
+                    "under draft/proposal paths."
+                ),
+                blocking=True,
+            ) from exc
+
+        if bundle.task_id != request.task_id:
+            raise ServiceError(
+                "worker bundle task_id does not match submit request",
+                code="bundle_submit_failed",
+                remediation="Use a submit request whose task_id matches the bundle.",
+                blocking=True,
+                details={
+                    "request_task_id": request.task_id,
+                    "bundle_task_id": bundle.task_id,
+                },
+            )
+
+        warnings = [
+            *bundle.failures_or_counterexamples,
+            *(f"risk: {flag}" for flag in bundle.risk_flags),
+            f"confidence: {bundle.confidence.value}",
+        ]
+        if dry_run:
+            warnings.append("dry-run: bundle validated; no task state was changed")
+
+        return WorkerBundleSubmitResult(
+            task_id=bundle.task_id,
+            bundle_id=bundle.bundle_id,
+            accepted_for_review=True,
+            output_paths=[
+                proposed.path for proposed in bundle.proposed_artifacts
+            ],
+            warnings=warnings,
+        )
+
 
 class DraftWriteService:
     """Service for controlled draft/pre-accepted lifecycle artifact writes."""
@@ -496,6 +578,234 @@ class DraftWriteService:
             remediation="Fix validation failures before writing the draft artifact.",
         )
 
+    def write_artifact_request(
+        self,
+        request: DraftArtifactWriteRequest,
+        *,
+        dry_run: bool = False,
+    ) -> ControlledWriteResult:
+        """Write or preview a controlled draft artifact request."""
+        if request.status is ArtifactStatus.ACCEPTED:
+            raise DraftWriteServiceError(
+                "accepted artifacts cannot be written by draft write commands",
+                code="accepted_write_forbidden",
+                remediation=(
+                    "Use draft status here. Accepted artifacts require review, "
+                    "gates, and explicit promotion."
+                ),
+            )
+
+        relative_path = _workspace_lifecycle_artifact_path(
+            context=self.context,
+            artifact_type=request.artifact_type,
+            status=request.status,
+            artifact_id=request.artifact_id,
+        )
+        _reject_accepted_path(relative_path)
+        _ensure_target_writable(self.context, relative_path)
+
+        if dry_run:
+            self._validate_artifact_request_without_write(request, relative_path)
+            return ControlledWriteResult(
+                kind="draft_artifact",
+                relative_path=relative_path,
+                written_paths=(),
+                dry_run=True,
+                record_id=request.artifact_id,
+            )
+
+        result = self.create_artifact(
+            artifact_id=request.artifact_id,
+            artifact_type=request.artifact_type,
+            title=request.title,
+            domain=request.domain,
+            status=request.status,
+            statement=request.statement,
+            authors=request.authors,
+            tags=request.tags,
+            depends_on=request.depends_on,
+            supersedes=request.supersedes,
+        )
+        return ControlledWriteResult(
+            kind="draft_artifact",
+            relative_path=result.relative_path,
+            written_paths=(result.relative_path,),
+            dry_run=False,
+            record_id=result.artifact.id,
+        )
+
+    def write_source_note(
+        self,
+        request: Mapping[str, Any],
+        *,
+        dry_run: bool = False,
+    ) -> ControlledWriteResult:
+        """Write or preview a staged draft source note."""
+        source_id = _required_text(request, "source_id")
+        try:
+            validate_artifact_id(source_id)
+        except ValueError as exc:
+            raise DraftWriteServiceError(
+                str(exc),
+                code="invalid_artifact_id",
+                remediation="Use a dot-separated lowercase source note id.",
+            ) from exc
+
+        target_path = _repo_local_staging_path(
+            request.get("target_path", f"sources/notes/{source_id}.yaml")
+        )
+        _reject_accepted_path(target_path)
+        _ensure_target_writable(self.context, target_path)
+
+        source = _source_metadata_from_request(request)
+        now = _now_iso()
+        payload = {
+            "id": source_id,
+            "type": "source_note",
+            "status": "draft",
+            "created_at": now,
+            "updated_at": now,
+            "authors": _optional_text_list(request, "authors"),
+            "source": source.model_dump(mode="json"),
+            "notes": str(request.get("notes", "")).strip(),
+        }
+        _validate_source_note_payload(payload)
+
+        return _write_controlled_yaml(
+            context=self.context,
+            kind="source_note",
+            relative_path=target_path,
+            payload=payload,
+            dry_run=dry_run,
+            record_id=source_id,
+            error_code="source_note_write_failed",
+            validator=_validate_source_note_file,
+        )
+
+    def write_review_request(
+        self,
+        request: Mapping[str, Any],
+        *,
+        dry_run: bool = False,
+    ) -> ControlledWriteResult:
+        """Write or preview a draft review-request record."""
+        review_id = _required_text(request, "review_id")
+        status = str(request.get("status", "draft")).strip()
+        if status in {"human_reviewed", "accepted"}:
+            raise DraftWriteServiceError(
+                "controlled review requests cannot mark human review complete",
+                code="human_review_forbidden",
+                remediation=(
+                    "Use status=draft and decision=informational. Human review "
+                    "must be recorded by the explicit review workflow."
+                ),
+            )
+        if status != "draft":
+            raise DraftWriteServiceError(
+                f"unsupported review request status: {status}",
+                code="review_request_failed",
+                remediation="Use status=draft for controlled review requests.",
+            )
+
+        target_path = _repo_local_staging_path(
+            f"reviews/requests/{review_id}.yaml"
+        )
+        _reject_accepted_path(target_path)
+        _ensure_target_writable(self.context, target_path)
+
+        now = _now_iso()
+        payload = {
+            "id": review_id,
+            "type": "review",
+            "title": _required_text(request, "title"),
+            "status": "draft",
+            "created_at": now,
+            "updated_at": now,
+            "authors": _optional_text_list(request, "authors"),
+            "target": _required_text(request, "target"),
+            "summary": _required_text(request, "summary"),
+            "findings": _optional_text_list(request, "findings"),
+            "decision": str(request.get("decision", "informational")).strip(),
+        }
+        try:
+            ReviewRecord.model_validate(payload)
+        except ValidationError as exc:
+            raise DraftWriteServiceError(
+                _format_pydantic_errors(exc),
+                code="review_request_failed",
+                remediation="Fix the review request fields and retry.",
+            ) from exc
+        if payload["decision"] != "informational":
+            raise DraftWriteServiceError(
+                "controlled review requests must be informational",
+                code="human_review_forbidden",
+                remediation=(
+                    "Use decision=informational. Approval, rejection, or "
+                    "changes-requested decisions require human review."
+                ),
+            )
+
+        return _write_controlled_yaml(
+            context=self.context,
+            kind="review_request",
+            relative_path=target_path,
+            payload=payload,
+            dry_run=dry_run,
+            record_id=review_id,
+            error_code="review_request_failed",
+            validator=_validate_review_request_file,
+        )
+
+    def _validate_artifact_request_without_write(
+        self,
+        request: DraftArtifactWriteRequest,
+        relative_path: Path,
+    ) -> None:
+        if not request.domain:
+            raise DraftWriteServiceError(
+                "at least one domain value is required",
+                code="missing_required_domain",
+                remediation="Provide at least one domain for the draft artifact.",
+            )
+        _ensure_artifact_id_is_available(self.context, request.artifact_id)
+        if self.context.resolve(relative_path).exists():
+            raise DraftWriteServiceError(
+                f"artifact path already exists: {relative_path.as_posix()}",
+                code="artifact_path_exists",
+                remediation="Choose a new artifact id or inspect the existing path.",
+                details={"path": relative_path.as_posix()},
+            )
+        timestamp = datetime.now(UTC).replace(microsecond=0)
+        try:
+            BaseArtifact.model_validate(
+                {
+                    "id": request.artifact_id,
+                    "type": request.artifact_type,
+                    "title": request.title,
+                    "domain": request.domain,
+                    "status": request.status,
+                    "created_at": timestamp,
+                    "updated_at": timestamp,
+                    "authors": request.authors,
+                    "depends_on": request.depends_on,
+                    "supersedes": request.supersedes,
+                    "tags": request.tags,
+                    "statement": request.statement,
+                    "evidence": [],
+                    "review": {
+                        "state": "requested",
+                        "notes": "Created by CLI.",
+                    },
+                    "risk": {"level": "low", "notes": ""},
+                }
+            )
+        except ValidationError as exc:
+            raise DraftWriteServiceError(
+                _format_pydantic_errors(exc),
+                code="artifact_model_validation_failed",
+                remediation="Fix the draft artifact fields and retry.",
+            ) from exc
+
 
 def _parse_artifact_timestamp(value: str | None) -> datetime:
     if value is None:
@@ -516,6 +826,261 @@ def _parse_artifact_timestamp(value: str | None) -> datetime:
             remediation="Use an ISO 8601 timestamp with a timezone or trailing Z.",
         )
     return parsed.astimezone(UTC).replace(microsecond=0)
+
+
+def _now_iso() -> str:
+    return datetime.now(UTC).replace(microsecond=0).isoformat()
+
+
+def _required_text(request: Mapping[str, Any], key: str) -> str:
+    value = request.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise DraftWriteServiceError(
+            f"missing required text field: {key}",
+            code="draft_write_failed",
+            remediation=f"Provide a non-empty `{key}` field in the input JSON.",
+        )
+    return value.strip()
+
+
+def _optional_text_list(request: Mapping[str, Any], key: str) -> list[str]:
+    value = request.get(key, [])
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        raise DraftWriteServiceError(
+            f"`{key}` must be a list of strings",
+            code="draft_write_failed",
+            remediation=f"Use a JSON array of strings for `{key}`.",
+        )
+    result: list[str] = []
+    seen: set[str] = set()
+    for item in value:
+        if not isinstance(item, str):
+            raise DraftWriteServiceError(
+                f"`{key}` must contain only strings",
+                code="draft_write_failed",
+                remediation=f"Use a JSON array of strings for `{key}`.",
+            )
+        normalized = item.strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        result.append(normalized)
+    return result
+
+
+def _repo_local_staging_path(value: Any) -> Path:
+    if not isinstance(value, str | Path):
+        raise DraftWriteServiceError(
+            "target path must be a repository-local path",
+            code="invalid_staging_path",
+            remediation="Use a relative repository path ending in .yaml or .yml.",
+        )
+    raw = str(value)
+    normalized = normalize_repo_path(raw)
+    is_absolute = Path(raw).is_absolute() or PureWindowsPath(raw).is_absolute()
+    parts = PurePosixPath(normalized).parts
+    if (
+        not normalized
+        or normalized == "."
+        or is_absolute
+        or normalized == ".."
+        or normalized.startswith("../")
+        or ".." in parts
+    ):
+        raise DraftWriteServiceError(
+            f"invalid repository-local staging path: {raw}",
+            code="invalid_staging_path",
+            remediation="Use a relative path inside the repository.",
+        )
+    path = Path(normalized)
+    if path.suffix.lower() not in {".yaml", ".yml"}:
+        raise DraftWriteServiceError(
+            f"staging path must be YAML: {normalized}",
+            code="invalid_staging_path",
+            remediation="Use a .yaml or .yml staging path.",
+        )
+    return path
+
+
+def _reject_accepted_path(path: str | Path) -> None:
+    normalized = normalize_repo_path(path)
+    parts = PurePosixPath(normalized).parts
+    if parts and parts[0] == "kb" and "accepted" in parts:
+        raise DraftWriteServiceError(
+            f"controlled write cannot target accepted knowledge: {normalized}",
+            code="accepted_write_forbidden",
+            remediation=(
+                "Write draft/proposal/staging outputs only. Accepted knowledge "
+                "requires review, gates, and explicit promotion."
+            ),
+            details={"path": normalized},
+        )
+
+
+def _ensure_target_writable(context: RepoContext, relative_path: Path) -> None:
+    try:
+        resolved = context.resolve(relative_path)
+        resolved.relative_to(context.repo_root)
+    except ValueError:
+        raise DraftWriteServiceError(
+            f"target path is outside the repository: {relative_path}",
+            code="invalid_staging_path",
+            remediation="Use a repository-local target path.",
+        ) from None
+
+    root = context.kb_root_for_path(relative_path)
+    if root is not None and root.readonly:
+        raise DraftWriteServiceError(
+            f"readonly KB root cannot be modified: {root.name}",
+            code="readonly_kb_root",
+            remediation=(
+                "Choose a writable private KB root or staging path outside the "
+                "readonly root."
+            ),
+            details={"kb_root": root.name, "path": relative_path.as_posix()},
+        )
+
+
+def _source_metadata_from_request(request: Mapping[str, Any]) -> SourceMetadata:
+    source_payload = {
+        "kind": _required_text(request, "kind"),
+        "title": str(request.get("title", "")).strip(),
+        "authors": _optional_text_list(request, "authors"),
+        "year": request.get("year"),
+        "doi": str(request.get("doi", "")).strip(),
+        "arxiv": str(request.get("arxiv", "")).strip(),
+        "url": str(request.get("url", "")).strip(),
+        "theorem_number": str(request.get("theorem_number", "")).strip(),
+        "page": str(request.get("page", "")).strip(),
+        "notes": str(request.get("notes", "")).strip(),
+    }
+    try:
+        return SourceMetadata.model_validate(source_payload)
+    except ValidationError as exc:
+        raise DraftWriteServiceError(
+            _format_pydantic_errors(exc),
+            code="source_note_write_failed",
+            remediation="Fix source metadata fields and retry.",
+        ) from exc
+
+
+def _validate_source_note_payload(payload: Mapping[str, Any]) -> None:
+    source_id = payload.get("id")
+    if not isinstance(source_id, str):
+        raise DraftWriteServiceError(
+            "source note id must be a string",
+            code="source_note_write_failed",
+            remediation="Provide a valid source_id.",
+        )
+    try:
+        validate_artifact_id(source_id)
+        SourceMetadata.model_validate(payload.get("source"))
+    except (TypeError, ValueError, ValidationError) as exc:
+        raise DraftWriteServiceError(
+            str(exc),
+            code="source_note_write_failed",
+            remediation="Fix the staged source-note metadata and retry.",
+        ) from exc
+    if payload.get("type") != "source_note" or payload.get("status") != "draft":
+        raise DraftWriteServiceError(
+            "source note staging records must be type=source_note and status=draft",
+            code="source_note_write_failed",
+            remediation="Use the controlled source-note request shape.",
+        )
+
+
+def _write_controlled_yaml(
+    *,
+    context: RepoContext,
+    kind: str,
+    relative_path: Path,
+    payload: Mapping[str, Any],
+    dry_run: bool,
+    record_id: str,
+    error_code: str,
+    validator: Callable[[RepoContext, Path], None],
+) -> ControlledWriteResult:
+    target_path = context.resolve(relative_path)
+    if target_path.exists():
+        raise DraftWriteServiceError(
+            f"target path already exists: {relative_path.as_posix()}",
+            code=error_code,
+            remediation="Choose a new staging id or inspect the existing file.",
+            details={"path": relative_path.as_posix()},
+        )
+    if dry_run:
+        return ControlledWriteResult(
+            kind=kind,
+            relative_path=relative_path,
+            written_paths=(),
+            dry_run=True,
+            record_id=record_id,
+        )
+
+    write_yaml_deterministic(target_path, dict(payload))
+    try:
+        validator(context, relative_path)
+    except DraftWriteServiceError:
+        target_path.unlink(missing_ok=True)
+        raise
+    except Exception as exc:
+        target_path.unlink(missing_ok=True)
+        raise DraftWriteServiceError(
+            str(exc),
+            code=error_code,
+            remediation="Fix the staged YAML fields and retry.",
+        ) from exc
+
+    return ControlledWriteResult(
+        kind=kind,
+        relative_path=relative_path,
+        written_paths=(relative_path,),
+        dry_run=False,
+        record_id=record_id,
+    )
+
+
+def _read_yaml_mapping(context: RepoContext, relative_path: Path) -> dict[str, Any]:
+    path = context.resolve(relative_path)
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except YAMLError as exc:
+        raise DraftWriteServiceError(
+            f"invalid YAML: {exc}",
+            code="draft_write_failed",
+            remediation="Fix the generated YAML and retry.",
+        ) from exc
+    if not isinstance(raw, dict):
+        raise DraftWriteServiceError(
+            "generated YAML must be a mapping",
+            code="draft_write_failed",
+            remediation="Fix the generated YAML and retry.",
+        )
+    return raw
+
+
+def _validate_source_note_file(context: RepoContext, relative_path: Path) -> None:
+    _validate_source_note_payload(_read_yaml_mapping(context, relative_path))
+
+
+def _validate_review_request_file(context: RepoContext, relative_path: Path) -> None:
+    raw = _read_yaml_mapping(context, relative_path)
+    try:
+        record = ReviewRecord.model_validate(raw)
+    except ValidationError as exc:
+        raise DraftWriteServiceError(
+            _format_pydantic_errors(exc),
+            code="review_request_failed",
+            remediation="Fix the staged review request and retry.",
+        ) from exc
+    if record.status != "draft" or record.decision != "informational":
+        raise DraftWriteServiceError(
+            "review requests must remain draft informational records",
+            code="human_review_forbidden",
+            remediation="Do not mark human review or approval through this command.",
+        )
 
 
 def _workspace_lifecycle_artifact_path(
@@ -595,6 +1160,7 @@ __all__ = [
     "BundleValidationService",
     "ContextPackService",
     "ContextSendPolicyService",
+    "ControlledWriteResult",
     "DraftWriteService",
     "DraftWriteServiceError",
     "GateService",

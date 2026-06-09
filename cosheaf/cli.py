@@ -74,11 +74,14 @@ from cosheaf.memory import (
     load_memory_graph_snapshot,
 )
 from cosheaf.services import (
+    BundleValidationService,
     ContextPackService,
+    ControlledWriteResult,
     DraftWriteService,
     DraftWriteServiceError,
     GateService,
     MemorySearchService,
+    ServiceError,
     TaskService,
     ValidationService,
     WorkspaceService,
@@ -87,10 +90,12 @@ from cosheaf.services.models import (
     AgentAccessModel,
     AgentKbRoot,
     ContextBuildResult,
+    DraftArtifactWriteRequest,
     ErrorResult,
     GateRunResult,
     KbRootPolicy,
     ValidateResult,
+    WorkerBundleSubmitRequest,
 )
 from cosheaf.services.models import (
     WorkspaceInfoResult as AgentWorkspaceInfoResult,
@@ -134,6 +139,21 @@ task_app = typer.Typer(
     help="Agent task commands.",
     no_args_is_help=True,
 )
+draft_app = typer.Typer(
+    add_completion=False,
+    help="Controlled draft/staging write commands.",
+    no_args_is_help=True,
+)
+bundle_app = typer.Typer(
+    add_completion=False,
+    help="Worker bundle review-submission commands.",
+    no_args_is_help=True,
+)
+review_app = typer.Typer(
+    add_completion=False,
+    help="Controlled review request commands.",
+    no_args_is_help=True,
+)
 orchestrator_app = typer.Typer(
     add_completion=False,
     help="Deterministic local orchestrator commands.",
@@ -175,6 +195,9 @@ app.add_typer(graph_app, name="graph")
 app.add_typer(gate_app, name="gate")
 app.add_typer(context_app, name="context")
 app.add_typer(task_app, name="task")
+app.add_typer(draft_app, name="draft")
+app.add_typer(bundle_app, name="bundle")
+app.add_typer(review_app, name="review")
 app.add_typer(orchestrator_app, name="orchestrator")
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(ingest_app, name="ingest")
@@ -378,6 +401,208 @@ def artifact_create(
     console.print(f"Artifact created: {relative_path.as_posix()}")
     console.print(f"- id: {artifact.id}")
     console.print(f"- status: {artifact.status.value}")
+
+
+@draft_app.command("write-artifact")
+def draft_write_artifact(
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="JSON request for a draft artifact write.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for controlled draft writes.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Validate and report target paths without writing files.",
+    ),
+) -> None:
+    """Write or preview a controlled draft artifact request."""
+    console = Console(width=120, markup=False)
+    raw = _read_input_json_or_exit(input_json, json_output=json_output)
+    if str(raw.get("status", "")).strip() == ArtifactStatus.ACCEPTED.value:
+        _exit_with_error(
+            ErrorResult(
+                code="accepted_write_forbidden",
+                message="draft write-artifact cannot target accepted knowledge",
+                remediation=(
+                    "Use draft status and the explicit promotion workflow after "
+                    "review and gates."
+                ),
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+
+    try:
+        request = DraftArtifactWriteRequest.model_validate(raw)
+        result = DraftWriteService(RepoContext(repo_root)).write_artifact_request(
+            request,
+            dry_run=dry_run,
+        )
+    except (DraftWriteServiceError, ValidationError) as exc:
+        _exit_with_error(
+            _exception_to_error_result(exc, default_code="draft_write_failed"),
+            json_output=json_output,
+            console=console,
+        )
+
+    _emit_controlled_write(result, json_output=json_output, console=console)
+
+
+@draft_app.command("write-source-note")
+def draft_write_source_note(
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="JSON request for a staged source note.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for controlled source-note writes.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Validate and report target paths without writing files.",
+    ),
+) -> None:
+    """Write or preview a staged draft source note."""
+    console = Console(width=120, markup=False)
+    raw = _read_input_json_or_exit(input_json, json_output=json_output)
+    try:
+        result = DraftWriteService(RepoContext(repo_root)).write_source_note(
+            raw,
+            dry_run=dry_run,
+        )
+    except DraftWriteServiceError as exc:
+        _exit_with_error(
+            exc.to_error_result(),
+            json_output=json_output,
+            console=console,
+        )
+
+    _emit_controlled_write(result, json_output=json_output, console=console)
+
+
+@review_app.command("request")
+def review_request(
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="JSON request for a draft review request record.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for controlled review requests.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Validate and report target paths without writing files.",
+    ),
+) -> None:
+    """Write or preview a draft informational review request."""
+    console = Console(width=120, markup=False)
+    raw = _read_input_json_or_exit(input_json, json_output=json_output)
+    status = str(raw.get("status", "")).strip()
+    if status in {"human_reviewed", "accepted"}:
+        _exit_with_error(
+            ErrorResult(
+                code="human_review_forbidden",
+                message="review request cannot mark human review complete",
+                remediation=(
+                    "Use status=draft and decision=informational. Human review "
+                    "must be recorded explicitly by a reviewer."
+                ),
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+
+    try:
+        result = DraftWriteService(RepoContext(repo_root)).write_review_request(
+            raw,
+            dry_run=dry_run,
+        )
+    except DraftWriteServiceError as exc:
+        _exit_with_error(
+            exc.to_error_result(),
+            json_output=json_output,
+            console=console,
+        )
+
+    _emit_controlled_write(result, json_output=json_output, console=console)
+
+
+@bundle_app.command("submit")
+def bundle_submit(
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="JSON request for worker bundle review submission.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for bundle submission.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Validate and report without changing task state.",
+    ),
+) -> None:
+    """Validate a worker bundle for review without promotion."""
+    console = Console(width=120, markup=False)
+    raw = _read_input_json_or_exit(input_json, json_output=json_output)
+    try:
+        request = WorkerBundleSubmitRequest.model_validate(raw)
+        result = BundleValidationService(RepoContext(repo_root)).submit(
+            request,
+            dry_run=dry_run,
+        )
+    except (ServiceError, ValidationError) as exc:
+        _exit_with_error(
+            _exception_to_error_result(exc, default_code="bundle_submit_failed"),
+            json_output=json_output,
+            console=console,
+        )
+
+    if json_output:
+        _emit_model(result)
+        return
+
+    console.print(f"Bundle accepted for review: {result.bundle_id}")
+    console.print("- accepted knowledge merge: not performed")
 
 
 @artifact_app.command("move-status")
@@ -1502,6 +1727,103 @@ def _emit_model(model: AgentAccessModel) -> None:
 
 def _emit_error(error: ErrorResult) -> None:
     _emit_model(error)
+
+
+def _read_input_json_or_exit(
+    input_json: Path,
+    *,
+    json_output: bool,
+) -> dict[str, Any]:
+    try:
+        raw = json.loads(input_json.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        _exit_with_error(
+            ErrorResult(
+                code="invalid_input_json",
+                message=f"invalid input JSON: {exc}",
+                remediation="Provide a readable JSON object via --input-json.",
+                blocking=True,
+                related_path=_valid_related_path(str(input_json)),
+            ),
+            json_output=json_output,
+            console=Console(width=120, markup=False),
+        )
+    if not isinstance(raw, dict):
+        _exit_with_error(
+            ErrorResult(
+                code="invalid_input_json",
+                message="input JSON must be an object",
+                remediation="Provide a JSON object at the input document root.",
+                blocking=True,
+                related_path=_valid_related_path(str(input_json)),
+            ),
+            json_output=json_output,
+            console=Console(width=120, markup=False),
+        )
+    return dict(raw)
+
+
+def _exit_with_error(
+    error: ErrorResult,
+    *,
+    json_output: bool,
+    console: Console,
+) -> None:
+    if json_output:
+        _emit_error(error)
+    else:
+        console.print(f"{error.code}: {error.message}")
+        console.print(f"remediation: {error.remediation}")
+    raise typer.Exit(code=1)
+
+
+def _exception_to_error_result(
+    exc: Exception,
+    *,
+    default_code: str,
+) -> ErrorResult:
+    if isinstance(exc, ServiceError):
+        return exc.to_error_result()
+    if isinstance(exc, ValidationError):
+        return ErrorResult(
+            code=default_code,
+            message=_format_pydantic_errors(exc),
+            remediation="Fix the input JSON fields and retry.",
+            blocking=True,
+        )
+    return ErrorResult(
+        code=default_code,
+        message=str(exc),
+        remediation="Fix the request and retry.",
+        blocking=True,
+    )
+
+
+def _emit_controlled_write(
+    result: ControlledWriteResult,
+    *,
+    json_output: bool,
+    console: Console,
+) -> None:
+    if json_output:
+        _emit_json(
+            {
+                "schema_version": 1,
+                "kind": result.kind,
+                "path": result.relative_path.as_posix(),
+                "written_paths": [
+                    path.as_posix() for path in result.written_paths
+                ],
+                "dry_run": result.dry_run,
+                "accepted_write_performed": result.accepted_write_performed,
+                "record_id": result.record_id,
+            }
+        )
+        return
+
+    action = "would write" if result.dry_run else "wrote"
+    console.print(f"{result.kind}: {action} {result.relative_path.as_posix()}")
+    console.print("- accepted knowledge merge: not performed")
 
 
 def _workspace_info_to_agent_result(
