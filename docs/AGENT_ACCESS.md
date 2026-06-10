@@ -11,6 +11,8 @@ This document records architecture and threat-model guidance plus current
 agent-access status. It does not by itself grant authority, change gates,
 implement hosted provider transport, or create write permissions.
 
+The executable security regression map is in [`docs/SECURITY.md`](SECURITY.md).
+
 ## Access Surfaces
 
 TCS-Cosheaf has these intended access surfaces:
