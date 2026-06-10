@@ -24,9 +24,14 @@ from cosheaf.agent.orchestrator_planner import (
     plan_for_issue,
 )
 from cosheaf.agent.orchestrator_runner import (
+    OrchestratorHostedRunConfig,
+    OrchestratorHostedRunError,
+    OrchestratorHostedRunner,
+    OrchestratorHostedRunResult,
     OrchestratorLocalRunConfig,
     OrchestratorLocalRunError,
     OrchestratorLocalRunner,
+    OrchestratorLocalRunResult,
 )
 from cosheaf.agent.orchestrator_stub import TaskHarnessError
 from cosheaf.agent.providers import (
@@ -1758,20 +1763,125 @@ def orchestrator_run(
         "--timeout-seconds",
         help="Maximum runtime for each local worker command in seconds.",
     ),
+    provider: str | None = typer.Option(
+        None,
+        "--provider",
+        help=(
+            "Explicit hosted-worker provider path: fake or openai-compatible. "
+            "Omit to use the local-only dry-run path."
+        ),
+    ),
+    confirm_send: bool = typer.Option(
+        False,
+        "--confirm-send",
+        help="Confirm provider dispatch after reviewing context-send policy.",
+    ),
+    include_private: bool = typer.Option(
+        False,
+        "--include-private",
+        help="Include private context. Requires private policy and consent.",
+    ),
+    policy_mode: ContextPolicyMode = typer.Option(
+        ContextPolicyMode.PUBLIC,
+        "--policy-mode",
+        help="Context policy mode for provider dispatch.",
+    ),
+    allow_private_context: bool = typer.Option(
+        False,
+        "--allow-private-context",
+        help="Confirm private-context provider dispatch for private research mode.",
+    ),
+    max_cards: int = typer.Option(
+        20,
+        "--max-cards",
+        help="Maximum context-preview cards for provider dispatch.",
+    ),
     repo_root: Path = typer.Option(
         Path("."),
         "--repo-root",
         help="Repository root to inspect.",
     ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
 ) -> None:
-    """Run a deterministic local-only orchestrator dry-run for an issue."""
+    """Run a local-only or explicit hosted-worker orchestrator path."""
     console = Console(width=120, markup=False)
+    if provider is not None:
+        try:
+            hosted_result = OrchestratorHostedRunner(RepoContext(repo_root)).run_issue(
+                OrchestratorHostedRunConfig(
+                    issue_id=issue,
+                    provider=provider,
+                    confirm_send=confirm_send,
+                    include_private=include_private,
+                    policy_mode=policy_mode,
+                    allow_private_context=allow_private_context,
+                    max_cards=max_cards,
+                )
+            )
+        except OrchestratorHostedRunError as exc:
+            _exit_with_error(exc.error, json_output=json_output, console=console)
+        except WorkspaceConfigError as exc:
+            _exit_with_error(
+                _exception_to_error_result(
+                    exc,
+                    default_code="workspace_config_failed",
+                ),
+                json_output=json_output,
+                console=console,
+            )
+
+        if json_output:
+            _emit_json(_orchestrator_hosted_result_payload(hosted_result))
+        else:
+            console.print(f"Orchestrator run: {hosted_result.run.run_id}")
+            console.print(f"- issue: {hosted_result.run.issue_id}")
+            console.print(f"- state: {hosted_result.run.state.value}")
+            console.print(f"- provider: {_orchestrator_provider_label(hosted_result)}")
+            console.print(f"- mode: {hosted_result.provider_mode.value}")
+            console.print("- accepted_writes: not performed")
+            console.print(f"- run_record: {hosted_result.record_path}")
+            console.print(f"- worker_calls: {len(hosted_result.run.worker_calls)}")
+            console.print(
+                f"- reducer_results: {len(hosted_result.run.reducer_results)}"
+            )
+            for stop in hosted_result.run.stop_conditions:
+                console.print(f"- stop: {stop.reason} | {stop.description}")
+        if hosted_result.run.state.value != "completed":
+            raise typer.Exit(code=1)
+        return
+
     if not dry_run:
-        console.print("Orchestrator run failed: --dry-run is required")
-        raise typer.Exit(code=1)
+        _exit_with_error(
+            ErrorResult(
+                code="orchestrator_run_failed",
+                message="--dry-run is required when --provider is omitted",
+                remediation=(
+                    "Use --dry-run --local-only, or set --provider fake for "
+                    "the explicit hosted-worker path."
+                ),
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
     if not local_only:
-        console.print("Orchestrator run failed: --local-only is required")
-        raise typer.Exit(code=1)
+        _exit_with_error(
+            ErrorResult(
+                code="orchestrator_run_failed",
+                message="--local-only is required when --provider is omitted",
+                remediation=(
+                    "Use --dry-run --local-only, or set --provider fake for "
+                    "the explicit hosted-worker path."
+                ),
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
 
     try:
         result = OrchestratorLocalRunner(RepoContext(repo_root)).run_issue(
@@ -1781,8 +1891,22 @@ def orchestrator_run(
             )
         )
     except OrchestratorLocalRunError as exc:
-        console.print(f"Orchestrator run failed: {exc}")
-        raise typer.Exit(code=1) from None
+        _exit_with_error(
+            ErrorResult(
+                code="orchestrator_run_failed",
+                message=str(exc),
+                remediation="Check the issue ID, run ID, and local runner inputs.",
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+
+    if json_output:
+        _emit_json(_orchestrator_local_result_payload(result))
+        if result.run.state.value != "completed":
+            raise typer.Exit(code=1)
+        return
 
     console.print(f"Orchestrator run: {result.run.run_id}")
     console.print(f"- issue: {result.run.issue_id}")
@@ -2177,6 +2301,71 @@ def _provider_log_payload(
     if not isinstance(raw, dict):
         return {}
     return dict(raw)
+
+
+def _orchestrator_local_result_payload(
+    result: OrchestratorLocalRunResult,
+) -> dict[str, Any]:
+    repo_root = _orchestrator_run_repo_root(result.run_root)
+    return {
+        "schema_version": 1,
+        "run_id": result.run.run_id,
+        "issue_id": result.run.issue_id,
+        "state": result.run.state.value,
+        "local_only": True,
+        "provider": None,
+        "hosted_network": "not_used",
+        "accepted_write_performed": False,
+        "run_record": repo_relative_posix(repo_root, result.record_path),
+        "worker_calls": [call.to_dict() for call in result.run.worker_calls],
+        "reducer_results": [
+            reducer.to_dict() for reducer in result.run.reducer_results
+        ],
+        "stop_conditions": [
+            stop.to_dict() for stop in result.run.stop_conditions
+        ],
+    }
+
+
+def _orchestrator_hosted_result_payload(
+    result: OrchestratorHostedRunResult,
+) -> dict[str, Any]:
+    repo_root = _orchestrator_run_repo_root(result.run_root)
+    return {
+        "schema_version": 1,
+        "run_id": result.run.run_id,
+        "issue_id": result.run.issue_id,
+        "state": result.run.state.value,
+        "provider": _orchestrator_provider_label(result),
+        "mode": result.provider_mode.value,
+        "context_preview": result.context_preview.to_dict(),
+        "hosted_network": "not_used"
+        if result.provider is ProviderName.FAKE
+        else "explicit_config_only",
+        "accepted_write_performed": result.accepted_write_performed,
+        "run_record": repo_relative_posix(repo_root, result.record_path),
+        "provider_run_record_paths": [
+            repo_relative_posix(repo_root, path)
+            for path in result.provider_run_record_paths
+        ],
+        "worker_calls": [call.to_dict() for call in result.run.worker_calls],
+        "reducer_results": [
+            reducer.to_dict() for reducer in result.run.reducer_results
+        ],
+        "stop_conditions": [
+            stop.to_dict() for stop in result.run.stop_conditions
+        ],
+    }
+
+
+def _orchestrator_provider_label(result: OrchestratorHostedRunResult) -> str:
+    if result.provider is ProviderName.OPENAI:
+        return "openai-compatible"
+    return result.provider.value
+
+
+def _orchestrator_run_repo_root(run_root: Path) -> Path:
+    return run_root.parents[4]
 
 
 def _workspace_info_to_agent_result(

@@ -249,6 +249,21 @@ does not call hosted LLMs, make network
 calls, run gates, request human review, merge outputs, write accepted
 knowledge, or promote artifacts.
 
+The hosted-worker orchestrator runner in the same module wires the deterministic
+plan to `HostedWorkerService` only when the operator explicitly supplies a
+provider through `cosheaf orchestrator run --issue <issue-id> --provider
+<provider>`. The deterministic `fake` provider path performs an end-to-end
+hosted-worker dispatch without hosted network access. The OpenAI-compatible
+path requires explicit `--confirm-send` plus a configured or injected transport;
+the default CLI path reports missing transport instead of making a real hosted
+call. Hosted-worker run records stay under
+`.cosheaf/orchestrator/<issue-id>/runs/<run-id>/`, copy provider audit records
+into a run-local `providers/` directory, write WorkerBundle v2 manifests under
+run-local `bundles/`, write typed sub-results under `typed-results/`, and run
+the reducer only on validated WorkerBundle outputs. This path does not write
+accepted knowledge, mark human review, promote artifacts, run gates, or treat
+provider output as verifier success.
+
 The default local dry-run worker command is implemented by
 `cosheaf.agent.dry_run_workers`. It generates role-aware worker bundle v2
 manifests for the planner's reasoner, verifier, and orchestrator nodes. The
@@ -259,13 +274,12 @@ does not write proposed artifacts; it only writes the bundle manifest that the
 runner validates and reduces.
 
 The provider-neutral model interface in `cosheaf.agent.model_provider` defines
-request, response, capability-negotiation, and provider protocol DTOs for
-future worker integrations. The only implemented provider is
-`FakeModelProvider`, a deterministic local fake used for tests and disabled
-hosted-runtime paths. Capability negotiation records unsupported requested
-parameters instead of crashing. This interface does not add OpenAI, Anthropic,
-Google, local model, or other hosted-provider SDK dependencies, and it does
-not perform network calls.
+request, response, capability-negotiation, and provider protocol DTOs for worker
+integrations. The deterministic `FakeModelProvider` is used for tests and
+offline hosted-worker paths. The OpenAI-compatible provider boundary is
+transport-injected and does not import hosted-provider SDKs or perform network
+calls by itself. Capability negotiation records unsupported requested
+parameters instead of crashing.
 
 The local worker runner is not an LLM runtime or model-provider integration. It
 executes only an explicit argv command with `shell=False`, defaults to the
@@ -303,12 +317,13 @@ workspace, validation, gate, memory search, context-pack, task,
 bundle-validation, and draft-write logic while returning typed results instead
 of terminal-only output.
 
-The service layer does not grant MCP authority, run hosted provider calls,
-expose arbitrary shell access, mark automatic review, or create
-accepted-promotion authority. Controlled write services are limited to
-draft/pre-accepted artifact creation, task or run records, worker bundles, and
-review context surfaces. Accepted promotion remains the existing explicit
-lifecycle path and is not exposed as an agent-authority service.
+The service layer does not grant MCP authority, expose arbitrary shell access,
+mark automatic review, or create accepted-promotion authority. Provider calls
+are only available through explicit provider gateway services with fake or
+injected transports and policy/consent metadata. Controlled write services are
+limited to draft/pre-accepted artifact creation, task or run records, worker
+bundles, and review context surfaces. Accepted promotion remains the existing
+explicit lifecycle path and is not exposed as an agent-authority service.
 
 Expected service-layer failures use stable machine-readable error codes and
 can be converted to the public `ErrorResult` DTO. CLI commands may continue to

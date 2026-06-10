@@ -64,9 +64,11 @@ the provider gateway. It supports:
   `librarian_summarizer`;
 - local rejection of invalid provider output or unsafe authority claims.
 
-The bridge does not add a hosted-provider CLI command, built-in HTTP transport,
-or orchestrator dispatch. It does not write accepted artifacts, create human
-review records, promote artifacts, or treat provider output as truth.
+The bridge does not add a hosted-provider CLI command or built-in HTTP
+transport. The internal orchestrator may call this bridge only through the
+explicit hosted-worker dispatch path, with context preview, policy, and
+consent checks preserved. The bridge does not write accepted artifacts, create
+human review records, promote artifacts, or treat provider output as truth.
 
 ## Common Forbidden Actions
 

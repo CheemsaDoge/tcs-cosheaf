@@ -144,11 +144,11 @@ The agent-access direction does not weaken knowledge governance:
 
 ## Next Focus
 
-After role-specific hosted API workers land, continue with Phase P / Task P.5
-from `longplan_v3_fixed_cli_first.md`: internal orchestrator dispatch to
-hosted API workers when explicitly configured. Do not add real hosted network
-calls to CI, do not add accepted writes, and do not let provider output bypass
-review, gate, verifier, reducer, or promotion policy.
+After internal orchestrator hosted-worker dispatch lands, continue with Phase
+W / Task W.1 from `longplan_v3_fixed_cli_first.md`: workspace CLI-agent
+quickstart integration. Do not expand this milestone into MCP work, do not add
+real hosted network calls to CI, do not add accepted writes, and do not let
+provider output bypass review, gate, verifier, reducer, or promotion policy.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
