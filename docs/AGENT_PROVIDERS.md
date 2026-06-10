@@ -29,6 +29,8 @@ Implemented today:
 - provider CLI commands for listing supported provider modes, checking
   configuration without printing secrets, previewing context-send payload
   shape, and running the deterministic fake provider;
+- explicit orchestrator dispatch to role-specific hosted workers through
+  `cosheaf orchestrator run --issue <issue-id> --provider <provider>`;
 - fake-provider and mocked OpenAI-compatible tests that run without network
   access or API keys.
 
@@ -36,7 +38,6 @@ Not implemented yet:
 
 - built-in real OpenAI-compatible HTTP transport;
 - hosted worker CLI commands;
-- provider-backed orchestrator dispatch;
 - provider MCP tools.
 
 ## Direction
@@ -105,6 +106,32 @@ This bridge writes provider audit logs through the gateway under
 knowledge, create human review records, promote artifacts, or run a real
 hosted network transport by itself.
 
+## Orchestrator Hosted-Worker Dispatch
+
+`cosheaf orchestrator run` now has an explicit hosted-worker path:
+
+- `cosheaf orchestrator run --issue <issue-id> --provider fake --json`
+- `cosheaf orchestrator run --issue <issue-id> --provider openai-compatible
+  --confirm-send --json`
+
+The `fake` path is deterministic and performs no hosted network call. It plans
+the issue, previews the context-send shape, dispatches planned nodes to
+`HostedWorkerService`, writes provider run-record copies under
+`.cosheaf/orchestrator/<issue-id>/runs/<run-id>/providers/`, writes hosted
+WorkerBundle v2 manifests under the run-local `bundles/` directory, writes
+typed sub-results under `typed-results/`, and reduces only validated
+WorkerBundle outputs.
+
+The `openai-compatible` path is configurable but not default-runnable. It
+requires `--confirm-send`, still goes through context-preview and consent
+checks, and requires an injected or configured provider transport. The default
+CLI path does not include a built-in real HTTP transport and does not make a
+network call in CI.
+
+The hosted-worker orchestrator path never writes accepted knowledge, never
+marks human review, never promotes artifacts, and does not treat provider
+output as validation, gate, verifier, or human-review success.
+
 ## Provider CLI
 
 The current provider CLI surface is agent-facing and conservative:
@@ -120,13 +147,22 @@ The current provider CLI surface is agent-facing and conservative:
 - `cosheaf provider fake-run --input-json <path> --json` runs the
   deterministic fake provider and writes redacted provider logs under
   `.cosheaf/providers/`.
+- `cosheaf orchestrator run --issue <issue-id> --provider fake --json`
+  runs the explicit hosted-worker orchestrator path with the deterministic
+  fake provider.
+- `cosheaf orchestrator run --issue <issue-id> --provider openai-compatible
+  --confirm-send --json` uses the explicit OpenAI-compatible hosted-worker
+  dispatch boundary only when a transport is configured or injected; the
+  default CLI path reports missing transport rather than making a network call.
 
 `fake-run` is allowed in CI and performs no hosted network call. There is no
 `real-run` CLI command in this task. The only provider names accepted by the
-current CLI are `fake` and `openai`; future names such as `anthropic`,
-`google`, and `local` are model identifiers only until a later task implements
-and tests their CLI/provider behavior. Unsupported provider names return the
-stable `provider_unsupported` error code.
+current provider CLI are `fake` and `openai`; `orchestrator run --provider`
+accepts `fake`, `openai`, and `openai-compatible` as the explicit hosted-worker
+dispatch names. Future names such as `anthropic`, `google`, and `local` are
+model identifiers only until a later task implements and tests their
+CLI/provider behavior. Unsupported provider names return the stable
+`provider_unsupported` error code.
 
 ## Configuration Rules
 

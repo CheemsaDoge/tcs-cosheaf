@@ -22,10 +22,12 @@ TCS-Cosheaf has these intended access surfaces:
   hosted provider workers, internal orchestrator runs, and optional MCP.
 - Hosted provider gateway: provider core and provider CLI inspection/preview/
   fake-run surfaces are implemented. A role-specific hosted worker service
-  bridge is implemented for fake and mocked provider calls. Built-in real
-  hosted HTTP transport, hosted worker CLI commands, and provider-backed
-  orchestrator dispatch remain later tasks. Real calls must be explicit,
-  default-off, policy scoped, consented, and fake or mocked in tests.
+  bridge is implemented for fake and mocked provider calls. The internal
+  orchestrator can explicitly dispatch planned nodes to hosted workers through
+  fake or OpenAI-compatible provider boundaries. Built-in real hosted HTTP
+  transport and hosted worker CLI commands remain later tasks. Real calls must
+  be explicit, default-off, policy scoped, consented, and fake or mocked in
+  tests.
 - MCP: optional adapter for assistants that benefit from resources/tools
   rather than shell access. It is not required for ordinary Codex-style repo
   work.
@@ -121,6 +123,9 @@ Agent-safe read/check commands include:
 - `cosheaf context build <issue-id> --json`
 - `cosheaf context show <issue-id> --json`
 - `cosheaf orchestrator plan --issue <issue-id> --json`
+- `cosheaf orchestrator run --issue <issue-id> --provider fake --json`
+- `cosheaf orchestrator run --issue <issue-id> --provider openai-compatible
+  --confirm-send --json`
 - `cosheaf provider list --json`
 - `cosheaf provider config-check --json`
 - `cosheaf provider preview-send --issue <issue-id> --provider <provider>
@@ -219,6 +224,7 @@ The stable error-code list is exported as
 - `context_show_failed`
 - `draft_write_failed`
 - `gate_issue`
+- `hosted_worker_policy_violation`
 - `human_review_forbidden`
 - `invalid_artifact_id`
 - `invalid_artifact_target_path`
@@ -230,10 +236,14 @@ The stable error-code list is exported as
 - `missing_required_domain`
 - `no_writable_kb_root`
 - `orchestrator_plan_failed`
+- `orchestrator_run_failed`
 - `private_context_requires_consent`
 - `private_context_requires_policy`
+- `provider_confirm_send_required`
 - `provider_context_preview_failed`
 - `provider_context_scope_violation`
+- `provider_output_validation_failed`
+- `provider_request_validation_failed`
 - `provider_unsupported`
 - `readonly_kb_root`
 - `repository_load_failed`
@@ -262,6 +272,13 @@ issue id, artifact ids, root scopes, estimated token counts, and risk flags; it
 does not include full artifact text, issue text, provider credentials, API
 keys, or secrets. The preview is not a provider call and does not authorize a
 provider call by itself.
+
+`OrchestratorHostedRunner` uses the same preview boundary before dispatching
+planned task nodes to `HostedWorkerService`. The fake path performs a complete
+deterministic hosted-worker run without hosted network access. The
+OpenAI-compatible path requires explicit `--confirm-send` and a configured or
+injected transport; the default CLI path reports missing transport rather than
+calling a real provider.
 
 ## Hosted Provider Boundary
 
@@ -374,9 +391,10 @@ MCP surface that is optional adapter code, and an optional
 `skills/cosheaf-operator/` Skill package that documents the CLI-first operator
 workflow. It also has `HostedWorkerService` for role-specific fake or mocked
 provider worker calls whose outputs validate as WorkerBundle v2 or typed
-review-only sub-results. The repository has not implemented built-in real
-hosted HTTP transport, hosted worker CLI commands, provider-backed
-orchestrator dispatch, or controlled-write MCP tools described here. Existing
+review-only sub-results, plus explicit orchestrator dispatch to those hosted
+workers through the fake provider or an OpenAI-compatible provider boundary.
+The repository has not implemented built-in real hosted HTTP transport, hosted
+worker CLI commands, or controlled-write MCP tools described here. Existing
 local CLI, validation, gate, index, retrieval, context-pack, task,
-orchestrator dry-run, fake provider, and optional verifier surfaces keep their
-current behavior.
+orchestrator dry-run, fake provider, hosted-worker dispatch, and optional
+verifier surfaces keep their current behavior.

@@ -4,10 +4,12 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- Built-in real provider HTTP transports, hosted worker CLI commands,
-  provider-backed orchestrator dispatch, and hosted-provider MCP tools are not
-  implemented yet. Role-specific hosted worker service bridging for fake and
-  mocked provider calls is implemented under `cosheaf.agent.hosted_workers`.
+- Built-in real provider HTTP transports, hosted worker CLI commands, and
+  hosted-provider MCP tools are not implemented yet. Role-specific hosted
+  worker service bridging for fake and mocked provider calls is implemented
+  under `cosheaf.agent.hosted_workers`, and the internal orchestrator can
+  explicitly dispatch planned nodes to that bridge through fake or
+  OpenAI-compatible provider boundaries.
 - `docs/ADR/0019-hosted-provider-gateway.md`: ADR for the planned hosted
   provider gateway. It records provider modes, fake-provider test
   requirements, private-context preview and consent, output discipline,
@@ -17,8 +19,9 @@
   hosted worker work.
 - `docs/AGENT_PROVIDERS.md`: operator-facing provider policy document. It
   describes the implemented provider gateway core, provider CLI commands,
-  planned configuration, context policy, output rules, logging,
-  OpenAI-compatible transport boundary, and fake-provider requirements.
+  orchestrator hosted-worker dispatch, planned configuration, context policy,
+  output rules, logging, OpenAI-compatible transport boundary, and
+  fake-provider requirements.
 - MCP controlled-write tools are not implemented yet.
 - `docs/ADR/0017-mcp-agent-interface.md`: ADR for the optional MCP adapter. It
   records stdio transport, resource/tool/prompt boundaries, controlled-write
@@ -308,6 +311,24 @@
   enforces a positive timeout for each local worker command.
 - `cosheaf orchestrator run --issue <issue-id> --dry-run --local-only --repo-root <path>`:
   runs the local-only dry-run for an explicit repository root.
+- `cosheaf orchestrator run --issue <issue-id> --provider fake --json`: runs
+  the explicit hosted-worker orchestrator path for an existing issue with the
+  deterministic fake provider. It plans the issue, previews provider-send
+  context shape, dispatches planned nodes to role-specific hosted workers,
+  writes run-local provider-record copies under
+  `.cosheaf/orchestrator/<issue-id>/runs/<run-id>/providers/`, writes hosted
+  WorkerBundle v2 manifests under run-local `bundles/`, writes typed
+  sub-results under `typed-results/`, reduces only validated WorkerBundle
+  outputs, performs no hosted network call, and writes no accepted knowledge.
+- `cosheaf orchestrator run --issue <issue-id> --provider openai-compatible --confirm-send --json`:
+  enters the explicit OpenAI-compatible hosted-worker dispatch boundary after
+  context preview and consent checks. The default CLI path has no built-in real
+  HTTP transport and reports missing transport instead of making a network
+  call unless a configured/injected transport exists.
+- `cosheaf orchestrator run --issue <issue-id> --provider <provider> --include-private --policy-mode private_research --allow-private-context --confirm-send --json`:
+  permits private-context hosted-worker dispatch only when private-research
+  policy and explicit private-context consent are supplied. Public mode remains
+  public-only by default.
 
 ### Python API
 
@@ -375,7 +396,8 @@
   `invalid_input_json`, `invalid_staging_path`, `invalid_timestamp`,
   `memory_cards_failed`, `memory_search_failed`, `missing_required_domain`,
   `no_writable_kb_root`, `orchestrator_plan_failed`,
-  `private_context_requires_consent`, `private_context_requires_policy`,
+  `orchestrator_run_failed`, `private_context_requires_consent`,
+  `private_context_requires_policy`, `provider_confirm_send_required`,
   `provider_context_preview_failed`, `provider_context_scope_violation`,
   `provider_output_validation_failed`, `provider_request_validation_failed`,
   `provider_unsupported`, `readonly_kb_root`, `repository_load_failed`,
@@ -1393,6 +1415,31 @@ review, promotion, proof, or public/private policy bypasses.
 - `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunner`: local-only orchestrator runner that converts a deterministic plan into local task records, runs explicit argv commands through `LocalWorkerRunner`, validates worker bundle v2 outputs, reduces them into `ReducerResult` records, and writes the final run record plus sanitized structured `run_log.json`. It does not call hosted LLMs, make network calls, run gates, request human review, write accepted knowledge, or promote artifacts.
 - `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunner.run_issue(config: OrchestratorLocalRunConfig) -> OrchestratorLocalRunResult`: runs one issue-scoped local-only dry-run and returns the final persisted run metadata.
 - `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunError`: expected local orchestrator run failure, including invalid configuration, missing issue records, duplicate run IDs, and local runner boundary failures.
+- `cosheaf.agent.orchestrator_runner.OrchestratorHostedRunConfig`: dataclass
+  for one explicit hosted-worker orchestrator run with fields `issue_id`,
+  `provider`, `confirm_send`, `include_private`, `policy_mode`,
+  `allow_private_context`, `max_cards`, optional `run_id`, and optional `now`.
+- `cosheaf.agent.orchestrator_runner.OrchestratorHostedRunResult`: dataclass
+  containing the final `OrchestratorRun`, run root, run record path,
+  structured run-log path, provider-send context preview, provider mode,
+  run-local provider record paths, and `accepted_write_performed: false`.
+- `cosheaf.agent.orchestrator_runner.OrchestratorHostedRunner`: explicit
+  hosted-worker orchestrator runner that converts a deterministic plan into
+  role-specific `HostedWorkerService` calls, validates and reduces only
+  WorkerBundle v2 outputs, writes typed sub-results and provider-record copies
+  under the run-local `.cosheaf/orchestrator/...` directory, and refuses real
+  provider dispatch unless `confirm_send` is set. The fake path performs no
+  hosted network call; the OpenAI-compatible path requires an injected or
+  configured transport and does not include built-in HTTP transport.
+- `cosheaf.agent.orchestrator_runner.OrchestratorHostedRunner.run_issue(config, *, provider_config=None, provider=None) -> OrchestratorHostedRunResult`:
+  runs one issue-scoped hosted-worker dispatch and returns the final persisted
+  run metadata without writing accepted knowledge, marking human review,
+  promoting artifacts, running gates, or treating provider output as verifier
+  success.
+- `cosheaf.agent.orchestrator_runner.OrchestratorHostedRunError`: expected
+  hosted-worker orchestrator run failure carrying an `ErrorResult`, including
+  unsupported providers, missing `--confirm-send`, context policy denials,
+  duplicate run IDs, and planning failures.
 - `cosheaf.agent.run_logging.StructuredRunLog`: strict Pydantic v2 JSON DTO for local run observability with run/task/artifact/bundle IDs, timing, status, stop reason, and sanitized worker-call metadata.
 - `cosheaf.agent.run_logging.RunLogWorkerCall`: strict Pydantic v2 DTO for sanitized worker-call metadata. It records redacted command argv but does not inline stdout or stderr contents.
 - `cosheaf.agent.run_logging.structured_log_from_orchestrator_run(run: OrchestratorRun) -> StructuredRunLog`: derives a structured local run log from an orchestrator run DTO.

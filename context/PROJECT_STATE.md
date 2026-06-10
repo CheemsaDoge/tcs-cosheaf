@@ -3,6 +3,31 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Internal Orchestrator Hosted-Worker Dispatch - 2026-06-10
+
+Issue 215 adds explicit internal orchestrator dispatch to role-specific hosted
+workers. `cosheaf orchestrator run --issue <issue-id> --provider fake --json`
+now runs the deterministic fake-provider hosted-worker path end to end:
+planning, provider-send context preview, role-specific hosted worker calls,
+WorkerBundle v2 validation, typed sub-result persistence, reducer execution
+for validated bundles, run-record persistence, and run-local provider-record
+copies under `.cosheaf/orchestrator/<issue-id>/runs/<run-id>/providers/`.
+
+`cosheaf orchestrator run --issue <issue-id> --provider openai-compatible
+--confirm-send --json` enters the OpenAI-compatible hosted-worker boundary only
+after explicit consent. The default CLI path still has no built-in real HTTP
+transport and reports missing transport unless a provider transport is
+configured or injected. CI and unit tests use the fake provider or mocked
+transport only.
+
+The hosted-worker orchestrator path does not write accepted knowledge, does
+not write proposed artifacts into KB paths, does not create human review
+records, does not promote artifacts, does not run real hosted network calls in
+CI, and does not let provider output bypass reducers, validation, gates,
+verifier results, review, or promotion policy. Private context remains
+public-only by default and requires private-research policy plus explicit
+private-context consent.
+
 ## Role-Specific Hosted API Workers - 2026-06-10
 
 Issue 213 connects the provider gateway to role-specific hosted worker
