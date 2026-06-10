@@ -1,8 +1,10 @@
 # Agent Providers
 
-This document defines the planned hosted provider gateway boundary for
-TCS-Cosheaf. It is policy and design guidance. It does not implement provider
-runtime code, add API keys, or make real hosted calls available by default.
+This document defines the hosted provider gateway boundary for TCS-Cosheaf.
+The current implementation includes a provider-neutral gateway core, a
+deterministic fake path, and an OpenAI-compatible adapter over an injected
+transport for mocked tests. It does not add API keys, import hosted provider
+SDKs, or make real hosted calls available by default.
 
 ## Current Status
 
@@ -13,13 +15,19 @@ Implemented today:
 - agent-access DTOs and schemas for provider request/result/run-record shapes;
 - provider context-send preview through
   `ContextSendPolicyService.provider_preview(...)`;
-- fake-provider tests and service tests that run without network access.
+- `ProviderGateway` and `ModelCallService` for fake calls and
+  OpenAI-compatible calls through injected transport only;
+- WorkerBundle v2 schema validation for provider `worker_bundle` outputs;
+- timeout, retry, cancellation, and rate-limit result handling;
+- provider run logs under `.cosheaf/providers/` with secret redaction and
+  attempt, retry, unsupported-parameter, latency, token, and cost metadata;
+- fake-provider and mocked OpenAI-compatible tests that run without network
+  access or API keys.
 
 Not implemented yet:
 
-- hosted provider gateway service;
-- OpenAI-compatible transport;
 - provider CLI commands;
+- built-in real OpenAI-compatible HTTP transport;
 - hosted worker execution;
 - provider-backed orchestrator dispatch;
 - provider MCP tools.
@@ -55,9 +63,10 @@ configuration check
   -> ordinary validate/gate/review/promotion
 ```
 
-The gateway is the service-layer boundary. CLI commands may expose it, hosted
-workers may use it, and optional MCP adapters may wrap it later. The gateway
-must not bypass validation, gates, review, reducer logic, or promotion.
+The gateway is the service-layer boundary. CLI commands may expose it later,
+hosted workers may use it later, and optional MCP adapters may wrap it later.
+The gateway must not bypass validation, gates, review, reducer logic, or
+promotion.
 
 ## Configuration Rules
 
@@ -133,6 +142,12 @@ The first hosted transport should be OpenAI-compatible and optional. It should
 be tested through mocked transport by default, not through live network calls.
 Unsupported parameters must be surfaced through capability negotiation or a
 structured error, not silently treated as a successful request.
+
+The current OpenAI-compatible adapter accepts an injected transport object. This
+keeps CI deterministic and allows tests to exercise provider success, retry,
+timeout, cancellation, rate-limit, error, metadata, and redaction paths without
+network access. A real HTTP transport remains a separate explicitly configured
+future task.
 
 ## Fake Provider Requirement
 

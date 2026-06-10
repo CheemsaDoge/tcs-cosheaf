@@ -4,19 +4,21 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- Hosted provider gateway commands and real provider transports are not
-  implemented yet.
+- Provider CLI commands, built-in real provider HTTP transports,
+  provider-backed hosted worker execution, and hosted-provider MCP tools are
+  not implemented yet.
 - `docs/ADR/0019-hosted-provider-gateway.md`: ADR for the planned hosted
   provider gateway. It records provider modes, fake-provider test
   requirements, private-context preview and consent, output discipline,
-  logging/redaction metadata, and no-accepted-write boundaries. It is design
-  documentation only and does not implement provider runtime code.
+  logging/redaction metadata, and no-accepted-write boundaries. The runtime
+  now implements the gateway core with fake and injected OpenAI-compatible
+  mocked transport paths; the ADR still governs future real transport and
+  hosted worker work.
 - `docs/AGENT_PROVIDERS.md`: operator-facing provider policy document. It
-  describes the planned configuration, context policy, output rules, logging,
-  OpenAI-compatible transport, and fake-provider requirements for hosted
-  provider work. It is not a CLI command or runtime implementation.
+  describes the implemented provider gateway core, planned configuration,
+  context policy, output rules, logging, OpenAI-compatible transport boundary,
+  and fake-provider requirements. It is not a CLI command.
 - MCP controlled-write tools are not implemented yet.
-- Hosted-provider MCP tools are not implemented yet.
 - `docs/ADR/0017-mcp-agent-interface.md`: ADR for the optional MCP adapter. It
   records stdio transport, resource/tool/prompt boundaries, controlled-write
   requirements, forbidden tools, and private KB policy constraints. The current
@@ -398,6 +400,13 @@
   public KB scope only. Private KB context requires `policy_mode=private_research`,
   `public_only=false`, and explicit private-context permission. The method does
   not call providers, implement MCP, include full context text, or write files.
+- `cosheaf.services.model_calls.ModelCallService`: service wrapper around the
+  provider gateway core.
+- `cosheaf.services.model_calls.ModelCallService.call(request, *, config=None, provider=None) -> ModelCallResult | ProviderError`:
+  calls the configured provider gateway. The fake path performs no network
+  call. The OpenAI-compatible path requires explicit enabled configuration and
+  uses an injected transport object; it does not import hosted-provider SDKs or
+  perform real network calls by itself.
 - `cosheaf.services.TaskService`: typed service for local task records and
   explicit local worker command runs.
 - `cosheaf.services.TaskService.create_task(...) -> AgentTask`: creates an
@@ -1230,8 +1239,8 @@ review, promotion, proof, or public/private policy bypasses.
   provider. It performs no network call, imports no hosted-provider SDK, and
   records unsupported requested parameters instead of crashing.
 - `cosheaf.agent.model_provider.ProviderName`: enum with `fake`, `openai`,
-  `anthropic`, `google`, and `local`. Only the fake provider is implemented in
-  the current framework.
+  `anthropic`, `google`, and `local`. The provider gateway currently supports
+  fake calls and OpenAI-compatible calls through injected transport only.
 - `cosheaf.agent.model_provider.ReasoningEffort`: enum with `low`, `medium`,
   and `high`.
 - `cosheaf.agent.model_provider.ToolPolicy`: enum with `none`, `read_only`,
@@ -1240,6 +1249,38 @@ review, promotion, proof, or public/private policy bypasses.
   `explicit_allow`.
 - `cosheaf.agent.model_provider.FinishReason`: enum with `stop`, `length`, and
   `error`.
+- `cosheaf.agent.providers.ProviderMode`: provider gateway mode enum with
+  `fake` and `openai_compatible`.
+- `cosheaf.agent.providers.ProviderTransportStatus`: normalized transport
+  status enum with `completed`, `cancelled`, `failed`, `timeout`,
+  `rate_limited`, and `error`.
+- `cosheaf.agent.providers.ProviderConfig`: strict Pydantic v2 runtime
+  configuration for provider id, mode, model, enabled flag, optional API-key
+  environment variable name, timeout, retry count, optional base URL, and
+  supported parameter list.
+- `cosheaf.agent.providers.ProviderGatewayRequest`: strict Pydantic v2 gateway
+  request carrying provider/model, worker role, prompt, consent, context
+  artifact IDs, root scopes, output kind, expected output paths, model
+  parameters, tool policy, and network policy. It rejects private context
+  without explicit private-research policy and consent, and rejects expected
+  output paths that target accepted knowledge.
+- `cosheaf.agent.providers.ProviderTransportResult`: strict Pydantic v2 DTO for
+  an injected transport response, including normalized status, finish reason,
+  latency, token counts, cost, error fields, and raw metadata.
+- `cosheaf.agent.providers.ProviderError`: expected provider gateway error DTO
+  with stable code, message, remediation, blocking flag, and details.
+- `cosheaf.agent.providers.OpenAICompatibleProvider`: adapter over an injected
+  transport object. It does not perform network calls by itself.
+- `cosheaf.agent.providers.ProviderGateway.call(request, *, config=None, provider=None) -> ModelCallResult | ProviderError`:
+  executes the fake provider path or the OpenAI-compatible injected-transport
+  path, writes redacted run logs under `.cosheaf/providers/`, validates
+  WorkerBundle v2 outputs when requested, handles timeout, retry,
+  cancellation, and rate-limit statuses, and does not write accepted knowledge
+  or perform promotion.
+- `cosheaf.agent.providers.redact_text(value) -> tuple[str, bool]` and
+  `cosheaf.agent.providers.redact_mapping(values) -> tuple[dict[str, str], bool]`:
+  redact common secret value shapes and secret-looking metadata fields before
+  provider logs are written.
 - `cosheaf.agent.task.WorkerType`: protocol worker type enum with values `reasoner`, `verifier`, `counterexampleer`, `construction_searcher`, `formalizer`, `literature_scout`, and `orchestrator`.
 - `cosheaf.agent.task.TaskStatus`: task status enum with values `open`, `in_progress`, `blocked`, `completed`, `failed`, and `cancelled`.
 - `cosheaf.agent.task.AgentTask`: Pydantic v2 model for local task records with fields `task_id`, `issue_id`, `worker_type`, `status`, `input_context`, `budget`, `expected_outputs`, `created_at`, and `updated_at`.
