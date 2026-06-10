@@ -353,9 +353,10 @@ private research disclosure.
 As of this document, the repository has a thin typed service layer, versioned
 agent-access DTO/JSON Schema contracts, a provider-send context preview policy
 service, deterministic JSON output for core read-only CLI commands, controlled
-CLI draft/staging write commands, and a minimal read-only stdio MCP surface
-that is optional adapter code. The repository has not implemented the hosted
-provider gateway, controlled-write MCP tools, or Skill package described here.
-Existing local CLI, validation, gate, index, retrieval, context-pack, task,
-orchestrator dry-run, fake provider, and optional verifier surfaces keep their
-current behavior.
+CLI draft/staging write commands, a minimal read-only stdio MCP surface that is
+optional adapter code, and an optional `skills/cosheaf-operator/` Skill package
+that documents the CLI-first operator workflow. The repository has not
+implemented the hosted provider gateway or controlled-write MCP tools described
+here. Existing local CLI, validation, gate, index, retrieval, context-pack,
+task, orchestrator dry-run, fake provider, and optional verifier surfaces keep
+their current behavior.

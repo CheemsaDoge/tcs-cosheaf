@@ -144,9 +144,10 @@ The agent-access direction does not weaken knowledge governance:
 
 ## Next Focus
 
-After the CLI agent operator contract lands, continue with Phase C / Task C.2
-from `longplan_v3_fixed_cli_first.md`: add an end-to-end CLI agent demo in
-`tcs-cosheaf-workspace-template` on branch `cli-agent-e2e-demo`.
+After the optional Cosheaf operator Skill package lands, continue with Phase P
+/ Task P.1 from `longplan_v3_fixed_cli_first.md`: design the hosted provider
+gateway without adding real provider calls to CI or weakening review, gate, or
+promotion boundaries.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
