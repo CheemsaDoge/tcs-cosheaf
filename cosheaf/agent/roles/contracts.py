@@ -26,9 +26,17 @@ class RoleName(StrEnum):
     EXPLORER = "explorer"
     COUNTEREXAMPLER = "counterexampleer"
     COLLECTOR = "collector"
+    LIBRARIAN_SUMMARIZER = "librarian_summarizer"
 
 
-REQUIRED_ROLE_NAMES = tuple(role.value for role in RoleName)
+REQUIRED_ROLE_NAMES = (
+    RoleName.REASONER.value,
+    RoleName.VERIFIER.value,
+    RoleName.COUNTEREXAMPLER.value,
+    RoleName.EXPLORER.value,
+    RoleName.FORMALIZER.value,
+    RoleName.LIBRARIAN_SUMMARIZER.value,
+)
 
 COMMON_FORBIDDEN_ACTIONS = (
     "write_accepted_knowledge",
@@ -113,6 +121,58 @@ class RoleContextBudget(RoleContractModel):
         return value.strip()
 
 
+class RoleContextPolicy(RoleContractModel):
+    """Provider-send context policy for one role."""
+
+    allowed_root_scopes: list[str] = Field(default_factory=list)
+    allow_private_context: bool = False
+    require_preview: bool = True
+    require_explicit_consent_for_private: bool = True
+    notes: str = ""
+
+    @field_validator("allowed_root_scopes")
+    @classmethod
+    def _normalize_scopes(cls, values: list[str]) -> list[str]:
+        return _dedupe_preserving_order(
+            _validate_slug(value, field_name="root scope") for value in values
+        )
+
+    @field_validator("notes")
+    @classmethod
+    def _strip_notes(cls, value: str) -> str:
+        return value.strip()
+
+
+class RoleProviderCapabilityRequirements(RoleContractModel):
+    """Minimum provider capabilities expected by one hosted role."""
+
+    output_kinds: list[str] = Field(default_factory=list)
+    requires_json_output: bool = True
+    requires_worker_bundle: bool = False
+    requires_network: bool = False
+    notes: str = ""
+
+    @field_validator("output_kinds")
+    @classmethod
+    def _normalize_output_kinds(cls, values: list[str]) -> list[str]:
+        return _dedupe_preserving_order(
+            _validate_slug(value, field_name="output kind") for value in values
+        )
+
+    @field_validator("notes")
+    @classmethod
+    def _strip_notes(cls, value: str) -> str:
+        return value.strip()
+
+    @model_validator(mode="after")
+    def _validate_no_network_requirement(
+        self,
+    ) -> RoleProviderCapabilityRequirements:
+        if self.requires_network:
+            raise ValueError("role contracts must not require provider network access")
+        return self
+
+
 class RoleToolPolicy(RoleContractModel):
     """Tool and network policy for one role contract."""
 
@@ -151,6 +211,8 @@ class RoleContract(RoleContractModel):
     forbidden_actions: list[str] = Field(default_factory=list)
     required_output_schema: RoleOutputSchema
     context_budget: RoleContextBudget
+    context_policy: RoleContextPolicy
+    provider_capability_requirements: RoleProviderCapabilityRequirements
     tool_policy: RoleToolPolicy
     stop_conditions: list[str] = Field(default_factory=list)
     risk_flags: list[str] = Field(default_factory=list)
@@ -205,7 +267,8 @@ def list_role_contracts() -> tuple[RoleContract, ...]:
 def get_role_contract(role: RoleName | str) -> RoleContract:
     """Return one role contract by enum value or string name."""
     role_name = RoleName(role)
-    return ROLE_CONTRACT_BY_NAME[role_name]
+    resolved_role = ROLE_CONTRACT_ALIASES.get(role_name, role_name)
+    return ROLE_CONTRACT_BY_NAME[resolved_role]
 
 
 def _contract(
@@ -218,6 +281,8 @@ def _contract(
     output_required: Iterable[str],
     output_optional: Iterable[str],
     context_budget: RoleContextBudget,
+    context_policy: RoleContextPolicy,
+    provider_capability_requirements: RoleProviderCapabilityRequirements,
     tool_policy: RoleToolPolicy,
     stop_conditions: Iterable[str],
     risk_flags: Iterable[str],
@@ -239,6 +304,8 @@ def _contract(
             optional_fields=list(output_optional),
         ),
         context_budget=context_budget,
+        context_policy=context_policy,
+        provider_capability_requirements=provider_capability_requirements,
         tool_policy=tool_policy,
         stop_conditions=list(stop_conditions),
         risk_flags=list(risk_flags),
@@ -295,6 +362,30 @@ EXPLORATION_BUDGET = RoleContextBudget(
     notes="Exploration may inspect more cards but still avoids bulk context.",
 )
 
+PUBLIC_CONTEXT_POLICY = RoleContextPolicy(
+    allowed_root_scopes=["public"],
+    allow_private_context=False,
+    notes="Default public-only provider context.",
+)
+PRIVATE_REVIEW_CONTEXT_POLICY = RoleContextPolicy(
+    allowed_root_scopes=["public", "private"],
+    allow_private_context=True,
+    notes=(
+        "Private research context requires explicit preview and operator consent."
+    ),
+)
+
+BUNDLE_PROVIDER_REQUIREMENTS = RoleProviderCapabilityRequirements(
+    output_kinds=["worker_bundle"],
+    requires_worker_bundle=True,
+    notes="Hosted worker must return a valid WorkerBundle v2 payload.",
+)
+TYPED_SUBRESULT_PROVIDER_REQUIREMENTS = RoleProviderCapabilityRequirements(
+    output_kinds=["typed_subresult"],
+    requires_worker_bundle=False,
+    notes="Hosted worker may return a typed review-only sub-result.",
+)
+
 READ_ONLY_TOOLS = RoleToolPolicy(
     tool_policy=ToolPolicy.READ_ONLY,
     allowed_tools=["context_pack", "artifact_index_query", "memory_search"],
@@ -317,29 +408,6 @@ VERIFIER_TOOLS = RoleToolPolicy(
 
 ROLE_CONTRACTS = (
     _contract(
-        role=RoleName.LIBRARIAN,
-        display_name="Librarian",
-        purpose="Retrieve and rank existing repository context for an issue.",
-        system_prompt=(
-            "You are the librarian role. Retrieve bounded existing context, "
-            "label draft and private material clearly, and report retrieval "
-            "uncertainty without creating new claims."
-        ),
-        allowed_inputs=["issue_record", "artifact_cards", "retrieval_audit"],
-        output_required=[
-            "summary",
-            "selected_artifacts",
-            "retrieval_audit",
-            "risk_flags",
-        ],
-        output_optional=["excluded_artifacts", "next_steps"],
-        context_budget=CARD_ONLY_BUDGET,
-        tool_policy=READ_ONLY_TOOLS,
-        stop_conditions=["missing_issue", "context_budget_exhausted"],
-        risk_flags=["draft_context_present", "private_context_present"],
-        forbidden_actions=["create_claims", "rewrite_artifacts"],
-    ),
-    _contract(
         role=RoleName.REASONER,
         display_name="Reasoner",
         purpose="Draft candidate reasoning for human review from supplied context.",
@@ -357,6 +425,8 @@ ROLE_CONTRACTS = (
         ],
         output_optional=["proof_sketches", "open_questions", "next_steps"],
         context_budget=CARD_ONLY_BUDGET,
+        context_policy=PRIVATE_REVIEW_CONTEXT_POLICY,
+        provider_capability_requirements=BUNDLE_PROVIDER_REQUIREMENTS,
         tool_policy=NO_TOOLS,
         stop_conditions=["insufficient_context", "contradiction_found"],
         risk_flags=["unverified_reasoning", "needs_human_review"],
@@ -380,6 +450,8 @@ ROLE_CONTRACTS = (
         ],
         output_optional=["commands_to_run", "evidence_gaps", "next_steps"],
         context_budget=VERIFIER_BUDGET,
+        context_policy=PRIVATE_REVIEW_CONTEXT_POLICY,
+        provider_capability_requirements=BUNDLE_PROVIDER_REQUIREMENTS,
         tool_policy=VERIFIER_TOOLS,
         stop_conditions=[
             "gate_failed",
@@ -388,6 +460,56 @@ ROLE_CONTRACTS = (
         ],
         risk_flags=["skipped_is_not_pass", "not_machine_checked"],
         forbidden_actions=["weaken_tests", "hide_skipped_results"],
+    ),
+    _contract(
+        role=RoleName.COUNTEREXAMPLER,
+        display_name="Counterexampleer",
+        purpose="Search for failures, counterexamples, and edge cases.",
+        system_prompt=(
+            "You are the counterexampleer role. Try to break candidate claims "
+            "with explicit assumptions, small examples, and local deterministic "
+            "checks when allowed."
+        ),
+        allowed_inputs=["candidate_claims", "assumptions", "known_failures"],
+        output_required=[
+            "summary",
+            "counterexamples_or_failed_attempts",
+            "assumptions_tested",
+            "risk_flags",
+        ],
+        output_optional=["local_checks", "next_steps"],
+        context_budget=VERIFIER_BUDGET,
+        context_policy=PRIVATE_REVIEW_CONTEXT_POLICY,
+        provider_capability_requirements=BUNDLE_PROVIDER_REQUIREMENTS,
+        tool_policy=LOCAL_ANALYSIS_TOOLS,
+        stop_conditions=["counterexample_found", "assumptions_incomplete"],
+        risk_flags=["adversarial_check_only", "not_a_proof"],
+        forbidden_actions=["claim_refutation_without_evidence", "edit_artifacts"],
+    ),
+    _contract(
+        role=RoleName.EXPLORER,
+        display_name="Explorer",
+        purpose="Identify bounded search directions and related context.",
+        system_prompt=(
+            "You are the explorer role. Explore adjacent definitions, examples, "
+            "sources, and open questions while keeping proposals separate from "
+            "accepted knowledge."
+        ),
+        allowed_inputs=["issue_context", "artifact_cards", "source_notes"],
+        output_required=[
+            "summary",
+            "search_directions",
+            "source_candidates",
+            "risk_flags",
+        ],
+        output_optional=["related_artifacts", "next_steps"],
+        context_budget=EXPLORATION_BUDGET,
+        context_policy=PRIVATE_REVIEW_CONTEXT_POLICY,
+        provider_capability_requirements=TYPED_SUBRESULT_PROVIDER_REQUIREMENTS,
+        tool_policy=READ_ONLY_TOOLS,
+        stop_conditions=["scope_too_large", "source_boundary_unclear"],
+        risk_flags=["exploratory_only", "source_review_needed"],
+        forbidden_actions=["mass_import_sources", "create_accepted_artifacts"],
     ),
     _contract(
         role=RoleName.FORMALIZER,
@@ -411,6 +533,8 @@ ROLE_CONTRACTS = (
         ],
         output_optional=["candidate_imports", "candidate_symbols", "next_steps"],
         context_budget=SOURCE_REVIEW_BUDGET,
+        context_policy=PRIVATE_REVIEW_CONTEXT_POLICY,
+        provider_capability_requirements=BUNDLE_PROVIDER_REQUIREMENTS,
         tool_policy=READ_ONLY_TOOLS,
         stop_conditions=["missing_source_locator", "alignment_unclear"],
         risk_flags=["formal_link_metadata_only", "alignment_not_proven"],
@@ -420,74 +544,34 @@ ROLE_CONTRACTS = (
         ],
     ),
     _contract(
-        role=RoleName.EXPLORER,
-        display_name="Explorer",
-        purpose="Identify bounded search directions and related context.",
+        role=RoleName.LIBRARIAN_SUMMARIZER,
+        display_name="Librarian Summarizer",
+        purpose="Summarize bounded retrieval context for review-only worker use.",
         system_prompt=(
-            "You are the explorer role. Explore adjacent definitions, examples, "
-            "sources, and open questions while keeping proposals separate from "
-            "accepted knowledge."
+            "You are the librarian summarizer role. Summarize bounded existing "
+            "context, label draft and private material clearly, and report "
+            "retrieval uncertainty without creating new claims."
         ),
-        allowed_inputs=["issue_context", "artifact_cards", "source_notes"],
+        allowed_inputs=["issue_record", "artifact_cards", "retrieval_audit"],
         output_required=[
             "summary",
-            "search_directions",
-            "source_candidates",
+            "selected_artifacts",
+            "retrieval_audit",
             "risk_flags",
         ],
-        output_optional=["related_artifacts", "next_steps"],
-        context_budget=EXPLORATION_BUDGET,
+        output_optional=["excluded_artifacts", "next_steps"],
+        context_budget=CARD_ONLY_BUDGET,
+        context_policy=PUBLIC_CONTEXT_POLICY,
+        provider_capability_requirements=TYPED_SUBRESULT_PROVIDER_REQUIREMENTS,
         tool_policy=READ_ONLY_TOOLS,
-        stop_conditions=["scope_too_large", "source_boundary_unclear"],
-        risk_flags=["exploratory_only", "source_review_needed"],
-        forbidden_actions=["mass_import_sources", "create_accepted_artifacts"],
-    ),
-    _contract(
-        role=RoleName.COUNTEREXAMPLER,
-        display_name="Counterexampleer",
-        purpose="Search for failures, counterexamples, and edge cases.",
-        system_prompt=(
-            "You are the counterexampleer role. Try to break candidate claims "
-            "with explicit assumptions, small examples, and local deterministic "
-            "checks when allowed."
-        ),
-        allowed_inputs=["candidate_claims", "assumptions", "known_failures"],
-        output_required=[
-            "summary",
-            "counterexamples_or_failed_attempts",
-            "assumptions_tested",
-            "risk_flags",
-        ],
-        output_optional=["local_checks", "next_steps"],
-        context_budget=VERIFIER_BUDGET,
-        tool_policy=LOCAL_ANALYSIS_TOOLS,
-        stop_conditions=["counterexample_found", "assumptions_incomplete"],
-        risk_flags=["adversarial_check_only", "not_a_proof"],
-        forbidden_actions=["claim_refutation_without_evidence", "edit_artifacts"],
-    ),
-    _contract(
-        role=RoleName.COLLECTOR,
-        display_name="Collector",
-        purpose="Collect source candidates and provenance for later review.",
-        system_prompt=(
-            "You are the collector role. Collect source candidates, locators, "
-            "and provenance notes for review without turning them into accepted "
-            "artifacts or human review records."
-        ),
-        allowed_inputs=["source_candidates", "source_notes", "issue_context"],
-        output_required=[
-            "summary",
-            "source_candidates",
-            "locator_status",
-            "risk_flags",
-        ],
-        output_optional=["missing_locators", "next_steps"],
-        context_budget=SOURCE_REVIEW_BUDGET,
-        tool_policy=READ_ONLY_TOOLS,
-        stop_conditions=["source_not_citable", "locator_missing"],
-        risk_flags=["source_review_required", "locator_may_be_incomplete"],
-        forbidden_actions=["fabricate_source_locators", "mark_reviewed"],
+        stop_conditions=["missing_issue", "context_budget_exhausted"],
+        risk_flags=["draft_context_present", "private_context_present"],
+        forbidden_actions=["create_claims", "rewrite_artifacts"],
     ),
 )
 
 ROLE_CONTRACT_BY_NAME = {contract.role: contract for contract in ROLE_CONTRACTS}
+ROLE_CONTRACT_ALIASES = {
+    RoleName.LIBRARIAN: RoleName.LIBRARIAN_SUMMARIZER,
+    RoleName.COLLECTOR: RoleName.LIBRARIAN_SUMMARIZER,
+}

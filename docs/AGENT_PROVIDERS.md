@@ -4,9 +4,9 @@ This document defines the hosted provider gateway boundary for TCS-Cosheaf.
 The current implementation includes a provider-neutral gateway core, a
 deterministic fake path, an OpenAI-compatible adapter over an injected
 transport for mocked tests, and provider CLI commands for configuration
-checks, context-send previews, and deterministic fake runs. It does not add
-API keys, import hosted provider SDKs, or make real hosted calls available by
-default.
+checks, context-send previews, deterministic fake runs, and a role-specific
+hosted worker service bridge. It does not add API keys, import hosted provider
+SDKs, or make real hosted calls available by default.
 
 ## Current Status
 
@@ -19,6 +19,9 @@ Implemented today:
   `ContextSendPolicyService.provider_preview(...)`;
 - `ProviderGateway` and `ModelCallService` for fake calls and
   OpenAI-compatible calls through injected transport only;
+- `HostedWorkerService` for role-specific fake or mocked provider worker
+  calls that validate output as WorkerBundle v2 or typed review-only
+  sub-results;
 - WorkerBundle v2 schema validation for provider `worker_bundle` outputs;
 - timeout, retry, cancellation, and rate-limit result handling;
 - provider run logs under `.cosheaf/providers/` with secret redaction and
@@ -32,7 +35,7 @@ Implemented today:
 Not implemented yet:
 
 - built-in real OpenAI-compatible HTTP transport;
-- hosted worker execution;
+- hosted worker CLI commands;
 - provider-backed orchestrator dispatch;
 - provider MCP tools.
 
@@ -68,9 +71,39 @@ configuration check
 ```
 
 The gateway is the service-layer boundary. Current CLI commands expose safe
-inspection, preview, and fake-run paths. Hosted workers may use it later, and
-optional MCP adapters may wrap it later. The gateway must not bypass
-validation, gates, review, reducer logic, or promotion.
+inspection, preview, and fake-run paths. The hosted worker service now uses
+the same gateway for fake and mocked provider calls, and optional MCP adapters
+may wrap the same services later. The gateway must not bypass validation,
+gates, review, reducer logic, or promotion.
+
+## Hosted Worker Bridge
+
+`HostedWorkerService` connects role contracts to provider calls without making
+provider output a source of truth. It supports these roles:
+
+- `reasoner`
+- `verifier`
+- `counterexampleer`
+- `explorer`
+- `formalizer`
+- `librarian_summarizer`
+
+Roles that map directly to protocol `WorkerType` return WorkerBundle v2:
+`reasoner`, `verifier`, `counterexampleer`, and `formalizer`. Roles without a
+direct bundle role return typed review-only sub-results: `explorer` and
+`librarian_summarizer`.
+
+The service returns `HostedWorkerOutput` instead of raising for expected
+provider or validation failures. Invalid provider output is rejected with
+`provider_output_validation_failed`. Unsafe authority claims are rejected with
+`hosted_worker_policy_violation`, including verifier claims that mark accepted
+or human-reviewed state, reasoner claims that turn conjectures into theorems,
+and formalizer claims that Lean checked semantic alignment.
+
+This bridge writes provider audit logs through the gateway under
+`.cosheaf/providers/`, but it does not write proposed artifacts, write accepted
+knowledge, create human review records, promote artifacts, or run a real
+hosted network transport by itself.
 
 ## Provider CLI
 

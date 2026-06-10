@@ -3,6 +3,30 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Role-Specific Hosted API Workers - 2026-06-10
+
+Issue 213 connects the provider gateway to role-specific hosted worker
+contracts through `HostedWorkerService`. The required hosted worker roles are
+`reasoner`, `verifier`, `counterexampleer`, `explorer`, `formalizer`, and
+`librarian_summarizer`.
+
+The service uses the existing provider gateway and model-call service. It
+supports deterministic fake-provider runs and OpenAI-compatible mocked
+transport runs through injected transport only. Worker output is validated as
+WorkerBundle v2 for `reasoner`, `verifier`, `counterexampleer`, and
+`formalizer`; `explorer` and `librarian_summarizer` return typed review-only
+sub-results. Invalid provider output returns
+`provider_output_validation_failed`, invalid request policy returns
+`provider_request_validation_failed`, and unsafe authority claims return
+`hosted_worker_policy_violation`.
+
+This is a service-layer bridge, not production hosted multi-agent execution.
+It does not add a hosted worker CLI command, does not add built-in real HTTP
+transport, does not run real hosted network calls in CI, does not write
+proposed artifacts, does not write accepted knowledge, does not create human
+review records, does not promote artifacts, and does not bypass validation,
+gates, verifier results, reducers, review, or promotion.
+
 ## Provider CLI Commands - 2026-06-10
 
 Issue 211 exposes the provider gateway through conservative CLI commands for

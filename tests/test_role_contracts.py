@@ -14,13 +14,12 @@ def test_required_role_contracts_are_present() -> None:
 
     assert [contract.role.value for contract in contracts] == list(REQUIRED_ROLE_NAMES)
     assert {contract.role for contract in contracts} == {
-        RoleName.LIBRARIAN,
         RoleName.REASONER,
         RoleName.VERIFIER,
-        RoleName.FORMALIZER,
-        RoleName.EXPLORER,
         RoleName.COUNTEREXAMPLER,
-        RoleName.COLLECTOR,
+        RoleName.EXPLORER,
+        RoleName.FORMALIZER,
+        RoleName.LIBRARIAN_SUMMARIZER,
     }
 
 
@@ -41,6 +40,8 @@ def test_role_contracts_define_required_boundaries() -> None:
         assert "claim_machine_verification_without_checker" in (
             contract.forbidden_actions
         )
+        assert contract.context_policy
+        assert contract.provider_capability_requirements
 
 
 def test_role_contracts_do_not_enable_hosted_llm_or_network() -> None:
@@ -64,11 +65,22 @@ def test_role_prompts_are_role_specific_not_one_generic_prompt() -> None:
         assert contract.role.value.replace("_", " ") in contract.system_prompt
 
 
+def test_required_hosted_worker_role_names_match_p4_plan() -> None:
+    assert list(REQUIRED_ROLE_NAMES) == [
+        "reasoner",
+        "verifier",
+        "counterexampleer",
+        "explorer",
+        "formalizer",
+        "librarian_summarizer",
+    ]
+
+
 def test_role_contract_lookup_and_serialization_are_deterministic() -> None:
-    librarian = get_role_contract("librarian")
+    librarian = get_role_contract("librarian_summarizer")
     verifier = get_role_contract(RoleName.VERIFIER)
 
-    assert librarian.role is RoleName.LIBRARIAN
+    assert librarian.role is RoleName.LIBRARIAN_SUMMARIZER
     assert verifier.role is RoleName.VERIFIER
     assert librarian.to_json() == librarian.to_json()
     assert list(librarian.to_dict()) == [
@@ -80,6 +92,8 @@ def test_role_contract_lookup_and_serialization_are_deterministic() -> None:
         "forbidden_actions",
         "required_output_schema",
         "context_budget",
+        "context_policy",
+        "provider_capability_requirements",
         "tool_policy",
         "stop_conditions",
         "risk_flags",
