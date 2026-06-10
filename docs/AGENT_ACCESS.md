@@ -21,8 +21,10 @@ TCS-Cosheaf has these intended access surfaces:
 - Service layer: the typed implementation boundary shared by CLI first, then
   hosted provider workers, internal orchestrator runs, and optional MCP.
 - Hosted provider gateway: provider core and provider CLI inspection/preview/
-  fake-run surfaces are implemented. Built-in real hosted HTTP transport and
-  hosted worker execution remain later tasks. Real calls must be explicit,
+  fake-run surfaces are implemented. A role-specific hosted worker service
+  bridge is implemented for fake and mocked provider calls. Built-in real
+  hosted HTTP transport, hosted worker CLI commands, and provider-backed
+  orchestrator dispatch remain later tasks. Real calls must be explicit,
   default-off, policy scoped, consented, and fake or mocked in tests.
 - MCP: optional adapter for assistants that benefit from resources/tools
   rather than shell access. It is not required for ordinary Codex-style repo
@@ -370,8 +372,11 @@ CLI draft/staging write commands, provider CLI commands for config checks,
 context-send preview, and deterministic fake runs, a minimal read-only stdio
 MCP surface that is optional adapter code, and an optional
 `skills/cosheaf-operator/` Skill package that documents the CLI-first operator
-workflow. The repository has not implemented built-in real hosted HTTP
-transport, hosted worker execution, provider-backed orchestrator dispatch, or
-controlled-write MCP tools described here. Existing local CLI, validation,
-gate, index, retrieval, context-pack, task, orchestrator dry-run, fake
-provider, and optional verifier surfaces keep their current behavior.
+workflow. It also has `HostedWorkerService` for role-specific fake or mocked
+provider worker calls whose outputs validate as WorkerBundle v2 or typed
+review-only sub-results. The repository has not implemented built-in real
+hosted HTTP transport, hosted worker CLI commands, provider-backed
+orchestrator dispatch, or controlled-write MCP tools described here. Existing
+local CLI, validation, gate, index, retrieval, context-pack, task,
+orchestrator dry-run, fake provider, and optional verifier surfaces keep their
+current behavior.

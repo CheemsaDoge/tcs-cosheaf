@@ -4,8 +4,10 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- Built-in real provider HTTP transports, provider-backed hosted worker
-  execution, and hosted-provider MCP tools are not implemented yet.
+- Built-in real provider HTTP transports, hosted worker CLI commands,
+  provider-backed orchestrator dispatch, and hosted-provider MCP tools are not
+  implemented yet. Role-specific hosted worker service bridging for fake and
+  mocked provider calls is implemented under `cosheaf.agent.hosted_workers`.
 - `docs/ADR/0019-hosted-provider-gateway.md`: ADR for the planned hosted
   provider gateway. It records provider modes, fake-provider test
   requirements, private-context preview and consent, output discipline,
@@ -367,13 +369,15 @@
   `artifact_id_exists`, `artifact_model_validation_failed`,
   `artifact_path_exists`, `bundle_complete_forbidden`,
   `bundle_submit_failed`, `context_build_failed`, `context_show_failed`,
-  `draft_write_failed`, `gate_issue`, `human_review_forbidden`,
+  `draft_write_failed`, `gate_issue`, `hosted_worker_policy_violation`,
+  `human_review_forbidden`,
   `invalid_artifact_id`, `invalid_artifact_target_path`,
   `invalid_input_json`, `invalid_staging_path`, `invalid_timestamp`,
   `memory_cards_failed`, `memory_search_failed`, `missing_required_domain`,
   `no_writable_kb_root`, `orchestrator_plan_failed`,
   `private_context_requires_consent`, `private_context_requires_policy`,
   `provider_context_preview_failed`, `provider_context_scope_violation`,
+  `provider_output_validation_failed`, `provider_request_validation_failed`,
   `provider_unsupported`, `readonly_kb_root`, `repository_load_failed`,
   `review_request_failed`, `source_note_write_failed`,
   `timestamp_missing_timezone`, `unknown_context_policy_mode`,
@@ -1242,29 +1246,42 @@ review, promotion, proof, or public/private policy bypasses.
 
 - `cosheaf.agent.roles.RoleName`: enum for role prompt/context contracts with
   values `librarian`, `reasoner`, `verifier`, `formalizer`, `explorer`,
-  `counterexampleer`, and `collector`.
+  `counterexampleer`, `collector`, and `librarian_summarizer`.
 - `cosheaf.agent.roles.RoleOutputSchema`: strict Pydantic v2 model describing
   required and optional fields expected from one role's worker output.
 - `cosheaf.agent.roles.RoleContextBudget`: strict Pydantic v2 model for
   bounded role context budgets, including maximum cards, maximum full artifact
   pulls, maximum prompt characters, and private-context allowance.
+- `cosheaf.agent.roles.RoleContextPolicy`: strict Pydantic v2 model for one
+  role's provider-send context policy, including allowed root scopes, private
+  context allowance, preview requirement, and explicit private-context consent
+  requirement.
+- `cosheaf.agent.roles.RoleProviderCapabilityRequirements`: strict Pydantic v2
+  model for one role's provider-output expectations, including output kinds,
+  JSON-output requirement, WorkerBundle requirement, and network requirement
+  flag. Current contracts do not require provider network access.
 - `cosheaf.agent.roles.RoleToolPolicy`: strict Pydantic v2 model for one
   role's tool and network policy. Current role contracts keep network access
   disabled.
 - `cosheaf.agent.roles.RoleContract`: strict Pydantic v2 model for
   machine-readable role boundaries. It records role-specific prompt text,
   allowed inputs, forbidden actions, required output schema, context budget,
-  tool policy, stop conditions, risk flags, `provider: fake`, and
-  `hosted_llm_enabled: false`.
+  context policy, provider capability requirements, tool policy, stop
+  conditions, risk flags, `provider: fake`, and `hosted_llm_enabled: false`.
 - `cosheaf.agent.roles.REQUIRED_ROLE_NAMES`: deterministic tuple of required
-  role names in contract order.
+  hosted-worker role names in contract order: `reasoner`, `verifier`,
+  `counterexampleer`, `explorer`, `formalizer`, and
+  `librarian_summarizer`.
 - `cosheaf.agent.roles.ROLE_CONTRACTS`: deterministic tuple of the built-in
-  role contracts. The built-in roles do not write accepted knowledge, do not
-  promote artifacts, do not mark human review, and do not enable hosted LLMs.
+  required hosted-worker role contracts. The built-in contracts do not write
+  accepted knowledge, do not promote artifacts, do not mark human review, and
+  do not enable hosted LLMs.
 - `cosheaf.agent.roles.list_role_contracts() -> tuple[RoleContract, ...]`:
-  returns all built-in role contracts in deterministic order.
+  returns all required hosted-worker role contracts in deterministic order.
 - `cosheaf.agent.roles.get_role_contract(role: RoleName | str) -> RoleContract`:
   returns one built-in role contract by enum value or role-name string.
+  Legacy local role names `librarian` and `collector` resolve to
+  `librarian_summarizer`.
 - `cosheaf.agent.model_provider.ModelRequest`: strict Pydantic v2 model for a
   provider-neutral model request. Fields include `provider`, `model`, `prompt`,
   `temperature`, `top_p`, `reasoning_effort`, `max_output_tokens`,
@@ -1325,6 +1342,27 @@ review, promotion, proof, or public/private policy bypasses.
   `cosheaf.agent.providers.redact_mapping(values) -> tuple[dict[str, str], bool]`:
   redact common secret value shapes and secret-looking metadata fields before
   provider logs are written.
+- `cosheaf.agent.hosted_workers.HostedWorkerStatus`: normalized hosted worker
+  status enum with `completed`, `rejected`, `failed`, and `skipped`.
+- `cosheaf.agent.hosted_workers.HostedWorkerInput`: strict Pydantic v2 model
+  for one role-specific hosted worker request. It records issue ID, role,
+  prompt, context artifact IDs, root scopes, and provider consent.
+- `cosheaf.agent.hosted_workers.HostedWorkerTypedResult`: strict Pydantic v2
+  model for review-only typed sub-results from roles that do not map directly
+  to WorkerBundle v2 worker roles, such as `explorer` and
+  `librarian_summarizer`.
+- `cosheaf.agent.hosted_workers.HostedWorkerOutput`: strict Pydantic v2 model
+  for one hosted worker result. It records issue ID, role, status, provider
+  run/log metadata, optional WorkerBundle v2, optional typed sub-result,
+  optional `ErrorResult`, and `accepted_write_performed: false`.
+- `cosheaf.agent.hosted_workers.HostedWorkerService.run(input, *, config=None, provider=None) -> HostedWorkerOutput`:
+  calls the provider gateway through `ModelCallService`, validates fake or
+  mocked provider output as WorkerBundle v2 or typed review-only sub-result,
+  writes provider audit logs through the gateway, and returns structured
+  rejected output for expected provider, validation, or hosted-worker policy
+  failures. It does not add a CLI command, perform a real network call by
+  itself, write proposed artifacts, write accepted knowledge, create human
+  review records, or promote artifacts.
 - `cosheaf.agent.task.WorkerType`: protocol worker type enum with values `reasoner`, `verifier`, `counterexampleer`, `construction_searcher`, `formalizer`, `literature_scout`, and `orchestrator`.
 - `cosheaf.agent.task.TaskStatus`: task status enum with values `open`, `in_progress`, `blocked`, `completed`, `failed`, and `cancelled`.
 - `cosheaf.agent.task.AgentTask`: Pydantic v2 model for local task records with fields `task_id`, `issue_id`, `worker_type`, `status`, `input_context`, `budget`, `expected_outputs`, `created_at`, and `updated_at`.
