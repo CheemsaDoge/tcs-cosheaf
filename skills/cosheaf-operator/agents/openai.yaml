@@ -1,0 +1,7 @@
+interface:
+  display_name: "Cosheaf Operator"
+  short_description: "CLI-first TCS-Cosheaf operator workflow"
+  brand_color: "#2563EB"
+  default_prompt: "Use $cosheaf-operator to operate this TCS-Cosheaf task through the CLI-first workflow."
+policy:
+  allow_implicit_invocation: true
