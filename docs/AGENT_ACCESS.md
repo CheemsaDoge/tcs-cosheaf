@@ -20,8 +20,10 @@ TCS-Cosheaf has these intended access surfaces:
   state.
 - Service layer: the typed implementation boundary shared by CLI first, then
   hosted provider workers, internal orchestrator runs, and optional MCP.
-- Hosted provider gateway: planned worker capability. Real calls must be
-  explicit, default-off, policy scoped, consented, and fake or mocked in tests.
+- Hosted provider gateway: provider core and provider CLI inspection/preview/
+  fake-run surfaces are implemented. Built-in real hosted HTTP transport and
+  hosted worker execution remain later tasks. Real calls must be explicit,
+  default-off, policy scoped, consented, and fake or mocked in tests.
 - MCP: optional adapter for assistants that benefit from resources/tools
   rather than shell access. It is not required for ordinary Codex-style repo
   work.
@@ -117,6 +119,16 @@ Agent-safe read/check commands include:
 - `cosheaf context build <issue-id> --json`
 - `cosheaf context show <issue-id> --json`
 - `cosheaf orchestrator plan --issue <issue-id> --json`
+- `cosheaf provider list --json`
+- `cosheaf provider config-check --json`
+- `cosheaf provider preview-send --issue <issue-id> --provider <provider>
+  --json`
+- `cosheaf provider fake-run --input-json <path> --json`
+
+Provider commands are inspection, preview, or fake-run commands only in the
+current surface. `provider preview-send` does not send artifact text to a
+hosted provider, and `provider fake-run` performs no hosted network call.
+There is no `provider real-run` command.
 
 Controlled write commands are deliberately narrow and require explicit JSON
 input:
@@ -220,6 +232,7 @@ The stable error-code list is exported as
 - `private_context_requires_policy`
 - `provider_context_preview_failed`
 - `provider_context_scope_violation`
+- `provider_unsupported`
 - `readonly_kb_root`
 - `repository_load_failed`
 - `review_request_failed`
@@ -353,10 +366,12 @@ private research disclosure.
 As of this document, the repository has a thin typed service layer, versioned
 agent-access DTO/JSON Schema contracts, a provider-send context preview policy
 service, deterministic JSON output for core read-only CLI commands, controlled
-CLI draft/staging write commands, a minimal read-only stdio MCP surface that is
-optional adapter code, and an optional `skills/cosheaf-operator/` Skill package
-that documents the CLI-first operator workflow. The repository has not
-implemented the hosted provider gateway or controlled-write MCP tools described
-here. Existing local CLI, validation, gate, index, retrieval, context-pack,
-task, orchestrator dry-run, fake provider, and optional verifier surfaces keep
-their current behavior.
+CLI draft/staging write commands, provider CLI commands for config checks,
+context-send preview, and deterministic fake runs, a minimal read-only stdio
+MCP surface that is optional adapter code, and an optional
+`skills/cosheaf-operator/` Skill package that documents the CLI-first operator
+workflow. The repository has not implemented built-in real hosted HTTP
+transport, hosted worker execution, provider-backed orchestrator dispatch, or
+controlled-write MCP tools described here. Existing local CLI, validation,
+gate, index, retrieval, context-pack, task, orchestrator dry-run, fake
+provider, and optional verifier surfaces keep their current behavior.

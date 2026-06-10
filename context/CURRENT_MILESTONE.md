@@ -144,10 +144,11 @@ The agent-access direction does not weaken knowledge governance:
 
 ## Next Focus
 
-After the hosted provider gateway design lands, continue with Phase P / Task
-P.2 from `longplan_v3_fixed_cli_first.md`: implement provider gateway core
-with fake and OpenAI-compatible mocked transport. Keep real API calls
-default-off, absent from CI, and unable to write accepted knowledge.
+After provider CLI commands land, continue with Phase P / Task P.4 from
+`longplan_v3_fixed_cli_first.md`: add role-specific hosted API worker
+contracts and fake-provider tests first. Do not add real hosted network calls
+to CI, do not add accepted writes, and do not let provider output bypass
+review, gate, verifier, reducer, or promotion policy.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

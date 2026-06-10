@@ -2,9 +2,11 @@
 
 This document defines the hosted provider gateway boundary for TCS-Cosheaf.
 The current implementation includes a provider-neutral gateway core, a
-deterministic fake path, and an OpenAI-compatible adapter over an injected
-transport for mocked tests. It does not add API keys, import hosted provider
-SDKs, or make real hosted calls available by default.
+deterministic fake path, an OpenAI-compatible adapter over an injected
+transport for mocked tests, and provider CLI commands for configuration
+checks, context-send previews, and deterministic fake runs. It does not add
+API keys, import hosted provider SDKs, or make real hosted calls available by
+default.
 
 ## Current Status
 
@@ -21,12 +23,14 @@ Implemented today:
 - timeout, retry, cancellation, and rate-limit result handling;
 - provider run logs under `.cosheaf/providers/` with secret redaction and
   attempt, retry, unsupported-parameter, latency, token, and cost metadata;
+- provider CLI commands for listing supported provider modes, checking
+  configuration without printing secrets, previewing context-send payload
+  shape, and running the deterministic fake provider;
 - fake-provider and mocked OpenAI-compatible tests that run without network
   access or API keys.
 
 Not implemented yet:
 
-- provider CLI commands;
 - built-in real OpenAI-compatible HTTP transport;
 - hosted worker execution;
 - provider-backed orchestrator dispatch;
@@ -63,10 +67,33 @@ configuration check
   -> ordinary validate/gate/review/promotion
 ```
 
-The gateway is the service-layer boundary. CLI commands may expose it later,
-hosted workers may use it later, and optional MCP adapters may wrap it later.
-The gateway must not bypass validation, gates, review, reducer logic, or
-promotion.
+The gateway is the service-layer boundary. Current CLI commands expose safe
+inspection, preview, and fake-run paths. Hosted workers may use it later, and
+optional MCP adapters may wrap it later. The gateway must not bypass
+validation, gates, review, reducer logic, or promotion.
+
+## Provider CLI
+
+The current provider CLI surface is agent-facing and conservative:
+
+- `cosheaf provider list --json` lists the currently supported CLI modes.
+- `cosheaf provider config-check --json` checks provider configuration
+  without printing secret values. It reports only whether an API-key
+  environment variable is present.
+- `cosheaf provider preview-send --issue <issue-id> --provider <provider>
+  --json` previews the context-send payload shape without sending artifact
+  text to a provider. The preview includes artifact count, root scopes,
+  estimated token count, private-context inclusion, and risk flags.
+- `cosheaf provider fake-run --input-json <path> --json` runs the
+  deterministic fake provider and writes redacted provider logs under
+  `.cosheaf/providers/`.
+
+`fake-run` is allowed in CI and performs no hosted network call. There is no
+`real-run` CLI command in this task. The only provider names accepted by the
+current CLI are `fake` and `openai`; future names such as `anthropic`,
+`google`, and `local` are model identifiers only until a later task implements
+and tests their CLI/provider behavior. Unsupported provider names return the
+stable `provider_unsupported` error code.
 
 ## Configuration Rules
 

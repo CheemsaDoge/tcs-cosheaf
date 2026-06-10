@@ -163,6 +163,7 @@ AGENT_ACCESS_STABLE_ERROR_CODES: tuple[str, ...] = (
     "private_context_requires_policy",
     "provider_context_preview_failed",
     "provider_context_scope_violation",
+    "provider_unsupported",
     "readonly_kb_root",
     "repository_load_failed",
     "review_request_failed",
