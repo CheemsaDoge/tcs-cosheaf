@@ -78,8 +78,8 @@ target direction is:
   review requests.
 - Service-layer functions are the shared implementation boundary for CLI,
   hosted workers, internal orchestrator code, and optional future MCP.
-- Hosted provider support is scheduled capability, implemented through an
-  explicit provider gateway and fake/mocked tests first.
+- Hosted provider support is scheduled capability, to be implemented through
+  an explicit provider gateway and fake/mocked tests first.
 - Local-only execution remains fallback, offline, and CI/testing mode. It is
   not the permanent product boundary.
 - The internal orchestrator may call hosted API workers only when policy,
@@ -144,10 +144,10 @@ The agent-access direction does not weaken knowledge governance:
 
 ## Next Focus
 
-After the optional Cosheaf operator Skill package lands, continue with Phase P
-/ Task P.1 from `longplan_v3_fixed_cli_first.md`: design the hosted provider
-gateway without adding real provider calls to CI or weakening review, gate, or
-promotion boundaries.
+After the hosted provider gateway design lands, continue with Phase P / Task
+P.2 from `longplan_v3_fixed_cli_first.md`: implement provider gateway core
+with fake and OpenAI-compatible mocked transport. Keep real API calls
+default-off, absent from CI, and unable to write accepted knowledge.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

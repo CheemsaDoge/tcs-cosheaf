@@ -6,6 +6,15 @@
 
 - Hosted provider gateway commands and real provider transports are not
   implemented yet.
+- `docs/ADR/0019-hosted-provider-gateway.md`: ADR for the planned hosted
+  provider gateway. It records provider modes, fake-provider test
+  requirements, private-context preview and consent, output discipline,
+  logging/redaction metadata, and no-accepted-write boundaries. It is design
+  documentation only and does not implement provider runtime code.
+- `docs/AGENT_PROVIDERS.md`: operator-facing provider policy document. It
+  describes the planned configuration, context policy, output rules, logging,
+  OpenAI-compatible transport, and fake-provider requirements for hosted
+  provider work. It is not a CLI command or runtime implementation.
 - MCP controlled-write tools are not implemented yet.
 - Hosted-provider MCP tools are not implemented yet.
 - `docs/ADR/0017-mcp-agent-interface.md`: ADR for the optional MCP adapter. It
