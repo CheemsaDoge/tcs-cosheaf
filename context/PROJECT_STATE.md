@@ -3,6 +3,27 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Provider CLI Commands - 2026-06-10
+
+Issue 211 exposes the provider gateway through conservative CLI commands for
+agent-facing inspection, preview, and deterministic fake runs:
+`cosheaf provider list --json`, `cosheaf provider config-check --json`,
+`cosheaf provider preview-send --issue <issue-id> --provider <provider>
+--json`, and `cosheaf provider fake-run --input-json <path> --json`.
+
+These commands do not add a real-run command, do not import hosted provider
+SDKs, do not perform real hosted network calls, do not write accepted
+knowledge, and do not bypass review, gate, verifier, reducer, or promotion
+policy. `config-check` reports secret presence only and redacts secret values.
+`preview-send` shows root scopes and estimated payload shape without sending
+artifact text. `fake-run` forces the deterministic fake provider and writes
+redacted provider logs under `.cosheaf/providers/`.
+
+The current provider CLI supports only `fake` and `openai` mode names.
+Future provider identifiers such as `anthropic`, `google`, and `local` remain
+model enums only until later tasks implement and test their behavior; the CLI
+returns `provider_unsupported` for those names.
+
 ## CLI-First Direction Alignment - 2026-06-09
 
 Issue 201 adds the first controlled CLI write surface for external coding

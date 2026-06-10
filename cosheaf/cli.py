@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 import typer
 from pydantic import ValidationError
@@ -17,6 +18,7 @@ from cosheaf.agent.context_pack import (
 from cosheaf.agent.local_runner import (
     LocalWorkerRunError,
 )
+from cosheaf.agent.model_provider import ProviderName
 from cosheaf.agent.orchestrator_planner import (
     OrchestratorPlannerError,
     plan_for_issue,
@@ -27,6 +29,12 @@ from cosheaf.agent.orchestrator_runner import (
     OrchestratorLocalRunner,
 )
 from cosheaf.agent.orchestrator_stub import TaskHarnessError
+from cosheaf.agent.providers import (
+    ProviderConfig,
+    ProviderError,
+    ProviderGatewayRequest,
+    ProviderMode,
+)
 from cosheaf.agent.task import WorkerType
 from cosheaf.config.workspace import KbRootConfig, WorkspaceConfigError
 from cosheaf.core.artifact import BaseArtifact, is_external_dependency_ref
@@ -76,6 +84,7 @@ from cosheaf.memory import (
 from cosheaf.services import (
     BundleValidationService,
     ContextPackService,
+    ContextSendPolicyService,
     ControlledWriteResult,
     DraftWriteService,
     DraftWriteServiceError,
@@ -86,14 +95,19 @@ from cosheaf.services import (
     ValidationService,
     WorkspaceService,
 )
+from cosheaf.services.model_calls import ModelCallService
 from cosheaf.services.models import (
     AgentAccessModel,
     AgentKbRoot,
+    ContextBuildRequest,
     ContextBuildResult,
+    ContextPolicyMode,
     DraftArtifactWriteRequest,
     ErrorResult,
     GateRunResult,
     KbRootPolicy,
+    ModelCallResult,
+    ProviderConsent,
     ValidateResult,
     WorkerBundleSubmitRequest,
 )
@@ -189,6 +203,11 @@ mcp_app = typer.Typer(
     help="Read-only MCP server commands.",
     no_args_is_help=True,
 )
+provider_app = typer.Typer(
+    add_completion=False,
+    help="Provider gateway preview and fake-run commands.",
+    no_args_is_help=True,
+)
 app.add_typer(artifact_app, name="artifact")
 app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
@@ -204,7 +223,10 @@ app.add_typer(ingest_app, name="ingest")
 app.add_typer(eval_app, name="eval")
 app.add_typer(memory_app, name="memory")
 app.add_typer(mcp_app, name="mcp")
+app.add_typer(provider_app, name="provider")
 memory_app.add_typer(memory_graph_app, name="graph")
+
+_SUPPORTED_PROVIDER_CLI_NAMES = (ProviderName.FAKE, ProviderName.OPENAI)
 
 
 @app.command()
@@ -1356,6 +1378,284 @@ def memory_graph_pagerank(
         )
 
 
+@provider_app.command("list")
+def provider_list(
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """List provider gateway modes available to agent callers."""
+    providers = [
+        {
+            "provider": ProviderName.FAKE.value,
+            "mode": ProviderMode.FAKE.value,
+            "enabled_by_default": True,
+            "network": "not_used",
+            "api_key_required": False,
+            "fake_run_cli": True,
+            "real_run_cli": False,
+        },
+        {
+            "provider": ProviderName.OPENAI.value,
+            "mode": ProviderMode.OPENAI_COMPATIBLE.value,
+            "enabled_by_default": False,
+            "network": "explicit_config_only",
+            "api_key_required": True,
+            "fake_run_cli": False,
+            "real_run_cli": False,
+        },
+    ]
+    if json_output:
+        _emit_json({"schema_version": 1, "providers": providers})
+        return
+
+    console = Console(width=120, markup=False)
+    for provider in providers:
+        console.print(
+            f"{provider['provider']} | mode={provider['mode']} | "
+            f"network={provider['network']} | real_run_cli=false"
+        )
+
+
+@provider_app.command("config-check")
+def provider_config_check(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    provider: ProviderName = typer.Option(
+        ProviderName.FAKE,
+        "--provider",
+        help="Provider identifier to check.",
+    ),
+    api_key_env: str | None = typer.Option(
+        None,
+        "--api-key-env",
+        help="Environment variable name for provider API key presence checks.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Check provider configuration without revealing secret values."""
+    console = Console(width=120, markup=False)
+    _ensure_supported_provider_cli(provider, json_output=json_output, console=console)
+    try:
+        RepoContext(repo_root)
+    except WorkspaceConfigError as exc:
+        _exit_with_error(
+            ErrorResult(
+                code="workspace_config_failed",
+                message=str(exc),
+                remediation="Fix cosheaf.toml and rerun provider config-check.",
+                blocking=True,
+                related_path="cosheaf.toml",
+            ),
+            json_output=json_output,
+            console=console,
+        )
+
+    env_name = api_key_env or _default_provider_api_key_env(provider)
+    api_key_present = bool(env_name and os.environ.get(env_name))
+    payload = {
+        "schema_version": 1,
+        "provider": provider.value,
+        "mode": _provider_mode(provider).value,
+        "enabled": provider is ProviderName.FAKE,
+        "api_key_env": env_name,
+        "api_key_present": api_key_present,
+        "api_key_value": "<redacted>" if api_key_present else "missing",
+        "real_run_cli": False,
+        "network": "not_used"
+        if provider is ProviderName.FAKE
+        else "explicit_config_only",
+    }
+    if json_output:
+        _emit_json(payload)
+        return
+
+    console.print(f"provider: {payload['provider']}")
+    console.print(f"mode: {payload['mode']}")
+    console.print(f"api_key_present: {str(api_key_present).lower()}")
+    api_key_value = "<redacted>" if api_key_present else "missing"
+    console.print(f"api_key_value: {api_key_value}")
+    console.print("real_run_cli: false")
+
+
+@provider_app.command("preview-send")
+def provider_preview_send(
+    issue: str = typer.Option(..., "--issue", help="Issue ID to preview."),
+    provider: ProviderName = typer.Option(
+        ProviderName.FAKE,
+        "--provider",
+        help="Provider identifier for preview metadata.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    include_private: bool = typer.Option(
+        False,
+        "--include-private",
+        help="Preview private context. Requires private policy and consent.",
+    ),
+    policy_mode: ContextPolicyMode = typer.Option(
+        ContextPolicyMode.PUBLIC,
+        "--policy-mode",
+        help="Context policy mode.",
+    ),
+    allow_private_context: bool = typer.Option(
+        False,
+        "--allow-private-context",
+        help="Confirm private-context preview for private research mode.",
+    ),
+    max_cards: int = typer.Option(
+        20,
+        "--max-cards",
+        help="Maximum preview cards.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Preview provider-send context shape without sending artifact text."""
+    console = Console(width=120, markup=False)
+    _ensure_supported_provider_cli(provider, json_output=json_output, console=console)
+    try:
+        request = ContextBuildRequest(
+            issue_id=issue,
+            max_cards=max_cards,
+            max_full_artifacts=0,
+            policy_mode=policy_mode,
+            public_only=not include_private,
+            allow_private_context=allow_private_context,
+        )
+        preview = ContextSendPolicyService(RepoContext(repo_root)).provider_preview(
+            request
+        )
+    except (ValidationError, WorkspaceConfigError) as exc:
+        _exit_with_error(
+            _exception_to_error_result(
+                exc,
+                default_code="provider_context_preview_failed",
+            ),
+            json_output=json_output,
+            console=console,
+        )
+
+    if isinstance(preview, ErrorResult):
+        _exit_with_error(preview, json_output=json_output, console=console)
+
+    preview_payload = preview.to_dict()
+    payload = {
+        "schema_version": 1,
+        "provider": provider.value,
+        "mode": _provider_mode(provider).value,
+        "real_run_performed": False,
+        "preview": preview_payload,
+        "payload_shape": {
+            "artifact_count": len(preview.artifact_ids),
+            "root_scopes": preview_payload["root_scopes"],
+            "estimated_tokens": preview.estimated_tokens,
+            "private_context_included": preview.private_context_included,
+            "risk_flags": preview.risk_flags,
+        },
+    }
+    if json_output:
+        _emit_json(payload)
+        return
+
+    console.print(f"provider: {provider.value}")
+    console.print(f"artifact_count: {len(preview.artifact_ids)}")
+    console.print(f"root_scopes: {', '.join(preview_payload['root_scopes'])}")
+    console.print(f"estimated_tokens: {preview.estimated_tokens}")
+
+
+@provider_app.command("fake-run")
+def provider_fake_run(
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="JSON request for a fake provider run.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root for provider run logs.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Run the deterministic fake provider; no hosted API call is performed."""
+    console = Console(width=120, markup=False)
+    context = RepoContext(repo_root)
+    raw = _read_input_json_or_exit(input_json, json_output=json_output)
+    raw["provider"] = ProviderName.FAKE.value
+    raw.setdefault("model", "fake-deterministic")
+    raw.setdefault(
+        "consent",
+        ProviderConsent(
+            consent_required=False,
+            consent_granted=False,
+            allow_private_context=False,
+            policy_scope=ContextPolicyMode.PUBLIC,
+        ).to_dict(),
+    )
+    try:
+        request = ProviderGatewayRequest.model_validate(raw)
+        result = ModelCallService(context).call(
+            request,
+            config=ProviderConfig(
+                provider=ProviderName.FAKE,
+                mode=ProviderMode.FAKE,
+                model=request.model,
+                enabled=True,
+            ),
+        )
+    except (ValidationError, WorkspaceConfigError) as exc:
+        _exit_with_error(
+            _exception_to_error_result(exc, default_code="provider_fake_run_failed"),
+            json_output=json_output,
+            console=console,
+        )
+
+    if isinstance(result, ProviderError):
+        _exit_with_error(
+            ErrorResult(
+                code=result.code,
+                message=result.message,
+                remediation=result.remediation,
+                blocking=result.blocking,
+                details=result.details,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+
+    provider_log = _provider_log_payload(context, result)
+    payload = result.to_dict()
+    payload["provider_log"] = provider_log
+    if json_output:
+        _emit_json(payload)
+        return
+
+    console.print(f"provider: {result.provider.value}")
+    console.print(f"status: {result.status.value}")
+    if result.provider_run.log_path:
+        console.print(f"log_path: {result.provider_run.log_path}")
+
+
 @mcp_app.command("list-tools")
 def mcp_list_tools(
     repo_root: Path = typer.Option(
@@ -1735,7 +2035,7 @@ def _read_input_json_or_exit(
     json_output: bool,
 ) -> dict[str, Any]:
     try:
-        raw = json.loads(input_json.read_text(encoding="utf-8"))
+        raw = json.loads(input_json.read_text(encoding="utf-8-sig"))
     except (OSError, json.JSONDecodeError) as exc:
         _exit_with_error(
             ErrorResult(
@@ -1768,7 +2068,7 @@ def _exit_with_error(
     *,
     json_output: bool,
     console: Console,
-) -> None:
+) -> NoReturn:
     if json_output:
         _emit_error(error)
     else:
@@ -1824,6 +2124,59 @@ def _emit_controlled_write(
     action = "would write" if result.dry_run else "wrote"
     console.print(f"{result.kind}: {action} {result.relative_path.as_posix()}")
     console.print("- accepted knowledge merge: not performed")
+
+
+def _provider_mode(provider: ProviderName) -> ProviderMode:
+    if provider is ProviderName.OPENAI:
+        return ProviderMode.OPENAI_COMPATIBLE
+    if provider is ProviderName.FAKE:
+        return ProviderMode.FAKE
+    msg = f"provider CLI does not support {provider.value!r}"
+    raise ValueError(msg)
+
+
+def _ensure_supported_provider_cli(
+    provider: ProviderName,
+    *,
+    json_output: bool,
+    console: Console,
+) -> None:
+    if provider in _SUPPORTED_PROVIDER_CLI_NAMES:
+        return
+    supported = ",".join(provider.value for provider in _SUPPORTED_PROVIDER_CLI_NAMES)
+    _exit_with_error(
+        ErrorResult(
+            code="provider_unsupported",
+            message=f"Provider CLI does not support {provider.value!r}.",
+            remediation=(
+                "Use `cosheaf provider list --json` to inspect currently "
+                "supported provider CLI modes."
+            ),
+            blocking=True,
+            details={"supported_providers": supported},
+        ),
+        json_output=json_output,
+        console=console,
+    )
+
+
+def _default_provider_api_key_env(provider: ProviderName) -> str | None:
+    if provider is ProviderName.OPENAI:
+        return "OPENAI_API_KEY"
+    return None
+
+
+def _provider_log_payload(
+    context: RepoContext,
+    result: ModelCallResult,
+) -> dict[str, Any]:
+    log_path = result.provider_run.log_path
+    if log_path is None:
+        return {}
+    raw = json.loads(context.resolve(Path(log_path)).read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        return {}
+    return dict(raw)
 
 
 def _workspace_info_to_agent_result(

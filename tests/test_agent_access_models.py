@@ -140,6 +140,7 @@ def test_stable_agent_access_error_code_list_exists() -> None:
         "artifact_id_exists",
         "private_context_requires_consent",
         "provider_context_scope_violation",
+        "provider_unsupported",
         "repository_load_failed",
     }.issubset(AGENT_ACCESS_STABLE_ERROR_CODES)
 

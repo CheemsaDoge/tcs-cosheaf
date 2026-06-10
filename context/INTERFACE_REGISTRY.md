@@ -4,9 +4,8 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- Provider CLI commands, built-in real provider HTTP transports,
-  provider-backed hosted worker execution, and hosted-provider MCP tools are
-  not implemented yet.
+- Built-in real provider HTTP transports, provider-backed hosted worker
+  execution, and hosted-provider MCP tools are not implemented yet.
 - `docs/ADR/0019-hosted-provider-gateway.md`: ADR for the planned hosted
   provider gateway. It records provider modes, fake-provider test
   requirements, private-context preview and consent, output discipline,
@@ -15,9 +14,9 @@
   mocked transport paths; the ADR still governs future real transport and
   hosted worker work.
 - `docs/AGENT_PROVIDERS.md`: operator-facing provider policy document. It
-  describes the implemented provider gateway core, planned configuration,
-  context policy, output rules, logging, OpenAI-compatible transport boundary,
-  and fake-provider requirements. It is not a CLI command.
+  describes the implemented provider gateway core, provider CLI commands,
+  planned configuration, context policy, output rules, logging,
+  OpenAI-compatible transport boundary, and fake-provider requirements.
 - MCP controlled-write tools are not implemented yet.
 - `docs/ADR/0017-mcp-agent-interface.md`: ADR for the optional MCP adapter. It
   records stdio transport, resource/tool/prompt boundaries, controlled-write
@@ -221,6 +220,50 @@
   explicit repository root.
 - `cosheaf memory graph pagerank --json`: emits a deterministic
   `PageRankResult` JSON payload.
+- `cosheaf provider list`: lists provider gateway modes currently exposed
+  through the CLI.
+- `cosheaf provider list --json`: emits deterministic JSON with
+  `schema_version` and provider metadata for `fake` and `openai`, including
+  mode, default-enabled status, network policy, API-key requirement, fake-run
+  availability, and real-run availability.
+- `cosheaf provider config-check`: checks provider CLI configuration without
+  revealing secret values.
+- `cosheaf provider config-check --repo-root <path>`: checks configuration for
+  an explicit repository root.
+- `cosheaf provider config-check --provider <provider>`: checks `fake` or
+  `openai`. Other `ProviderName` values currently return the structured
+  `provider_unsupported` error because their CLI/provider behavior is not
+  implemented.
+- `cosheaf provider config-check --api-key-env <name>`: uses an explicit
+  environment variable name for API-key presence checks. Output reports
+  presence only and prints `<redacted>` instead of secret values.
+- `cosheaf provider config-check --json`: emits deterministic JSON with
+  provider id, mode, enabled flag, API-key environment variable name,
+  API-key presence, redacted API-key value status, real-run CLI availability,
+  and network mode.
+- `cosheaf provider preview-send --issue <issue-id> --provider <provider>`:
+  previews the provider-send context payload shape for an issue without
+  sending artifact text or making a hosted provider call.
+- `cosheaf provider preview-send --repo-root <path>`: previews context for an
+  explicit repository root.
+- `cosheaf provider preview-send --include-private --policy-mode private_research --allow-private-context`:
+  permits private-context preview only when private-research policy and
+  explicit private-context permission are both supplied. Without those flags,
+  private-context previews return structured policy errors.
+- `cosheaf provider preview-send --json`: emits deterministic JSON with
+  provider id, mode, `real_run_performed: false`, the
+  `ProviderContextPreview` payload, artifact count, root scopes, estimated
+  token count, private-context inclusion, and risk flags.
+- `cosheaf provider fake-run --input-json <path>`: runs the deterministic fake
+  provider from a JSON `ProviderGatewayRequest`-compatible object. The command
+  forces `provider: fake`, defaults the model and public consent when omitted,
+  writes redacted provider logs under `.cosheaf/providers/`, performs no
+  hosted network call, writes no accepted knowledge, and performs no
+  promotion.
+- `cosheaf provider fake-run --repo-root <path>`: runs the fake provider using
+  an explicit repository root for provider logs.
+- `cosheaf provider fake-run --json`: emits deterministic `ModelCallResult`
+  JSON plus the redacted provider log payload. It is allowed in CI.
 - `cosheaf mcp list-tools`: prints the read-only MCP tool whitelist, one tool
   name per line.
 - `cosheaf mcp list-tools --repo-root <path>`: validates command context
@@ -331,10 +374,11 @@
   `no_writable_kb_root`, `orchestrator_plan_failed`,
   `private_context_requires_consent`, `private_context_requires_policy`,
   `provider_context_preview_failed`, `provider_context_scope_violation`,
-  `readonly_kb_root`, `repository_load_failed`, `review_request_failed`,
-  `source_note_write_failed`, `timestamp_missing_timezone`,
-  `unknown_context_policy_mode`, `validation_failed`,
-  `validation_unexpected_error`, and `workspace_config_failed`.
+  `provider_unsupported`, `readonly_kb_root`, `repository_load_failed`,
+  `review_request_failed`, `source_note_write_failed`,
+  `timestamp_missing_timezone`, `unknown_context_policy_mode`,
+  `validation_failed`, `validation_unexpected_error`, and
+  `workspace_config_failed`.
 - `cosheaf.services.models.AGENT_ACCESS_SCHEMA_MODELS`: mapping used to
   generate the versioned JSON Schema files under `schemas/agent_access/`.
 
