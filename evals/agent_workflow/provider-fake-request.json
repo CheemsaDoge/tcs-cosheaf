@@ -1,0 +1,15 @@
+{
+  "model": "fake-deterministic",
+  "worker_role": "reasoner",
+  "prompt": "Use sk-agent-workflow-eval-secret only as a redaction fixture.",
+  "context_artifact_ids": [
+    "claim.agent-dry-run.demo"
+  ],
+  "root_scopes": [
+    "workspace"
+  ],
+  "output_kind": "text",
+  "expected_output_paths": [
+    "kb/draft/claims/agent-workflow-eval-provider.yaml"
+  ]
+}

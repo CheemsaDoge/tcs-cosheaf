@@ -3,6 +3,28 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Agent Workflow Evaluation Suite - 2026-06-10
+
+Issue 219 adds a deterministic Python-level agent workflow eval harness under
+`cosheaf.evals.agent_workflow` plus the default case suite in
+`evals/agent_workflow/cases.yaml`. The suite exercises existing CLI-agent and
+provider-worker paths through `CliRunner` and records metrics for command exit
+expectations, JSON parsing, required artifact hits, private leakage, expected
+accepted-write rejection, expected malformed-bundle rejection, fake-provider
+redaction, and surface counts.
+
+The default suite distinguishes `cli`, `provider`, and `optional_mcp` surfaces.
+The optional MCP case only calls the existing read-only `mcp list-tools`
+whitelist; this does not make MCP mandatory and does not add MCP write
+behavior. The harness does not add a `cosheaf eval agent-workflow` CLI command,
+does not run real hosted provider calls, does not require API keys, does not
+use network access, does not write accepted knowledge, and does not bypass
+validation, gates, verifier results, human review, reducers, or promotion.
+
+Running the suite may refresh runtime context-pack files under
+`context/TASKS/` and redacted fake-provider logs under `.cosheaf/providers/`.
+Those are generated runtime outputs and should not be committed.
+
 ## Internal Orchestrator Hosted-Worker Dispatch - 2026-06-10
 
 Issue 215 adds explicit internal orchestrator dispatch to role-specific hosted

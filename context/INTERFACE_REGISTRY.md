@@ -810,6 +810,45 @@ promotion semantics beyond ordinary gatekeeper blocking behavior.
   or execution failures.
 - `cosheaf.evals.DEFAULT_RETRIEVAL_EVAL_CASES`: default case path
   `evals/retrieval/cases.yaml`.
+- `cosheaf.evals.agent_workflow.AgentWorkflowEvalKind`: enum for
+  `cli_agent_workflow`, `provider_worker_fake`, `context_privacy`,
+  `bundle_validity`, `gate_regression`, and `optional_mcp_readonly` cases.
+- `cosheaf.evals.agent_workflow.AgentWorkflowEvalSurface`: enum for `cli`,
+  `provider`, and `optional_mcp` surface labels.
+- `cosheaf.evals.agent_workflow.AgentWorkflowEvalCase`: Pydantic v2 model for
+  one deterministic CLI-agent/provider workflow eval case with `kind`,
+  `surface`, command, exit-code, JSON, artifact-hit, forbidden-substring,
+  expected-error, and provider-redaction expectations.
+- `cosheaf.evals.agent_workflow.AgentWorkflowEvalSuite`: Pydantic v2 model for
+  a YAML suite of agent workflow eval cases.
+- `cosheaf.evals.agent_workflow.AgentWorkflowEvalMetrics`: frozen dataclass
+  with `command_success_rate`, `json_parse_success_rate`,
+  `required_artifact_hit`, `private_leakage_count`,
+  `accepted_write_rejection_count`, `malformed_bundle_rejection_count`, and
+  `provider_redaction_pass_count` output.
+- `cosheaf.evals.agent_workflow.AgentWorkflowEvalCaseResult`: frozen dataclass
+  for one executed workflow eval case, including surface, command, exit code,
+  JSON parse status, policy rejection booleans, redaction status, and failures.
+- `cosheaf.evals.agent_workflow.AgentWorkflowEvalReport`: frozen dataclass for
+  aggregate suite output with deterministic `to_dict()` and `to_json()`
+  helpers plus `surface_counts`.
+- `cosheaf.evals.agent_workflow.AgentWorkflowEvalError`: expected error for
+  agent workflow eval loading or execution failures.
+- `cosheaf.evals.agent_workflow.DEFAULT_AGENT_WORKFLOW_EVAL_CASES`: default
+  case path `evals/agent_workflow/cases.yaml`.
+- `cosheaf.evals.agent_workflow.load_agent_workflow_eval_suite(path)`:
+  loads an agent workflow eval YAML suite.
+- `cosheaf.evals.agent_workflow.resolve_agent_workflow_eval_case_path(context, cases_path)`:
+  resolves and constrains an eval case path to the repository root.
+- `cosheaf.evals.agent_workflow.run_agent_workflow_eval_suite(context, suite)`:
+  invokes existing CLI commands through `CliRunner` and returns an
+  `AgentWorkflowEvalReport`.
+- `cosheaf.evals.agent_workflow.run_agent_workflow_eval_case(context, case)`:
+  runs and scores one eval case.
+
+The agent workflow eval harness is intentionally a direct submodule API in
+this phase. It is not exported from `cosheaf.evals.__init__`, and no
+`cosheaf eval agent-workflow` CLI command is added.
 
 All memory models are strict (`extra="forbid"`), frozen, preserve enum values as
 enum instances in Python, and expose:

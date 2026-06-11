@@ -1,0 +1,5 @@
+{
+  "task_id": "task.issue.agent-dry-run.demo.reasoner",
+  "bundle_path": "evals/agent_workflow/malformed-bundle.yaml",
+  "complete_task": false
+}
