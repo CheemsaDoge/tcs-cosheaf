@@ -150,15 +150,18 @@ After the `v0.2.1` prerelease and downstream compatibility checks:
    current context privacy and provider-log regression guards. Provider
    previews remain metadata-only and cards-only under the implemented
    provider-send boundary.
-6. Continue post-`v0.2.1` hardening through small issue/branch/PR increments,
-   with the next planned ecosystem task moving into Phase F.1 workspace
-   real-provider setup documentation after three-repo compatibility smoke
-   matrix coverage lands.
+6. Continue post-`v0.2.1` hardening through small issue/branch/PR increments.
+   Workspace-template provider setup and public-preview smoke docs are now
+   landed, and public KB source-note/backlog refresh plus one draft-only
+   foundation tightening have landed without accepted promotion.
 7. Improve CLI-agent, provider fake/mocked, context-pack, evaluation, and
    failure/counterexample workflows without weakening review, gate, promotion,
    or public/private policy boundaries.
-8. Treat MCP as optional adapter work and do not implement controlled-write MCP
-   without a separate approved issue.
+8. Treat MCP as optional adapter work. The H.1 review keeps the current stdio
+   surface read-only and does not implement controlled-write MCP, provider MCP
+   tools, arbitrary shell, or accepted writes.
+9. Move next into the v0.2.2 release readiness audit before any release-candidate
+   metadata changes.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
