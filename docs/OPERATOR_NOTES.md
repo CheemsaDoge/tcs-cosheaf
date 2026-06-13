@@ -94,6 +94,19 @@ afterward. If the command reports `unknown arguments` followed by words from
 the issue title, the shell split the search query; this is not an
 authentication failure.
 
+When creating issues or pull requests from PowerShell, prefer `--body-file`
+over inline `--body` whenever the markdown contains backticks, quotes, issue
+numbers, or multi-line punctuation. PowerShell can treat backticks inside an
+inline body as escape characters and split the intended body into unexpected
+`gh` arguments. A safe pattern is:
+
+```powershell
+$tmp = New-TemporaryFile
+Set-Content -LiteralPath $tmp -Value $body -Encoding UTF8
+gh issue create --repo CheemsaDoge/tcs-cosheaf --title "<title>" --body-file $tmp
+Remove-Item -LiteralPath $tmp
+```
+
 ## GitHub Actions Stuck Check Runs
 
 Sometimes a GitHub Actions job can show every step completed successfully while
