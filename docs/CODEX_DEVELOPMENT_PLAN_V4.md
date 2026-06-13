@@ -143,12 +143,19 @@ fixtures only. CI must not need an API key or live provider network.
 
 ### B.3 Explicit Real Provider CLI Path
 
-Next implementation task. Add a deliberately hard-to-trigger CLI path only
-after B.2. It must require explicit send confirmation, explicit network
-permission, valid config/key, and a prior or inline context preview reference.
-Tests must mock or inject the transport and must not call a live provider.
+Status: complete in issue 235.
+
+`cosheaf provider real-run --input-json <path> --provider openai-compatible
+--confirm-send --allow-network --json` exists as a deliberately
+hard-to-trigger CLI path after B.2. It requires explicit send confirmation,
+explicit network permission, valid endpoint/API-key environment configuration,
+an environment-provided key, inline context preview metadata, and required
+private-context consent. Tests mock or inject the transport and do not call a
+live provider.
 
 ## Phase C: Provider Output And Worker Reliability
+
+Next implementation phase.
 
 Harden WorkerBundle and hosted-worker outputs so failures, uncertainty,
 counterexamples, verification requests, dependency questions, risk flags, and

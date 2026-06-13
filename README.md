@@ -20,11 +20,12 @@ provider gateway and fake/mocked hosted-worker dispatch paths, verifier
 adapters including a Python checker, a minimal optional SAT DIMACS path, a
 minimal optional SMT-LIB path, a minimal optional plain Lean file path, and an
 optional external Lean library reference `#check` path, an optional stdlib
-OpenAI-compatible HTTP transport object that is not used by default, GitHub
-Actions CI, and collaboration templates. It is not production-ready software
-and does not yet provide a web UI, a default real hosted provider path,
-provider `real-run` CLI, automatic theorem proving, full Lean
-autoformalization, automatic accepted promotion, or multi-user permissions.
+OpenAI-compatible HTTP transport object plus a deliberately hard-to-trigger
+provider `real-run` CLI path that is not used by default, GitHub Actions CI,
+and collaboration templates. It is not production-ready software and does not
+yet provide a web UI, a default real hosted provider path, hosted worker CLI
+commands, automatic theorem proving, full Lean autoformalization, automatic
+accepted promotion, or multi-user permissions.
 
 ## Problem
 
@@ -107,6 +108,10 @@ Implemented:
   only.
 - Optional stdlib OpenAI-compatible HTTP transport object for explicitly
   configured and injected provider calls; no default CLI path instantiates it.
+- Explicit `cosheaf provider real-run --input-json <path> --provider
+  openai-compatible --confirm-send --allow-network --json` path that requires
+  inline context preview, operator send consent, explicit network permission,
+  endpoint/API-key environment configuration, and redacted run logging.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
   DIMACS adapter, minimal optional SMT-LIB adapter, minimal optional Lean
   plain-file adapter, and optional external Lean library reference checker.
@@ -130,7 +135,7 @@ Planned or incomplete:
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
-- Provider `real-run` CLI and hosted worker CLI commands.
+- Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
 - Automatic informal/formal semantic alignment checking.
 

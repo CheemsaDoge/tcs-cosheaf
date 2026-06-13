@@ -28,9 +28,10 @@ TCS-Cosheaf has these intended access surfaces:
   orchestrator can explicitly dispatch planned nodes to hosted workers through
   fake or OpenAI-compatible provider boundaries. An optional stdlib
   OpenAI-compatible HTTP transport object exists, but no default CLI path
-  instantiates it and hosted worker CLI commands remain later tasks. Real calls
-  must be explicit, default-off, policy scoped, consented, and fake, mocked, or
-  local non-live-network in tests.
+  instantiates it. A deliberately hard-to-trigger provider `real-run` CLI path
+  exists for explicit operator-approved calls, and hosted worker CLI commands
+  remain later tasks. Real calls must be explicit, default-off, policy scoped,
+  consented, and fake, mocked, or local non-live-network in tests.
 - MCP: optional adapter for assistants that benefit from resources/tools
   rather than shell access. It is not required for ordinary Codex-style repo
   work.
@@ -134,11 +135,16 @@ Agent-safe read/check commands include:
 - `cosheaf provider preview-send --issue <issue-id> --provider <provider>
   --json`
 - `cosheaf provider fake-run --input-json <path> --json`
+- `cosheaf provider real-run --input-json <path> --provider
+  openai-compatible --confirm-send --allow-network --json`
 
-Provider commands are inspection, preview, or fake-run commands only in the
-current surface. `provider preview-send` does not send artifact text to a
-hosted provider, and `provider fake-run` performs no hosted network call.
-There is no `provider real-run` command.
+Provider commands are inspection, preview, fake-run, or explicit real-run
+commands. `provider preview-send` does not send artifact text to a hosted
+provider, and `provider fake-run` performs no hosted network call. `provider
+real-run` is intentionally not part of demos or CI. It fails closed without
+`--confirm-send`, `--allow-network`, inline `context_preview`, endpoint and
+API-key environment configuration, an environment-provided key, and required
+private-context consent when private context is present.
 
 Controlled write commands are deliberately narrow and require explicit JSON
 input:
@@ -414,9 +420,11 @@ review-only sub-results, plus explicit orchestrator dispatch to those hosted
 workers through the fake provider or an OpenAI-compatible provider boundary.
 The repository has implemented an optional stdlib OpenAI-compatible HTTP
 transport object that remains default-off and only runs when explicitly
-configured and injected. It has not added a provider real-run CLI, hosted
-worker CLI commands, or controlled-write MCP tools. Controlled-write MCP is not
-planned unless separately approved. Existing local CLI, validation, gate,
-index, retrieval, context-pack, task, orchestrator dry-run, fake provider,
-hosted-worker dispatch, and optional verifier surfaces keep their current
-behavior.
+configured and injected. It also has a provider `real-run` CLI path that
+requires inline preview, explicit send consent, explicit network permission,
+endpoint/API-key environment configuration, and redacted runtime logging. It
+has not added hosted worker CLI commands or controlled-write MCP tools.
+Controlled-write MCP is not planned unless separately approved. Existing local
+CLI, validation, gate, index, retrieval, context-pack, task, orchestrator
+dry-run, fake provider, hosted-worker dispatch, and optional verifier surfaces
+keep their current behavior.

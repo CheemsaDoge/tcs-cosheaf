@@ -8,9 +8,15 @@ import pytest
 import yaml  # type: ignore[import-untyped]
 from typer.testing import CliRunner
 
+import cosheaf.cli as cli_module
+from cosheaf.agent.providers import ProviderTransportResult, ProviderTransportStatus
 from cosheaf.cli import app
 
 runner = CliRunner()
+
+
+def _synthetic_secret(label: str) -> str:
+    return "sk-" + "provider-cli-fixture-" + label
 
 
 def _write_yaml(repo_root: Path, relative_path: str, data: dict[str, Any]) -> None:
@@ -160,6 +166,66 @@ def _assert_json_output(output: str) -> dict[str, Any]:
     return payload
 
 
+def _context_preview_payload() -> dict[str, Any]:
+    return {
+        "issue_id": "issue.fixture.provider-cli",
+        "policy_mode": "public",
+        "public_only": True,
+        "private_context_requested": False,
+        "private_context_included": False,
+        "artifact_ids": ["claim.fixture.provider-cli-public"],
+        "root_scopes": ["public"],
+        "estimated_tokens": 10,
+        "risk_flags": [],
+        "items": [],
+    }
+
+
+def _private_context_preview_payload() -> dict[str, Any]:
+    payload = _context_preview_payload()
+    payload.update(
+        {
+            "policy_mode": "private_research",
+            "public_only": False,
+            "private_context_requested": True,
+            "private_context_included": True,
+            "artifact_ids": [
+                "claim.fixture.provider-cli-public",
+                "claim.fixture.provider-cli-private",
+            ],
+            "root_scopes": ["public", "private"],
+            "risk_flags": ["private_context"],
+        }
+    )
+    return payload
+
+
+def _real_run_input(
+    *,
+    include_preview: bool = True,
+    include_config: bool = True,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "model": "gpt-test",
+        "worker_role": "reasoner",
+        "prompt": "Return a review-only real provider response.",
+        "output_kind": "text",
+        "expected_output_paths": ["kb/private/draft/claims/provider-real-run.yaml"],
+    }
+    if include_preview:
+        payload["context_preview"] = _context_preview_payload()
+    if include_config:
+        payload["provider_config"] = {
+            "model": "gpt-test",
+            "base_url": "https://provider.test/v1/chat/completions",
+            "api_key_env": "COSHEAF_TEST_API_KEY",
+            "timeout_seconds": 5,
+            "max_retries": 0,
+            "supported_parameters": ["prompt", "model", "max_output_tokens"],
+        }
+    return payload
+
+
 def test_provider_list_json_is_agent_parseable() -> None:
     result = runner.invoke(app, ["provider", "list", "--json"])
 
@@ -173,7 +239,7 @@ def test_provider_list_json_is_agent_parseable() -> None:
     assert payload["providers"][0]["mode"] == "fake"
     assert payload["providers"][0]["network"] == "not_used"
     assert payload["providers"][1]["mode"] == "openai_compatible"
-    assert payload["providers"][1]["real_run_cli"] is False
+    assert payload["providers"][1]["real_run_cli"] is True
 
 
 def test_provider_config_check_redacts_secret_env(
@@ -206,7 +272,7 @@ def test_provider_config_check_redacts_secret_env(
     assert payload["api_key_env"] == "COSHEAF_TEST_API_KEY"
     assert payload["api_key_present"] is True
     assert payload["api_key_value"] == "<redacted>"
-    assert payload["real_run_cli"] is False
+    assert payload["real_run_cli"] is True
 
 
 def test_provider_config_check_rejects_unimplemented_provider(
@@ -390,3 +456,238 @@ def test_provider_fake_run_accepts_utf8_bom_input_json(tmp_path: Path) -> None:
     payload = _assert_json_output(result.output)
     assert payload["provider"] == "fake"
     assert payload["status"] == "completed"
+
+
+def test_provider_real_run_requires_confirm_send(tmp_path: Path) -> None:
+    request_path = _write_json(tmp_path, "requests/real-run.json", _real_run_input())
+
+    result = runner.invoke(
+        app,
+        [
+            "provider",
+            "real-run",
+            "--repo-root",
+            str(tmp_path),
+            "--input-json",
+            str(request_path),
+            "--provider",
+            "openai-compatible",
+            "--allow-network",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = _assert_json_output(result.output)
+    assert payload["code"] == "provider_confirm_send_required"
+
+
+def test_provider_real_run_requires_allow_network(tmp_path: Path) -> None:
+    request_path = _write_json(tmp_path, "requests/real-run.json", _real_run_input())
+
+    result = runner.invoke(
+        app,
+        [
+            "provider",
+            "real-run",
+            "--repo-root",
+            str(tmp_path),
+            "--input-json",
+            str(request_path),
+            "--provider",
+            "openai-compatible",
+            "--confirm-send",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = _assert_json_output(result.output)
+    assert payload["code"] == "provider_network_not_allowed"
+
+
+def test_provider_real_run_requires_inline_context_preview(tmp_path: Path) -> None:
+    request_path = _write_json(
+        tmp_path,
+        "requests/real-run.json",
+        _real_run_input(include_preview=False),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "provider",
+            "real-run",
+            "--repo-root",
+            str(tmp_path),
+            "--input-json",
+            str(request_path),
+            "--provider",
+            "openai-compatible",
+            "--confirm-send",
+            "--allow-network",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = _assert_json_output(result.output)
+    assert payload["code"] == "provider_context_preview_failed"
+
+
+def test_provider_real_run_requires_config_and_api_key(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("COSHEAF_TEST_API_KEY", raising=False)
+    missing_config_path = _write_json(
+        tmp_path,
+        "requests/real-run-missing-config.json",
+        _real_run_input(include_config=False),
+    )
+    missing_key_path = _write_json(
+        tmp_path,
+        "requests/real-run-missing-key.json",
+        _real_run_input(),
+    )
+
+    missing_config = runner.invoke(
+        app,
+        [
+            "provider",
+            "real-run",
+            "--repo-root",
+            str(tmp_path),
+            "--input-json",
+            str(missing_config_path),
+            "--provider",
+            "openai-compatible",
+            "--confirm-send",
+            "--allow-network",
+            "--json",
+        ],
+    )
+    missing_key = runner.invoke(
+        app,
+        [
+            "provider",
+            "real-run",
+            "--repo-root",
+            str(tmp_path),
+            "--input-json",
+            str(missing_key_path),
+            "--provider",
+            "openai-compatible",
+            "--confirm-send",
+            "--allow-network",
+            "--json",
+        ],
+    )
+
+    assert missing_config.exit_code == 1
+    assert (
+        _assert_json_output(missing_config.output)["code"]
+        == "provider_config_missing"
+    )
+    assert missing_key.exit_code == 1
+    assert _assert_json_output(missing_key.output)["code"] == "provider_api_key_missing"
+
+
+def test_provider_real_run_requires_private_context_consent(
+    tmp_path: Path,
+) -> None:
+    request_payload = _real_run_input()
+    request_payload["context_preview"] = _private_context_preview_payload()
+    request_path = _write_json(
+        tmp_path,
+        "requests/real-run-private.json",
+        request_payload,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "provider",
+            "real-run",
+            "--repo-root",
+            str(tmp_path),
+            "--input-json",
+            str(request_path),
+            "--provider",
+            "openai-compatible",
+            "--confirm-send",
+            "--allow-network",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = _assert_json_output(result.output)
+    assert payload["code"] == "private_context_requires_consent"
+
+
+def test_provider_real_run_uses_mocked_transport_and_writes_redacted_log(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    request_secret = _synthetic_secret("request")
+    response_secret = _synthetic_secret("response")
+    monkeypatch.setenv("COSHEAF_TEST_API_KEY", request_secret)
+    request_payload = _real_run_input()
+    request_payload["prompt"] = f"Do not leak {request_secret}."
+    request_path = _write_json(tmp_path, "requests/real-run.json", request_payload)
+    calls = []
+
+    class MockHttpTransport:
+        def complete(self, request: Any, config: Any) -> ProviderTransportResult:
+            calls.append((request, config))
+            return ProviderTransportResult(
+                content=f"Provider response mentions {response_secret}.",
+                status=ProviderTransportStatus.COMPLETED,
+                raw_metadata={"Authorization": f"Bearer {request_secret}"},
+            )
+
+    monkeypatch.setattr(
+        cli_module,
+        "OpenAICompatibleHttpTransport",
+        lambda: MockHttpTransport(),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "provider",
+            "real-run",
+            "--repo-root",
+            str(tmp_path),
+            "--input-json",
+            str(request_path),
+            "--provider",
+            "openai-compatible",
+            "--confirm-send",
+            "--allow-network",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json_output(result.output)
+    assert payload["provider"] == "openai"
+    assert payload["status"] == "completed"
+    assert payload["real_run_performed"] is True
+    assert payload["context_preview"]["artifact_ids"] == [
+        "claim.fixture.provider-cli-public"
+    ]
+    assert response_secret not in result.output
+    assert request_secret not in result.output
+    assert "<redacted>" in result.output
+    assert calls
+    assert calls[0][0].network_policy.value == "explicit_allow"
+    assert calls[0][0].consent.consent_granted is True
+    assert calls[0][0].context_artifact_ids == ["claim.fixture.provider-cli-public"]
+
+    log_path = tmp_path / payload["provider_run"]["log_path"]
+    log_text = log_path.read_text(encoding="utf-8")
+    assert response_secret not in log_text
+    assert request_secret not in log_text
+    assert "<redacted>" in log_text
