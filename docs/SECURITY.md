@@ -20,6 +20,11 @@ checks:
 | Prompt or tool instructions override governance | Provider output cannot request accepted writes or bypass policy | `test_provider_output_cannot_override_accepted_write_policy` |
 | Promotion bypasses review/gate workflow | Direct accepted status movement is refused and promotion still requires review and gates | `test_promotion_remains_explicit_review_and_gate_gated` |
 | Optional MCP exposes arbitrary shell | The MCP surface remains read-only and whitelist-based | `test_optional_mcp_surface_exposes_no_arbitrary_shell` |
+| Real provider is triggered accidentally | Real transport must be default-off and require explicit provider config, context preview, send consent, and network permission | Planned by ADR 0021; implementation tests must cover missing consent/network/config/key |
+| Real provider sends private context without approval | Private context requires private-research policy, `public_only=false`, and explicit private-context consent | Planned by ADR 0021; existing context-policy tests cover preview denial paths |
+| Real provider returns malformed or policy-violating output | Output must schema-validate and policy-validate before becoming WorkerBundle, draft, proposal, or review context | Existing fake/mocked hosted-worker tests plus ADR 0021 implementation tests |
+| Real provider or transport fails operationally | Timeout, cancellation, rate limit, HTTP error, invalid JSON, schema rejection, and related failures must become typed provider errors or rejected outputs | Planned by ADR 0021; no live provider tests in CI |
+| Unsupported provider parameters are ignored silently | Capability negotiation must record unsupported parameters or return a blocking provider error | Planned by ADR 0021 |
 
 ## Hard Boundaries
 
@@ -35,8 +40,13 @@ checks:
   summaries, credentials, or secrets.
 - Hosted-provider paths must be default-off, explicit, policy-scoped, and
   fake or mocked in tests.
+- Real provider transport, when implemented, must additionally require an
+  explicit context-preview reference, operator send consent, explicit network
+  permission, configured provider/model/timeout policy, and environment or
+  secret-manager key source.
 - Real API keys, tokens, raw secrets, hidden reasoning, or unredacted provider
   logs must not be committed.
+- Real provider run records must fail closed if redaction cannot be applied.
 - Optional MCP is an adapter over typed services. It must not expose arbitrary
   shell, environment dumps, arbitrary filesystem access, direct promotion,
   human-review marking, or accepted-path writes.
@@ -46,6 +56,10 @@ checks:
 Security regressions must run with the normal test suite and require no network
 or real provider credential. Tests may use the deterministic fake provider or
 injected mocked transport only.
+
+When the optional real OpenAI-compatible HTTP transport is implemented, CI must
+still use fake, injected mocked, or local non-network fixtures. Live provider
+accounts, live network, and real API keys remain outside default tests.
 
 If a security check cannot run, report it as unavailable or skipped with the
 exact reason. Do not describe skipped security checks as passes.

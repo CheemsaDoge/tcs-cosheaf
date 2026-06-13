@@ -76,9 +76,10 @@ unavailable optional tools must be reported as unavailable or skipped, never as
 pass.
 
 ADR 0015 records the earlier CLI-first direction change. ADR 0020 records the
-post-`v0.2.1` provider/workflow hardening line. The first concrete task after
-the v4 plan lands is a real-provider transport ADR and threat model, not
-runtime implementation.
+post-`v0.2.1` provider/workflow hardening line. ADR 0021 records the real
+OpenAI-compatible HTTP transport boundary and threat model. Runtime
+implementation must follow that default-off, explicit-consent,
+no-real-provider-in-CI boundary.
 
 ## Completed Baseline
 

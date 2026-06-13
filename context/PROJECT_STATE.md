@@ -3,6 +3,25 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Real Provider Transport Boundary ADR - 2026-06-13
+
+Issue 231 adds ADR 0021 for the first real provider transport boundary before
+runtime implementation. The chosen first transport is OpenAI-compatible HTTP,
+but it must be optional, default-off, explicitly configured, blocked without
+context preview, operator send consent, explicit network permission, and
+environment or secret-manager key source.
+
+The ADR and docs require private context to fail closed unless
+`policy_mode=private_research`, `public_only=false`, and explicit
+private-context consent are all present. They also require unsupported
+parameters, timeout, cancellation, rate limit, HTTP error, invalid JSON,
+malformed model output, schema rejection, redaction failure, and log-write
+failure to become structured provider errors or rejected output, not passes.
+
+This is documentation-only design work. It does not add a real HTTP transport,
+real-run CLI, dependencies, provider MCP tools, schema changes, accepted writes,
+promotion changes, or public/private KB changes.
+
 ## v4 Provider/Workflow Hardening Plan Landing - 2026-06-13
 
 Issue 229 lands `docs/CODEX_DEVELOPMENT_PLAN_V4.md` as the current

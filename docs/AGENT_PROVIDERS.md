@@ -245,6 +245,44 @@ timeout, cancellation, rate-limit, error, metadata, and redaction paths without
 network access. A real HTTP transport remains a separate explicitly configured
 future task.
 
+ADR 0021 defines the real transport boundary before implementation. A future
+real OpenAI-compatible HTTP transport must be:
+
+- optional and default-off;
+- explicitly enabled through provider configuration;
+- unable to run in CI or default tests;
+- configured with an explicit model id, timeout, retry policy, context policy,
+  and API-key environment or secret-manager reference;
+- blocked until a context-send preview exists for the exact request scope;
+- blocked until operator send consent and explicit network permission are both
+  present;
+- blocked from private context unless `policy_mode=private_research`,
+  `public_only=false`, and explicit private-context consent are all present;
+- tested through fake, mocked, or local non-network fixtures by default;
+- unable to write accepted knowledge, mark human review, promote artifacts, or
+  turn provider output into verifier/gate success.
+
+Expected real-transport failures must be structured provider errors or
+rejected output, not uncaught tracebacks and not passes. Required failure modes
+include timeout, cancellation, connection/TLS/DNS failures, rate limits,
+authentication and authorization failures, HTTP errors, provider structured
+errors, invalid JSON, malformed model output, schema rejection, policy
+rejection, redaction failure, and log-write failure.
+
+Run records may store provider/model id, policy and consent flags, context
+preview reference, request fingerprint, timeout/retry/cancellation metadata,
+latency, token/cost metadata when available, response validation status,
+redaction status, and repository-local log paths. They must not store API
+keys, bearer tokens, authorization headers, full environment dumps, hidden
+reasoning, unapproved private context, raw private artifact text, or
+unredacted provider responses unless a later explicit audit policy permits
+that content.
+
+There is still no provider `real-run` command. If a future task adds one, it
+must be hard to trigger and must fail closed without explicit send
+confirmation, explicit network permission, valid configuration/key,
+context-preview reference, and required public/private context consent.
+
 ## Fake Provider Requirement
 
 Every provider workflow must be testable with the fake provider. Fake-provider
