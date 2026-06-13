@@ -1,34 +1,49 @@
 # Roadmap
 
-TCS-Cosheaf is at the published `v0.2.0` local-MVP release baseline after the
-`v0.1.1` Formal Link Layer support baseline. The project is still not
-production-ready. This roadmap records durable direction and named milestones;
-live issue state belongs in GitHub issues.
+TCS-Cosheaf is preparing the `v0.2.1` CLI Agent Access + Hosted Provider
+Gateway release candidate after the published `v0.2.0` local-MVP release and
+the earlier `v0.1.1` Formal Link Layer support baseline. The project is still
+not production-ready. This roadmap records durable direction and named
+milestones; live issue state belongs in GitHub issues.
 
-## Current Baseline: v0.2.0 Local MVP Release
+## Current Baseline: v0.2.1 Release Candidate
 
-The `v0.2.0` tag packages the already-implemented deterministic local workflow
-as a pin-able framework version without adding new capability or overclaiming
+The `v0.2.1` release candidate packages the CLI-first agent-access and hosted
+provider gateway surfaces that landed after the `v0.2.0` local-MVP tag. It is a
+candidate framework version for coding-agent workflows, deterministic fake
+provider runs, and explicit provider-worker orchestration without overclaiming
 production readiness, automatic theorem proving, Lean autoformalization, or
-hosted agent behavior.
+accepted-knowledge automation.
 
-Completed release work includes:
+Completed release-candidate work includes:
 
-- Package metadata and release notes for `v0.2.0`.
-- Full framework verification for the tag.
-- Workspace-template install/pin verification against the tag.
-- Public KB validation/gate regression against the tag.
+- Package metadata and release notes for `v0.2.1`.
+- Stable JSON/error contracts for core agent-facing CLI commands.
+- Controlled draft/proposal/bundle/source-note/review-request CLI write
+  surfaces.
+- CLI operator workflow documentation and optional operator Skill package.
+- Provider gateway design, fake provider path, and OpenAI-compatible mocked
+  transport boundary.
+- Provider CLI commands for list, config-check, preview-send, and fake-run.
+- Role-specific hosted worker service over fake or mocked provider calls.
+- Internal orchestrator dispatch to hosted workers when explicitly configured.
+- Agent-access security regression coverage and agent workflow evaluation
+  suite.
+- Required framework verification for the release-candidate PR.
 - A post-`v0.2.0` rollback audit that identified no code or KB revert scope,
   but did identify MCP-first roadmap language that needed rewrite.
 
-## Next Focus: v0.2.1 CLI Agent Access
+The `v0.2.1` tag is still a publication step after the reviewed release
+candidate merge. Downstream repository pins should move to `@v0.2.1` only after
+that tag exists.
 
-The next implementation direction is `v0.2.1` CLI Agent Access + Hosted
-Provider Gateway.
+## Next Focus: v0.2.1 Publication And Compatibility
 
-This does not mean turning the project into a production hosted multi-agent
-platform. It means adding a controlled agent-facing access layer around the
-existing deterministic substrate:
+The next focus after the release candidate is to publish the tag and run
+three-repository compatibility checks. This still does not mean turning the
+project into a production hosted multi-agent platform. It means proving that
+the controlled agent-facing access layer works across the framework package,
+workspace template, and public KB:
 
 - CLI is the primary agent interface for coding agents.
 - CLI output for agent-facing commands should become stable, structured, and
@@ -176,25 +191,30 @@ ADR 0014 records this scope decision.
 
 ### v0.2.1 CLI Agent Access + Hosted Provider Gateway
 
-`v0.2.1` targets the access layer around the existing local-MVP substrate:
+`v0.2.1` packages the access layer around the existing local-MVP substrate:
 
-- Fixed CLI-first execution plan installation as current project memory.
+- Fixed CLI-first execution plan installed as current project memory.
 - Workspace-template pin audit against the `v0.2.0` baseline.
 - Shared service layer used by CLI first, then hosted workers and optional MCP.
 - Stable JSON/error contracts for agent-facing CLI commands.
-- Controlled draft/proposal/bundle write CLI surfaces.
-- CLI operator workflow docs and demo.
+- Controlled draft/proposal/bundle/source-note/review-request write CLI
+  surfaces.
+- CLI operator workflow docs and workspace demo path.
 - Provider gateway design, fake/mocked test surface, and OpenAI-compatible
-  transport behind explicit opt-in.
+  mocked transport boundary.
+- Provider CLI commands for inspection, config checks, preview, and fake runs.
 - Hosted worker contracts and execution service that produce validated worker
-  bundles, not accepted knowledge.
+  bundles or typed review-only sub-results, not accepted knowledge.
+- Internal orchestrator dispatch to hosted workers only when explicitly
+  configured.
 - Skill/operator package that instructs agents how to use CLI first and MCP as
   optional adapter.
-- Optional MCP adapter work after CLI/provider stabilization.
+- Optional read-only MCP adapter retained as nonblocking compatibility surface.
 
 Out of scope for `v0.2.1` unless separately approved:
 
 - Default-on hosted API calls.
+- Built-in default real hosted HTTP transport.
 - CI that requires network access, API keys, or real provider calls.
 - Direct accepted writes by CLI draft tools, MCP tools, hosted workers,
   external agents, or the internal orchestrator.

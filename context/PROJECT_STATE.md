@@ -3,6 +3,29 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.1 CLI Agent Access Release Candidate - 2026-06-13
+
+Issue 221 prepares `v0.2.1` as the CLI Agent Access + Hosted Provider Gateway
+release candidate. The package metadata and `cosheaf.__version__` record
+`0.2.1` on the release-candidate branch, and `docs/releases/v0.2.1.md`
+documents conservative release boundaries.
+
+The candidate packages the already-merged CLI-first agent-access surface,
+controlled draft/staging write CLI, provider gateway, fake and mocked
+OpenAI-compatible provider paths, role-specific hosted worker service,
+explicit orchestrator hosted-worker dispatch, optional operator Skill, security
+regression suite, and Python-level agent workflow evaluation suite. It does not
+add accepted writes, does not create human review, does not enable default real
+hosted HTTP transport, does not run real provider calls in CI, and does not let
+provider, MCP, Skill, retrieval, context, SAT, SMT, Lean, validation, or gate
+output bypass reducer, review, verifier, promotion, or accepted-knowledge
+policy.
+
+`v0.2.0` remains the local-MVP baseline, and `v0.2.1` should be tagged only
+after the reviewed release-candidate merge. Downstream workspaces should move
+to `@v0.2.1` for CLI-agent/provider-gateway workflows only after that tag
+exists. MCP remains optional and is not required for `v0.2.1`.
+
 ## Agent Workflow Evaluation Suite - 2026-06-10
 
 Issue 219 adds a deterministic Python-level agent workflow eval harness under

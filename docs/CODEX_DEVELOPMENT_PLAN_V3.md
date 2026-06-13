@@ -177,7 +177,7 @@ Repository: `tcs-cosheaf`
 
 Branch: `roadmap-cli-agent-provider`
 
-Status: current.
+Status: complete.
 
 Goal:
 
@@ -452,6 +452,8 @@ Goal:
 ### Task E.3: v0.2.1 Release Candidate
 
 Branch: `release-v021-cli-agent-provider-rc`
+
+Status: current release-candidate task.
 
 Goal:
 

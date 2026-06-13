@@ -5,22 +5,24 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.2.0 local-MVP release**. The `v0.1.1` tag remains the
-downstream Formal Link Layer support baseline; the `v0.2.0` tag packages the
-later deterministic local workflow into a pin-able framework version. The
-repository has working Python scaffolding, typed artifact models, filesystem
-loading,
-validation, dependency graph indexing,
-workspace-aware KB root loading, artifact lifecycle CLI commands, gatekeeper
-reports including the G10 Formal Link Gate, ranked context-pack generation with
-compact formal-link display, local task harness and local-only dry-run
-surfaces, verifier adapters
-including a Python checker, a minimal optional SAT DIMACS path, a minimal
-optional SMT-LIB path, a minimal optional plain Lean file path, and an optional
-external Lean library reference `#check` path, GitHub Actions CI, and
+Current status: **v0.2.1 CLI Agent Access + Hosted Provider Gateway release
+candidate**. The `v0.1.1` tag remains the downstream Formal Link Layer support
+baseline; the `v0.2.0` tag packages the deterministic local-MVP workflow; and
+the `v0.2.1` candidate prepares the CLI-first agent and hosted-provider gateway
+surfaces for a pin-able framework release. The repository has working Python
+scaffolding, typed artifact models, filesystem loading, validation, dependency
+graph indexing, workspace-aware KB root loading, artifact lifecycle CLI
+commands, gatekeeper reports including the G10 Formal Link Gate, ranked
+context-pack generation with compact formal-link display, local task harness
+and orchestrator dry-run surfaces, controlled draft-write CLI commands,
+provider gateway and fake/mocked hosted-worker dispatch paths, verifier
+adapters including a Python checker, a minimal optional SAT DIMACS path, a
+minimal optional SMT-LIB path, a minimal optional plain Lean file path, and an
+optional external Lean library reference `#check` path, GitHub Actions CI, and
 collaboration templates. It is not production-ready software and does not yet
-provide a web UI, automatic theorem proving, full Lean autoformalization,
-hosted LLM execution, automatic accepted promotion, or multi-user permissions.
+provide a web UI, built-in default real hosted HTTP transport, automatic
+theorem proving, full Lean autoformalization, automatic accepted promotion, or
+multi-user permissions.
 
 ## Problem
 
@@ -89,9 +91,18 @@ Implemented:
   compact manifest metadata.
 - Context-pack display of formal-link metadata without claiming Lean
   verification or informal/formal alignment.
-- Local task harness and local-only orchestrator dry-run surfaces with
+- Local task harness and local orchestrator dry-run surfaces with
   `cosheaf task ...`, `cosheaf orchestrator plan`, and
   `cosheaf orchestrator run --dry-run --local-only`.
+- CLI-first agent-access surfaces with deterministic `--json` output for core
+  read/check commands.
+- Controlled draft, source-note, bundle, and review-request write commands
+  that refuse accepted writes and readonly KB roots.
+- Provider gateway commands for configuration inspection, context-send
+  preview, and deterministic fake provider runs.
+- Role-specific hosted worker services and explicit orchestrator dispatch
+  through fake or OpenAI-compatible provider boundaries, with fake/mocked tests
+  only.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
   DIMACS adapter, minimal optional SMT-LIB adapter, minimal optional Lean
   plain-file adapter, and optional external Lean library reference checker.
@@ -115,24 +126,28 @@ Planned or incomplete:
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
-- Hosted LLM/model-provider worker execution.
+- Built-in real hosted HTTP provider transport and hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
 - Automatic informal/formal semantic alignment checking.
 
-## Worker And Orchestrator Boundary
+## Worker, Provider, And Orchestrator Boundary
 
-TCS-Cosheaf includes a lightweight local task-execution layer. Tasks are
-issue-scoped records, context packs provide bounded repository context, and
-local worker runs execute explicit command argv lists with repository-local
-working directories, timeout metadata, stdout, stderr, and return-code records.
-Workers can return structured output bundles that the existing contract
-validates for review.
+TCS-Cosheaf includes a lightweight task-execution and provider-worker layer.
+Tasks are issue-scoped records, context packs provide bounded repository
+context, and local worker runs execute explicit command argv lists with
+repository-local working directories, timeout metadata, stdout, stderr, and
+return-code records. Workers and hosted-worker services can return structured
+output bundles that the existing contract validates for review.
 
-The current orchestrator surface is local-only and deterministic. It can plan
-and run a bounded dry-run workflow with fake local workers, but it is not a
-hosted agent runtime. It does not call hosted LLMs or model providers, does not
-run network services, does not merge worker outputs, and does not promote
-accepted knowledge. Accepted knowledge still enters through review, gates, and
+The orchestrator surface has two controlled paths. The local dry-run path is
+deterministic and uses fake local workers. The hosted-worker path is explicit:
+`cosheaf orchestrator run --issue <issue-id> --provider fake --json` uses the
+deterministic fake provider, while the OpenAI-compatible boundary requires
+explicit `--confirm-send` and configured or injected transport. Default tests
+and CI use fake or mocked providers only. These paths do not write accepted
+knowledge, do not mark human review, do not run real provider network calls in
+CI, do not bypass reducers, validation, gates, verifier results, review, or
+promotion. Accepted knowledge still enters through review, gates, and
 `cosheaf artifact promote`.
 
 ## Core Concepts
@@ -229,7 +244,9 @@ See [Workspace quickstart](docs/WORKSPACE_QUICKSTART.md),
 [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md) for layered KB roots.
 Downstream repositories that only need Formal Link Layer metadata can stay
 pinned to `v0.1.1`. Downstream repositories that need the deterministic
-local-MVP workflow should pin to `v0.2.0`.
+local-MVP workflow can pin to `v0.2.0`. Downstream repositories that need the
+CLI-agent and hosted-provider gateway surfaces should pin to `v0.2.1` after
+that tag is published.
 
 ## Development Commands
 
@@ -273,6 +290,9 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Workspace model](docs/WORKSPACE.md)
 - [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md)
 - [Gatekeeper and validation gates](docs/GATES.md)
+- [Agent access](docs/AGENT_ACCESS.md)
+- [Agent providers](docs/AGENT_PROVIDERS.md)
+- [Evaluation](docs/EVALUATION.md)
 - [Artifact lifecycle](docs/ARTIFACT_LIFECYCLE.md)
 - [Artifact schema](docs/ARTIFACT_SCHEMA.md)
 - [Codex workflow](docs/CODEX_WORKFLOW.md)
