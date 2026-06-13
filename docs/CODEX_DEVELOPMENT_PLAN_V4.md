@@ -169,8 +169,9 @@ counterexamples, and dependency questions, and reducers preserve them as
 labeled warnings. C.2 is complete in issue 239: role contracts now require
 structured uncertainty, failures, verifier requests, candidate-vs-verified
 counterexample fields, and formal symbol-resolution versus semantic-alignment
-separation. C.3 is the next planned task: deterministic malformed-output
-recovery for provider responses.
+separation. C.3 is complete in issue 241: malformed WorkerBundle provider
+output remains `provider_output_validation_failed`, and the gateway can perform
+one logged schema-reminder retry when the configured retry budget permits.
 
 ## Phase D: Context Privacy And Send Preview
 

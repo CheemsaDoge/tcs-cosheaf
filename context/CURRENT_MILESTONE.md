@@ -73,6 +73,8 @@ informal/formal semantic alignment.
 - Role contracts require structured uncertainty, failures, verifier requests,
   candidate-vs-verified counterexamples, formal symbol-resolution versus
   semantic-alignment separation, and no-claim-invention librarian summaries.
+- Provider gateway malformed WorkerBundle output recovery can perform one
+  configured output-validation retry with logged retry metadata.
 - Security regression coverage for agent/provider/optional-MCP governance
   boundaries.
 - Python-level agent workflow eval suite for CLI, provider, context privacy,
@@ -136,8 +138,7 @@ After the `v0.2.1` prerelease and downstream compatibility checks:
 4. Treat `OpenAICompatibleHttpTransport` as the optional stdlib HTTP transport
    implementation: it remains explicit, default-off, injected/configured, and
    absent from default CI/provider demos.
-5. Continue with provider malformed-output recovery and provider output
-   reliability work.
+5. Continue with context privacy and send-preview hardening.
 6. Continue post-`v0.2.1` hardening through small issue/branch/PR increments.
 7. Improve CLI-agent, provider fake/mocked, context-pack, evaluation, and
    failure/counterexample workflows without weakening review, gate, promotion,

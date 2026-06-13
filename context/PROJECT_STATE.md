@@ -3,6 +3,23 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Provider Malformed-Output Recovery - 2026-06-14
+
+Issue 241 adds deterministic output-validation retry behavior for
+OpenAI-compatible provider calls that request `worker_bundle` output. Malformed
+JSON or schema-invalid WorkerBundle v2 payloads still become
+`provider_output_validation_failed`. When the configured retry budget permits,
+the gateway performs at most one output-validation retry with a stricter
+WorkerBundle schema reminder in the retry prompt.
+
+Provider logs record `attempt_count`, `output_validation_retry_count`,
+`output_validation_retry_code`, `output_validation_retry_status`, and
+`output_validation_retry_final_status` when this path runs. A successful retry
+must validate as WorkerBundle v2 before it can become `ModelCallResult`
+content. Failed retries remain `ProviderError`; malformed output is not
+silently coerced into draft artifacts, accepted artifacts, verifier results,
+human review, gate output, or promotion.
+
 ## Role Contract V2 Failure Fields - 2026-06-13
 
 Issue 239 updates built-in role contracts for `reasoner`, `verifier`,
