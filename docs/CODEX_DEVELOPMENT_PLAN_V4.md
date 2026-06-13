@@ -108,7 +108,7 @@ It does not implement runtime behavior.
 
 ### B.1 Real Provider Transport ADR And Threat Model
 
-First concrete task after this plan lands.
+Status: complete in ADR 0021.
 
 Define the first real OpenAI-compatible HTTP transport before implementation.
 The ADR and security docs must decide:
@@ -131,9 +131,10 @@ No runtime code or new dependency belongs in B.1.
 
 ### B.2 Optional OpenAI-Compatible HTTP Transport
 
-Implement the transport only after B.1. It must stay optional, default-off,
-secret-redacted, timeout-aware, and tested with mocked or local fake HTTP only.
-CI must not need an API key or live network.
+Next implementation task after ADR 0021. Implement the transport only after
+B.1. It must stay optional, default-off, secret-redacted, timeout-aware, and
+tested with mocked or local fake HTTP only. CI must not need an API key or live
+network.
 
 ### B.3 Explicit Real Provider CLI Path
 

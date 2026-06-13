@@ -119,13 +119,16 @@ After the `v0.2.1` prerelease and downstream compatibility checks:
    as the current post-release evidence baseline.
 2. Treat [`docs/CODEX_DEVELOPMENT_PLAN_V4.md`](../docs/CODEX_DEVELOPMENT_PLAN_V4.md)
    and ADR 0020 as the current next-stage plan.
-3. Start with the real-provider transport ADR and threat model before runtime
-   transport implementation.
-4. Continue post-`v0.2.1` hardening through small issue/branch/PR increments.
-5. Improve CLI-agent, provider fake/mocked, context-pack, evaluation, and
+3. Treat ADR 0021 as the real-provider transport boundary and threat model
+   before runtime transport implementation.
+4. Continue with optional OpenAI-compatible HTTP transport implementation only
+   behind the ADR 0021 default-off, explicit-consent, no-real-provider-in-CI
+   boundary.
+5. Continue post-`v0.2.1` hardening through small issue/branch/PR increments.
+6. Improve CLI-agent, provider fake/mocked, context-pack, evaluation, and
    failure/counterexample workflows without weakening review, gate, promotion,
    or public/private policy boundaries.
-6. Treat MCP as optional adapter work and do not implement controlled-write MCP
+7. Treat MCP as optional adapter work and do not implement controlled-write MCP
    without a separate approved issue.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
