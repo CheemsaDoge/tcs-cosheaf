@@ -88,6 +88,11 @@ candidate counterexamples, verification requests, dependency questions, risk
 flags, and next steps as review-only reducer warnings; candidate
 counterexamples are not accepted refutations and verification requests are not
 verifier results.
+Role contracts now request those structures explicitly: reasoner separates
+conjectures/proof ideas/assumptions, verifier separates concerns from tool
+results, counterexampleer separates candidate from verified counterexamples,
+formalizer separates symbol resolution from semantic-alignment questions, and
+librarian summaries must not invent claims.
 
 ## Completed Baseline
 
@@ -123,6 +128,9 @@ Completed framework scaffold pieces include:
   endpoint/API-key environment configuration, and writes redacted runtime logs.
 - WorkerBundle v2 failure/counterexample preservation fields that remain
   backward-compatible with existing bundles and reducer-only.
+- Role prompt/output contracts for structured uncertainty, failures, verifier
+  requests, candidate counterexamples, formal-link limitations, and
+  no-claim-invention librarian summaries.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
   DIMACS adapter, minimal optional SMT-LIB adapter, minimal optional plain Lean
   adapter, and optional external Lean library reference checker.

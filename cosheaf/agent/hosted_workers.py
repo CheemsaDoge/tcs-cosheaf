@@ -300,6 +300,12 @@ def _worker_prompt(worker_input: HostedWorkerInput, role: RoleName) -> str:
         [
             contract.system_prompt,
             "",
+            "Required output fields: "
+            + ", ".join(contract.required_output_schema.required_fields),
+            "Optional output fields: "
+            + ", ".join(contract.required_output_schema.optional_fields),
+            "Forbidden authority: " + ", ".join(contract.forbidden_actions),
+            "",
             "Return review-only output. Do not write accepted knowledge, mark "
             "human review, promote artifacts, or claim unchecked verification.",
             "",
