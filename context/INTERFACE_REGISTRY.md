@@ -1444,6 +1444,18 @@ review, promotion, proof, or public/private policy bypasses.
   `cosheaf.agent.providers.redact_mapping(values) -> tuple[dict[str, str], bool]`:
   redact common secret value shapes and secret-looking metadata fields before
   provider logs are written.
+- `cosheaf.security.provider_logs.ProviderLogLeakFinding`: dataclass for one
+  deterministic generated-provider-log scanner finding. It records stable
+  `kind`, explanatory `message`, optional `path`, optional `line`, and optional
+  `key` metadata.
+- `cosheaf.security.provider_logs.scan_provider_log_text(text, *, path=None) -> list[ProviderLogLeakFinding]`
+  and `scan_provider_log_file(path) -> list[ProviderLogLeakFinding]`: scan
+  generated provider logs and run records for API-key-shaped values, bearer
+  tokens, environment-like dumps, secret-looking key/value pairs, hidden
+  reasoning markers, unapproved private context markers, and avoidable absolute
+  user/workspace filesystem paths. The scanner is a regression/security helper;
+  it does not make provider calls, write logs, redact data, validate knowledge,
+  run gates, or authorize promotion.
 - `cosheaf.agent.hosted_workers.HostedWorkerStatus`: normalized hosted worker
   status enum with `completed`, `rejected`, `failed`, and `skipped`.
 - `cosheaf.agent.hosted_workers.HostedWorkerInput`: strict Pydantic v2 model

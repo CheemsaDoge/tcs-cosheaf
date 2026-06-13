@@ -15,7 +15,7 @@ checks:
 | Agent writes into readonly public KB | Controlled draft/source-note writes reject readonly roots | `test_cli_draft_write_rejects_readonly_public_root` |
 | Public context leaks private artifacts | Public provider previews include public scope only and policy filtering runs before ranking can include private results | `test_public_provider_preview_excludes_private_artifact`, `test_public_provider_preview_excludes_private_before_ranking_scores`, and `test_provider_preview_policy_matrix_allows_only_explicit_scopes` |
 | Hosted provider receives private context by default | Private provider context requires private-research policy and explicit consent | `test_hosted_provider_private_context_requires_policy_and_consent` and `test_provider_preview_policy_matrix_denials_have_stable_error_codes` |
-| Provider logs expose secrets | Provider output and run logs redact common secret values and secret-looking metadata keys | `test_provider_logs_redact_secret_values` |
+| Provider logs expose secrets | Provider output and run logs redact common secret values and secret-looking metadata keys, and generated provider logs can be scanned for leaked API keys, bearer tokens, environment dumps, hidden reasoning, unapproved private context, and absolute private paths | `test_provider_logs_redact_secret_values`, `test_synthetic_provider_log_leaks_are_detected`, `test_redacted_provider_log_shape_passes_scanner`, and `test_scanner_accepts_generated_redacted_provider_log` |
 | Model output is malformed | Hosted worker output is rejected unless it validates as the expected structured payload | `test_malformed_provider_worker_output_is_rejected` |
 | Prompt or tool instructions override governance | Provider output cannot request accepted writes or bypass policy | `test_provider_output_cannot_override_accepted_write_policy` |
 | Promotion bypasses review/gate workflow | Direct accepted status movement is refused and promotion still requires review and gates | `test_promotion_remains_explicit_review_and_gate_gated` |
@@ -84,6 +84,11 @@ fixtures. CI must still use fake, injected mocked, or local non-live-network
 fixtures. Live provider accounts, live provider network, and real API keys
 remain outside default tests. Provider `real-run` CLI tests must mock or inject
 the transport and must not contact a live provider.
+
+Provider log leak-scanner tests use synthetic fixtures and generated redacted
+run records only. The scanner is a regression guard for committed or generated
+provider logs; it is not a substitute for provider redaction, context-send
+policy, human review, validation, gates, or promotion checks.
 
 If a security check cannot run, report it as unavailable or skipped with the
 exact reason. Do not describe skipped security checks as passes.
