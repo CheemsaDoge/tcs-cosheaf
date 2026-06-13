@@ -13,8 +13,8 @@ checks:
 | --- | --- | --- |
 | Agent writes accepted knowledge directly | Controlled draft-write commands reject accepted status and accepted paths | `test_cli_draft_write_rejects_accepted_status` |
 | Agent writes into readonly public KB | Controlled draft/source-note writes reject readonly roots | `test_cli_draft_write_rejects_readonly_public_root` |
-| Public context leaks private artifacts | Public provider previews include public scope only | `test_public_provider_preview_excludes_private_artifact` |
-| Hosted provider receives private context by default | Private provider context requires private-research policy and explicit consent | `test_hosted_provider_private_context_requires_policy_and_consent` |
+| Public context leaks private artifacts | Public provider previews include public scope only and policy filtering runs before ranking can include private results | `test_public_provider_preview_excludes_private_artifact`, `test_public_provider_preview_excludes_private_before_ranking_scores`, and `test_provider_preview_policy_matrix_allows_only_explicit_scopes` |
+| Hosted provider receives private context by default | Private provider context requires private-research policy and explicit consent | `test_hosted_provider_private_context_requires_policy_and_consent` and `test_provider_preview_policy_matrix_denials_have_stable_error_codes` |
 | Provider logs expose secrets | Provider output and run logs redact common secret values and secret-looking metadata keys | `test_provider_logs_redact_secret_values` |
 | Model output is malformed | Hosted worker output is rejected unless it validates as the expected structured payload | `test_malformed_provider_worker_output_is_rejected` |
 | Prompt or tool instructions override governance | Provider output cannot request accepted writes or bypass policy | `test_provider_output_cannot_override_accepted_write_policy` |
@@ -52,6 +52,26 @@ checks:
 - Optional MCP is an adapter over typed services. It must not expose arbitrary
   shell, environment dumps, arbitrary filesystem access, direct promotion,
   human-review marking, or accepted-path writes.
+
+## Context-Send Matrix
+
+Provider send previews enforce the current stable policy matrix before any
+ranking result can be exposed to a provider path:
+
+| Policy mode | `public_only` | Private consent | Preview scopes | Result |
+| --- | --- | --- | --- | --- |
+| `public` | `true` | `false` or `true` | `public` | allowed |
+| `public` | `false` | `false` or `true` | none | `private_context_requires_policy` |
+| `private_research` | `true` | `false` or `true` | `public` | allowed |
+| `private_research` | `false` | `false` | none | `private_context_requires_consent` |
+| `private_research` | `false` | `true` | `public`, `private` | allowed |
+
+The v4 plan name `public_research` maps to the current serialized mode
+`public`. `workspace` and `framework` cards are excluded from provider-send
+previews unless a later explicit design changes the matrix. Preview output is
+metadata-only: artifact IDs, root scopes, token estimates, and risk flags. It
+must not include full artifact statements, issue text, secrets, or provider
+credentials.
 
 ## CI Expectations
 

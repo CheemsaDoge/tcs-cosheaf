@@ -213,8 +213,9 @@ required secret is present, missing, or malformed.
 Provider calls must use the smallest issue-scoped context that satisfies the
 worker role.
 
-Public-mode calls may use public KB scope only. Private context may be sent
-only when:
+Public-mode calls may use public KB scope only. The v4 plan calls this
+`public_research`; the current stable serialized value remains `public` for
+backward compatibility. Private context may be sent only when:
 
 - policy mode is private research;
 - `public_only=false`;
@@ -225,6 +226,21 @@ only when:
 
 The preview is a checkpoint, not authorization by itself. A real call still
 requires policy and consent.
+
+The current provider-send preview matrix is deliberately conservative:
+
+| Policy mode | `public_only` | Private consent | Allowed preview scopes | Denied code |
+| --- | --- | --- | --- | --- |
+| `public` | `true` | `false` or `true` | `public` | none |
+| `public` | `false` | `false` or `true` | none | `private_context_requires_policy` |
+| `private_research` | `true` | `false` or `true` | `public` | none |
+| `private_research` | `false` | `false` | none | `private_context_requires_consent` |
+| `private_research` | `false` | `true` | `public`, `private` | none |
+
+`workspace` and `framework` scope cards are excluded from provider-send
+previews by the current matrix. Provider previews are metadata only: they list
+artifact IDs, root scopes, token estimates, and risk flags, and they do not
+include full artifact statements or issue text.
 
 ## Output Rules
 

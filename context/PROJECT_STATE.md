@@ -3,6 +3,28 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Context Send Policy Matrix - 2026-06-14
+
+Issue 243 defines the provider context-send preview matrix for the current
+stable service boundary. The serialized public research mode remains
+`policy_mode=public` for backward compatibility with the agent-access DTOs;
+the v4 plan name `public_research` refers to that public mode. Public-mode
+previews include public KB scope only. Private KB context is previewable only
+with `policy_mode=private_research`, `public_only=false`, and explicit
+private-context consent.
+
+Provider previews remain metadata-only: artifact IDs, root scopes, token
+estimates, and risk flags. They do not include full artifact statements, full
+issue text, provider credentials, secrets, or raw private content. Workspace
+and framework scope cards are excluded from provider-send previews under the
+current matrix unless a later explicit design changes that boundary.
+
+Table-driven tests cover allowed and denied combinations, stable denial error
+codes, fake and OpenAI provider preview metadata, public-only filtering before
+private ranking can surface results, and full-text exclusion from previews.
+This task does not add real provider/network tests, accepted writes, promotion
+changes, MCP changes, schema changes, or KB content changes.
+
 ## Provider Malformed-Output Recovery - 2026-06-14
 
 Issue 241 adds deterministic output-validation retry behavior for
