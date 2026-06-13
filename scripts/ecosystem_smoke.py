@@ -1,18 +1,23 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import shlex
 import shutil
 import subprocess
 import sys
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
 ISSUE_ID = "issue.ecosystem-smoke.private-context"
 PUBLIC_ARTIFACT_ID = "definition.ecosystem.graph"
 PRIVATE_ARTIFACT_ID = "claim.ecosystem.private"
+DEFAULT_FRAMEWORK_TAG = "v0.2.1"
 
 
 @dataclass(frozen=True)
@@ -36,6 +41,139 @@ class EcosystemSmokePlan:
     public_private_violation_workspace: Path
     accepted_draft_violation_workspace: Path
     steps: tuple[CommandStep, ...]
+
+
+class MatrixCaseStatus(StrEnum):
+    """Structured release matrix case status."""
+
+    PASS = "pass"
+    FAIL = "fail"
+    SKIPPED = "skipped"
+
+
+@dataclass(frozen=True)
+class MatrixCommand:
+    """One command belonging to a release matrix case."""
+
+    argv: tuple[str, ...]
+
+    @property
+    def display(self) -> str:
+        return " ".join(self.argv)
+
+
+@dataclass(frozen=True)
+class EcosystemSmokeMatrixCase:
+    """One row in the three-repository compatibility smoke matrix."""
+
+    id: str
+    repo: str
+    cwd: Path
+    commands: tuple[MatrixCommand, ...]
+    requires_network: bool = False
+    env: dict[str, str] | None = None
+    skip_reason: str | None = None
+
+    @property
+    def argv(self) -> tuple[str, ...]:
+        """Return the first command argv for simple single-command callers."""
+        if not self.commands:
+            return ()
+        return self.commands[0].argv
+
+
+@dataclass(frozen=True)
+class EcosystemSmokeMatrix:
+    """A structured compatibility smoke matrix across the three repositories."""
+
+    framework_root: Path
+    workspace_template_root: Path
+    public_kb_root: Path
+    framework_tag: str
+    include_network: bool
+    cases: tuple[EcosystemSmokeMatrixCase, ...]
+
+
+@dataclass(frozen=True)
+class EcosystemSmokeMatrixCaseResult:
+    """One executed compatibility smoke matrix result."""
+
+    id: str
+    repo: str
+    status: MatrixCaseStatus
+    command: str
+    returncode: int | None
+    message: str
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return deterministic JSON-compatible case result data."""
+        return {
+            "id": self.id,
+            "repo": self.repo,
+            "status": self.status.value,
+            "command": self.command,
+            "returncode": self.returncode,
+            "message": self.message,
+        }
+
+
+@dataclass(frozen=True)
+class EcosystemSmokeMatrixReport:
+    """Structured compatibility smoke matrix report."""
+
+    schema_version: int
+    framework_tag: str
+    include_network: bool
+    results: tuple[EcosystemSmokeMatrixCaseResult, ...]
+
+    @property
+    def case_count(self) -> int:
+        """Return the number of matrix rows."""
+        return len(self.results)
+
+    @property
+    def pass_count(self) -> int:
+        """Return the number of passed matrix rows."""
+        return sum(
+            1 for result in self.results if result.status is MatrixCaseStatus.PASS
+        )
+
+    @property
+    def fail_count(self) -> int:
+        """Return the number of failed matrix rows."""
+        return sum(
+            1 for result in self.results if result.status is MatrixCaseStatus.FAIL
+        )
+
+    @property
+    def skip_count(self) -> int:
+        """Return the number of skipped matrix rows."""
+        return sum(
+            1 for result in self.results if result.status is MatrixCaseStatus.SKIPPED
+        )
+
+    @property
+    def passed(self) -> bool:
+        """Return whether no executed matrix row failed."""
+        return self.fail_count == 0
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return deterministic JSON-compatible report data."""
+        return {
+            "schema_version": self.schema_version,
+            "framework_tag": self.framework_tag,
+            "include_network": self.include_network,
+            "case_count": self.case_count,
+            "pass_count": self.pass_count,
+            "fail_count": self.fail_count,
+            "skip_count": self.skip_count,
+            "passed": self.passed,
+            "results": [result.to_dict() for result in self.results],
+        }
+
+    def to_json(self) -> str:
+        """Return deterministic JSON report text."""
+        return json.dumps(self.to_dict(), ensure_ascii=True, indent=2) + "\n"
 
 
 def build_ecosystem_smoke_plan(
@@ -114,6 +252,201 @@ def build_ecosystem_smoke_plan(
         public_private_violation_workspace=public_private_violation_workspace,
         accepted_draft_violation_workspace=accepted_draft_violation_workspace,
         steps=steps,
+    )
+
+
+def build_ecosystem_smoke_matrix(
+    *,
+    framework_root: Path,
+    workspace_template_root: Path,
+    public_kb_root: Path,
+    cosheaf_executable: str | Path = "python -m cosheaf.cli",
+    framework_tag: str = DEFAULT_FRAMEWORK_TAG,
+    include_network: bool = False,
+    bash_executable: str | None = None,
+    make_executable: str = "make",
+) -> EcosystemSmokeMatrix:
+    """Build the structured release matrix across the three repositories."""
+    cosheaf = str(cosheaf_executable)
+    framework_root = framework_root.resolve()
+    workspace_template_root = workspace_template_root.resolve()
+    public_kb_root = public_kb_root.resolve()
+    pythonpath = str(framework_root)
+    local_env = {
+        "COSHEAF_CMD": cosheaf,
+        "COSHEAF_SKIP_INSTALL": "1",
+        "PYTHONPATH": pythonpath,
+    }
+    workspace_demo_env: dict[str, str] = {}
+    if bash_executable is not None:
+        local_env["BASH"] = bash_executable
+        workspace_demo_env["BASH"] = bash_executable
+    public_kb_env = {"PYTHONPATH": pythonpath}
+    tag_source = (
+        "git+https://github.com/CheemsaDoge/tcs-cosheaf.git@"
+        f"{framework_tag}"
+    )
+    cases = (
+        EcosystemSmokeMatrixCase(
+            id="framework.local-checkout",
+            repo="tcs-cosheaf",
+            cwd=framework_root,
+            commands=(
+                MatrixCommand(
+                    (
+                        sys.executable,
+                        "scripts/ecosystem_smoke.py",
+                        "--cosheaf",
+                        cosheaf,
+                    )
+                ),
+            ),
+        ),
+        EcosystemSmokeMatrixCase(
+            id="framework.git-tag",
+            repo="tcs-cosheaf",
+            cwd=framework_root,
+            commands=(
+                MatrixCommand(
+                    (
+                        sys.executable,
+                        "scripts/release_smoke.py",
+                        "--source",
+                        tag_source,
+                    )
+                ),
+            ),
+            requires_network=True,
+            env=workspace_demo_env,
+            skip_reason=_network_skip_reason(
+                include_network,
+                "requires --include-network because it installs a framework git tag",
+            ),
+        ),
+        EcosystemSmokeMatrixCase(
+            id="workspace-template.demo",
+            repo="tcs-cosheaf-workspace-template",
+            cwd=workspace_template_root,
+            commands=(MatrixCommand((make_executable, "demo")),),
+            requires_network=True,
+            skip_reason=_network_skip_reason(
+                include_network,
+                "requires --include-network because the demo installs a framework tag",
+            ),
+        ),
+        EcosystemSmokeMatrixCase(
+            id="workspace-template.cli-agent-demo",
+            repo="tcs-cosheaf-workspace-template",
+            cwd=workspace_template_root,
+            commands=(MatrixCommand((make_executable, "cli-agent-demo")),),
+            env=local_env,
+        ),
+        EcosystemSmokeMatrixCase(
+            id="workspace-template.provider-fake-smoke",
+            repo="tcs-cosheaf-workspace-template",
+            cwd=workspace_template_root,
+            commands=(MatrixCommand((make_executable, "provider-fake-smoke")),),
+            env=local_env,
+        ),
+        EcosystemSmokeMatrixCase(
+            id="public-kb.policy-guard",
+            repo="tcs-kb-public",
+            cwd=public_kb_root,
+            commands=(
+                MatrixCommand((sys.executable, "scripts/check_public_kb_policy.py")),
+                MatrixCommand(
+                    (
+                        sys.executable,
+                        "scripts/check_public_kb_policy.py",
+                        "--self-test",
+                    )
+                ),
+                MatrixCommand((*shlex.split(cosheaf), "workspace", "info")),
+                MatrixCommand((*shlex.split(cosheaf), "validate")),
+                MatrixCommand((*shlex.split(cosheaf), "gate", "run")),
+                MatrixCommand(
+                    (
+                        *shlex.split(cosheaf),
+                        "gate",
+                        "run",
+                        "--pr-checklist",
+                        ".github/pull_request_template.md",
+                    )
+                ),
+            ),
+            env=public_kb_env,
+        ),
+    )
+    return EcosystemSmokeMatrix(
+        framework_root=framework_root,
+        workspace_template_root=workspace_template_root,
+        public_kb_root=public_kb_root,
+        framework_tag=framework_tag,
+        include_network=include_network,
+        cases=cases,
+    )
+
+
+def run_ecosystem_smoke_matrix(
+    matrix: EcosystemSmokeMatrix,
+    *,
+    command_runner: Callable[[tuple[str, ...], Path], int] | None = None,
+) -> EcosystemSmokeMatrixReport:
+    """Run the structured release matrix and return a deterministic report."""
+    results: list[EcosystemSmokeMatrixCaseResult] = []
+    for case in matrix.cases:
+        if case.skip_reason is not None:
+            skipped_argv = case.argv
+            results.append(
+                EcosystemSmokeMatrixCaseResult(
+                    id=case.id,
+                    repo=case.repo,
+                    status=MatrixCaseStatus.SKIPPED,
+                    command=" ".join(skipped_argv),
+                    returncode=None,
+                    message=case.skip_reason,
+                )
+            )
+            continue
+
+        failed_result: EcosystemSmokeMatrixCaseResult | None = None
+        for command in case.commands:
+            if command_runner is None:
+                returncode = _run_matrix_command(command.argv, case.cwd, case.env)
+            else:
+                returncode = command_runner(command.argv, case.cwd)
+            if returncode != 0:
+                message = (
+                    f"repo={case.repo} command={command.display} "
+                    f"returncode={returncode}"
+                )
+                failed_result = EcosystemSmokeMatrixCaseResult(
+                    id=case.id,
+                    repo=case.repo,
+                    status=MatrixCaseStatus.FAIL,
+                    command=command.display,
+                    returncode=returncode,
+                    message=message,
+                )
+                break
+        if failed_result is not None:
+            results.append(failed_result)
+            continue
+        results.append(
+            EcosystemSmokeMatrixCaseResult(
+                id=case.id,
+                repo=case.repo,
+                status=MatrixCaseStatus.PASS,
+                command=" && ".join(command.display for command in case.commands),
+                returncode=0,
+                message=f"repo={case.repo} passed",
+            )
+        )
+    return EcosystemSmokeMatrixReport(
+        schema_version=1,
+        framework_tag=matrix.framework_tag,
+        include_network=matrix.include_network,
+        results=tuple(results),
     )
 
 
@@ -288,7 +621,76 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="Write fixtures and print the command plan without running it.",
     )
+    parser.add_argument(
+        "--matrix",
+        action="store_true",
+        help="Run the structured three-repository compatibility smoke matrix.",
+    )
+    parser.add_argument(
+        "--framework-root",
+        type=Path,
+        default=Path.cwd(),
+        help="Framework checkout root used by --matrix.",
+    )
+    parser.add_argument(
+        "--workspace-template-root",
+        type=Path,
+        default=Path.cwd().parent / "tcs-cosheaf-workspace-template",
+        help="Workspace-template checkout root used by --matrix.",
+    )
+    parser.add_argument(
+        "--public-kb-root",
+        type=Path,
+        default=Path.cwd().parent / "tcs-kb-public",
+        help="Public KB checkout root used by --matrix.",
+    )
+    parser.add_argument(
+        "--framework-tag",
+        default=DEFAULT_FRAMEWORK_TAG,
+        help="Framework tag used by the network-enabled release-smoke matrix row.",
+    )
+    parser.add_argument(
+        "--include-network",
+        action="store_true",
+        help=(
+            "Allow matrix rows that install framework git tags. "
+            "Real provider calls are still never part of this smoke."
+        ),
+    )
+    parser.add_argument(
+        "--bash",
+        default=None,
+        help=(
+            "Optional Bash executable override used by workspace-template "
+            "Makefile targets in --matrix."
+        ),
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit the --matrix report as deterministic JSON.",
+    )
     args = parser.parse_args(argv)
+
+    if args.matrix:
+        matrix = build_ecosystem_smoke_matrix(
+            framework_root=args.framework_root,
+            workspace_template_root=args.workspace_template_root,
+            public_kb_root=args.public_kb_root,
+            cosheaf_executable=args.cosheaf,
+            framework_tag=args.framework_tag,
+            include_network=args.include_network,
+            bash_executable=args.bash,
+        )
+        if args.dry_run:
+            _print_matrix_plan(matrix)
+            return 0
+        report = run_ecosystem_smoke_matrix(matrix)
+        if args.json:
+            print(report.to_json(), end="")
+        else:
+            _print_matrix_report(report)
+        return 0 if report.passed else 1
 
     if args.workdir is not None:
         return _run_with_workdir(
@@ -336,6 +738,50 @@ def _run_with_workdir(
             print(step.display)
         return 0
     return run_ecosystem_smoke(plan)
+
+
+def _network_skip_reason(include_network: bool, reason: str) -> str | None:
+    return None if include_network else reason
+
+
+def _run_matrix_command(
+    argv: tuple[str, ...],
+    cwd: Path,
+    extra_env: dict[str, str] | None,
+) -> int:
+    env = os.environ.copy()
+    if extra_env:
+        env.update(extra_env)
+    print(f"[{cwd.name}] $ {' '.join(argv)}", file=sys.stderr, flush=True)
+    completed = subprocess.run(
+        argv,
+        cwd=cwd,
+        env=env,
+        stdout=sys.stderr,
+        stderr=sys.stderr,
+        check=False,
+    )
+    return completed.returncode
+
+
+def _print_matrix_plan(matrix: EcosystemSmokeMatrix) -> None:
+    for case in matrix.cases:
+        if case.skip_reason:
+            print(f"[{case.repo}] {case.id}: skipped - {case.skip_reason}")
+            continue
+        for command in case.commands:
+            print(f"[{case.repo}] {case.id}: {command.display}")
+
+
+def _print_matrix_report(report: EcosystemSmokeMatrixReport) -> None:
+    print(
+        "Ecosystem smoke matrix: "
+        f"pass={report.pass_count} fail={report.fail_count} "
+        f"skipped={report.skip_count}"
+    )
+    for result in report.results:
+        detail = result.message if result.message else result.command
+        print(f"- {result.status.value}: {result.repo} {result.id}: {detail}")
 
 
 def _write_workspace_config(workspace: Path) -> None:

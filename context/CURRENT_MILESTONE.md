@@ -151,9 +151,9 @@ After the `v0.2.1` prerelease and downstream compatibility checks:
    previews remain metadata-only and cards-only under the implemented
    provider-send boundary.
 6. Continue post-`v0.2.1` hardening through small issue/branch/PR increments,
-   with the next planned framework task moving into Phase E.3
-   three-repo compatibility smoke matrix coverage after
-   failure/counterexample workflow eval coverage lands.
+   with the next planned ecosystem task moving into Phase F.1 workspace
+   real-provider setup documentation after three-repo compatibility smoke
+   matrix coverage lands.
 7. Improve CLI-agent, provider fake/mocked, context-pack, evaluation, and
    failure/counterexample workflows without weakening review, gate, promotion,
    or public/private policy boundaries.

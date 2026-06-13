@@ -3,6 +3,34 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Three-Repo Compatibility Smoke Matrix - 2026-06-14
+
+Issue 253 extends `scripts/ecosystem_smoke.py` with a structured
+three-repository compatibility matrix. The matrix rows cover framework local
+checkout, framework git tag release smoke, workspace-template demo,
+workspace-template CLI-agent demo, workspace-template fake-provider smoke, and
+public KB policy guard.
+
+The default no-network matrix run executes the local framework smoke, the
+workspace-template CLI-agent demo, the workspace-template fake-provider smoke,
+and the public KB policy guard against local checkouts. It reports the
+framework tag release-smoke row and the workspace-template install-demo row as
+`skipped`, not `pass`, unless the operator explicitly supplies
+`--include-network`.
+
+The structured report includes per-row repository names, commands, statuses,
+return codes, and failure messages. Failure messages identify both the
+repository and the failing command. The public KB row runs the policy guard,
+policy guard self-test, workspace info, validation, gatekeeper, and PR
+checklist gate. The workspace provider row uses `provider=fake` only and does
+not perform a hosted API call.
+
+This task does not change artifact schema, accepted-promotion semantics, gate
+semantics, public/private policy, formal-link semantics, provider
+default-off behavior, MCP behavior, or KB artifact content. It does not add
+real provider calls or require API keys. Runtime outputs remain under ignored
+`.cosheaf/` and context-pack paths in the downstream checkouts.
+
 ## Failure/Counterexample Workflow Eval - 2026-06-14
 
 Issue 251 adds a deterministic Python-level failure/counterexample workflow

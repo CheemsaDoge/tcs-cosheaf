@@ -2054,6 +2054,31 @@ working directory.
 - `make validate`: runs `python -m cosheaf.cli validate`.
 - `make gate`: runs `python -m cosheaf.cli gate`, which defaults to a real gatekeeper run.
 
+### Release And Smoke Scripts
+
+- `python scripts/release_smoke.py --source <package-source>`: creates a clean
+  temporary environment, installs the requested package source, and exercises
+  the release fixture with help, version, validate, gate, index rebuild, and
+  context-pack commands.
+- `python scripts/ecosystem_smoke.py --cosheaf <command>`: runs the local
+  network-free three-repository fixture smoke against a Cosheaf command. It
+  checks workspace info, validation, gatekeeper, index rebuild, context build,
+  readonly public-root write refusal, public-to-private dependency rejection,
+  and accepted-to-draft dependency rejection.
+- `python scripts/ecosystem_smoke.py --matrix`: runs the structured
+  three-repository compatibility matrix. Matrix rows cover framework local
+  checkout, framework git tag release smoke, workspace-template demo,
+  workspace-template CLI-agent demo, workspace-template fake-provider smoke,
+  and public KB policy guard. By default, network-install rows are reported as
+  `skipped`, not `pass`.
+- `python scripts/ecosystem_smoke.py --matrix --include-network`: also runs
+  matrix rows that perform normal framework package install or git clone steps.
+  This still does not run real hosted providers or require API keys.
+- `python scripts/ecosystem_smoke.py --matrix --json`: emits a deterministic
+  JSON report with `pass_count`, `fail_count`, `skip_count`, and per-row
+  `repo`, `command`, `status`, `returncode`, and `message` fields. Failure
+  messages include the repository name and failing command.
+
 ### Schemas
 
 - `schemas/artifact.schema.json`: artifact YAML schema. Inline
