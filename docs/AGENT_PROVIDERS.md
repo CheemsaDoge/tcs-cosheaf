@@ -7,8 +7,9 @@ transport for mocked tests, an optional stdlib OpenAI-compatible HTTP
 transport object, and provider CLI commands for configuration checks,
 context-send previews, deterministic fake runs, and a role-specific hosted
 worker service bridge. It does not add API keys, import hosted provider SDKs,
-add a provider real-run command, or make real hosted calls available by
-default.
+or make real hosted calls available by default. The explicit provider
+`real-run` command exists, but it is intentionally hard to trigger and remains
+outside demos and CI.
 
 ## Current Status
 
@@ -32,7 +33,9 @@ Implemented today:
   attempt, retry, unsupported-parameter, latency, token, and cost metadata;
 - provider CLI commands for listing supported provider modes, checking
   configuration without printing secrets, previewing context-send payload
-  shape, and running the deterministic fake provider;
+  shape, running the deterministic fake provider, and running one explicit
+  OpenAI-compatible real provider call when all consent/network/config gates
+  are satisfied;
 - explicit orchestrator dispatch to role-specific hosted workers through
   `cosheaf orchestrator run --issue <issue-id> --provider <provider>`;
 - fake-provider, mocked OpenAI-compatible, and stdlib HTTP-transport tests that
@@ -40,7 +43,6 @@ Implemented today:
 
 Not implemented yet:
 
-- provider `real-run` CLI command;
 - hosted worker CLI commands;
 - provider MCP tools.
 
@@ -151,6 +153,13 @@ The current provider CLI surface is agent-facing and conservative:
 - `cosheaf provider fake-run --input-json <path> --json` runs the
   deterministic fake provider and writes redacted provider logs under
   `.cosheaf/providers/`.
+- `cosheaf provider real-run --input-json <path> --provider openai-compatible
+  --confirm-send --allow-network --json` runs one explicit OpenAI-compatible
+  provider call from an input envelope with inline `context_preview` and
+  `provider_config`. It writes redacted provider logs under
+  `.cosheaf/providers/` and fails closed without send confirmation, network
+  permission, inline preview, endpoint/API-key environment configuration, an
+  environment-provided key, or required private-context consent.
 - `cosheaf orchestrator run --issue <issue-id> --provider fake --json`
   runs the explicit hosted-worker orchestrator path with the deterministic
   fake provider.
@@ -159,9 +168,11 @@ The current provider CLI surface is agent-facing and conservative:
   dispatch boundary only when a transport is configured or injected; the
   default CLI path reports missing transport rather than making a network call.
 
-`fake-run` is allowed in CI and performs no hosted network call. There is no
-`real-run` CLI command in this task. The only provider names accepted by the
-current provider CLI are `fake` and `openai`; `orchestrator run --provider`
+`fake-run` is allowed in CI and performs no hosted network call. `real-run`
+is not allowed in CI/default tests with a live provider; its tests use mocked
+transport injection. The only provider names accepted by the current provider
+CLI are `fake` and `openai` for inspection/fake paths, plus
+`openai-compatible` for the real-run command; `orchestrator run --provider`
 accepts `fake`, `openai`, and `openai-compatible` as the explicit hosted-worker
 dispatch names. Future names such as `anthropic`, `google`, and `local` are
 model identifiers only until a later task implements and tests their
@@ -282,10 +293,11 @@ reasoning, unapproved private context, raw private artifact text, or
 unredacted provider responses unless a later explicit audit policy permits
 that content.
 
-There is still no provider `real-run` command. If a future task adds one, it
-must be hard to trigger and must fail closed without explicit send
-confirmation, explicit network permission, valid configuration/key,
-context-preview reference, and required public/private context consent.
+The provider `real-run` command is hard to trigger and fails closed without
+explicit send confirmation, explicit network permission, valid
+configuration/key, inline context preview, and required public/private context
+consent. It does not write draft or accepted artifacts directly from raw
+provider output.
 
 ## Fake Provider Requirement
 

@@ -3,6 +3,28 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Explicit Provider Real-Run CLI Path - 2026-06-13
+
+Issue 235 adds `cosheaf provider real-run --input-json <path> --provider
+openai-compatible --confirm-send --allow-network --json` as a deliberately
+hard-to-trigger operator path for one OpenAI-compatible provider call. The
+input JSON must include inline `context_preview` metadata and
+`provider_config` with endpoint and API-key environment variable name. The
+command fails closed without send confirmation, explicit network permission,
+inline preview, valid provider configuration, an environment-provided key, or
+required private-context consent.
+
+Successful real-run calls still go through the provider gateway, the optional
+stdlib HTTP transport, redaction, and run-record logging under
+`.cosheaf/providers/`. The command emits structured JSON when requested and
+does not write draft artifacts, accepted artifacts, human review records, gate
+results, verifier results, or promotion output from raw provider responses.
+
+Tests use mocked transport injection and do not contact live provider networks
+or require real API keys. This task does not add hosted worker CLI commands,
+provider MCP tools, SDK dependencies, default real provider calls, accepted
+writes, promotion changes, schema changes, or public/private KB changes.
+
 ## Optional OpenAI-Compatible HTTP Transport - 2026-06-13
 
 Issue 233 implements `OpenAICompatibleHttpTransport`, an optional stdlib HTTP

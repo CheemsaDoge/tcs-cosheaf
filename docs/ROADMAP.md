@@ -80,7 +80,9 @@ post-`v0.2.1` provider/workflow hardening line. ADR 0021 records the real
 OpenAI-compatible HTTP transport boundary and threat model. Runtime
 implementation has begun with an optional stdlib HTTP transport object that
 follows that default-off, explicit-consent, no-real-provider-in-CI boundary.
-The provider `real-run` CLI remains a separate future task.
+The provider `real-run` CLI now exists as a deliberately hard-to-trigger path
+with inline preview, confirmation, network, endpoint/key, and redacted-log
+checks. Hosted worker CLI commands remain separate future work.
 
 ## Completed Baseline
 
@@ -111,6 +113,9 @@ Completed framework scaffold pieces include:
 - Provider-neutral model interface with deterministic fake-provider tests.
 - Optional stdlib OpenAI-compatible HTTP transport object for explicitly
   configured and injected real-provider calls, tested with local fixtures only.
+- Explicit provider `real-run` CLI path that is default-off, requires inline
+  context preview, send confirmation, explicit network permission,
+  endpoint/API-key environment configuration, and writes redacted runtime logs.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
   DIMACS adapter, minimal optional SMT-LIB adapter, minimal optional plain Lean
   adapter, and optional external Lean library reference checker.
@@ -228,7 +233,7 @@ ADR 0014 records this scope decision.
 Out of scope for `v0.2.1` unless separately approved:
 
 - Default-on hosted API calls.
-- Default real hosted HTTP transport or provider `real-run` CLI.
+- Default real hosted provider calls.
 - CI that requires network access, API keys, or real provider calls.
 - Direct accepted writes by CLI draft tools, MCP tools, hosted workers,
   external agents, or the internal orchestrator.

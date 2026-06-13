@@ -18,7 +18,7 @@ from cosheaf.agent.context_pack import (
 from cosheaf.agent.local_runner import (
     LocalWorkerRunError,
 )
-from cosheaf.agent.model_provider import ProviderName
+from cosheaf.agent.model_provider import NetworkPolicy, ProviderName
 from cosheaf.agent.orchestrator_planner import (
     OrchestratorPlannerError,
     plan_for_issue,
@@ -35,6 +35,8 @@ from cosheaf.agent.orchestrator_runner import (
 )
 from cosheaf.agent.orchestrator_stub import TaskHarnessError
 from cosheaf.agent.providers import (
+    OpenAICompatibleHttpTransport,
+    OpenAICompatibleProvider,
     ProviderConfig,
     ProviderError,
     ProviderGatewayRequest,
@@ -113,6 +115,7 @@ from cosheaf.services.models import (
     KbRootPolicy,
     ModelCallResult,
     ProviderConsent,
+    ProviderContextPreview,
     ValidateResult,
     WorkerBundleSubmitRequest,
 )
@@ -1409,7 +1412,7 @@ def provider_list(
             "network": "explicit_config_only",
             "api_key_required": True,
             "fake_run_cli": False,
-            "real_run_cli": False,
+            "real_run_cli": True,
         },
     ]
     if json_output:
@@ -1420,7 +1423,8 @@ def provider_list(
     for provider in providers:
         console.print(
             f"{provider['provider']} | mode={provider['mode']} | "
-            f"network={provider['network']} | real_run_cli=false"
+            f"network={provider['network']} | "
+            f"real_run_cli={str(provider['real_run_cli']).lower()}"
         )
 
 
@@ -1475,7 +1479,7 @@ def provider_config_check(
         "api_key_env": env_name,
         "api_key_present": api_key_present,
         "api_key_value": "<redacted>" if api_key_present else "missing",
-        "real_run_cli": False,
+        "real_run_cli": provider is ProviderName.OPENAI,
         "network": "not_used"
         if provider is ProviderName.FAKE
         else "explicit_config_only",
@@ -1489,7 +1493,7 @@ def provider_config_check(
     console.print(f"api_key_present: {str(api_key_present).lower()}")
     api_key_value = "<redacted>" if api_key_present else "missing"
     console.print(f"api_key_value: {api_key_value}")
-    console.print("real_run_cli: false")
+    console.print(f"real_run_cli: {str(payload['real_run_cli']).lower()}")
 
 
 @provider_app.command("preview-send")
@@ -1651,6 +1655,139 @@ def provider_fake_run(
     provider_log = _provider_log_payload(context, result)
     payload = result.to_dict()
     payload["provider_log"] = provider_log
+    if json_output:
+        _emit_json(payload)
+        return
+
+    console.print(f"provider: {result.provider.value}")
+    console.print(f"status: {result.status.value}")
+    if result.provider_run.log_path:
+        console.print(f"log_path: {result.provider_run.log_path}")
+
+
+@provider_app.command("real-run")
+def provider_real_run(
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="JSON request envelope for an explicit real provider run.",
+    ),
+    provider: str = typer.Option(
+        "openai-compatible",
+        "--provider",
+        help="Real provider identifier. Currently supports openai-compatible.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root for provider run logs.",
+    ),
+    confirm_send: bool = typer.Option(
+        False,
+        "--confirm-send",
+        help="Confirm that the operator approves sending this request.",
+    ),
+    allow_network: bool = typer.Option(
+        False,
+        "--allow-network",
+        help="Allow the real provider command to use network transport.",
+    ),
+    allow_private_context: bool = typer.Option(
+        False,
+        "--allow-private-context",
+        help="Confirm private-context send after private-research preview.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Run one explicitly consented OpenAI-compatible provider call."""
+    console = Console(width=120, markup=False)
+    resolved_provider = _resolve_real_run_provider(
+        provider,
+        json_output=json_output,
+        console=console,
+    )
+    if not confirm_send:
+        _exit_with_error(
+            ErrorResult(
+                code="provider_confirm_send_required",
+                message="provider real-run requires --confirm-send",
+                remediation=(
+                    "Preview the context, then rerun with --confirm-send only "
+                    "when the operator approves sending it."
+                ),
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+    if not allow_network:
+        _exit_with_error(
+            ErrorResult(
+                code="provider_network_not_allowed",
+                message="provider real-run requires --allow-network",
+                remediation=(
+                    "Rerun with --allow-network only when this real provider "
+                    "call is intentional."
+                ),
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+
+    context = RepoContext(repo_root)
+    raw = _read_input_json_or_exit(input_json, json_output=json_output)
+    preview = _real_run_context_preview_or_exit(
+        raw,
+        allow_private_context=allow_private_context,
+        json_output=json_output,
+        console=console,
+    )
+    config = _real_run_provider_config_or_exit(
+        raw,
+        provider=resolved_provider,
+        json_output=json_output,
+        console=console,
+    )
+    request = _real_run_gateway_request_or_exit(
+        raw,
+        provider=resolved_provider,
+        preview=preview,
+        confirm_send=confirm_send,
+        allow_network=allow_network,
+        allow_private_context=allow_private_context,
+        json_output=json_output,
+        console=console,
+    )
+
+    result = ModelCallService(context).call(
+        request,
+        config=config,
+        provider=OpenAICompatibleProvider(
+            transport=OpenAICompatibleHttpTransport()
+        ),
+    )
+    if isinstance(result, ProviderError):
+        _exit_with_error(
+            ErrorResult(
+                code=result.code,
+                message=result.message,
+                remediation=result.remediation,
+                blocking=result.blocking,
+                details=result.details,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+
+    payload = result.to_dict()
+    payload["real_run_performed"] = True
+    payload["context_preview"] = preview.to_dict()
+    payload["provider_log"] = _provider_log_payload(context, result)
     if json_output:
         _emit_json(payload)
         return
@@ -2248,6 +2385,209 @@ def _emit_controlled_write(
     action = "would write" if result.dry_run else "wrote"
     console.print(f"{result.kind}: {action} {result.relative_path.as_posix()}")
     console.print("- accepted knowledge merge: not performed")
+
+
+def _resolve_real_run_provider(
+    provider: str,
+    *,
+    json_output: bool,
+    console: Console,
+) -> ProviderName:
+    normalized = provider.strip().replace("_", "-").lower()
+    if normalized in {"openai", "openai-compatible"}:
+        return ProviderName.OPENAI
+    _exit_with_error(
+        ErrorResult(
+            code="provider_unsupported",
+            message=f"Provider real-run does not support {provider!r}.",
+            remediation="Use --provider openai-compatible.",
+            blocking=True,
+            details={"supported_providers": "openai-compatible"},
+        ),
+        json_output=json_output,
+        console=console,
+    )
+
+
+def _real_run_context_preview_or_exit(
+    raw: dict[str, Any],
+    *,
+    allow_private_context: bool,
+    json_output: bool,
+    console: Console,
+) -> ProviderContextPreview:
+    preview_raw = raw.get("context_preview")
+    if not isinstance(preview_raw, dict):
+        _exit_with_error(
+            ErrorResult(
+                code="provider_context_preview_failed",
+                message="provider real-run requires inline context_preview",
+                remediation=(
+                    "Run provider preview-send first and include the resulting "
+                    "preview object in the real-run input JSON."
+                ),
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+    try:
+        preview = ProviderContextPreview.model_validate(preview_raw)
+    except ValidationError as exc:
+        _exit_with_error(
+            ErrorResult(
+                code="provider_context_preview_failed",
+                message=_format_pydantic_errors(exc),
+                remediation="Fix the inline context_preview object and retry.",
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+    if (
+        preview.private_context_included
+        and preview.policy_mode is not ContextPolicyMode.PRIVATE_RESEARCH
+    ):
+        _exit_with_error(
+            ErrorResult(
+                code="private_context_requires_policy",
+                message="private context requires private_research policy",
+                remediation=(
+                    "Rebuild the preview with private_research policy before "
+                    "sending private KB context."
+                ),
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+    if preview.private_context_included and not allow_private_context:
+        _exit_with_error(
+            ErrorResult(
+                code="private_context_requires_consent",
+                message="private context real-run requires --allow-private-context",
+                remediation=(
+                    "Rerun with --allow-private-context only when private KB "
+                    "context send is explicitly approved."
+                ),
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+    return preview
+
+
+def _real_run_provider_config_or_exit(
+    raw: dict[str, Any],
+    *,
+    provider: ProviderName,
+    json_output: bool,
+    console: Console,
+) -> ProviderConfig:
+    config_raw = raw.get("provider_config")
+    if not isinstance(config_raw, dict):
+        _exit_with_error(
+            ErrorResult(
+                code="provider_config_missing",
+                message="provider real-run requires provider_config",
+                remediation=(
+                    "Add provider_config with model, base_url, api_key_env, "
+                    "timeout_seconds, and retry policy."
+                ),
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+    config_payload = dict(config_raw)
+    config_payload["provider"] = provider
+    config_payload["mode"] = ProviderMode.OPENAI_COMPATIBLE
+    config_payload["enabled"] = True
+    config_payload.setdefault("model", raw.get("model", "openai-compatible"))
+    try:
+        config = ProviderConfig.model_validate(config_payload)
+    except ValidationError as exc:
+        _exit_with_error(
+            ErrorResult(
+                code="provider_config_missing",
+                message=_format_pydantic_errors(exc),
+                remediation="Fix provider_config and retry.",
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+    if config.base_url is None or config.api_key_env is None:
+        _exit_with_error(
+            ErrorResult(
+                code="provider_config_missing",
+                message="provider_config requires base_url and api_key_env",
+                remediation=(
+                    "Set provider_config.base_url and provider_config.api_key_env. "
+                    "The key value itself must remain in the environment."
+                ),
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+    return config
+
+
+def _real_run_gateway_request_or_exit(
+    raw: dict[str, Any],
+    *,
+    provider: ProviderName,
+    preview: ProviderContextPreview,
+    confirm_send: bool,
+    allow_network: bool,
+    allow_private_context: bool,
+    json_output: bool,
+    console: Console,
+) -> ProviderGatewayRequest:
+    request_payload: dict[str, Any] = {
+        "provider": provider,
+        "model": raw.get("model"),
+        "worker_role": raw.get("worker_role"),
+        "prompt": raw.get("prompt"),
+        "consent": ProviderConsent(
+            consent_required=True,
+            consent_granted=confirm_send,
+            allow_private_context=allow_private_context,
+            policy_scope=preview.policy_mode,
+            operator_note="Explicit provider real-run send consent.",
+        ).to_dict(),
+        "context_artifact_ids": list(preview.artifact_ids),
+        "root_scopes": [scope.value for scope in preview.root_scopes],
+        "output_kind": raw.get("output_kind", "text"),
+        "expected_output_paths": raw.get("expected_output_paths", []),
+        "network_policy": NetworkPolicy.EXPLICIT_ALLOW
+        if allow_network
+        else NetworkPolicy.DISABLED,
+    }
+    for key in (
+        "temperature",
+        "top_p",
+        "reasoning_effort",
+        "max_output_tokens",
+        "tool_policy",
+    ):
+        if key in raw:
+            request_payload[key] = raw[key]
+    try:
+        return ProviderGatewayRequest.model_validate(request_payload)
+    except ValidationError as exc:
+        _exit_with_error(
+            ErrorResult(
+                code="provider_request_validation_failed",
+                message=_format_pydantic_errors(exc),
+                remediation="Fix the real-run request fields and retry.",
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
 
 
 def _provider_mode(provider: ProviderName) -> ProviderMode:

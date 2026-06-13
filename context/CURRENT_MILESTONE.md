@@ -61,7 +61,9 @@ informal/formal semantic alignment.
 - Provider gateway with deterministic fake provider and OpenAI-compatible
   mocked transport boundary.
 - Provider CLI commands for list, config-check, context-send preview, and
-  fake-run.
+  fake-run, plus an explicit real-run path that fails closed without inline
+  preview, send consent, network permission, endpoint/key configuration, and
+  required private-context consent.
 - Role-specific hosted worker service for fake or mocked provider calls.
 - Internal orchestrator dispatch to hosted workers only when explicitly
   configured.
@@ -79,6 +81,8 @@ informal/formal semantic alignment.
   tests.
 - Optional real hosted HTTP transport exists as an explicitly injected stdlib
   OpenAI-compatible transport object and is not default-enabled.
+- Provider `real-run` CLI exists as a deliberately hard-to-trigger operator
+  path and is not used by CI or default demos.
 - Real provider calls require explicit configuration, credentials, policy
   scope, context preview, and operator consent.
 - MCP remains optional adapter work. It is not a `v0.2.1` blocker.
@@ -124,9 +128,8 @@ After the `v0.2.1` prerelease and downstream compatibility checks:
 4. Treat `OpenAICompatibleHttpTransport` as the optional stdlib HTTP transport
    implementation: it remains explicit, default-off, injected/configured, and
    absent from default CI/provider demos.
-5. Continue with a deliberately hard-to-trigger real-provider CLI path only
-   behind explicit send confirmation, network permission, configuration/key,
-   context-preview, and public/private consent gates.
+5. Continue with WorkerBundle failure/counterexample hardening and provider
+   output reliability work.
 6. Continue post-`v0.2.1` hardening through small issue/branch/PR increments.
 7. Improve CLI-agent, provider fake/mocked, context-pack, evaluation, and
    failure/counterexample workflows without weakening review, gate, promotion,

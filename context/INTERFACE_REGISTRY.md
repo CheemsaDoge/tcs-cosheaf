@@ -4,21 +4,21 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- Provider `real-run` CLI commands, hosted worker CLI commands, and
-  hosted-provider MCP tools are not implemented yet. Role-specific hosted
-  worker service bridging for fake and mocked provider calls is implemented
-  under `cosheaf.agent.hosted_workers`, the optional stdlib
-  `OpenAICompatibleHttpTransport` exists for explicitly injected/configured
-  OpenAI-compatible calls, and the internal orchestrator can explicitly
-  dispatch planned nodes to that bridge through fake or OpenAI-compatible
-  provider boundaries.
+- Hosted worker CLI commands and hosted-provider MCP tools are not implemented
+  yet. Role-specific hosted worker service bridging for fake and mocked
+  provider calls is implemented under `cosheaf.agent.hosted_workers`, the
+  optional stdlib `OpenAICompatibleHttpTransport` exists for explicitly
+  injected/configured OpenAI-compatible calls, `cosheaf provider real-run`
+  exposes a deliberately hard-to-trigger real-provider CLI path, and the
+  internal orchestrator can explicitly dispatch planned nodes to that bridge
+  through fake or OpenAI-compatible provider boundaries.
 - `docs/ADR/0019-hosted-provider-gateway.md`: ADR for the planned hosted
   provider gateway. It records provider modes, fake-provider test
   requirements, private-context preview and consent, output discipline,
   logging/redaction metadata, and no-accepted-write boundaries. The runtime
   now implements the gateway core with fake, injected mocked
-  OpenAI-compatible, and optional stdlib HTTP transport paths; the ADR still
-  governs future real-run CLI and hosted worker work.
+  OpenAI-compatible, optional stdlib HTTP transport, and explicit real-run CLI
+  paths; the ADR still governs future hosted worker work.
 - `docs/AGENT_PROVIDERS.md`: operator-facing provider policy document. It
   describes the implemented provider gateway core, provider CLI commands,
   orchestrator hosted-worker dispatch, planned configuration, context policy,
@@ -271,6 +271,19 @@
   an explicit repository root for provider logs.
 - `cosheaf provider fake-run --json`: emits deterministic `ModelCallResult`
   JSON plus the redacted provider log payload. It is allowed in CI.
+- `cosheaf provider real-run --input-json <path> --provider openai-compatible --confirm-send --allow-network --json`:
+  performs one explicitly consented OpenAI-compatible provider call from an
+  input envelope containing `provider_config` and inline `context_preview`.
+  The command fails closed without `--confirm-send`, without
+  `--allow-network`, without valid endpoint/API-key environment configuration,
+  without an inline context preview, or when private context is present without
+  private-research preview policy and `--allow-private-context`.
+- `cosheaf provider real-run --repo-root <path>`: writes redacted provider run
+  records under `.cosheaf/providers/` for the selected repository root.
+- `cosheaf provider real-run --json`: emits deterministic `ModelCallResult`
+  JSON with `real_run_performed: true`, the inline context preview, and the
+  redacted provider log payload. Tests use mocked transport injection; CI does
+  not call live provider networks.
 - `cosheaf mcp list-tools`: prints the read-only MCP tool whitelist, one tool
   name per line.
 - `cosheaf mcp list-tools --repo-root <path>`: validates command context
