@@ -3,6 +3,30 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Provider Workflow Eval Suite - 2026-06-14
+
+Issue 249 adds a deterministic Python-level provider workflow eval harness
+under `cosheaf.evals.provider_workflow` plus the default case suite in
+`evals/provider_workflow/cases.yaml`. The suite covers fake-provider success,
+mocked OpenAI-compatible success, missing provider configuration, missing
+send consent, private-context denial, malformed provider output,
+policy-violating verifier output, and injected rate-limit, timeout, and
+cancellation transport failures.
+
+The report exposes provider-workflow regression metrics for policy-denial
+accuracy, validation-rejection accuracy, secret-leak count,
+malformed-output rejection count, bundle-validity rate, and context-scope
+violation count. Expected failures are successful eval outcomes only when the
+structured error code matches the case expectation. The harness scans
+structured output and generated `.cosheaf/providers/` logs for provider-log
+leak findings.
+
+This task does not add a provider-workflow CLI command, does not call real
+provider networks, does not require API keys, does not add provider MCP tools,
+does not change provider default-off behavior, does not write accepted
+knowledge, and does not change review, gate, promotion, public/private,
+formal-link, or schema semantics.
+
 ## Full Artifact Pull Audit - 2026-06-14
 
 Issue 247 makes context payload shape visible across the context-pack and

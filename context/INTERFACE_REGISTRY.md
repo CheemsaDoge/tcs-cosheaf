@@ -873,10 +873,48 @@ promotion semantics beyond ordinary gatekeeper blocking behavior.
   `AgentWorkflowEvalReport`.
 - `cosheaf.evals.agent_workflow.run_agent_workflow_eval_case(context, case)`:
   runs and scores one eval case.
+- `cosheaf.evals.provider_workflow.ProviderWorkflowEvalKind`: enum for
+  `fake_provider_success`, `mocked_openai_success`, `missing_config`,
+  `missing_consent`, `private_context_denied`, `malformed_output`,
+  `policy_violating_verifier_output`, `rate_limit`, `timeout`, and
+  `cancellation` cases.
+- `cosheaf.evals.provider_workflow.ProviderWorkflowEvalCase`: Pydantic v2
+  model for one deterministic provider workflow eval case with expected error
+  code, policy-denial, validation-rejection, malformed-output,
+  context-scope, bundle-validity, and forbidden-substring expectations.
+- `cosheaf.evals.provider_workflow.ProviderWorkflowEvalSuite`: Pydantic v2
+  model for a YAML suite of provider workflow eval cases.
+- `cosheaf.evals.provider_workflow.ProviderWorkflowEvalMetrics`: frozen
+  dataclass with `policy_denial_accuracy`,
+  `validation_rejection_accuracy`, `secret_leak_count`,
+  `malformed_output_reject_count`, `bundle_validity_rate`, and
+  `context_scope_violation_count` output.
+- `cosheaf.evals.provider_workflow.ProviderWorkflowEvalCaseResult`: frozen
+  dataclass for one executed provider workflow eval case, including provider,
+  role, status, error code, bundle validity, accepted-write flag, matched
+  expectations, provider-log secret findings, runtime paths, and failures.
+- `cosheaf.evals.provider_workflow.ProviderWorkflowEvalReport`: frozen
+  dataclass for aggregate suite output with deterministic `to_dict()` and
+  `to_json()` helpers plus runtime paths.
+- `cosheaf.evals.provider_workflow.ProviderWorkflowEvalError`: expected error
+  for provider workflow eval loading or execution failures.
+- `cosheaf.evals.provider_workflow.DEFAULT_PROVIDER_WORKFLOW_EVAL_CASES`:
+  default case path `evals/provider_workflow/cases.yaml`.
+- `cosheaf.evals.provider_workflow.load_provider_workflow_eval_suite(path)`:
+  loads a provider workflow eval YAML suite.
+- `cosheaf.evals.provider_workflow.resolve_provider_workflow_eval_case_path(context, cases_path)`:
+  resolves and constrains an eval case path to the repository root.
+- `cosheaf.evals.provider_workflow.run_provider_workflow_eval_suite(context, suite)`:
+  invokes existing provider gateway, hosted-worker, and context-policy service
+  boundaries with fake or mocked transports and returns a
+  `ProviderWorkflowEvalReport`.
+- `cosheaf.evals.provider_workflow.run_provider_workflow_eval_case(context, case)`:
+  runs and scores one provider workflow eval case.
 
-The agent workflow eval harness is intentionally a direct submodule API in
-this phase. It is not exported from `cosheaf.evals.__init__`, and no
-`cosheaf eval agent-workflow` CLI command is added.
+The agent workflow and provider workflow eval harnesses are intentionally
+direct submodule APIs in this phase. They are not exported from
+`cosheaf.evals.__init__`, and no `cosheaf eval agent-workflow` or
+`cosheaf eval provider-workflow` CLI command is added.
 
 All memory models are strict (`extra="forbid"`), frozen, preserve enum values as
 enum instances in Python, and expose:

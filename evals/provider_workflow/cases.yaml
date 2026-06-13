@@ -1,0 +1,70 @@
+schema_version: 1
+cases:
+  - id: case.provider.fake-success
+    kind: fake_provider_success
+    expect_bundle_valid: true
+    forbidden_substrings:
+      - sk-provider-workflow-
+
+  - id: case.provider.mock-openai-success
+    kind: mocked_openai_success
+    expect_bundle_valid: true
+    forbidden_substrings:
+      - sk-provider-workflow-
+
+  - id: case.provider.missing-config
+    kind: missing_config
+    expected_error_code: provider_config_missing
+    expect_policy_denial: true
+    forbidden_substrings:
+      - sk-provider-workflow-
+
+  - id: case.provider.missing-consent
+    kind: missing_consent
+    expected_error_code: provider_confirm_send_required
+    expect_policy_denial: true
+    forbidden_substrings:
+      - sk-provider-workflow-
+
+  - id: case.provider.private-context-denied
+    kind: private_context_denied
+    expected_error_code: private_context_requires_policy
+    expect_policy_denial: true
+    expect_context_scope_violation: true
+    forbidden_substrings:
+      - claim.fixture.provider-workflow-private
+      - private-scope-marker
+      - sk-provider-workflow-private-secret
+
+  - id: case.provider.malformed-output
+    kind: malformed_output
+    expected_error_code: provider_output_validation_failed
+    expect_validation_rejection: true
+    expect_malformed_rejection: true
+    forbidden_substrings:
+      - sk-provider-workflow-
+
+  - id: case.provider.verifier-policy-violation
+    kind: policy_violating_verifier_output
+    expected_error_code: hosted_worker_policy_violation
+    expect_policy_denial: true
+    forbidden_substrings:
+      - sk-provider-workflow-
+
+  - id: case.provider.rate-limit
+    kind: rate_limit
+    expected_error_code: provider_rate_limited
+    forbidden_substrings:
+      - sk-provider-workflow-
+
+  - id: case.provider.timeout
+    kind: timeout
+    expected_error_code: provider_timeout
+    forbidden_substrings:
+      - sk-provider-workflow-
+
+  - id: case.provider.cancellation
+    kind: cancellation
+    expected_error_code: provider_cancelled
+    forbidden_substrings:
+      - sk-provider-workflow-
