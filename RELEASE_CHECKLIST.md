@@ -79,13 +79,23 @@ gate output and release notes.
   clean environment when network access is available.
 - [x] `python scripts/ecosystem_smoke.py --cosheaf cosheaf` runs without
   cloning remote repositories.
-- [ ] The ecosystem smoke covers a readonly public KB root, writable private KB
+- [x] `python scripts/ecosystem_smoke.py --matrix --cosheaf "python -m cosheaf.cli" --framework-root . --workspace-template-root ..\tcs-cosheaf-workspace-template --public-kb-root ..\tcs-kb-public --json`
+  reports a structured three-repository compatibility matrix. The default
+  no-network run executes local framework smoke, workspace-template
+  CLI-agent demo, workspace-template fake-provider smoke, and public KB
+  policy guard. It reports framework-tag and workspace demo install rows as
+  `skipped`, not `pass`.
+- [ ] Run the network-enabled rows with `--include-network` before a release
+  announcement when package install/git clone access is available. This runs
+  the framework tag release smoke and the workspace-template install demo.
+- [x] The ecosystem smoke covers a readonly public KB root, writable private KB
   root, private draft depending on public accepted knowledge, validation,
   gatekeeper, index rebuild, and context-pack generation.
-- [ ] Expected policy failures in smoke helpers are verified as failures, not
+- [x] Expected policy failures in smoke helpers are verified as failures, not
   described as passes.
-- [ ] Retrieval, context-pack, security, and agent-workflow evals remain
-  deterministic and do not require network access or API keys.
+- [x] Retrieval, context-pack, security, agent-workflow, provider-workflow, and
+  failure/counterexample evals remain deterministic and do not require network
+  access or API keys.
 
 ## Agent Access And Provider Status
 

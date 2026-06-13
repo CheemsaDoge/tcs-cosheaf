@@ -10,7 +10,10 @@ from cosheaf.cli import app
 from scripts.ecosystem_smoke import (
     ISSUE_ID,
     PUBLIC_ARTIFACT_ID,
+    MatrixCaseStatus,
+    build_ecosystem_smoke_matrix,
     build_ecosystem_smoke_plan,
+    run_ecosystem_smoke_matrix,
     write_accepted_to_draft_violation_workspace,
     write_ecosystem_smoke_workspace,
     write_public_to_private_violation_workspace,
@@ -168,6 +171,71 @@ def test_ecosystem_smoke_rejects_accepted_dependency_on_draft(
     normalized_output = " ".join(result.output.split())
     assert "accepted artifact depends on draft artifact" in normalized_output
     assert "claim.ecosystem.private" in result.output
+
+
+def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
+    tmp_path: Path,
+) -> None:
+    matrix = build_ecosystem_smoke_matrix(
+        framework_root=tmp_path / "tcs-cosheaf",
+        workspace_template_root=tmp_path / "tcs-cosheaf-workspace-template",
+        public_kb_root=tmp_path / "tcs-kb-public",
+        cosheaf_executable="python -m cosheaf.cli",
+        framework_tag="v0.2.1",
+        include_network=False,
+    )
+
+    cases = {case.id: case for case in matrix.cases}
+
+    assert set(cases) == {
+        "framework.local-checkout",
+        "framework.git-tag",
+        "workspace-template.demo",
+        "workspace-template.cli-agent-demo",
+        "workspace-template.provider-fake-smoke",
+        "public-kb.policy-guard",
+    }
+    assert cases["framework.local-checkout"].repo == "tcs-cosheaf"
+    assert cases["framework.git-tag"].requires_network is True
+    assert cases["framework.git-tag"].skip_reason == (
+        "requires --include-network because it installs a framework git tag"
+    )
+    assert cases["workspace-template.provider-fake-smoke"].argv[-1] == (
+        "provider-fake-smoke"
+    )
+    assert cases["public-kb.policy-guard"].repo == "tcs-kb-public"
+
+
+def test_ecosystem_smoke_matrix_report_is_structured_and_identifies_failures(
+    tmp_path: Path,
+) -> None:
+    matrix = build_ecosystem_smoke_matrix(
+        framework_root=tmp_path / "tcs-cosheaf",
+        workspace_template_root=tmp_path / "tcs-cosheaf-workspace-template",
+        public_kb_root=tmp_path / "tcs-kb-public",
+        cosheaf_executable="python -m cosheaf.cli",
+        framework_tag="v0.2.1",
+        include_network=False,
+    )
+
+    def fake_runner(argv: tuple[str, ...], cwd: Path) -> int:
+        if cwd.name == "tcs-kb-public":
+            return 2
+        return 0
+
+    report = run_ecosystem_smoke_matrix(matrix, command_runner=fake_runner)
+
+    assert report.passed is False
+    assert report.case_count == 6
+    assert report.pass_count == 3
+    assert report.fail_count == 1
+    assert report.skip_count == 2
+    assert report.results[1].status is MatrixCaseStatus.SKIPPED
+    failure = [result for result in report.results if result.status == "fail"][0]
+    assert failure.repo == "tcs-kb-public"
+    assert "check_public_kb_policy.py" in failure.command
+    assert "repo=tcs-kb-public command=" in failure.message
+    assert report.to_dict()["results"][1]["status"] == "skipped"
 
 
 def _latest_gate_report(repo_root: Path) -> dict[str, Any]:
