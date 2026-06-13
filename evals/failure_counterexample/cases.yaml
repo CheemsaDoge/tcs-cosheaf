@@ -1,0 +1,31 @@
+schema_version: 1
+cases:
+  - id: case.failure.reasoner-uncertainty
+    kind: reasoner_uncertainty
+    expect_failure_preserved: true
+    expect_uncertainty: true
+    expect_verifier_request: true
+
+  - id: case.failure.counterexample-candidate
+    kind: counterexample_candidate
+    expect_failure_preserved: true
+    expect_counterexample_candidate: true
+    expect_verifier_request: true
+
+  - id: case.failure.verifier-rejects-invalid-proof
+    kind: verifier_rejects_invalid_proof
+    expect_failure_preserved: true
+    expect_uncertainty: true
+    expect_verifier_request: true
+
+  - id: case.failure.reducer-preserves-failure
+    kind: reducer_preserves_failure
+    expect_failure_preserved: true
+    expect_uncertainty: true
+    expect_verifier_request: true
+
+  - id: case.failure.accepted-write-boundary
+    kind: accepted_write_boundary
+    expect_reducer_rejection: true
+    forbidden_output_paths:
+      - kb/accepted/claims/unsafe-eval.yaml

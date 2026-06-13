@@ -15,9 +15,12 @@ budgets. The agent workflow eval harness checks CLI-agent and provider-worker
 workflow boundaries by invoking existing CLI commands through a Python test
 harness. The provider workflow eval harness checks provider success, expected
 policy denials, validation rejections, context-scope boundaries, and provider
-log leakage by calling local services with fake or mocked transports. These
-harnesses reuse existing runtime surfaces; they do not introduce new retrieval,
-context-pack, provider, MCP, or orchestration algorithms.
+log leakage by calling local services with fake or mocked transports. The
+failure/counterexample eval harness checks that WorkerBundle v2 reducer
+boundaries preserve failed attempts, uncertainty, candidate counterexamples,
+and verification requests as review context. These harnesses reuse existing
+runtime surfaces; they do not introduce new retrieval, context-pack, provider,
+MCP, or orchestration algorithms.
 
 ## Retrieval Eval Cases
 
@@ -299,6 +302,70 @@ These metrics are regression signals only. They are not provider quality
 scores, proof evidence, human review, source review, accepted status, or
 promotion authority.
 
+## Failure/Counterexample Eval Cases
+
+Failure/counterexample eval cases are YAML records under
+`evals/failure_counterexample/`. The default case file is:
+
+```text
+evals/failure_counterexample/cases.yaml
+```
+
+The harness is a Python API in `cosheaf.evals.failure_counterexample`; there
+is no dedicated `cosheaf eval failure-counterexample` CLI command in this
+phase. Tests load the suite and invoke the existing WorkerBundle v2 reducer
+boundary directly. The harness writes deterministic bundle fixtures under
+`.cosheaf/evals/failure_counterexample/` and does not write accepted
+knowledge.
+
+Case file format:
+
+```yaml
+schema_version: 1
+cases:
+  - id: case.failure.counterexample-candidate
+    kind: counterexample_candidate
+    expect_failure_preserved: true
+    expect_counterexample_candidate: true
+    expect_verifier_request: true
+```
+
+Required case kinds for the default suite are:
+
+- `reasoner_uncertainty`: reasoner output preserves an assumption, uncertainty,
+  failed attempt, and verifier request.
+- `counterexample_candidate`: counterexampleer output preserves candidate
+  counterexample evidence without treating it as a checked refutation.
+- `verifier_rejects_invalid_proof`: verifier output preserves an invalid proof
+  rejection as a failed attempt plus uncertainty and next verifier request.
+- `reducer_preserves_failure`: reducer warnings preserve failed attempts and
+  legacy failure notes as reviewer context.
+- `accepted_write_boundary`: unsafe accepted-path output is rejected by the
+  WorkerBundle v2 boundary and no accepted path is created.
+
+Expected safety failures are successful eval outcomes only when the reducer
+rejects the unsafe bundle for the expected case. Candidate counterexamples are
+review-only evidence until a verifier and human review process checks them.
+
+## Failure/Counterexample Metrics
+
+The failure/counterexample eval report records:
+
+- `failure_preservation_rate`: fraction of cases expecting preserved failure
+  evidence whose reducer warnings retained it.
+- `uncertainty_field_presence`: fraction of cases expecting uncertainty whose
+  reducer warnings retained it.
+- `counterexample_candidate_flag_accuracy`: fraction of cases expecting a
+  candidate counterexample whose reducer warnings labeled it as a candidate.
+- `verifier_request_presence`: fraction of cases expecting verifier requests
+  whose reducer warnings retained them.
+- `accepted_write_violation_count`: count of cases that opened or returned an
+  accepted write path.
+
+These metrics are regression signals only. They are not proof evidence, human
+review, source review, verifier results, accepted status, accepted refutation,
+or promotion authority.
+
 ## CLI
 
 Run the default retrieval eval suite:
@@ -331,10 +398,11 @@ rebuild the SQLite index implicitly. The context eval does not rebuild the
 SQLite index implicitly, but it does build context packs through the existing
 context-pack writer.
 
-The agent workflow and provider workflow evals currently have no CLI commands.
-Running them from Python may refresh `context/TASKS/<issue-id>/` context packs
-and redacted provider logs under `.cosheaf/providers/`. These are runtime
-outputs and should not be committed.
+The agent workflow, provider workflow, and failure/counterexample evals
+currently have no CLI commands. Running them from Python may refresh
+`context/TASKS/<issue-id>/` context packs, redacted provider logs under
+`.cosheaf/providers/`, and failure/counterexample bundle fixtures under
+`.cosheaf/evals/`. These are runtime outputs and should not be committed.
 
 ## Limitations
 
