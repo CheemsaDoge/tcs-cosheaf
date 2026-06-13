@@ -160,8 +160,11 @@ After the `v0.2.1` prerelease and downstream compatibility checks:
 8. Treat MCP as optional adapter work. The H.1 review keeps the current stdio
    surface read-only and does not implement controlled-write MCP, provider MCP
    tools, arbitrary shell, or accepted writes.
-9. Move next into the v0.2.2 release readiness audit before any release-candidate
-   metadata changes.
+9. Treat [`docs/releases/v0.2.2.md`](../docs/releases/v0.2.2.md) as the
+   readiness audit for the release-candidate task. If that audit PR merges
+   without blockers, move next into the v0.2.2 release-candidate PR and rerun
+   the full command ladder plus ecosystem smoke before changing version
+   metadata.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

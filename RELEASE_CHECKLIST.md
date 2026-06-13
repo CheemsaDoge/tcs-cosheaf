@@ -26,6 +26,29 @@ assume a downstream pin to `@v0.2.0` includes `v0.2.1` agent/provider surfaces.
   publication:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.1`.
 
+## v0.2.2 Readiness Delta
+
+Before preparing a `v0.2.2` release candidate, confirm
+`docs/releases/v0.2.2.md` exists as a readiness audit and answers the explicit
+release-readiness questions. The release-candidate PR may update package
+metadata only after the audit says no blockers remain.
+
+- [x] Optional OpenAI-compatible HTTP transport exists and remains default-off.
+- [x] Explicit `provider real-run` fails closed without context preview,
+  consent, network permission, endpoint/key config, and private-context consent
+  when needed.
+- [x] CI and default tests use fake, mocked, or local non-live-network fixtures;
+  they do not call real providers or require API keys.
+- [x] Provider logs and run records have redaction and leak-scanner regression
+  coverage.
+- [x] Failure/counterexample workflows have deterministic eval coverage.
+- [x] Workspace-template provider setup and public-preview smoke docs are
+  updated without adding real provider calls to default demos.
+- [x] Public KB changes since the v0.2.1 compatibility update are explicitly
+  scoped policy/content PRs and do not add or promote accepted artifacts.
+- [x] MCP remains optional read-only adapter work; controlled-write MCP and
+  provider MCP tools remain out of scope.
+
 ## Framework Checklist
 
 ### Version And Tag
@@ -208,7 +231,7 @@ Boundaries:
 - No automatic informal/formal semantic alignment checking.
 - No multi-user permission system.
 - No default-on hosted provider calls.
-- No built-in default real hosted HTTP transport.
+- No default real hosted HTTP transport.
 - External public KB integration is through local workspace roots, not a hosted
   registry service.
 - SAT, SMT, plain Lean, and external Lean reference adapters are intentionally
