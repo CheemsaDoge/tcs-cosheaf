@@ -320,8 +320,11 @@ MCP must not expose:
 - secrets, environment dumps, or provider credentials;
 - private KB context outside the selected scope.
 
-Controlled-write MCP tools remain later optional work and must require explicit
-allow-write configuration if implemented.
+Controlled-write MCP tools are not planned unless a separate
+maintainer-approved issue explicitly reopens that scope. If such scope is
+approved later, it must require explicit allow-write configuration and must
+still reject accepted writes, direct promotion, readonly-root writes, and human
+review spoofing.
 
 ## Skill Boundary
 
@@ -396,7 +399,8 @@ provider worker calls whose outputs validate as WorkerBundle v2 or typed
 review-only sub-results, plus explicit orchestrator dispatch to those hosted
 workers through the fake provider or an OpenAI-compatible provider boundary.
 The repository has not implemented built-in real hosted HTTP transport, hosted
-worker CLI commands, or controlled-write MCP tools described here. Existing
-local CLI, validation, gate, index, retrieval, context-pack, task,
-orchestrator dry-run, fake provider, hosted-worker dispatch, and optional
-verifier surfaces keep their current behavior.
+worker CLI commands, or controlled-write MCP tools. Controlled-write MCP is not
+planned unless separately approved. Existing local CLI, validation, gate,
+index, retrieval, context-pack, task, orchestrator dry-run, fake provider,
+hosted-worker dispatch, and optional verifier surfaces keep their current
+behavior.

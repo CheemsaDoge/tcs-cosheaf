@@ -157,18 +157,15 @@ does not change source-of-truth artifacts.
 
 ### Controlled-Write Tools
 
-Controlled-write tools are later optional adapter work. They must require both
-server configuration and per-call confirmation or policy approval. They may
-include:
+Controlled-write MCP tools are not planned unless a separate
+maintainer-approved issue explicitly reopens that scope. If such scope is
+approved later, controlled writes must require both server configuration and
+per-call confirmation or policy approval, must be narrow, typed,
+repository-local, and blocked from readonly public roots.
 
-- creating draft or pre-accepted artifacts in writable roots;
-- creating task records;
-- writing worker bundles or proposal records;
-- recording reducer output or review context that still needs human review.
-
-Controlled writes must be narrow, typed, repository-local, and blocked from
-readonly public roots. They must never write to accepted paths or mark human
-review complete.
+Controlled-write MCP must never write to accepted paths, run accepted
+promotion, mark human review complete, mutate verifier results, bypass gates,
+or become required for ordinary CLI-first work.
 
 ### Forbidden Tools
 

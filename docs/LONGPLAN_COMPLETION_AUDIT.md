@@ -9,22 +9,22 @@ three-repository TCS-Cosheaf ecosystem. It is a documentation and code-surface
 audit, not a release tag and not a claim that the project is production-ready.
 
 Supersession note: this document is a historical audit of the older
-`longplan_fixed.md` execution plan. Future task ordering is now governed by the
-CLI-first direction in `docs/CODEX_DEVELOPMENT_PLAN_V3.md` and
-`longplan_v3_fixed_cli_first.md`, where hosted provider work is planned,
-explicit, default-off, and fake/mocked in tests. The Phase 5 Task 5.3 gating
-language below records the old audit state and must not be used to defer or
-override the current CLI-first hosted-provider plan.
+`longplan_fixed.md` execution plan. Future task ordering is now governed by
+`docs/CODEX_DEVELOPMENT_PLAN_V4.md`; the CLI-first v3 plan remains historical
+evidence for the `v0.2.1` line. Hosted provider work remains explicit,
+default-off, and fake/mocked in tests. The Phase 5 Task 5.3 gating language
+below records the old audit state and must not be used to defer or override
+the current post-`v0.2.1` hardening plan.
 
 ## Summary
 
 All fixed-plan tasks through Phase 8 have merged evidence except Phase 5 Task
 5.3. Under the older `longplan_fixed.md` plan, Task 5.3 was not implemented
 because the task itself had an unmet precondition around provider-adapter
-approval. That historical gating language is superseded for future
-task ordering by the current CLI-first plan, which schedules hosted provider
-work while preserving explicit configuration, default-off behavior, fake or
-mocked tests, and the ban on accepted writes or review/gate/promotion bypass.
+approval. That historical gating language is superseded for future task
+ordering by the current v4 plan, which schedules provider transport hardening
+while preserving explicit configuration, default-off behavior, fake or mocked
+tests, and the ban on accepted writes or review/gate/promotion bypass.
 
 Current ecosystem state at the audit point:
 
@@ -106,11 +106,10 @@ The current framework code surface matches the conservative plan boundaries:
 
 ## Gated Follow-Up
 
-Future hosted provider work should follow `docs/CODEX_DEVELOPMENT_PLAN_V3.md`
-and `longplan_v3_fixed_cli_first.md`, not this historical audit's old task
-ordering. That work must stay explicit, opt-in, default-off,
-fake-transport-tested, network-free in tests, and unable to write accepted
-knowledge or bypass review/gate/promotion.
+Future hosted provider work should follow `docs/CODEX_DEVELOPMENT_PLAN_V4.md`,
+not this historical audit's old task ordering. That work must stay explicit,
+opt-in, default-off, fake-transport-tested, network-free in tests, and unable
+to write accepted knowledge or bypass review/gate/promotion.
 
 ## Verification Expectation
 

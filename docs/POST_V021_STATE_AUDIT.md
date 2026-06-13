@@ -219,16 +219,19 @@ Observed:
 Conclusion: no real provider call is default-enabled or used in CI/default
 tests.
 
-## Stale Or Follow-Up Documentation Items
+## Documentation Follow-Up Status
 
-No runtime or policy changes are required for the audit itself. The following
-wording should be tightened in a later documentation hardening PR:
+No runtime or policy changes are required for the audit itself. The v4
+plan-landing documentation pass tightened the current controlled-write MCP
+wording so active docs now say it is not planned unless a separate approved
+issue explicitly reopens that scope.
 
-1. Historical design text that says controlled-write MCP is "later optional
-   work" should be aligned with the current issue state: controlled-write MCP
-   is not planned unless a separate approved issue explicitly reopens it.
-2. Documents that mention local-only modes should continue to distinguish
-   specific local/dry-run/developer-tool modes from the product boundary.
+Historical superseded plans may still mention older controlled-write MCP
+options as historical context. They do not override the current issue state,
+current milestone, V4 plan, or ADR 0020.
 
-These follow-ups are documentation wording only. They do not imply provider,
-MCP, schema, promotion, or KB behavior changes.
+Documents that mention local-only modes should continue to distinguish specific
+local/dry-run/developer-tool modes from the product boundary.
+
+These documentation notes do not imply provider, MCP, schema, promotion, or KB
+behavior changes.

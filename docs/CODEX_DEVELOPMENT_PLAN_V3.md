@@ -1,7 +1,9 @@
 # TCS-Cosheaf Development Plan v3: CLI-First Agent Access
 
-This is the current durable Codex execution plan for post-`v0.2.0`
-TCS-Cosheaf work. It supersedes `docs/CODEX_DEVELOPMENT_PLAN.md`.
+This is the durable Codex execution plan for post-`v0.2.0`
+TCS-Cosheaf work through the `v0.2.1` prerelease. It superseded
+`docs/CODEX_DEVELOPMENT_PLAN.md` during the v3 phase and is now superseded for
+future work by `docs/CODEX_DEVELOPMENT_PLAN_V4.md`.
 
 The fixed v3 direction is CLI-first:
 

@@ -3,6 +3,27 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v4 Provider/Workflow Hardening Plan Landing - 2026-06-13
+
+Issue 229 lands `docs/CODEX_DEVELOPMENT_PLAN_V4.md` as the current
+post-`v0.2.1` durable plan and adds ADR 0020 for the `v0.2.2 Provider
+Transport + Agent Workflow Hardening` direction. The plan uses
+`docs/POST_V021_STATE_AUDIT.md` as its baseline.
+
+The next concrete work is a real-provider transport ADR and threat model
+before runtime implementation. CLI remains the first agent interface, real
+provider transport remains explicit/default-off, CI/default tests must stay
+fake or mocked, MCP remains optional, and controlled-write MCP is not planned
+unless a separate maintainer-approved issue reopens that scope. Provider,
+worker, MCP, and agent outputs still may not write accepted knowledge, mark
+human review, or bypass validation, gates, reducers, verifier results, review,
+or promotion.
+
+This is documentation-only plan/state alignment. It does not implement real
+provider HTTP transport, provider real-run CLI, provider MCP tools,
+controlled-write MCP, schema changes, promotion policy changes, or KB artifact
+changes.
+
 ## v0.2.1 CLI Agent Access Prerelease Closeout - 2026-06-13
 
 Issue 221 prepared `v0.2.1` as the CLI Agent Access + Hosted Provider Gateway
