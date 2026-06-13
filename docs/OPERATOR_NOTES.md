@@ -311,7 +311,7 @@ Get-ChildItem "$env:APPDATA\Python\Python313\Scripts" -Filter "cosheaf*"
 python -m cosheaf.cli --help
 ```
 
-On the current Windows environment, `tcs-cosheaf 0.1.1` has been installed for
+On the current Windows environment, `tcs-cosheaf 0.2.1` has been installed for
 Python 3.13 under the user site-packages, with the console script at:
 
 ```text

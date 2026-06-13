@@ -1,16 +1,16 @@
 # Roadmap
 
-TCS-Cosheaf is preparing the `v0.2.1` CLI Agent Access + Hosted Provider
-Gateway release candidate after the published `v0.2.0` local-MVP release and
-the earlier `v0.1.1` Formal Link Layer support baseline. The project is still
-not production-ready. This roadmap records durable direction and named
-milestones; live issue state belongs in GitHub issues.
+TCS-Cosheaf has published the `v0.2.1` CLI Agent Access + Hosted Provider
+Gateway prerelease after the published `v0.2.0` local-MVP release and the
+earlier `v0.1.1` Formal Link Layer support baseline. The project is still not
+production-ready. This roadmap records durable direction and named milestones;
+live issue state belongs in GitHub issues.
 
-## Current Baseline: v0.2.1 Release Candidate
+## Current Baseline: v0.2.1 Prerelease
 
-The `v0.2.1` release candidate packages the CLI-first agent-access and hosted
+The `v0.2.1` prerelease packages the CLI-first agent-access and hosted
 provider gateway surfaces that landed after the `v0.2.0` local-MVP tag. It is a
-candidate framework version for coding-agent workflows, deterministic fake
+pin-able framework version for coding-agent workflows, deterministic fake
 provider runs, and explicit provider-worker orchestration without overclaiming
 production readiness, automatic theorem proving, Lean autoformalization, or
 accepted-knowledge automation.
@@ -30,29 +30,30 @@ Completed release-candidate work includes:
 - Agent-access security regression coverage and agent workflow evaluation
   suite.
 - Required framework verification for the release-candidate PR.
+- Published `v0.2.1` tag and prerelease.
+- Workspace-template `@v0.2.1` pin update and demo/provider fake smoke
+  regression.
+- Public KB `@v0.2.1` CI pin update, validation, gate, PR-checklist, and
+  repository-local policy guard regression.
 - A post-`v0.2.0` rollback audit that identified no code or KB revert scope,
   but did identify MCP-first roadmap language that needed rewrite.
 
-The `v0.2.1` tag is still a publication step after the reviewed release
-candidate merge. Downstream repository pins should move to `@v0.2.1` only after
-that tag exists.
+## Next Focus: Post-v0.2.1 Hardening
 
-## Next Focus: v0.2.1 Publication And Compatibility
-
-The next focus after the release candidate is to publish the tag and run
-three-repository compatibility checks. This still does not mean turning the
-project into a production hosted multi-agent platform. It means proving that
-the controlled agent-facing access layer works across the framework package,
-workspace template, and public KB:
+The next focus after the prerelease and downstream compatibility checks is
+small, reviewable hardening. This still does not mean turning the project into
+a production hosted multi-agent platform. It means improving the controlled
+agent-facing access layer across the framework package, workspace template,
+and public KB:
 
 - CLI is the primary agent interface for coding agents.
-- CLI output for agent-facing commands should become stable, structured, and
+- CLI output for agent-facing commands should remain stable, structured, and
   machine-readable where needed.
 - The service layer is the shared implementation boundary for CLI, hosted
   provider workers, internal orchestrator code, and optional future MCP.
-- Hosted model API/provider support is scheduled provider-gateway work,
-  implemented behind explicit configuration, consent, policy scope, fake or
-  mocked tests, and no-real-API-in-CI rules.
+- Hosted model API/provider support remains explicit, default-off, and
+  implemented behind configuration, consent, policy scope, fake or mocked
+  tests, and no-real-API-in-CI rules.
 - Local-only execution remains fallback, offline, and CI/testing mode. It is
   not the permanent product boundary.
 - External agents can operate Cosheaf through CLI first.
