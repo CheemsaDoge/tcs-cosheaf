@@ -4,19 +4,21 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- Built-in real provider HTTP transports, hosted worker CLI commands, and
+- Provider `real-run` CLI commands, hosted worker CLI commands, and
   hosted-provider MCP tools are not implemented yet. Role-specific hosted
   worker service bridging for fake and mocked provider calls is implemented
-  under `cosheaf.agent.hosted_workers`, and the internal orchestrator can
-  explicitly dispatch planned nodes to that bridge through fake or
-  OpenAI-compatible provider boundaries.
+  under `cosheaf.agent.hosted_workers`, the optional stdlib
+  `OpenAICompatibleHttpTransport` exists for explicitly injected/configured
+  OpenAI-compatible calls, and the internal orchestrator can explicitly
+  dispatch planned nodes to that bridge through fake or OpenAI-compatible
+  provider boundaries.
 - `docs/ADR/0019-hosted-provider-gateway.md`: ADR for the planned hosted
   provider gateway. It records provider modes, fake-provider test
   requirements, private-context preview and consent, output discipline,
   logging/redaction metadata, and no-accepted-write boundaries. The runtime
-  now implements the gateway core with fake and injected OpenAI-compatible
-  mocked transport paths; the ADR still governs future real transport and
-  hosted worker work.
+  now implements the gateway core with fake, injected mocked
+  OpenAI-compatible, and optional stdlib HTTP transport paths; the ADR still
+  governs future real-run CLI and hosted worker work.
 - `docs/AGENT_PROVIDERS.md`: operator-facing provider policy document. It
   describes the implemented provider gateway core, provider CLI commands,
   orchestrator hosted-worker dispatch, planned configuration, context policy,
@@ -322,9 +324,9 @@
   outputs, performs no hosted network call, and writes no accepted knowledge.
 - `cosheaf orchestrator run --issue <issue-id> --provider openai-compatible --confirm-send --json`:
   enters the explicit OpenAI-compatible hosted-worker dispatch boundary after
-  context preview and consent checks. The default CLI path has no built-in real
-  HTTP transport and reports missing transport instead of making a network
-  call unless a configured/injected transport exists.
+  context preview and consent checks. The default CLI path does not instantiate
+  the optional stdlib HTTP transport and reports missing transport instead of
+  making a network call unless a configured/injected transport exists.
 - `cosheaf orchestrator run --issue <issue-id> --provider <provider> --include-private --policy-mode private_research --allow-private-context --confirm-send --json`:
   permits private-context hosted-worker dispatch only when private-research
   policy and explicit private-context consent are supplied. Public mode remains
@@ -1362,7 +1364,8 @@ review, promotion, proof, or public/private policy bypasses.
   records unsupported requested parameters instead of crashing.
 - `cosheaf.agent.model_provider.ProviderName`: enum with `fake`, `openai`,
   `anthropic`, `google`, and `local`. The provider gateway currently supports
-  fake calls and OpenAI-compatible calls through injected transport only.
+  fake calls and OpenAI-compatible calls through explicitly injected transport,
+  including the optional stdlib HTTP transport object.
 - `cosheaf.agent.model_provider.ReasoningEffort`: enum with `low`, `medium`,
   and `high`.
 - `cosheaf.agent.model_provider.ToolPolicy`: enum with `none`, `read_only`,
@@ -1393,6 +1396,15 @@ review, promotion, proof, or public/private policy bypasses.
   with stable code, message, remediation, blocking flag, and details.
 - `cosheaf.agent.providers.OpenAICompatibleProvider`: adapter over an injected
   transport object. It does not perform network calls by itself.
+- `cosheaf.agent.providers.OpenAICompatibleHttpTransport`: optional stdlib
+  HTTP transport for OpenAI-compatible chat-completions calls. It is inert
+  unless explicitly injected into `OpenAICompatibleProvider`, requires
+  `ProviderConfig.enabled`, `mode=openai_compatible`, explicit `base_url`,
+  `api_key_env`, `NetworkPolicy.EXPLICIT_ALLOW`, and an environment-provided
+  API key, and returns `ProviderTransportResult` statuses/errors instead of
+  raising expected timeout, HTTP, network, JSON, or malformed-response
+  failures. Tests use injected local fixtures rather than live provider
+  network.
 - `cosheaf.agent.providers.ProviderGateway.call(request, *, config=None, provider=None) -> ModelCallResult | ProviderError`:
   executes the fake provider path or the OpenAI-compatible injected-transport
   path, writes redacted run logs under `.cosheaf/providers/`, validates

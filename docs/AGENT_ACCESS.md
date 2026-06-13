@@ -26,10 +26,11 @@ TCS-Cosheaf has these intended access surfaces:
   fake-run surfaces are implemented. A role-specific hosted worker service
   bridge is implemented for fake and mocked provider calls. The internal
   orchestrator can explicitly dispatch planned nodes to hosted workers through
-  fake or OpenAI-compatible provider boundaries. Built-in real hosted HTTP
-  transport and hosted worker CLI commands remain later tasks. Real calls must
-  be explicit, default-off, policy scoped, consented, and fake or mocked in
-  tests.
+  fake or OpenAI-compatible provider boundaries. An optional stdlib
+  OpenAI-compatible HTTP transport object exists, but no default CLI path
+  instantiates it and hosted worker CLI commands remain later tasks. Real calls
+  must be explicit, default-off, policy scoped, consented, and fake, mocked, or
+  local non-live-network in tests.
 - MCP: optional adapter for assistants that benefit from resources/tools
   rather than shell access. It is not required for ordinary Codex-style repo
   work.
@@ -241,11 +242,24 @@ The stable error-code list is exported as
 - `orchestrator_run_failed`
 - `private_context_requires_consent`
 - `private_context_requires_policy`
+- `provider_api_key_missing`
+- `provider_call_failed`
+- `provider_cancelled`
+- `provider_config_missing`
 - `provider_confirm_send_required`
 - `provider_context_preview_failed`
 - `provider_context_scope_violation`
+- `provider_disabled`
+- `provider_http_error`
+- `provider_invalid_json`
+- `provider_malformed_response`
+- `provider_network_error`
+- `provider_network_not_allowed`
 - `provider_output_validation_failed`
+- `provider_rate_limited`
 - `provider_request_validation_failed`
+- `provider_timeout`
+- `provider_transport_missing`
 - `provider_unsupported`
 - `readonly_kb_root`
 - `repository_load_failed`
@@ -280,7 +294,7 @@ planned task nodes to `HostedWorkerService`. The fake path performs a complete
 deterministic hosted-worker run without hosted network access. The
 OpenAI-compatible path requires explicit `--confirm-send` and a configured or
 injected transport; the default CLI path reports missing transport rather than
-calling a real provider.
+instantiating the stdlib HTTP transport or calling a real provider.
 
 ## Hosted Provider Boundary
 
@@ -398,7 +412,9 @@ workflow. It also has `HostedWorkerService` for role-specific fake or mocked
 provider worker calls whose outputs validate as WorkerBundle v2 or typed
 review-only sub-results, plus explicit orchestrator dispatch to those hosted
 workers through the fake provider or an OpenAI-compatible provider boundary.
-The repository has not implemented built-in real hosted HTTP transport, hosted
+The repository has implemented an optional stdlib OpenAI-compatible HTTP
+transport object that remains default-off and only runs when explicitly
+configured and injected. It has not added a provider real-run CLI, hosted
 worker CLI commands, or controlled-write MCP tools. Controlled-write MCP is not
 planned unless separately approved. Existing local CLI, validation, gate,
 index, retrieval, context-pack, task, orchestrator dry-run, fake provider,

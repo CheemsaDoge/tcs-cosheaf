@@ -26,7 +26,9 @@ At the start of this plan:
 - `tcs-kb-public` CI installs `tcs-cosheaf@v0.2.1`.
 - CLI is the primary agent interface.
 - Fake and mocked provider paths exist.
-- Built-in real hosted HTTP transport is not implemented.
+- At plan start, built-in real hosted HTTP transport was not implemented; B.2
+  now adds an optional stdlib OpenAI-compatible HTTP transport object that
+  remains default-off, injected/configured, and absent from default CLI paths.
 - Hosted worker CLI commands are not implemented.
 - Provider MCP tools are not implemented.
 - MCP is optional adapter work and is not required for ordinary CLI-first
@@ -54,7 +56,8 @@ Provider and privacy:
 - Real provider calls require explicit configuration, explicit consent, and an
   explicit policy scope.
 - CI and default tests must use fake or mocked providers only.
-- API keys must come from environment variables or a secret manager, never
+- API keys must come from environment variables in the current implementation,
+  or from a future explicitly approved secret-manager integration, never
   repository files.
 - Logs must redact API keys, bearer tokens, environment dumps, hidden
   reasoning, and unapproved private context.
@@ -131,16 +134,19 @@ No runtime code or new dependency belongs in B.1.
 
 ### B.2 Optional OpenAI-Compatible HTTP Transport
 
-Next implementation task after ADR 0021. Implement the transport only after
-B.1. It must stay optional, default-off, secret-redacted, timeout-aware, and
-tested with mocked or local fake HTTP only. CI must not need an API key or live
-network.
+Status: complete in issue 233.
+
+`OpenAICompatibleHttpTransport` is implemented as an optional stdlib HTTP
+transport object. It remains explicit, default-off, injected/configured,
+secret-redacted at the gateway boundary, timeout-aware, and tested with local
+fixtures only. CI must not need an API key or live provider network.
 
 ### B.3 Explicit Real Provider CLI Path
 
-Add a deliberately hard-to-trigger CLI path only after B.2. It must require
-explicit send confirmation, explicit network permission, valid config/key, and
-a prior or inline context preview reference. Tests must mock the transport.
+Next implementation task. Add a deliberately hard-to-trigger CLI path only
+after B.2. It must require explicit send confirmation, explicit network
+permission, valid config/key, and a prior or inline context preview reference.
+Tests must mock or inject the transport and must not call a live provider.
 
 ## Phase C: Provider Output And Worker Reliability
 

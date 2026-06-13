@@ -3,6 +3,26 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Optional OpenAI-Compatible HTTP Transport - 2026-06-13
+
+Issue 233 implements `OpenAICompatibleHttpTransport`, an optional stdlib HTTP
+transport object for OpenAI-compatible chat-completions calls. It is not
+instantiated by default and must be explicitly injected through
+`OpenAICompatibleProvider` with `ProviderConfig.enabled=true`,
+`mode=openai_compatible`, explicit `base_url`, `api_key_env`,
+`NetworkPolicy.EXPLICIT_ALLOW`, and an environment-provided API key.
+
+The transport maps expected failures to `ProviderTransportResult` values
+instead of uncaught tracebacks: missing configuration, missing key, missing
+network permission, timeout, rate limit, HTTP error, network error, invalid
+JSON, and malformed provider output. Gateway integration still redacts secret
+values from result content and provider logs under `.cosheaf/providers/`.
+
+Tests use injected local fixtures and do not call live provider networks or
+require real API keys. This task does not add a provider `real-run` CLI, hosted
+worker CLI commands, provider MCP tools, SDK dependencies, accepted writes,
+promotion changes, schema changes, or public/private KB changes.
+
 ## Real Provider Transport Boundary ADR - 2026-06-13
 
 Issue 231 adds ADR 0021 for the first real provider transport boundary before
@@ -102,10 +122,10 @@ copies under `.cosheaf/orchestrator/<issue-id>/runs/<run-id>/providers/`.
 
 `cosheaf orchestrator run --issue <issue-id> --provider openai-compatible
 --confirm-send --json` enters the OpenAI-compatible hosted-worker boundary only
-after explicit consent. The default CLI path still has no built-in real HTTP
-transport and reports missing transport unless a provider transport is
-configured or injected. CI and unit tests use the fake provider or mocked
-transport only.
+after explicit consent. The default CLI path does not instantiate the optional
+stdlib HTTP transport and reports missing transport unless a provider
+transport is configured or injected. CI and unit tests use the fake provider,
+mocked transport, or local transport fixtures only.
 
 The hosted-worker orchestrator path does not write accepted knowledge, does
 not write proposed artifacts into KB paths, does not create human review

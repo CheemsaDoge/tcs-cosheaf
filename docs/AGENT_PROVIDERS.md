@@ -3,10 +3,12 @@
 This document defines the hosted provider gateway boundary for TCS-Cosheaf.
 The current implementation includes a provider-neutral gateway core, a
 deterministic fake path, an OpenAI-compatible adapter over an injected
-transport for mocked tests, and provider CLI commands for configuration
-checks, context-send previews, deterministic fake runs, and a role-specific
-hosted worker service bridge. It does not add API keys, import hosted provider
-SDKs, or make real hosted calls available by default.
+transport for mocked tests, an optional stdlib OpenAI-compatible HTTP
+transport object, and provider CLI commands for configuration checks,
+context-send previews, deterministic fake runs, and a role-specific hosted
+worker service bridge. It does not add API keys, import hosted provider SDKs,
+add a provider real-run command, or make real hosted calls available by
+default.
 
 ## Current Status
 
@@ -18,7 +20,9 @@ Implemented today:
 - provider context-send preview through
   `ContextSendPolicyService.provider_preview(...)`;
 - `ProviderGateway` and `ModelCallService` for fake calls and
-  OpenAI-compatible calls through injected transport only;
+  OpenAI-compatible calls through explicitly injected transport only;
+- `OpenAICompatibleHttpTransport`, an optional stdlib HTTP transport object
+  that is inert unless an operator explicitly configures and injects it;
 - `HostedWorkerService` for role-specific fake or mocked provider worker
   calls that validate output as WorkerBundle v2 or typed review-only
   sub-results;
@@ -31,12 +35,12 @@ Implemented today:
   shape, and running the deterministic fake provider;
 - explicit orchestrator dispatch to role-specific hosted workers through
   `cosheaf orchestrator run --issue <issue-id> --provider <provider>`;
-- fake-provider and mocked OpenAI-compatible tests that run without network
-  access or API keys.
+- fake-provider, mocked OpenAI-compatible, and stdlib HTTP-transport tests that
+  run without live provider network access or API keys.
 
 Not implemented yet:
 
-- built-in real OpenAI-compatible HTTP transport;
+- provider `real-run` CLI command;
 - hosted worker CLI commands;
 - provider MCP tools.
 
@@ -125,7 +129,7 @@ WorkerBundle outputs.
 The `openai-compatible` path is configurable but not default-runnable. It
 requires `--confirm-send`, still goes through context-preview and consent
 checks, and requires an injected or configured provider transport. The default
-CLI path does not include a built-in real HTTP transport and does not make a
+CLI path does not instantiate the stdlib HTTP transport and does not make a
 network call in CI.
 
 The hosted-worker orchestrator path never writes accepted knowledge, never
@@ -242,23 +246,23 @@ structured error, not silently treated as a successful request.
 The current OpenAI-compatible adapter accepts an injected transport object. This
 keeps CI deterministic and allows tests to exercise provider success, retry,
 timeout, cancellation, rate-limit, error, metadata, and redaction paths without
-network access. A real HTTP transport remains a separate explicitly configured
-future task.
+live provider network access. `OpenAICompatibleHttpTransport` is the optional
+stdlib HTTP implementation for OpenAI-compatible chat completions, but it is
+not wired into any default CLI path.
 
-ADR 0021 defines the real transport boundary before implementation. A future
-real OpenAI-compatible HTTP transport must be:
+ADR 0021 defines the real transport boundary. The stdlib HTTP transport is:
 
 - optional and default-off;
-- explicitly enabled through provider configuration;
+- explicitly enabled through provider configuration and injection;
 - unable to run in CI or default tests;
-- configured with an explicit model id, timeout, retry policy, context policy,
-  and API-key environment or secret-manager reference;
+- configured with an explicit model id, endpoint URL, timeout, retry policy,
+  context policy, and API-key environment variable;
 - blocked until a context-send preview exists for the exact request scope;
 - blocked until operator send consent and explicit network permission are both
   present;
 - blocked from private context unless `policy_mode=private_research`,
   `public_only=false`, and explicit private-context consent are all present;
-- tested through fake, mocked, or local non-network fixtures by default;
+- tested through fake, mocked, or local non-live-network fixtures by default;
 - unable to write accepted knowledge, mark human review, promote artifacts, or
   turn provider output into verifier/gate success.
 
