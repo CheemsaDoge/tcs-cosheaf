@@ -67,9 +67,9 @@ Workspace template checkout:
 
 ## Audit Answers
 
-### 1. Current Framework Version
+### 1. Audited-Time Framework Version
 
-Current framework package version is `0.1.1`.
+At the 2026-06-06 audit time, the framework package version was `0.1.1`.
 
 Evidence:
 
