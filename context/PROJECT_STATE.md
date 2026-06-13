@@ -3,6 +3,22 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Provider Log Leak Scanner - 2026-06-14
+
+Issue 245 adds `cosheaf.security.provider_logs`, a deterministic scanner for
+generated provider logs and run records. The scanner returns stable,
+explainable findings for API-key-shaped values, bearer tokens,
+environment-like dumps, secret-looking key/value pairs, hidden reasoning
+markers, unapproved private context markers, and avoidable absolute
+user/workspace filesystem paths.
+
+Security tests now cover synthetic leaked fixtures, a representative redacted
+provider log shape, and an actual generated redacted provider log from the
+gateway. Existing redaction remains the first boundary; the scanner is a
+regression guard and does not make provider calls, contact live networks,
+redact logs by itself, write accepted knowledge, change promotion policy,
+change schema, or alter MCP behavior.
+
 ## Context Send Policy Matrix - 2026-06-14
 
 Issue 243 defines the provider context-send preview matrix for the current

@@ -31,6 +31,8 @@ Implemented today:
 - timeout, retry, cancellation, and rate-limit result handling;
 - provider run logs under `.cosheaf/providers/` with secret redaction and
   attempt, retry, unsupported-parameter, latency, token, and cost metadata;
+- provider log leak scanning helpers in `cosheaf.security.provider_logs` for
+  deterministic regression checks over generated run records;
 - provider CLI commands for listing supported provider modes, checking
   configuration without printing secrets, previewing context-send payload
   shape, running the deterministic fake provider, and running one explicit
@@ -277,6 +279,13 @@ Provider run records should capture:
 
 Logs must not include API keys, bearer tokens, provider credentials, full
 environment dumps, hidden reasoning, or unapproved private context.
+
+The `cosheaf.security.provider_logs` scanner provides a deterministic
+regression check for generated provider logs and run records. It reports stable
+finding kinds for API-key-shaped values, bearer tokens, environment-like dumps,
+secret-looking key/value pairs, hidden reasoning markers, unapproved private
+context markers, and avoidable absolute user/workspace paths. Existing redacted
+provider logs should scan cleanly; synthetic leaked fixtures should fail tests.
 
 ## OpenAI-Compatible Transport
 
