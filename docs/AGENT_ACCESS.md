@@ -326,6 +326,9 @@ flags, and next steps as review-only material. Verification requests are not
 verifier results, and candidate counterexamples are not accepted refutations.
 Those fields must remain draft/proposal context until ordinary review, gate,
 verifier, and promotion workflows handle them explicitly.
+Hosted-worker role prompts include required/optional output fields and
+forbidden authority so providers see the same contract that local validators
+enforce.
 
 ## Optional MCP Boundary
 

@@ -108,6 +108,13 @@ are not accepted refutations. Reducers keep these fields as labeled review
 warnings; they do not update accepted knowledge, mark review state, or promote
 artifacts.
 
+Role contracts now make those expectations explicit in provider prompts:
+reasoners separate conjectures, proof ideas, and assumptions; verifiers
+separate natural-language concerns from tool results; counterexampleers
+separate candidates from verified counterexamples; formalizers separate symbol
+resolution from semantic alignment; and librarian summarizers must not invent
+claims.
+
 The service returns `HostedWorkerOutput` instead of raising for expected
 provider or validation failures. Invalid provider output is rejected with
 `provider_output_validation_failed`. Unsafe authority claims are rejected with

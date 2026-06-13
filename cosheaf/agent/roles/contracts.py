@@ -47,6 +47,73 @@ COMMON_FORBIDDEN_ACTIONS = (
     "hide_gate_or_verifier_failures",
 )
 
+ROLE_REQUIRED_OUTPUT_FIELDS = {
+    RoleName.REASONER: {
+        "conjectures",
+        "proof_ideas",
+        "assumptions",
+        "uncertainty",
+        "verification_requests",
+    },
+    RoleName.VERIFIER: {
+        "natural_language_concerns",
+        "tool_results",
+        "verification_requests",
+        "failed_attempts",
+    },
+    RoleName.COUNTEREXAMPLER: {
+        "counterexample_candidates",
+        "verified_counterexamples",
+        "failed_attempts",
+        "assumptions_tested",
+        "uncertainty",
+    },
+    RoleName.EXPLORER: {
+        "search_directions",
+        "source_candidates",
+        "uncertainty",
+        "dependency_questions",
+    },
+    RoleName.FORMALIZER: {
+        "symbol_resolution",
+        "semantic_alignment_questions",
+        "alignment_limitations",
+    },
+    RoleName.LIBRARIAN_SUMMARIZER: {
+        "selected_artifacts",
+        "retrieval_audit",
+        "uncertainty",
+    },
+}
+
+ROLE_REQUIRED_FORBIDDEN_AUTHORITY = {
+    RoleName.REASONER: {
+        "claim_source_review",
+        "claim_machine_verification",
+    },
+    RoleName.VERIFIER: {
+        "weaken_tests",
+        "hide_skipped_results",
+    },
+    RoleName.COUNTEREXAMPLER: {
+        "claim_refutation_without_evidence",
+        "edit_artifacts",
+    },
+    RoleName.EXPLORER: {
+        "mass_import_sources",
+        "create_accepted_artifacts",
+    },
+    RoleName.FORMALIZER: {
+        "claim_lean_checked_without_checker",
+        "claim_informal_formal_equivalence",
+    },
+    RoleName.LIBRARIAN_SUMMARIZER: {
+        "create_claims",
+        "invent_claims",
+        "rewrite_artifacts",
+    },
+}
+
 
 class RoleContractModel(BaseModel):
     """Shared strict base for role-contract DTOs."""
@@ -256,6 +323,25 @@ class RoleContract(RoleContractModel):
         role_text = self.role.value.replace("_", " ")
         if role_text not in self.system_prompt:
             raise ValueError(f"system_prompt must name role {role_text!r}")
+        schema_fields = set(self.required_output_schema.required_fields).union(
+            self.required_output_schema.optional_fields
+        )
+        missing_schema_fields = ROLE_REQUIRED_OUTPUT_FIELDS[self.role].difference(
+            schema_fields
+        )
+        if missing_schema_fields:
+            raise ValueError(
+                f"{self.role.value} contract missing role-specific output fields: "
+                + ", ".join(sorted(missing_schema_fields))
+            )
+        missing_authority_boundaries = ROLE_REQUIRED_FORBIDDEN_AUTHORITY[
+            self.role
+        ].difference(self.forbidden_actions)
+        if missing_authority_boundaries:
+            raise ValueError(
+                f"{self.role.value} contract missing forbidden authority: "
+                + ", ".join(sorted(missing_authority_boundaries))
+            )
         return self
 
 
@@ -413,17 +499,26 @@ ROLE_CONTRACTS = (
         purpose="Draft candidate reasoning for human review from supplied context.",
         system_prompt=(
             "You are the reasoner role. Propose candidate arguments from the "
-            "provided context only, keep uncertainty visible, and never present "
-            "draft reasoning as accepted knowledge."
+            "provided context only. Separate conjectures, proof ideas, and "
+            "assumptions; keep uncertainty visible; and never present draft "
+            "reasoning as accepted knowledge."
         ),
         allowed_inputs=["issue_context", "artifact_cards", "draft_notes"],
         output_required=[
             "summary",
-            "candidate_claims",
+            "conjectures",
+            "proof_ideas",
             "assumptions",
+            "uncertainty",
+            "verification_requests",
             "risk_flags",
         ],
-        output_optional=["proof_sketches", "open_questions", "next_steps"],
+        output_optional=[
+            "candidate_claims",
+            "open_questions",
+            "dependency_questions",
+            "next_steps",
+        ],
         context_budget=CARD_ONLY_BUDGET,
         context_policy=PRIVATE_REVIEW_CONTEXT_POLICY,
         provider_capability_requirements=BUNDLE_PROVIDER_REQUIREMENTS,
@@ -437,18 +532,26 @@ ROLE_CONTRACTS = (
         display_name="Verifier",
         purpose="Check proposed outputs against explicit local evidence and gates.",
         system_prompt=(
-            "You are the verifier role. Check explicit evidence, validation, "
-            "gate, and verifier results; distinguish pass, fail, error, and "
-            "skipped without upgrading skipped results."
+            "You are the verifier role. Separate natural language concerns "
+            "from tool results. Check explicit evidence, validation, gate, and "
+            "verifier results; distinguish pass, fail, error, and skipped "
+            "without upgrading skipped results."
         ),
         allowed_inputs=["proposed_output", "evidence_metadata", "gate_reports"],
         output_required=[
             "summary",
+            "natural_language_concerns",
+            "tool_results",
             "verification_requests",
-            "failures_or_counterexamples",
+            "failed_attempts",
             "risk_flags",
         ],
-        output_optional=["commands_to_run", "evidence_gaps", "next_steps"],
+        output_optional=[
+            "failures_or_counterexamples",
+            "commands_to_run",
+            "evidence_gaps",
+            "next_steps",
+        ],
         context_budget=VERIFIER_BUDGET,
         context_policy=PRIVATE_REVIEW_CONTEXT_POLICY,
         provider_capability_requirements=BUNDLE_PROVIDER_REQUIREMENTS,
@@ -468,16 +571,21 @@ ROLE_CONTRACTS = (
         system_prompt=(
             "You are the counterexampleer role. Try to break candidate claims "
             "with explicit assumptions, small examples, and local deterministic "
-            "checks when allowed."
+            "checks when allowed. Mark counterexamples as candidates unless "
+            "explicit evidence verifies them; verified counterexamples still "
+            "remain review evidence, not accepted refutations."
         ),
         allowed_inputs=["candidate_claims", "assumptions", "known_failures"],
         output_required=[
             "summary",
-            "counterexamples_or_failed_attempts",
+            "counterexample_candidates",
+            "verified_counterexamples",
+            "failed_attempts",
             "assumptions_tested",
+            "uncertainty",
             "risk_flags",
         ],
-        output_optional=["local_checks", "next_steps"],
+        output_optional=["local_checks", "verification_requests", "next_steps"],
         context_budget=VERIFIER_BUDGET,
         context_policy=PRIVATE_REVIEW_CONTEXT_POLICY,
         provider_capability_requirements=BUNDLE_PROVIDER_REQUIREMENTS,
@@ -500,6 +608,8 @@ ROLE_CONTRACTS = (
             "summary",
             "search_directions",
             "source_candidates",
+            "uncertainty",
+            "dependency_questions",
             "risk_flags",
         ],
         output_optional=["related_artifacts", "next_steps"],
@@ -517,7 +627,8 @@ ROLE_CONTRACTS = (
         purpose="Map informal statements to formal-link metadata for review.",
         system_prompt=(
             "You are the formalizer role. Propose formal-link metadata and "
-            "alignment questions only; do not claim Lean, CSLib, or mathlib "
+            "alignment questions only. Separate symbol resolution from "
+            "semantic alignment; do not claim Lean, CSLib, or mathlib "
             "verification unless an actual checker result is present."
         ),
         allowed_inputs=[
@@ -527,11 +638,18 @@ ROLE_CONTRACTS = (
         ],
         output_required=[
             "summary",
-            "formalization_mapping",
+            "symbol_resolution",
+            "semantic_alignment_questions",
             "alignment_limitations",
             "risk_flags",
         ],
-        output_optional=["candidate_imports", "candidate_symbols", "next_steps"],
+        output_optional=[
+            "formalization_mapping",
+            "candidate_imports",
+            "candidate_symbols",
+            "verification_requests",
+            "next_steps",
+        ],
         context_budget=SOURCE_REVIEW_BUDGET,
         context_policy=PRIVATE_REVIEW_CONTEXT_POLICY,
         provider_capability_requirements=BUNDLE_PROVIDER_REQUIREMENTS,
@@ -550,23 +668,24 @@ ROLE_CONTRACTS = (
         system_prompt=(
             "You are the librarian summarizer role. Summarize bounded existing "
             "context, label draft and private material clearly, and report "
-            "retrieval uncertainty without creating new claims."
+            "retrieval uncertainty without creating or inventing new claims."
         ),
         allowed_inputs=["issue_record", "artifact_cards", "retrieval_audit"],
         output_required=[
             "summary",
             "selected_artifacts",
             "retrieval_audit",
+            "uncertainty",
             "risk_flags",
         ],
-        output_optional=["excluded_artifacts", "next_steps"],
+        output_optional=["excluded_artifacts", "dependency_questions", "next_steps"],
         context_budget=CARD_ONLY_BUDGET,
         context_policy=PUBLIC_CONTEXT_POLICY,
         provider_capability_requirements=TYPED_SUBRESULT_PROVIDER_REQUIREMENTS,
         tool_policy=READ_ONLY_TOOLS,
         stop_conditions=["missing_issue", "context_budget_exhausted"],
         risk_flags=["draft_context_present", "private_context_present"],
-        forbidden_actions=["create_claims", "rewrite_artifacts"],
+        forbidden_actions=["create_claims", "invent_claims", "rewrite_artifacts"],
     ),
 )
 

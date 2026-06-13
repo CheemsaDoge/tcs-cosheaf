@@ -9,6 +9,10 @@ review, promote artifacts, bypass gates, or claim machine verification. Hosted
 worker execution, when used through `HostedWorkerService`, still routes output
 through local validation and review-only result types.
 
+The current contracts require role-specific output schemas for uncertainty,
+failures, verifier requests, dependency questions, and counterexample state.
+They are prompt/output contracts only; they do not make provider output true.
+
 ## Contract Shape
 
 Each `RoleContract` records:
@@ -40,12 +44,12 @@ CLI-first/provider track:
 
 | Role | Output Surface | Tool Policy | Boundary |
 | --- | --- | --- | --- |
-| `reasoner` | WorkerBundle v2 | `none` | May propose arguments for review, not accepted knowledge or source review. |
-| `verifier` | WorkerBundle v2 | `verifier_tools` | Must preserve pass/fail/error/skipped distinctions and cannot mark accepted or human reviewed. |
-| `counterexampleer` | WorkerBundle v2 | `local_tools` | May search for failures and edge cases; local checks are not proof by themselves. |
-| `explorer` | typed sub-result | `read_only` | Exploration is not mass import or accepted-artifact creation. |
-| `formalizer` | WorkerBundle v2 | `read_only` | Formal links remain metadata unless a checker actually records a result. |
-| `librarian_summarizer` | typed sub-result | `read_only` | Summarizes bounded retrieval context without creating claims or review authority. |
+| `reasoner` | WorkerBundle v2 | `none` | Separates conjectures, proof ideas, assumptions, uncertainty, and verification requests. |
+| `verifier` | WorkerBundle v2 | `verifier_tools` | Separates natural-language concerns from tool results; skipped remains skipped. |
+| `counterexampleer` | WorkerBundle v2 | `local_tools` | Separates candidate counterexamples from verified counterexamples; neither is accepted refutation. |
+| `explorer` | typed sub-result | `read_only` | Preserves uncertainty and dependency questions; exploration is not mass import or accepted-artifact creation. |
+| `formalizer` | WorkerBundle v2 | `read_only` | Separates symbol resolution from semantic-alignment questions. |
+| `librarian_summarizer` | typed sub-result | `read_only` | Summarizes bounded retrieval context and must not invent new claims or review authority. |
 
 Legacy local role names `librarian` and `collector` are accepted by
 `get_role_contract(...)` as aliases for `librarian_summarizer`; they are not
@@ -64,11 +68,12 @@ the provider gateway. It supports:
   `librarian_summarizer`;
 - local rejection of invalid provider output or unsafe authority claims.
 
-The bridge does not add a hosted-provider CLI command or built-in HTTP
-transport. The internal orchestrator may call this bridge only through the
-explicit hosted-worker dispatch path, with context preview, policy, and
-consent checks preserved. The bridge does not write accepted artifacts, create
-human review records, promote artifacts, or treat provider output as truth.
+The bridge does not itself add a hosted-provider CLI command or instantiate
+real HTTP transport by default. The internal orchestrator may call this bridge
+only through the explicit hosted-worker dispatch path, with context preview,
+policy, and consent checks preserved. The bridge does not write accepted
+artifacts, create human review records, promote artifacts, or treat provider
+output as truth.
 
 ## Common Forbidden Actions
 

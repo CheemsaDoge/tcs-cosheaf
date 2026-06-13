@@ -3,6 +3,21 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Role Contract V2 Failure Fields - 2026-06-13
+
+Issue 239 updates built-in role contracts for `reasoner`, `verifier`,
+`counterexampleer`, `explorer`, `formalizer`, and `librarian_summarizer`.
+Role-specific validation now requires structured output fields for uncertainty,
+failures, verifier requests, dependency questions, candidate-vs-verified
+counterexamples, and formal symbol resolution vs semantic alignment.
+
+`HostedWorkerService` now includes each role contract's required output fields,
+optional output fields, and forbidden authority list in the provider prompt.
+The service still validates provider output locally as WorkerBundle v2 or typed
+review-only sub-results, rejects unsafe authority claims, and does not write
+accepted knowledge, create human review, create verifier results, run gates, or
+promote artifacts.
+
 ## WorkerBundle Failure And Counterexample Preservation - 2026-06-13
 
 Issue 237 hardens WorkerBundle v2 with backward-compatible review-only fields

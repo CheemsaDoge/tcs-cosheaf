@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 from cosheaf.agent.hosted_workers import (
     HostedWorkerInput,
@@ -26,8 +27,10 @@ from cosheaf.storage.repo import RepoContext
 class StaticTransport:
     def __init__(self, content: str) -> None:
         self.content = content
+        self.calls: list[tuple[Any, Any]] = []
 
     def complete(self, request, config):  # type: ignore[no-untyped-def]
+        self.calls.append((request, config))
         return ProviderTransportResult(
             content=self.content,
             status=ProviderTransportStatus.COMPLETED,
@@ -161,6 +164,37 @@ def test_hosted_worker_rejects_invalid_provider_output(tmp_path: Path) -> None:
     assert result.error is not None
     assert result.error.code == "provider_output_validation_failed"
     assert result.accepted_write_performed is False
+
+
+def test_hosted_worker_prompt_includes_role_contract_schema_and_authority(
+    tmp_path: Path,
+) -> None:
+    transport = StaticTransport(_bundle_json())
+    service = HostedWorkerService(RepoContext(tmp_path))
+
+    result = service.run(
+        _request(),
+        config=ProviderConfig(
+            provider=ProviderName.OPENAI,
+            mode=ProviderMode.OPENAI_COMPATIBLE,
+            model="gpt-test",
+            enabled=True,
+            api_key_env=None,
+        ),
+        provider=OpenAICompatibleProvider(transport=transport),
+    )
+
+    assert result.status is HostedWorkerStatus.COMPLETED
+    assert transport.calls
+    prompt = transport.calls[0][0].prompt
+    assert "Required output fields:" in prompt
+    assert "conjectures" in prompt
+    assert "proof_ideas" in prompt
+    assert "assumptions" in prompt
+    assert "verification_requests" in prompt
+    assert "Forbidden authority:" in prompt
+    assert "write_accepted_knowledge" in prompt
+    assert "claim_machine_verification_without_checker" in prompt
 
 
 def test_hosted_worker_rejects_unsafe_verifier_bundle(tmp_path: Path) -> None:

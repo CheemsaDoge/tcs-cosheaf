@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import pytest
+from pydantic import ValidationError
+
 from cosheaf.agent.model_provider import NetworkPolicy, ProviderName, ToolPolicy
 from cosheaf.agent.roles import (
     REQUIRED_ROLE_NAMES,
+    RoleContract,
     RoleName,
     get_role_contract,
     list_role_contracts,
@@ -42,6 +46,63 @@ def test_role_contracts_define_required_boundaries() -> None:
         )
         assert contract.context_policy
         assert contract.provider_capability_requirements
+
+
+def test_role_contracts_encode_structured_failure_output_fields() -> None:
+    fields = {
+        contract.role: set(
+            contract.required_output_schema.required_fields
+        ).union(contract.required_output_schema.optional_fields)
+        for contract in list_role_contracts()
+    }
+
+    assert {
+        "conjectures",
+        "proof_ideas",
+        "assumptions",
+        "uncertainty",
+        "verification_requests",
+    }.issubset(fields[RoleName.REASONER])
+    assert {
+        "natural_language_concerns",
+        "tool_results",
+        "verification_requests",
+        "failed_attempts",
+    }.issubset(fields[RoleName.VERIFIER])
+    assert {
+        "counterexample_candidates",
+        "verified_counterexamples",
+        "failed_attempts",
+        "assumptions_tested",
+        "uncertainty",
+    }.issubset(fields[RoleName.COUNTEREXAMPLER])
+    assert {"uncertainty", "dependency_questions"}.issubset(
+        fields[RoleName.EXPLORER]
+    )
+    assert {
+        "symbol_resolution",
+        "semantic_alignment_questions",
+        "alignment_limitations",
+    }.issubset(fields[RoleName.FORMALIZER])
+    assert {"selected_artifacts", "retrieval_audit", "uncertainty"}.issubset(
+        fields[RoleName.LIBRARIAN_SUMMARIZER]
+    )
+
+
+def test_role_contracts_reject_missing_role_specific_output_fields() -> None:
+    data = get_role_contract(RoleName.REASONER).to_dict()
+    data["required_output_schema"]["required_fields"].remove("assumptions")
+
+    with pytest.raises(ValidationError, match="missing role-specific output fields"):
+        RoleContract.model_validate(data)
+
+
+def test_role_contracts_reject_missing_forbidden_authority() -> None:
+    data = get_role_contract(RoleName.LIBRARIAN_SUMMARIZER).to_dict()
+    data["forbidden_actions"].remove("invent_claims")
+
+    with pytest.raises(ValidationError, match="missing forbidden authority"):
+        RoleContract.model_validate(data)
 
 
 def test_role_contracts_do_not_enable_hosted_llm_or_network() -> None:

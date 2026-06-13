@@ -166,8 +166,11 @@ verifier results.
 C.1 is complete in issue 237: WorkerBundle v2 accepts backward-compatible
 review-only fields for assumptions, uncertainty, failed attempts, candidate
 counterexamples, and dependency questions, and reducers preserve them as
-labeled warnings. C.2 is the next planned task: role prompt and output
-contract v2 for structured uncertainty, failures, and verifier requests.
+labeled warnings. C.2 is complete in issue 239: role contracts now require
+structured uncertainty, failures, verifier requests, candidate-vs-verified
+counterexample fields, and formal symbol-resolution versus semantic-alignment
+separation. C.3 is the next planned task: deterministic malformed-output
+recovery for provider responses.
 
 ## Phase D: Context Privacy And Send Preview
 

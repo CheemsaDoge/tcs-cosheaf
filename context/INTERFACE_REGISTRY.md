@@ -1344,6 +1344,14 @@ review, promotion, proof, or public/private policy bypasses.
   allowed inputs, forbidden actions, required output schema, context budget,
   context policy, provider capability requirements, tool policy, stop
   conditions, risk flags, `provider: fake`, and `hosted_llm_enabled: false`.
+  Role-specific validators require structured output fields for reasoner
+  conjectures/proof ideas/assumptions, verifier natural-language concerns vs
+  tool results, counterexample candidate vs verified status, explorer
+  uncertainty and dependency questions, formalizer symbol resolution vs
+  semantic-alignment questions, and librarian-summarizer retrieval uncertainty.
+  Validators also enforce role-specific forbidden authority such as no invented
+  claims, no unverified refutations, no hidden skipped verifier results, and no
+  informal/formal equivalence claims without alignment review.
 - `cosheaf.agent.roles.REQUIRED_ROLE_NAMES`: deterministic tuple of required
   hosted-worker role names in contract order: `reasoner`, `verifier`,
   `counterexampleer`, `explorer`, `formalizer`, and
@@ -1444,11 +1452,12 @@ review, promotion, proof, or public/private policy bypasses.
 - `cosheaf.agent.hosted_workers.HostedWorkerService.run(input, *, config=None, provider=None) -> HostedWorkerOutput`:
   calls the provider gateway through `ModelCallService`, validates fake or
   mocked provider output as WorkerBundle v2 or typed review-only sub-result,
-  writes provider audit logs through the gateway, and returns structured
-  rejected output for expected provider, validation, or hosted-worker policy
-  failures. It does not add a CLI command, perform a real network call by
-  itself, write proposed artifacts, write accepted knowledge, create human
-  review records, or promote artifacts.
+  includes the role contract's required/optional output fields and forbidden
+  authority in the provider prompt, writes provider audit logs through the
+  gateway, and returns structured rejected output for expected provider,
+  validation, or hosted-worker policy failures. It does not add a CLI command,
+  perform a real network call by itself, write proposed artifacts, write
+  accepted knowledge, create human review records, or promote artifacts.
 - `cosheaf.agent.task.WorkerType`: protocol worker type enum with values `reasoner`, `verifier`, `counterexampleer`, `construction_searcher`, `formalizer`, `literature_scout`, and `orchestrator`.
 - `cosheaf.agent.task.TaskStatus`: task status enum with values `open`, `in_progress`, `blocked`, `completed`, `failed`, and `cancelled`.
 - `cosheaf.agent.task.AgentTask`: Pydantic v2 model for local task records with fields `task_id`, `issue_id`, `worker_type`, `status`, `input_context`, `budget`, `expected_outputs`, `created_at`, and `updated_at`.
