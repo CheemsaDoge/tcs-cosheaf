@@ -11,8 +11,10 @@ The Phase 7 retrieval eval harness measures whether the existing local
 artifact-card retrieval surface still returns expected records for small,
 reviewable cases. The context-pack regression eval checks whether bounded
 context packs stay within configured card, full-artifact, token, and policy
-budgets. Both harnesses reuse existing runtime surfaces; they do not introduce
-new retrieval or context-pack algorithms.
+budgets. The agent workflow eval harness checks CLI-agent and provider-worker
+workflow boundaries by invoking existing CLI commands through a Python test
+harness. These harnesses reuse existing runtime surfaces; they do not introduce
+new retrieval, context-pack, provider, MCP, or orchestration algorithms.
 
 ## Retrieval Eval Cases
 
@@ -148,6 +150,81 @@ Case output also lists returned artifacts, full-artifact pulls, private cards,
 known-failure cards, missing required artifacts, and policy failures. A failed
 case exits nonzero in text mode and records the failures in JSON mode.
 
+## Agent Workflow Eval Cases
+
+Agent workflow eval cases are YAML records under `evals/agent_workflow/`. The
+default case file is:
+
+```text
+evals/agent_workflow/cases.yaml
+```
+
+The harness is a Python API in `cosheaf.evals.agent_workflow`; there is no
+dedicated `cosheaf eval agent-workflow` CLI command in this phase. Tests load
+the suite and invoke the existing Typer CLI through `CliRunner`.
+
+Case file format:
+
+```yaml
+schema_version: 1
+cases:
+  - id: case.agent.cli-agent-workflow
+    kind: cli_agent_workflow
+    surface: cli
+    command:
+      - context
+      - build
+      - issue.agent-dry-run.demo
+      - --public-only
+      - --json
+    expect_exit_code: 0
+    expect_json: true
+    required_artifacts:
+      - claim.agent-dry-run.demo
+    forbidden_substrings:
+      - kb/private
+      - private-secret
+```
+
+Required case kinds for the default suite are:
+
+- `cli_agent_workflow`: CLI context workflow smoke.
+- `provider_worker_fake`: deterministic fake-provider worker boundary.
+- `context_privacy`: provider context-preview privacy regression.
+- `bundle_validity`: malformed WorkerBundle rejection.
+- `gate_regression`: accepted-write rejection through the controlled draft
+  write surface.
+- `optional_mcp_readonly`: existing read-only MCP whitelist smoke, when that
+  surface is present. This does not make MCP mandatory and does not add MCP
+  write behavior.
+
+`surface` records which access path the case exercises: `cli`, `provider`, or
+`optional_mcp`. The command list is passed to the existing `cosheaf` CLI app.
+The `{repo_root}` token expands to the active repository root and is used only
+for repository-local paths.
+
+## Agent Workflow Metrics
+
+The agent workflow eval report records:
+
+- `command_success_rate`: fraction of cases whose exit code matched
+  `expect_exit_code`.
+- `json_parse_success_rate`: fraction of cases with parseable JSON when
+  `expect_json` is true; text-only cases opt out explicitly.
+- `required_artifact_hit`: average fraction of required artifact IDs observed
+  in command output or generated context retrieval audit files.
+- `private_leakage_count`: forbidden substring hits across case stdout.
+- `accepted_write_rejection_count`: expected accepted-write policy rejections.
+- `malformed_bundle_rejection_count`: expected malformed bundle rejections.
+- `provider_redaction_pass_count`: fake-provider cases whose redacted log
+  evidence confirms secret redaction.
+- `surface_counts`: deterministic counts for `cli`, `provider`, and
+  `optional_mcp` cases.
+
+Expected safety rejections are successful eval outcomes only when the command
+exits with the expected code and returns the expected structured error code.
+Skipped or unavailable external tools are not treated as passes.
+
 ## CLI
 
 Run the default retrieval eval suite:
@@ -180,11 +257,21 @@ rebuild the SQLite index implicitly. The context eval does not rebuild the
 SQLite index implicitly, but it does build context packs through the existing
 context-pack writer.
 
+The agent workflow eval currently has no CLI command. Running it from Python
+may refresh `context/TASKS/<issue-id>/` context packs and redacted fake-provider
+logs under `.cosheaf/providers/`. These are runtime outputs and should not be
+committed.
+
 ## Limitations
 
 - The harness is intentionally small and fixture-oriented.
-- It does not use embeddings, hosted model calls, external benchmark data, or
-  network access.
+- It does not use embeddings, real hosted model calls, external benchmark
+  data, API keys, or network access.
+- Fake-provider cases are deterministic local regressions, not hosted-provider
+  proof that a real API is configured.
+- Optional MCP cases only cover the existing read-only whitelist surface; they
+  do not make MCP required and do not authorize arbitrary shell or controlled
+  writes.
 - It does not judge mathematical truth or informal/formal alignment.
 - It does not replace validation, gatekeeper, verifier adapters, source review,
   human review, or accepted promotion.

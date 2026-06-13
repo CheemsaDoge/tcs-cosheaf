@@ -1,0 +1,95 @@
+schema_version: 1
+cases:
+  - id: case.agent.cli-agent-workflow
+    kind: cli_agent_workflow
+    surface: cli
+    command:
+      - context
+      - build
+      - issue.agent-dry-run.demo
+      - --public-only
+      - --json
+      - --repo-root
+      - "{repo_root}"
+    expect_exit_code: 0
+    expect_json: true
+    required_artifacts:
+      - claim.agent-dry-run.demo
+    forbidden_substrings:
+      - kb/private
+      - private-secret
+
+  - id: case.agent.provider-worker-fake
+    kind: provider_worker_fake
+    surface: provider
+    command:
+      - provider
+      - fake-run
+      - --input-json
+      - "{repo_root}/evals/agent_workflow/provider-fake-request.json"
+      - --json
+    expect_exit_code: 0
+    expect_json: true
+    require_provider_redaction: true
+    forbidden_substrings:
+      - sk-agent-workflow-eval-secret
+
+  - id: case.agent.context-privacy
+    kind: context_privacy
+    surface: cli
+    command:
+      - provider
+      - preview-send
+      - --issue
+      - issue.agent-dry-run.demo
+      - --provider
+      - fake
+      - --json
+      - --repo-root
+      - "{repo_root}"
+    expect_exit_code: 0
+    expect_json: true
+    forbidden_substrings:
+      - kb/private
+      - private-secret
+
+  - id: case.agent.bundle-validity
+    kind: bundle_validity
+    surface: cli
+    command:
+      - bundle
+      - submit
+      - --input-json
+      - "{repo_root}/evals/agent_workflow/malformed-bundle-submit.json"
+      - --json
+    expect_exit_code: 1
+    expect_json: true
+    expected_error_code: bundle_submit_failed
+
+  - id: case.agent.gate-regression
+    kind: gate_regression
+    surface: cli
+    command:
+      - draft
+      - write-artifact
+      - --input-json
+      - "{repo_root}/evals/agent_workflow/accepted-write-request.json"
+      - --json
+    expect_exit_code: 1
+    expect_json: true
+    expected_error_code: accepted_write_forbidden
+
+  - id: case.agent.optional-mcp-readonly
+    kind: optional_mcp_readonly
+    surface: optional_mcp
+    command:
+      - mcp
+      - list-tools
+      - --repo-root
+      - "{repo_root}"
+    expect_exit_code: 0
+    expect_json: false
+    forbidden_substrings:
+      - shell
+      - promote
+      - accepted-write

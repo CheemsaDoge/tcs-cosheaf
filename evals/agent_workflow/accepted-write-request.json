@@ -1,0 +1,18 @@
+{
+  "artifact_id": "claim.agent-workflow.accepted-write",
+  "artifact_type": "claim",
+  "title": "Accepted write must be rejected",
+  "domain": [
+    "workflow"
+  ],
+  "status": "accepted",
+  "statement": "This eval request must be rejected before writing accepted knowledge.",
+  "authors": [
+    "eval"
+  ],
+  "tags": [
+    "agent-workflow-eval"
+  ],
+  "depends_on": [],
+  "supersedes": []
+}
