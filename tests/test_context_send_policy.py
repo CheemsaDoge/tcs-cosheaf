@@ -242,6 +242,9 @@ def test_provider_preview_policy_matrix_allows_only_explicit_scopes(
     assert preview.private_context_included is (
         MemoryRootScope.PRIVATE in expected_scopes
     )
+    assert preview.card_count == len(expected_artifacts)
+    assert preview.full_artifact_count == 0
+    assert preview.content_mode == "cards_only"
     assert preview.estimated_tokens >= len(expected_artifacts)
     assert all(item.estimated_tokens > 0 for item in preview.items)
     assert all(item.artifact_id in preview.artifact_ids for item in preview.items)
@@ -401,5 +404,8 @@ def test_provider_preview_cli_matrix_for_fake_and_openai_provider_metadata(
     assert payload["payload_shape"]["root_scopes"] == ["public"]
     assert payload["payload_shape"]["estimated_tokens"] > 0
     assert payload["payload_shape"]["private_context_included"] is False
+    assert payload["payload_shape"]["card_count"] == 1
+    assert payload["payload_shape"]["full_artifact_count"] == 0
+    assert payload["payload_shape"]["content_mode"] == "cards_only"
     for marker in FULL_TEXT_MARKERS:
         assert marker not in result.output

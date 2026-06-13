@@ -351,6 +351,9 @@ class ContextBuildResult(AgentAccessModel):
     files: list[str]
     public_only: bool
     private_context_included: bool = False
+    card_count: int = 0
+    full_artifact_count: int = 0
+    content_mode: Literal["cards_only", "cards_with_full_artifacts"] = "cards_only"
 
     @field_validator("issue_id")
     @classmethod
@@ -361,6 +364,13 @@ class ContextBuildResult(AgentAccessModel):
     @classmethod
     def _task_dir(cls, value: str) -> str:
         return _validate_repo_local_path(value)
+
+    @field_validator("card_count", "full_artifact_count")
+    @classmethod
+    def _context_counts(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("context counts must be non-negative")
+        return value
 
     @field_validator("files")
     @classmethod
@@ -568,6 +578,9 @@ class ProviderContextPreview(AgentAccessModel):
     artifact_ids: list[str]
     root_scopes: list[MemoryRootScope]
     estimated_tokens: int
+    card_count: int = 0
+    full_artifact_count: int = 0
+    content_mode: Literal["cards_only", "cards_with_full_artifacts"] = "cards_only"
     risk_flags: list[str] = Field(default_factory=list)
     items: list[ProviderContextPreviewItem] = Field(default_factory=list)
 
@@ -586,6 +599,13 @@ class ProviderContextPreview(AgentAccessModel):
     def _estimated_tokens(cls, value: int) -> int:
         if value < 0:
             raise ValueError("estimated_tokens must be non-negative")
+        return value
+
+    @field_validator("card_count", "full_artifact_count")
+    @classmethod
+    def _context_counts(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("context counts must be non-negative")
         return value
 
     @field_validator("risk_flags")

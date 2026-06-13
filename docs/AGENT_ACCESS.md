@@ -113,6 +113,10 @@ context build/show, and orchestrator planning. JSON mode emits no Rich or ANSI
 markup, keeps public/private root scope visible where retrieval or context is
 involved, and uses `ErrorResult` for expected machine-readable errors. MCP
 remains optional and is not required for ordinary CLI-first agent workflows.
+`cosheaf context build <issue-id> --json` reports context payload shape with
+`card_count`, `full_artifact_count`, and `content_mode` so agents and
+operators can tell whether a context pack stayed cards-only or included any
+full artifact pulls.
 
 ### Allowed Agent Commands
 
@@ -290,10 +294,13 @@ a breaking interface change.
 structured `ErrorResult`. Public-mode previews use public KB scope only.
 Private KB context is previewable only with `policy_mode=private_research`,
 `public_only=false`, and explicit private-context permission. The preview lists
-issue id, artifact ids, root scopes, estimated token counts, and risk flags; it
-does not include full artifact text, issue text, provider credentials, API
-keys, or secrets. The preview is not a provider call and does not authorize a
-provider call by itself.
+issue id, artifact ids, root scopes, estimated token counts, card count,
+full-artifact count, content mode, and risk flags; it does not include full
+artifact text, issue text, provider credentials, API keys, or secrets. Current
+provider previews remain metadata-only and cards-only, so
+`full_artifact_count` is expected to be `0` unless a later explicit design
+widens that boundary. The preview is not a provider call and does not authorize
+a provider call by itself.
 
 `OrchestratorHostedRunner` uses the same preview boundary before dispatching
 planned task nodes to `HostedWorkerService`. The fake path performs a complete

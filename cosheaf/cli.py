@@ -1572,6 +1572,9 @@ def provider_preview_send(
         "preview": preview_payload,
         "payload_shape": {
             "artifact_count": len(preview.artifact_ids),
+            "card_count": preview.card_count,
+            "full_artifact_count": preview.full_artifact_count,
+            "content_mode": preview.content_mode,
             "root_scopes": preview_payload["root_scopes"],
             "estimated_tokens": preview.estimated_tokens,
             "private_context_included": preview.private_context_included,
@@ -1584,6 +1587,7 @@ def provider_preview_send(
 
     console.print(f"provider: {provider.value}")
     console.print(f"artifact_count: {len(preview.artifact_ids)}")
+    console.print(f"full_artifact_count: {preview.full_artifact_count}")
     console.print(f"root_scopes: {', '.join(preview_payload['root_scopes'])}")
     console.print(f"estimated_tokens: {preview.estimated_tokens}")
 
@@ -2818,6 +2822,7 @@ def _context_build_to_result(
     *,
     public_only: bool,
 ) -> ContextBuildResult:
+    payload_counts = _context_payload_counts(result.task_dir)
     return ContextBuildResult(
         issue_id=result.issue_id,
         task_dir=repo_relative_posix(context.repo_root, result.task_dir),
@@ -2827,7 +2832,47 @@ def _context_build_to_result(
         ],
         public_only=public_only,
         private_context_included=_context_private_included(result.task_dir),
+        card_count=payload_counts["card_count"],
+        full_artifact_count=payload_counts["full_artifact_count"],
+        content_mode=payload_counts["content_mode"],
     )
+
+
+def _context_payload_counts(task_dir: Path) -> dict[str, Any]:
+    audit_path = task_dir / "RETRIEVAL_AUDIT.json"
+    try:
+        payload = json.loads(audit_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {
+            "card_count": 0,
+            "full_artifact_count": 0,
+            "content_mode": "cards_only",
+        }
+
+    context_payload = payload.get("context_payload")
+    if isinstance(context_payload, dict):
+        card_count = context_payload.get("card_count", 0)
+        full_artifact_count = context_payload.get("full_artifact_count", 0)
+        content_mode = context_payload.get("content_mode", "cards_only")
+        if isinstance(card_count, int) and isinstance(full_artifact_count, int):
+            if content_mode in {"cards_only", "cards_with_full_artifacts"}:
+                return {
+                    "card_count": card_count,
+                    "full_artifact_count": full_artifact_count,
+                    "content_mode": content_mode,
+                }
+
+    cards = payload.get("retrieval", {}).get("cards", [])
+    pulls = payload.get("full_artifact_pulls", [])
+    card_count = len(cards) if isinstance(cards, list) else 0
+    full_artifact_count = len(pulls) if isinstance(pulls, list) else 0
+    return {
+        "card_count": card_count,
+        "full_artifact_count": full_artifact_count,
+        "content_mode": "cards_with_full_artifacts"
+        if full_artifact_count
+        else "cards_only",
+    }
 
 
 def _context_private_included(task_dir: Path) -> bool:

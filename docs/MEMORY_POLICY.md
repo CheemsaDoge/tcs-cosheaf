@@ -42,7 +42,9 @@ YAML.
 
 Hot memory may include full artifact text only when a worker role or explicit
 request allows it. Full artifact pulls must be counted and recorded in the
-retrieval audit.
+retrieval audit. The audit must distinguish cards-only payloads from payloads
+that also pulled full artifacts, and every full-artifact pull must record the
+caller role and policy scope that justified it.
 
 ### Warm Memory
 
@@ -229,7 +231,7 @@ Context pack v2 writes the existing handoff files plus:
   artifacts were pulled. When `--max-full-artifacts <n>` is greater than zero,
   this file contains at most `n` explicit full YAML pulls.
 - `RETRIEVAL_AUDIT.json`: deterministic request, retrieval, score, exclusion,
-  warning, and full-artifact-pull metadata.
+  warning, context payload shape, and full-artifact-pull metadata.
 
 The CLI accepts:
 
@@ -245,6 +247,15 @@ dependency-neighbor, domain-match, and tag-match behavior while using the
 librarian score as card metadata. Retrieval scores and graph signals remain
 ranking metadata only; they do not authorize promotion, human review,
 verification claims, or public/private policy bypasses.
+
+The retrieval audit includes a `context_payload` object with `card_count`,
+`full_artifact_count`, and `content_mode`. `content_mode` is `cards_only` when
+no full artifact YAML was pulled and `cards_with_full_artifacts` when an
+explicit full-artifact budget produced at least one full pull. Full-artifact
+pull records include a reason string naming the explicit budget, retrieval
+role, policy scope (`public_only` or `workspace`), and maximum pull count. This
+metadata is audit context only; it does not make the pulled content accepted,
+reviewed, verified, or safe to send to a provider.
 
 ## Ranking Formula
 
@@ -418,7 +429,8 @@ Default limits:
 - use bounded `max_cards`;
 - use `max_full_artifacts: 0` for orchestrator context by default;
 - require explicit role policy or request flags for full artifact pulls;
-- record every full artifact pull in the retrieval audit;
+- record every full artifact pull, context payload mode, role, and policy scope
+  in the retrieval audit;
 - exclude generated runtime directories such as `.cosheaf/` from source scans
   except for documented sidecar/readback paths.
 

@@ -242,6 +242,8 @@ def test_orchestrator_run_provider_fake_json_dispatches_hosted_workers(
     assert payload["provider"] == "fake"
     assert payload["state"] == "completed"
     assert payload["context_preview"]["private_context_included"] is False
+    assert payload["context_preview"]["full_artifact_count"] == 0
+    assert payload["context_preview"]["content_mode"] == "cards_only"
     assert payload["accepted_write_performed"] is False
     assert payload["hosted_network"] == "not_used"
     assert len(payload["worker_calls"]) == 4
@@ -335,6 +337,7 @@ def test_orchestrator_openai_compatible_confirm_send_cli_has_no_default_network(
     assert payload["state"] == "failed"
     assert payload["accepted_write_performed"] is False
     assert payload["context_preview"]["private_context_included"] is False
+    assert payload["context_preview"]["full_artifact_count"] == 0
     assert payload["stop_conditions"][0]["reason"] == "hosted_worker_failed"
     assert "provider_transport_missing" in payload["stop_conditions"][0]["description"]
     assert not (tmp_path / "kb" / "accepted").exists()
