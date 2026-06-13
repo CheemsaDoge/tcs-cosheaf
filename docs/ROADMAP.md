@@ -44,7 +44,10 @@ The next focus after the prerelease and downstream compatibility checks is
 tracked in
 [`docs/CODEX_DEVELOPMENT_PLAN_V4.md`](CODEX_DEVELOPMENT_PLAN_V4.md) and
 ADR 0020. The target is `v0.2.2 Provider Transport + Agent Workflow
-Hardening`.
+Hardening`. The readiness audit is tracked in
+[`docs/releases/v0.2.2.md`](releases/v0.2.2.md); it records that `main` can
+move into release-candidate preparation after the audit merges and the release
+candidate reruns the full verification ladder.
 
 This still does not mean turning the project into a production hosted
 multi-agent platform. It means improving the controlled agent-facing access
