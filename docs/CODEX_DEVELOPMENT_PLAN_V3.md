@@ -453,7 +453,8 @@ Goal:
 
 Branch: `release-v021-cli-agent-provider-rc`
 
-Status: current release-candidate task.
+Status: completed and published as the `v0.2.1` prerelease. Continue with
+post-`v0.2.1` hardening through small issue/branch/PR increments.
 
 Goal:
 

@@ -14,6 +14,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any, TextIO
 
+from cosheaf import __version__
 from cosheaf.agent.context_pack import ContextPackError
 from cosheaf.agent.orchestrator_planner import OrchestratorPlannerError
 from cosheaf.gates.gatekeeper import GatekeeperRunResult, ValidationReport
@@ -116,7 +117,7 @@ class ReadOnlyMcpServer:
                     "protocolVersion": "2024-11-05",
                     "serverInfo": {
                         "name": "tcs-cosheaf-readonly",
-                        "version": "0.2.0",
+                        "version": __version__,
                     },
                     "capabilities": {
                         "tools": {},

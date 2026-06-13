@@ -1,15 +1,15 @@
 # Three-Repository Release Checklist
 
-This checklist is for the `v0.2.1` CLI Agent Access + Hosted Provider Gateway
-release candidate after the `v0.2.0` local-MVP release and the `v0.1.1` Formal
-Link Layer support baseline. It is an operator checklist for the framework
-package, public KB, and workspace template together. It is not a
-production-readiness claim.
+This checklist records the `v0.2.1` CLI Agent Access + Hosted Provider Gateway
+prerelease after the `v0.2.0` local-MVP release and the `v0.1.1` Formal Link
+Layer support baseline. It is an operator checklist for the framework package,
+public KB, and workspace template together. It is not a production-readiness
+claim.
 
 `v0.1.1` remains the downstream tag baseline for early formal-link metadata.
 `v0.2.0` packages the deterministic local-MVP workflow. `v0.2.1` packages the
 CLI-first agent-access layer, controlled draft/staging write CLI, provider
-gateway, fake/mocked hosted-worker path, and release-candidate docs. Do not
+gateway, fake/mocked hosted-worker path, and conservative release docs. Do not
 assume a downstream pin to `@v0.2.0` includes `v0.2.1` agent/provider surfaces.
 
 ## Scope
@@ -17,8 +17,7 @@ assume a downstream pin to `@v0.2.0` includes `v0.2.1` agent/provider surfaces.
 - Framework repository: `tcs-cosheaf`.
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
-- Current framework package metadata version on the release-candidate branch:
-  `0.2.1`.
+- Current framework package metadata version on `main`: `0.2.1`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
@@ -31,17 +30,15 @@ assume a downstream pin to `@v0.2.0` includes `v0.2.1` agent/provider surfaces.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.2.1` on the release-candidate
-  branch.
-- [x] `cosheaf.__version__` records `0.2.1` on the release-candidate branch.
+- [x] `pyproject.toml` records package version `0.2.1`.
+- [x] `cosheaf.__version__` records `0.2.1`.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
-- [ ] Remote tag `v0.2.1` points to a reviewed merge commit on the protected
-  default branch after this release-candidate PR merges.
-- [ ] Downstream repositories pin to an explicit release tag rather than
+- [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
+- [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
-- [ ] Workspace-template verification installs or pins `@v0.2.1` after the tag
-  exists before relying on CLI-agent/provider-gateway surfaces.
+- [x] Workspace-template verification installs or pins `@v0.2.1` before relying
+  on CLI-agent/provider-gateway surfaces.
 
 ### License
 
@@ -51,23 +48,24 @@ assume a downstream pin to `@v0.2.0` includes `v0.2.1` agent/provider surfaces.
 
 ### CI And Local Verification
 
-Run these before release-candidate PRs and before publishing the tag:
+Run these before framework release-candidate, release-followup, or consistency
+PRs:
 
-- [ ] `make lint`
-- [ ] `make typecheck`
-- [ ] `make test`
-- [ ] `make validate`
-- [ ] `make gate`
-- [ ] `git diff --check`
-- [ ] GitHub Actions checks pass for the release-candidate PR.
+- [x] `make lint`
+- [x] `make typecheck`
+- [x] `make test`
+- [x] `make validate`
+- [x] `make gate`
+- [x] `git diff --check`
+- [x] GitHub Actions checks passed for the `v0.2.1` release-candidate PR.
 
 Skipped verifier output is not a pass. Optional-tool skips must stay visible in
 gate output and release notes.
 
 ### Validate/Gate Status
 
-- [ ] `cosheaf validate` passes on the framework checkout.
-- [ ] `cosheaf gate run` passes or reports only intentional nonblocking
+- [x] `cosheaf validate` passes on the framework checkout.
+- [x] `cosheaf gate run` passes or reports only intentional nonblocking
   skipped/not-applicable gates.
 - [ ] `cosheaf gate run --pr-checklist <local-pr-body.md>` passes before a PR
   is marked ready when a local PR body draft is available.
@@ -76,10 +74,10 @@ gate output and release notes.
 
 ### Smoke And Evaluation Status
 
-- [ ] `python scripts/release_smoke.py --source
+- [x] `python scripts/release_smoke.py --source
   git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.1` runs against a
-  clean environment after the tag exists and network access is available.
-- [ ] `python scripts/ecosystem_smoke.py --cosheaf cosheaf` runs without
+  clean environment when network access is available.
+- [x] `python scripts/ecosystem_smoke.py --cosheaf cosheaf` runs without
   cloning remote repositories.
 - [ ] The ecosystem smoke covers a readonly public KB root, writable private KB
   root, private draft depending on public accepted knowledge, validation,
@@ -126,32 +124,32 @@ Boundaries:
 
 ## Workspace Template Checklist
 
-- [ ] The template remains the recommended user entry point.
-- [ ] The one-command demo runs from a clean clone.
-- [ ] Makefile shortcuts remain thin wrappers around documented `cosheaf`
+- [x] The template remains the recommended user entry point.
+- [x] The one-command demo runs from a clean clone.
+- [x] Makefile shortcuts remain thin wrappers around documented `cosheaf`
   commands.
-- [ ] CLI-agent workflow commands demonstrate JSON output.
-- [ ] Fake provider smoke uses the deterministic fake provider only.
-- [ ] `.env.example`, if present, names variables only and contains no secrets.
-- [ ] `kb/public` is documented as seed/demo content unless replaced or mounted
+- [x] CLI-agent workflow commands demonstrate JSON output.
+- [x] Fake provider smoke uses the deterministic fake provider only.
+- [x] `.env.example`, if present, names variables only and contains no secrets.
+- [x] `kb/public` is documented as seed/demo content unless replaced or mounted
   from `tcs-kb-public`.
-- [ ] `kb/private` is documented as the writable private research overlay.
-- [ ] The docs warn users not to manually merge framework, public KB, and
+- [x] `kb/private` is documented as the writable private research overlay.
+- [x] The docs warn users not to manually merge framework, public KB, and
   private workspace repositories into one mixed tree.
-- [ ] Runtime output stays ignored under `.cosheaf/` or another ignored runtime
+- [x] Runtime output stays ignored under `.cosheaf/` or another ignored runtime
   directory.
 
 ## Public KB Checklist
 
-- [ ] Public KB accepted artifacts have complete structured source metadata.
-- [ ] Public KB accepted artifacts have human review records or explicit
+- [x] Public KB accepted artifacts have complete structured source metadata.
+- [x] Public KB accepted artifacts have human review records or explicit
   maintainer review evidence.
-- [ ] Validation and gate success are recorded as checks, not as substitutes
+- [x] Validation and gate success are recorded as checks, not as substitutes
   for human review.
-- [ ] No accepted public artifact depends on private or draft artifacts.
-- [ ] No private conjecture, unpublished idea, or unreviewed LLM output is
+- [x] No accepted public artifact depends on private or draft artifacts.
+- [x] No private conjecture, unpublished idea, or unreviewed LLM output is
   committed under accepted public KB paths.
-- [ ] Source-note conventions and foundation backlog stay updated before
+- [x] Source-note conventions and foundation backlog stay updated before
   adding new accepted theorem/proof-sketch batches.
 
 ## Public/Private Policy Status

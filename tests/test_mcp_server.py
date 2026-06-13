@@ -7,6 +7,7 @@ from typing import Any
 import yaml  # type: ignore[import-untyped]
 from typer.testing import CliRunner
 
+import cosheaf
 from cosheaf.cli import app
 from cosheaf.mcp.server import (
     READ_ONLY_PROMPT_NAMES,
@@ -147,6 +148,17 @@ def _fixture_repo(repo_root: Path) -> RepoContext:
 
 def _request(method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     return {"jsonrpc": "2.0", "id": 1, "method": method, "params": params or {}}
+
+
+def test_mcp_initialize_reports_package_version(tmp_path: Path) -> None:
+    server = ReadOnlyMcpServer(_fixture_repo(tmp_path))
+
+    response = server.handle(_request("initialize"))
+
+    assert response["result"]["serverInfo"] == {
+        "name": "tcs-cosheaf-readonly",
+        "version": cosheaf.__version__,
+    }
 
 
 def test_mcp_tools_list_exposes_read_only_whitelist(tmp_path: Path) -> None:

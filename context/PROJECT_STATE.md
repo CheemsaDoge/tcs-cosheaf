@@ -3,12 +3,13 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
-## v0.2.1 CLI Agent Access Release Candidate - 2026-06-13
+## v0.2.1 CLI Agent Access Prerelease Closeout - 2026-06-13
 
-Issue 221 prepares `v0.2.1` as the CLI Agent Access + Hosted Provider Gateway
-release candidate. The package metadata and `cosheaf.__version__` record
-`0.2.1` on the release-candidate branch, and `docs/releases/v0.2.1.md`
-documents conservative release boundaries.
+Issue 221 prepared `v0.2.1` as the CLI Agent Access + Hosted Provider Gateway
+release candidate. PR #222 merged it to `main`, the package metadata and
+`cosheaf.__version__` now record `0.2.1`, the `v0.2.1` tag is published as a
+GitHub prerelease, and `docs/releases/v0.2.1.md` documents conservative
+release boundaries.
 
 The candidate packages the already-merged CLI-first agent-access surface,
 controlled draft/staging write CLI, provider gateway, fake and mocked
@@ -21,10 +22,11 @@ provider, MCP, Skill, retrieval, context, SAT, SMT, Lean, validation, or gate
 output bypass reducer, review, verifier, promotion, or accepted-knowledge
 policy.
 
-`v0.2.0` remains the local-MVP baseline, and `v0.2.1` should be tagged only
-after the reviewed release-candidate merge. Downstream workspaces should move
-to `@v0.2.1` for CLI-agent/provider-gateway workflows only after that tag
-exists. MCP remains optional and is not required for `v0.2.1`.
+`v0.2.0` remains the local-MVP baseline. The workspace template now pins
+CLI-agent/provider demo workflows to `@v0.2.1`, and `tcs-kb-public` CI now
+installs `tcs-cosheaf` from `@v0.2.1` for validation, gate, PR-checklist, and
+repository-local policy guard checks. MCP remains optional and is not required
+for `v0.2.1`.
 
 ## Agent Workflow Evaluation Suite - 2026-06-10
 

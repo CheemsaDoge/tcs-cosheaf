@@ -65,7 +65,7 @@ private KB roots are writable.
 Install the framework package into the active environment:
 
 ```bash
-python -m pip install "git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1"
+python -m pip install "git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.1"
 ```
 
 For framework development, clone `tcs-cosheaf` separately and install it with

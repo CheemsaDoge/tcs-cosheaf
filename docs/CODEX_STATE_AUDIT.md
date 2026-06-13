@@ -2,6 +2,11 @@
 
 Date: 2026-06-06
 
+Historical status: this audit records the repository state on 2026-06-06. It
+is not the current project state after the `v0.2.0` and `v0.2.1` tags. For the
+current status, read `context/CURRENT_MILESTONE.md`,
+`context/PROJECT_STATE.md`, `README.md`, and `docs/ROADMAP.md`.
+
 Scope:
 
 - Framework repository: `tcs-cosheaf`

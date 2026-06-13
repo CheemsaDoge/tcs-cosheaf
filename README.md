@@ -5,11 +5,12 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.2.1 CLI Agent Access + Hosted Provider Gateway release
-candidate**. The `v0.1.1` tag remains the downstream Formal Link Layer support
-baseline; the `v0.2.0` tag packages the deterministic local-MVP workflow; and
-the `v0.2.1` candidate prepares the CLI-first agent and hosted-provider gateway
-surfaces for a pin-able framework release. The repository has working Python
+Current status: **v0.2.1 CLI Agent Access + Hosted Provider Gateway
+prerelease**. The `v0.1.1` tag remains the downstream Formal Link Layer
+support baseline; the `v0.2.0` tag packages the deterministic local-MVP
+workflow; and the `v0.2.1` tag packages the CLI-first agent and
+hosted-provider gateway surfaces as a pin-able framework prerelease. The
+repository has working Python
 scaffolding, typed artifact models, filesystem loading, validation, dependency
 graph indexing, workspace-aware KB root loading, artifact lifecycle CLI
 commands, gatekeeper reports including the G10 Formal Link Gate, ranked
@@ -245,8 +246,7 @@ See [Workspace quickstart](docs/WORKSPACE_QUICKSTART.md),
 Downstream repositories that only need Formal Link Layer metadata can stay
 pinned to `v0.1.1`. Downstream repositories that need the deterministic
 local-MVP workflow can pin to `v0.2.0`. Downstream repositories that need the
-CLI-agent and hosted-provider gateway surfaces should pin to `v0.2.1` after
-that tag is published.
+CLI-agent and hosted-provider gateway surfaces should pin to `v0.2.1`.
 
 ## Development Commands
 
