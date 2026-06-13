@@ -1470,10 +1470,11 @@ review, promotion, proof, or public/private policy bypasses.
 - `cosheaf.agent.worker_contract.validate_output_bundle(context: RepoContext, bundle_path: str | Path, *, task: AgentTask | None = None) -> WorkerOutputBundle`: validates a local bundle manifest and referenced output paths without merging accepted knowledge.
 - `cosheaf.agent.worker_bundle_v2.WorkerBundleConfidence`: confidence enum with values `low`, `medium`, and `high`.
 - `cosheaf.agent.worker_bundle_v2.ProposedArtifact`: strict Pydantic v2 model for one repository-local proposed artifact path and summary.
-- `cosheaf.agent.worker_bundle_v2.WorkerBundleV2`: strict Pydantic v2 model for Phase 4.3 reducer-oriented worker bundles with fields `bundle_id`, `task_id`, `worker_role`, `created_at`, `summary`, `used_artifacts`, `used_sources`, `claims`, `proposed_artifacts`, `verification_requests`, `failures_or_counterexamples`, `risk_flags`, `next_steps`, and `confidence`.
+- `cosheaf.agent.worker_bundle_v2.WorkerBundleV2`: strict Pydantic v2 model for reducer-oriented worker bundles with fields `bundle_id`, `task_id`, `worker_role`, `created_at`, `summary`, `used_artifacts`, `used_sources`, `claims`, `proposed_artifacts`, optional review-preservation fields `assumptions`, `uncertainty`, `failed_attempts`, `counterexamples`, and `dependency_questions`, legacy-compatible `verification_requests` and `failures_or_counterexamples`, plus `risk_flags`, `next_steps`, and `confidence`.
 - `cosheaf.agent.worker_bundle_v2.WorkerBundleV2Error`: expected worker bundle v2 validation or reducer-boundary failure.
 - `cosheaf.agent.worker_bundle_v2.validate_worker_bundle_v2(context: RepoContext, bundle_path: str | Path) -> WorkerBundleV2`: loads and validates a worker bundle v2 manifest without executing workers, writing files, requesting review, or promoting accepted knowledge. It rejects non-repository-local bundle paths, non-repository-local proposed artifact paths, accepted-KB proposals, schema-invalid existing proposed artifacts, and worker-created `human_reviewed` or `accepted` review states.
-- `cosheaf.agent.worker_bundle_v2.reduce_worker_bundle_v2(context: RepoContext, bundle_path: str | Path, *, reducer_id: str) -> ReducerResult`: validates a worker bundle v2 manifest and returns a deterministic `ReducerResult`, preserving failures, risk flags, and confidence as warnings.
+- `cosheaf.agent.worker_bundle_v2.reduce_worker_bundle_v2(context: RepoContext, bundle_path: str | Path, *, reducer_id: str) -> ReducerResult`: validates a worker bundle v2 manifest and returns a deterministic `ReducerResult`, preserving assumptions, uncertainty, verification requests, failed attempts, counterexample candidates, dependency questions, legacy failure/counterexample notes, risk flags, and confidence as labeled warnings. Verification requests are preserved as requests, not verifier results; counterexamples remain candidate review evidence, not accepted refutations.
+- `cosheaf.agent.worker_bundle_v2.worker_bundle_review_warnings(bundle: WorkerBundleV2) -> list[str]`: returns the labeled reducer/review warnings used by bundle reduction and bundle submission.
 - `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunConfig`: dataclass for one local-only orchestrator dry-run with fields `issue_id`, `timeout_seconds`, optional `worker_command`, optional `proposal_path`, optional `run_id`, and optional `now`.
 - `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunResult`: dataclass containing the final `OrchestratorRun`, run root, run record path, and structured run-log path.
 - `cosheaf.agent.orchestrator_runner.OrchestratorLocalRunner`: local-only orchestrator runner that converts a deterministic plan into local task records, runs explicit argv commands through `LocalWorkerRunner`, validates worker bundle v2 outputs, reduces them into `ReducerResult` records, and writes the final run record plus sanitized structured `run_log.json`. It does not call hosted LLMs, make network calls, run gates, request human review, write accepted knowledge, or promote artifacts.
@@ -1601,16 +1602,21 @@ top-level fields:
 - `used_sources`
 - `claims`
 - `proposed_artifacts`
+- `assumptions` (optional; defaults to empty)
+- `uncertainty` (optional; defaults to empty)
 - `verification_requests`
+- `failed_attempts` (optional; defaults to empty)
+- `counterexamples` (optional; defaults to empty candidate evidence)
 - `failures_or_counterexamples`
+- `dependency_questions` (optional; defaults to empty)
 - `risk_flags`
 - `next_steps`
 - `confidence`
 
-Worker bundle v2 is a reducer-oriented contract only in this phase. It is not
-yet wired into `cosheaf task run` or `cosheaf task complete`, and it does not
-dispatch workers, run gates, request human review, write files, or promote
-accepted knowledge.
+Worker bundle v2 is a reducer-oriented contract. It is used by bundle services,
+local dry-run workers, hosted-worker outputs, and task-run bundle validation,
+but it still does not authorize gates, verifier results, human review, accepted
+knowledge writes, accepted refutations, or promotion.
 
 #### Verification
 
@@ -1967,8 +1973,11 @@ working directory.
   `created_at`, `summary`, `used_artifacts`, `used_sources`, `claims`,
   `proposed_artifacts`, `verification_requests`,
   `failures_or_counterexamples`, `risk_flags`, `next_steps`, and
-  `confidence`. It does not authorize accepted writes, review-state changes,
-  worker execution, or promotion.
+  `confidence`, while accepting optional `assumptions`, `uncertainty`,
+  `failed_attempts`, `counterexamples`, and `dependency_questions` for
+  backward-compatible failure/counterexample preservation. It does not
+  authorize accepted writes, review-state changes, verifier results, accepted
+  refutations, worker execution, or promotion.
 
 ### Formal Library Manifest Files
 

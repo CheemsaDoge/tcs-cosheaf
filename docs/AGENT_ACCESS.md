@@ -320,6 +320,13 @@ Provider behavior must be:
 A provider result can become worker output, a draft proposal, or review
 context. It cannot become accepted knowledge by itself.
 
+WorkerBundle v2 can preserve assumptions, uncertainty, failed attempts,
+candidate counterexamples, verification requests, dependency questions, risk
+flags, and next steps as review-only material. Verification requests are not
+verifier results, and candidate counterexamples are not accepted refutations.
+Those fields must remain draft/proposal context until ordinary review, gate,
+verifier, and promotion workflows handle them explicitly.
+
 ## Optional MCP Boundary
 
 MCP is an optional adapter, not the primary agent path.

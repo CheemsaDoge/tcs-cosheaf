@@ -100,6 +100,14 @@ Roles that map directly to protocol `WorkerType` return WorkerBundle v2:
 direct bundle role return typed review-only sub-results: `explorer` and
 `librarian_summarizer`.
 
+WorkerBundle v2 preserves review-only research state, including assumptions,
+uncertainty, verification requests, failed attempts, candidate
+counterexamples, dependency questions, risk flags, and next steps.
+Verification requests are not verifier results, and candidate counterexamples
+are not accepted refutations. Reducers keep these fields as labeled review
+warnings; they do not update accepted knowledge, mark review state, or promote
+artifacts.
+
 The service returns `HostedWorkerOutput` instead of raising for expected
 provider or validation failures. Invalid provider output is rejected with
 `provider_output_validation_failed`. Unsafe authority claims are rejected with

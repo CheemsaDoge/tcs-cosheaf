@@ -341,8 +341,13 @@ def _fake_bundle(worker_input: HostedWorkerInput, role: RoleName) -> WorkerBundl
                 "summary": "Draft-only hosted worker proposal.",
             }
         ],
+        "assumptions": ["Hosted worker output is review-only."],
+        "uncertainty": ["No human review or semantic alignment review was run."],
         "verification_requests": ["Run validate and gate before review."],
+        "failed_attempts": [],
+        "counterexamples": [],
         "failures_or_counterexamples": ["No external verifier was run."],
+        "dependency_questions": [],
         "risk_flags": ["needs_human_review"],
         "next_steps": ["Request explicit human review."],
         "confidence": "low",

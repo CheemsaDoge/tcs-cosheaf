@@ -82,8 +82,13 @@ def _bundle_v2_data() -> dict[str, Any]:
                 "summary": "Draft service fixture.",
             }
         ],
+        "assumptions": ["Service fixture assumptions remain review context."],
+        "uncertainty": ["No human review has been performed."],
         "verification_requests": ["Run validation and gate before review."],
+        "failed_attempts": ["No external verifier was invoked."],
+        "counterexamples": ["Candidate counterexample evidence is unreviewed."],
         "failures_or_counterexamples": ["No machine proof was performed."],
+        "dependency_questions": ["Should this cite a public accepted definition?"],
         "risk_flags": ["needs_human_review"],
         "next_steps": ["Request human review."],
         "confidence": "medium",
@@ -160,6 +165,11 @@ def test_task_and_bundle_services_preserve_review_only_outputs(tmp_path: Path) -
     )
     assert reducer.status == "accepted_for_review"
     assert reducer.output_paths == ["kb/draft/claims/service.yaml"]
+    assert "failed_attempt: No external verifier was invoked." in reducer.warnings
+    assert any(
+        warning.startswith("counterexample_candidate: Candidate counterexample")
+        for warning in reducer.warnings
+    )
 
 
 def test_draft_write_service_creates_draft_and_refuses_accepted(

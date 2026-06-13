@@ -71,12 +71,19 @@ def _bundle_data(
                 "summary": "Draft claim proposed by the worker.",
             }
         ],
+        "assumptions": ["The fixture graph is simple and undirected."],
+        "uncertainty": ["No source-alignment review was performed."],
         "verification_requests": [
             "Run cosheaf validate and gate before any review decision."
+        ],
+        "failed_attempts": ["A direct proof sketch did not identify the needed lemma."],
+        "counterexamples": [
+            "Candidate counterexample remains unverified and draft-only."
         ],
         "failures_or_counterexamples": [
             "No machine proof or Lean check was performed."
         ],
+        "dependency_questions": ["Should definition.path be an explicit dependency?"],
         "risk_flags": ["needs_human_review"],
         "next_steps": ["Request human review before promotion."],
         "confidence": confidence,
@@ -90,10 +97,41 @@ def test_worker_bundle_v2_is_strict_and_deterministic() -> None:
     assert bundle.worker_role is WorkerType.REASONER
     assert bundle.created_at == NOW
     assert bundle.proposed_artifacts[0].path == "kb/draft/claims/worker-bundle-v2.yaml"
+    assert bundle.assumptions == ["The fixture graph is simple and undirected."]
+    assert bundle.uncertainty == ["No source-alignment review was performed."]
+    assert bundle.failed_attempts == [
+        "A direct proof sketch did not identify the needed lemma."
+    ]
+    assert bundle.counterexamples == [
+        "Candidate counterexample remains unverified and draft-only."
+    ]
+    assert bundle.dependency_questions == [
+        "Should definition.path be an explicit dependency?"
+    ]
     assert bundle.to_json() == bundle.to_json()
 
     with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
         WorkerBundleV2.model_validate({**_bundle_data(), "extra_field": "nope"})
+
+
+def test_worker_bundle_v2_keeps_legacy_bundle_fields_optional() -> None:
+    legacy = _bundle_data()
+    for field in (
+        "assumptions",
+        "uncertainty",
+        "failed_attempts",
+        "counterexamples",
+        "dependency_questions",
+    ):
+        legacy.pop(field)
+
+    bundle = WorkerBundleV2.model_validate(legacy)
+
+    assert bundle.assumptions == []
+    assert bundle.uncertainty == []
+    assert bundle.failed_attempts == []
+    assert bundle.counterexamples == []
+    assert bundle.dependency_questions == []
 
 
 def test_validate_worker_bundle_v2_rejects_paths_outside_repo(tmp_path: Path) -> None:
@@ -171,6 +209,48 @@ def test_reduce_worker_bundle_v2_preserves_failures_and_uncertainty(
     assert result.reducer_id == "reducer.issue.fixture.worker-bundle-v2.0001"
     assert result.status == "accepted_for_review"
     assert result.output_paths == ["kb/draft/claims/worker-bundle-v2.yaml"]
+    assert "assumption: The fixture graph is simple and undirected." in result.warnings
+    assert "uncertainty: No source-alignment review was performed." in result.warnings
+    assert any(
+        warning.startswith("verification_request: Run cosheaf validate")
+        for warning in result.warnings
+    )
+    assert any(
+        warning.startswith("failed_attempt: A direct proof sketch")
+        for warning in result.warnings
+    )
+    assert any(
+        warning.startswith("counterexample_candidate: Candidate counterexample")
+        for warning in result.warnings
+    )
     assert any("No machine proof" in warning for warning in result.warnings)
+    assert any(
+        warning.startswith("dependency_question: Should definition.path")
+        for warning in result.warnings
+    )
     assert "risk: needs_human_review" in result.warnings
     assert "confidence: low" in result.warnings
+
+
+def test_counterexample_evidence_stays_review_warning_not_output_path(
+    tmp_path: Path,
+) -> None:
+    data = _bundle_data()
+    data["proposed_artifacts"] = []
+    data["counterexamples"] = [
+        "Candidate counterexample to an accepted theorem; not reviewed."
+    ]
+    _write_yaml(tmp_path, "outputs/bundle.yaml", data)
+
+    result = reduce_worker_bundle_v2(
+        RepoContext(tmp_path),
+        "outputs/bundle.yaml",
+        reducer_id="reducer.issue.fixture.counterexample.0001",
+    )
+
+    assert result.status == "accepted_for_review"
+    assert result.output_paths == []
+    assert (
+        "counterexample_candidate: Candidate counterexample to an accepted theorem; "
+        "not reviewed."
+    ) in result.warnings

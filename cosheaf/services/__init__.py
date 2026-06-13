@@ -37,6 +37,7 @@ from cosheaf.agent.worker_bundle_v2 import (
     WorkerBundleV2Error,
     reduce_worker_bundle_v2,
     validate_worker_bundle_v2,
+    worker_bundle_review_warnings,
 )
 from cosheaf.config.workspace import KbRootConfig
 from cosheaf.core.artifact import BaseArtifact, SourceMetadata
@@ -445,11 +446,7 @@ class BundleValidationService:
                 },
             )
 
-        warnings = [
-            *bundle.failures_or_counterexamples,
-            *(f"risk: {flag}" for flag in bundle.risk_flags),
-            f"confidence: {bundle.confidence.value}",
-        ]
+        warnings = worker_bundle_review_warnings(bundle)
         if dry_run:
             warnings.append("dry-run: bundle validated; no task state was changed")
 
