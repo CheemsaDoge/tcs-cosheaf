@@ -19,11 +19,12 @@ and orchestrator dry-run surfaces, controlled draft-write CLI commands,
 provider gateway and fake/mocked hosted-worker dispatch paths, verifier
 adapters including a Python checker, a minimal optional SAT DIMACS path, a
 minimal optional SMT-LIB path, a minimal optional plain Lean file path, and an
-optional external Lean library reference `#check` path, GitHub Actions CI, and
-collaboration templates. It is not production-ready software and does not yet
-provide a web UI, built-in default real hosted HTTP transport, automatic
-theorem proving, full Lean autoformalization, automatic accepted promotion, or
-multi-user permissions.
+optional external Lean library reference `#check` path, an optional stdlib
+OpenAI-compatible HTTP transport object that is not used by default, GitHub
+Actions CI, and collaboration templates. It is not production-ready software
+and does not yet provide a web UI, a default real hosted provider path,
+provider `real-run` CLI, automatic theorem proving, full Lean
+autoformalization, automatic accepted promotion, or multi-user permissions.
 
 ## Problem
 
@@ -104,6 +105,8 @@ Implemented:
 - Role-specific hosted worker services and explicit orchestrator dispatch
   through fake or OpenAI-compatible provider boundaries, with fake/mocked tests
   only.
+- Optional stdlib OpenAI-compatible HTTP transport object for explicitly
+  configured and injected provider calls; no default CLI path instantiates it.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
   DIMACS adapter, minimal optional SMT-LIB adapter, minimal optional Lean
   plain-file adapter, and optional external Lean library reference checker.
@@ -127,7 +130,7 @@ Planned or incomplete:
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
-- Built-in real hosted HTTP provider transport and hosted worker CLI commands.
+- Provider `real-run` CLI and hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
 - Automatic informal/formal semantic alignment checking.
 

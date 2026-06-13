@@ -11,7 +11,10 @@ import hashlib
 import json
 import os
 import re
-from collections.abc import Mapping, Sequence
+import time
+import urllib.error
+import urllib.request
+from collections.abc import Callable, Mapping, Sequence
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
@@ -293,6 +296,131 @@ class OpenAICompatibleProvider:
     ) -> ProviderTransportResult:
         """Dispatch through the injected transport."""
         return self.transport.complete(request, config)
+
+
+class OpenAICompatibleHttpTransport:
+    """Optional stdlib HTTP transport for OpenAI-compatible chat completions.
+
+    The transport is inert until an operator explicitly injects it into the
+    provider gateway. It does not install an SDK, discover credentials, or
+    choose a default endpoint on its own.
+    """
+
+    def __init__(
+        self,
+        *,
+        urlopen: Callable[..., Any] | None = None,
+    ) -> None:
+        self._urlopen = urlopen or urllib.request.urlopen
+
+    def complete(
+        self,
+        request: ProviderGatewayRequest,
+        config: ProviderConfig,
+    ) -> ProviderTransportResult:
+        """Run one explicitly configured OpenAI-compatible HTTP request."""
+        config_error = _real_transport_config_error(request, config)
+        if config_error is not None:
+            return config_error
+        assert config.api_key_env is not None
+        assert config.base_url is not None
+        api_key = os.environ.get(config.api_key_env)
+        if not api_key:
+            return ProviderTransportResult(
+                content="",
+                status=ProviderTransportStatus.ERROR,
+                error_code="provider_api_key_missing",
+                error_message="provider API key environment variable is missing",
+                raw_metadata={"api_key_env": config.api_key_env},
+            )
+
+        http_request = urllib.request.Request(
+            config.base_url,
+            data=json.dumps(
+                _openai_compatible_payload(request),
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            method="POST",
+        )
+        started = time.perf_counter()
+        try:
+            with self._urlopen(
+                http_request,
+                timeout=float(config.timeout_seconds),
+            ) as response:
+                raw_body = response.read()
+                http_status = _http_response_status(response)
+        except TimeoutError as exc:
+            return _http_transport_error(
+                ProviderTransportStatus.TIMEOUT,
+                "provider_timeout",
+                "provider request timed out",
+                exc,
+            )
+        except urllib.error.HTTPError as exc:
+            return _http_error_result(exc)
+        except urllib.error.URLError as exc:
+            if isinstance(exc.reason, TimeoutError):
+                return _http_transport_error(
+                    ProviderTransportStatus.TIMEOUT,
+                    "provider_timeout",
+                    "provider request timed out",
+                    exc.reason,
+                )
+            return _http_transport_error(
+                ProviderTransportStatus.ERROR,
+                "provider_network_error",
+                "provider network request failed",
+                exc,
+            )
+        except OSError as exc:
+            return _http_transport_error(
+                ProviderTransportStatus.ERROR,
+                "provider_network_error",
+                "provider network request failed",
+                exc,
+            )
+        latency_ms = int((time.perf_counter() - started) * 1000)
+        try:
+            payload = json.loads(raw_body.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            return _http_transport_error(
+                ProviderTransportStatus.ERROR,
+                "provider_invalid_json",
+                "provider response was not valid JSON",
+                exc,
+                raw_metadata={"http_status": str(http_status)},
+            )
+        parsed = _parse_openai_compatible_response(payload)
+        if isinstance(parsed, ProviderTransportResult):
+            return parsed.model_copy(
+                update={
+                    "raw_metadata": {
+                        **parsed.raw_metadata,
+                        "http_status": str(http_status),
+                    }
+                }
+            )
+        content, finish_reason, metadata = parsed
+        usage = payload.get("usage") if isinstance(payload, dict) else None
+        return ProviderTransportResult(
+            content=content,
+            status=ProviderTransportStatus.COMPLETED,
+            finish_reason=finish_reason,
+            latency_ms=latency_ms,
+            input_tokens=_optional_usage_int(usage, "prompt_tokens"),
+            output_tokens=_optional_usage_int(usage, "completion_tokens"),
+            raw_metadata={
+                "http_status": str(http_status),
+                **metadata,
+            },
+        )
 
 
 class ProviderGateway:
@@ -706,6 +834,200 @@ def _complete_with_retries(
     raise RuntimeError("provider retry loop exhausted unexpectedly")
 
 
+def _real_transport_config_error(
+    request: ProviderGatewayRequest,
+    config: ProviderConfig,
+) -> ProviderTransportResult | None:
+    if not request.consent.consent_required or not request.consent.consent_granted:
+        return ProviderTransportResult(
+            content="",
+            status=ProviderTransportStatus.ERROR,
+            error_code="provider_confirm_send_required",
+            error_message=(
+                "OpenAI-compatible HTTP transport requires explicit send consent"
+            ),
+        )
+    if request.network_policy is not NetworkPolicy.EXPLICIT_ALLOW:
+        return ProviderTransportResult(
+            content="",
+            status=ProviderTransportStatus.ERROR,
+            error_code="provider_network_not_allowed",
+            error_message="real provider transport requires explicit network policy",
+        )
+    if not config.enabled:
+        return ProviderTransportResult(
+            content="",
+            status=ProviderTransportStatus.ERROR,
+            error_code="provider_disabled",
+            error_message="provider is disabled",
+        )
+    if config.mode is not ProviderMode.OPENAI_COMPATIBLE:
+        return ProviderTransportResult(
+            content="",
+            status=ProviderTransportStatus.ERROR,
+            error_code="provider_config_missing",
+            error_message="OpenAI-compatible HTTP transport requires matching mode",
+        )
+    if (
+        config.provider is not ProviderName.OPENAI
+        or request.provider is not ProviderName.OPENAI
+    ):
+        return ProviderTransportResult(
+            content="",
+            status=ProviderTransportStatus.ERROR,
+            error_code="provider_config_missing",
+            error_message="OpenAI-compatible HTTP transport requires OpenAI provider",
+        )
+    if config.base_url is None:
+        return ProviderTransportResult(
+            content="",
+            status=ProviderTransportStatus.ERROR,
+            error_code="provider_config_missing",
+            error_message="OpenAI-compatible HTTP transport requires base_url",
+        )
+    if config.api_key_env is None:
+        return ProviderTransportResult(
+            content="",
+            status=ProviderTransportStatus.ERROR,
+            error_code="provider_config_missing",
+            error_message="OpenAI-compatible HTTP transport requires api_key_env",
+        )
+    return None
+
+
+def _openai_compatible_payload(request: ProviderGatewayRequest) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "model": request.model,
+        "messages": [{"role": "user", "content": request.prompt}],
+    }
+    if request.max_output_tokens is not None:
+        payload["max_tokens"] = request.max_output_tokens
+    if request.temperature is not None:
+        payload["temperature"] = request.temperature
+    if request.top_p is not None:
+        payload["top_p"] = request.top_p
+    return payload
+
+
+def _http_response_status(response: Any) -> int:
+    status = getattr(response, "status", None)
+    if isinstance(status, int):
+        return status
+    getcode = getattr(response, "getcode", None)
+    if callable(getcode):
+        code = getcode()
+        if isinstance(code, int):
+            return code
+    return 200
+
+
+def _http_error_result(exc: urllib.error.HTTPError) -> ProviderTransportResult:
+    status = (
+        ProviderTransportStatus.RATE_LIMITED
+        if exc.code == 429
+        else ProviderTransportStatus.FAILED
+    )
+    code = "provider_rate_limited" if exc.code == 429 else "provider_http_error"
+    return ProviderTransportResult(
+        content="",
+        status=status,
+        error_code=code,
+        error_message=_http_error_message(exc),
+        raw_metadata={"http_status": str(exc.code)},
+    )
+
+
+def _http_error_message(exc: urllib.error.HTTPError) -> str:
+    reason = str(getattr(exc, "reason", "") or exc.msg or "HTTP error")
+    clean_reason, _ = redact_text(reason)
+    return f"provider HTTP error {exc.code}: {clean_reason}"
+
+
+def _http_transport_error(
+    status: ProviderTransportStatus,
+    code: str,
+    message: str,
+    exc: BaseException,
+    *,
+    raw_metadata: Mapping[str, str] | None = None,
+) -> ProviderTransportResult:
+    clean_detail, _ = redact_text(str(exc) or exc.__class__.__name__)
+    return ProviderTransportResult(
+        content="",
+        status=status,
+        error_code=code,
+        error_message=f"{message}: {clean_detail}",
+        raw_metadata=dict(raw_metadata or {}),
+    )
+
+
+def _parse_openai_compatible_response(
+    payload: object,
+) -> tuple[str, FinishReason, dict[str, str]] | ProviderTransportResult:
+    if not isinstance(payload, dict):
+        return _malformed_openai_response("provider response must be a JSON object")
+    choices = payload.get("choices")
+    if not isinstance(choices, list) or not choices:
+        return _malformed_openai_response("provider response choices are missing")
+    first_choice = choices[0]
+    if not isinstance(first_choice, dict):
+        return _malformed_openai_response("provider response choice is invalid")
+    message = first_choice.get("message")
+    if not isinstance(message, dict):
+        return _malformed_openai_response("provider response message is missing")
+    content = message.get("content")
+    if not isinstance(content, str) or not content.strip():
+        return _malformed_openai_response("provider response content is missing")
+
+    metadata = _openai_response_metadata(payload, first_choice)
+    return (
+        content,
+        _normalize_finish_reason(first_choice.get("finish_reason")),
+        metadata,
+    )
+
+
+def _malformed_openai_response(message: str) -> ProviderTransportResult:
+    return ProviderTransportResult(
+        content="",
+        status=ProviderTransportStatus.FAILED,
+        error_code="provider_malformed_response",
+        error_message=message,
+    )
+
+
+def _openai_response_metadata(
+    payload: Mapping[str, object],
+    choice: Mapping[str, object],
+) -> dict[str, str]:
+    metadata: dict[str, str] = {}
+    response_id = payload.get("id")
+    if isinstance(response_id, str) and response_id.strip():
+        metadata["response_id"] = response_id.strip()
+    fingerprint = payload.get("system_fingerprint")
+    if isinstance(fingerprint, str) and fingerprint.strip():
+        metadata["system_fingerprint"] = fingerprint.strip()
+    finish_reason = choice.get("finish_reason")
+    if isinstance(finish_reason, str) and finish_reason.strip():
+        metadata["provider_finish_reason"] = finish_reason.strip()
+    return metadata
+
+
+def _normalize_finish_reason(value: object) -> FinishReason:
+    if value == "length":
+        return FinishReason.LENGTH
+    if value == "stop" or value is None:
+        return FinishReason.STOP
+    return FinishReason.ERROR
+
+
+def _optional_usage_int(usage: object, key: str) -> int | None:
+    if not isinstance(usage, dict):
+        return None
+    value = usage.get(key)
+    return value if isinstance(value, int) and value >= 0 else None
+
+
 def _write_provider_log(
     context: RepoContext,
     relative_path: Path,
@@ -912,6 +1234,7 @@ def _now() -> datetime:
 
 
 __all__ = [
+    "OpenAICompatibleHttpTransport",
     "OpenAICompatibleProvider",
     "ProviderConfig",
     "ProviderError",
