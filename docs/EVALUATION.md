@@ -13,8 +13,11 @@ reviewable cases. The context-pack regression eval checks whether bounded
 context packs stay within configured card, full-artifact, token, and policy
 budgets. The agent workflow eval harness checks CLI-agent and provider-worker
 workflow boundaries by invoking existing CLI commands through a Python test
-harness. These harnesses reuse existing runtime surfaces; they do not introduce
-new retrieval, context-pack, provider, MCP, or orchestration algorithms.
+harness. The provider workflow eval harness checks provider success, expected
+policy denials, validation rejections, context-scope boundaries, and provider
+log leakage by calling local services with fake or mocked transports. These
+harnesses reuse existing runtime surfaces; they do not introduce new retrieval,
+context-pack, provider, MCP, or orchestration algorithms.
 
 ## Retrieval Eval Cases
 
@@ -225,6 +228,77 @@ Expected safety rejections are successful eval outcomes only when the command
 exits with the expected code and returns the expected structured error code.
 Skipped or unavailable external tools are not treated as passes.
 
+## Provider Workflow Eval Cases
+
+Provider workflow eval cases are YAML records under `evals/provider_workflow/`.
+The default case file is:
+
+```text
+evals/provider_workflow/cases.yaml
+```
+
+The harness is a Python API in `cosheaf.evals.provider_workflow`; there is no
+dedicated `cosheaf eval provider-workflow` CLI command in this phase. Tests load
+the suite and invoke existing service-layer boundaries directly, using fake
+provider output, injected mocked OpenAI-compatible transports, and the
+provider-send context policy service.
+
+Case file format:
+
+```yaml
+schema_version: 1
+cases:
+  - id: case.provider.missing-consent
+    kind: missing_consent
+    expected_error_code: provider_confirm_send_required
+    expect_policy_denial: true
+    forbidden_substrings:
+      - sk-provider-workflow-
+```
+
+Required case kinds for the default suite are:
+
+- `fake_provider_success`: deterministic fake hosted-worker success.
+- `mocked_openai_success`: injected mocked OpenAI-compatible hosted-worker
+  success.
+- `missing_config`: OpenAI-compatible preflight failure for missing provider
+  configuration.
+- `missing_consent`: explicit-send consent failure.
+- `private_context_denied`: private context denied by provider-send policy.
+- `malformed_output`: invalid provider output rejected by WorkerBundle
+  validation.
+- `policy_violating_verifier_output`: verifier output rejected for unsafe
+  authority claims.
+- `rate_limit`, `timeout`, and `cancellation`: injected transport failure
+  fixtures with stable provider error codes.
+
+Expected safety failures are successful eval outcomes only when the observed
+error code exactly matches `expected_error_code`. The harness scans structured
+case output and generated `.cosheaf/providers/` logs for provider-log leakage.
+It does not call live provider networks, does not require API keys, and does
+not write accepted knowledge.
+
+## Provider Workflow Metrics
+
+The provider workflow eval report records:
+
+- `policy_denial_accuracy`: fraction of expected policy-denial cases that
+  returned the exact expected structured error code.
+- `validation_rejection_accuracy`: fraction of expected validation-rejection
+  cases that returned the exact expected structured error code.
+- `secret_leak_count`: total provider-log scanner findings plus forbidden
+  substring leaks observed in case output/logs.
+- `malformed_output_reject_count`: count of malformed-output cases rejected as
+  provider output validation failures.
+- `bundle_validity_rate`: fraction of expected-valid WorkerBundle outputs that
+  completed with a valid bundle.
+- `context_scope_violation_count`: count of private-context or scope-denial
+  cases observed by the provider-send policy boundary.
+
+These metrics are regression signals only. They are not provider quality
+scores, proof evidence, human review, source review, accepted status, or
+promotion authority.
+
 ## CLI
 
 Run the default retrieval eval suite:
@@ -257,10 +331,10 @@ rebuild the SQLite index implicitly. The context eval does not rebuild the
 SQLite index implicitly, but it does build context packs through the existing
 context-pack writer.
 
-The agent workflow eval currently has no CLI command. Running it from Python
-may refresh `context/TASKS/<issue-id>/` context packs and redacted fake-provider
-logs under `.cosheaf/providers/`. These are runtime outputs and should not be
-committed.
+The agent workflow and provider workflow evals currently have no CLI commands.
+Running them from Python may refresh `context/TASKS/<issue-id>/` context packs
+and redacted provider logs under `.cosheaf/providers/`. These are runtime
+outputs and should not be committed.
 
 ## Limitations
 
@@ -269,6 +343,8 @@ committed.
   data, API keys, or network access.
 - Fake-provider cases are deterministic local regressions, not hosted-provider
   proof that a real API is configured.
+- Mocked OpenAI-compatible provider workflow cases exercise injected local
+  transport fixtures, not live provider behavior.
 - Optional MCP cases only cover the existing read-only whitelist surface; they
   do not make MCP required and do not authorize arbitrary shell or controlled
   writes.

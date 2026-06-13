@@ -83,6 +83,10 @@ informal/formal semantic alignment.
   boundaries.
 - Python-level agent workflow eval suite for CLI, provider, context privacy,
   bundle validity, gate regression, and optional read-only MCP smoke.
+- Python-level provider workflow eval suite for fake/mocked provider success,
+  missing configuration/consent, private-context denial, malformed output,
+  verifier policy violations, transport failures, and provider-log leak
+  metrics.
 
 ## Explicit Boundaries
 
@@ -147,8 +151,9 @@ After the `v0.2.1` prerelease and downstream compatibility checks:
    previews remain metadata-only and cards-only under the implemented
    provider-send boundary.
 6. Continue post-`v0.2.1` hardening through small issue/branch/PR increments,
-   with the next planned framework task moving into Phase E.1 provider workflow
-   eval coverage.
+   with the next planned framework task moving into Phase E.2
+   failure/counterexample workflow eval coverage after provider workflow eval
+   coverage lands.
 7. Improve CLI-agent, provider fake/mocked, context-pack, evaluation, and
    failure/counterexample workflows without weakening review, gate, promotion,
    or public/private policy boundaries.
