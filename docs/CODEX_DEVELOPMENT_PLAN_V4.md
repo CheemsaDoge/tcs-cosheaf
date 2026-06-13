@@ -181,6 +181,14 @@ private-context consent. Previews should report artifact IDs, root scopes,
 token estimates, risk flags, and full-artifact pull counts without including
 full artifact text by default.
 
+D.1 is complete in issue 243: the current stable provider-send matrix treats
+`policy_mode=public` as the serialized public research mode, permits public
+scope only in public-mode previews, permits private scope only with
+private-research policy plus explicit consent, excludes workspace/framework
+scope cards from provider previews, and tests that previews remain metadata
+only. Continue Phase D with provider log leak scanning and full-artifact pull
+auditing.
+
 ## Phase E: CLI-Agent And Provider Workflow Evaluation
 
 Expand deterministic evals for provider workflows, malformed output, policy

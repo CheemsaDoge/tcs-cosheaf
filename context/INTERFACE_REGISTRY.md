@@ -481,10 +481,16 @@
   preview policy service.
 - `cosheaf.services.ContextSendPolicyService.provider_preview(request) -> ProviderContextPreview | ErrorResult`:
   returns a safe provider-send preview for a `ContextBuildRequest`, or a
-  structured `ErrorResult` when policy denies the request. Public mode uses
-  public KB scope only. Private KB context requires `policy_mode=private_research`,
-  `public_only=false`, and explicit private-context permission. The method does
-  not call providers, implement MCP, include full context text, or write files.
+  structured `ErrorResult` when policy denies the request. Public mode
+  (`policy_mode=public`; the v4 plan name is `public_research`) uses public KB
+  scope only. Private KB context requires `policy_mode=private_research`,
+  `public_only=false`, and explicit private-context permission. Workspace and
+  framework scope cards are excluded from provider-send previews under the
+  current matrix. The method returns metadata only: artifact IDs, root scopes,
+  token estimates, and risk flags. It does not call providers, implement MCP,
+  include full artifact text, include full issue text, or write files. Denials
+  use stable `ErrorResult` codes including `private_context_requires_policy`,
+  `private_context_requires_consent`, and `provider_context_scope_violation`.
 - `cosheaf.services.model_calls.ModelCallService`: service wrapper around the
   provider gateway core.
 - `cosheaf.services.model_calls.ModelCallService.call(request, *, config=None, provider=None) -> ModelCallResult | ProviderError`:

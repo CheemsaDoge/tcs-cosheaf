@@ -97,6 +97,10 @@ Malformed WorkerBundle provider output now stays typed as
 `provider_output_validation_failed`; the gateway can perform one logged
 schema-reminder retry when configured, without coercing malformed output into
 draft or accepted knowledge.
+Provider context-send previews now have a tested policy matrix: `public`
+policy mode previews public scope only, private scope requires
+`private_research` plus explicit consent, workspace/framework scope cards are
+excluded from provider previews, and previews stay metadata-only.
 
 ## Completed Baseline
 
@@ -137,6 +141,8 @@ Completed framework scaffold pieces include:
   no-claim-invention librarian summaries.
 - Provider malformed-output recovery for WorkerBundle payloads with logged
   output-validation retry metadata.
+- Context-send policy matrix coverage for provider previews, including stable
+  denial error codes and metadata-only preview boundaries.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
   DIMACS adapter, minimal optional SMT-LIB adapter, minimal optional plain Lean
   adapter, and optional external Lean library reference checker.
