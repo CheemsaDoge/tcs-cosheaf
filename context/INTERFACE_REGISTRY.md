@@ -1430,8 +1430,10 @@ review, promotion, proof, or public/private policy bypasses.
   executes the fake provider path or the OpenAI-compatible injected-transport
   path, writes redacted run logs under `.cosheaf/providers/`, validates
   WorkerBundle v2 outputs when requested, handles timeout, retry,
-  cancellation, and rate-limit statuses, and does not write accepted knowledge
-  or perform promotion.
+  cancellation, and rate-limit statuses, may perform one configured
+  output-validation retry for malformed WorkerBundle v2 payloads with a stricter
+  schema reminder, records output-validation retry metadata in provider logs,
+  and does not write accepted knowledge or perform promotion.
 - `cosheaf.agent.providers.redact_text(value) -> tuple[str, bool]` and
   `cosheaf.agent.providers.redact_mapping(values) -> tuple[dict[str, str], bool]`:
   redact common secret value shapes and secret-looking metadata fields before

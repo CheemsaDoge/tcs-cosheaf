@@ -93,6 +93,10 @@ conjectures/proof ideas/assumptions, verifier separates concerns from tool
 results, counterexampleer separates candidate from verified counterexamples,
 formalizer separates symbol resolution from semantic-alignment questions, and
 librarian summaries must not invent claims.
+Malformed WorkerBundle provider output now stays typed as
+`provider_output_validation_failed`; the gateway can perform one logged
+schema-reminder retry when configured, without coercing malformed output into
+draft or accepted knowledge.
 
 ## Completed Baseline
 
@@ -131,6 +135,8 @@ Completed framework scaffold pieces include:
 - Role prompt/output contracts for structured uncertainty, failures, verifier
   requests, candidate counterexamples, formal-link limitations, and
   no-claim-invention librarian summaries.
+- Provider malformed-output recovery for WorkerBundle payloads with logged
+  output-validation retry metadata.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
   DIMACS adapter, minimal optional SMT-LIB adapter, minimal optional plain Lean
   adapter, and optional external Lean library reference checker.

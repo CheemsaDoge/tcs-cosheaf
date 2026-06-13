@@ -508,6 +508,106 @@ def test_gateway_validates_worker_bundle_output_schema(tmp_path: Path) -> None:
     assert "accepted knowledge" in unsafe.message
 
 
+def test_gateway_retries_malformed_worker_bundle_once_with_schema_reminder(
+    tmp_path: Path,
+) -> None:
+    transport = SequenceTransport(
+        [
+            ProviderTransportResult(
+                content="not json",
+                status=ProviderTransportStatus.COMPLETED,
+            ),
+            ProviderTransportResult(
+                content=_worker_bundle_json(),
+                status=ProviderTransportStatus.COMPLETED,
+                latency_ms=12,
+            ),
+        ]
+    )
+    gateway = ProviderGateway(RepoContext(tmp_path))
+
+    result = gateway.call(
+        _request(
+            provider=ProviderName.OPENAI,
+            model="gpt-test",
+            output_kind="worker_bundle",
+        ),
+        config=ProviderConfig(
+            provider=ProviderName.OPENAI,
+            mode=ProviderMode.OPENAI_COMPATIBLE,
+            model="gpt-test",
+            enabled=True,
+            api_key_env=None,
+            max_retries=1,
+        ),
+        provider=OpenAICompatibleProvider(transport=transport),
+    )
+
+    assert isinstance(result, ModelCallResult)
+    assert len(transport.calls) == 2
+    assert "Previous provider output failed WorkerBundle v2 validation" in (
+        transport.calls[1][0].prompt
+    )
+    assert "Validation error code: provider_output_validation_failed" in (
+        transport.calls[1][0].prompt
+    )
+    log = _read_provider_log(tmp_path, result)
+    assert log["attempt_count"] == 2
+    assert log["output_validation_retry_count"] == 1
+    assert log["output_validation_retry_code"] == "provider_output_validation_failed"
+    assert log["output_validation_retry_status"] == "completed"
+    assert log["output_validation_retry_final_status"] == "completed"
+
+
+def test_gateway_logs_malformed_worker_bundle_retry_failure(
+    tmp_path: Path,
+) -> None:
+    transport = SequenceTransport(
+        [
+            ProviderTransportResult(
+                content="not json",
+                status=ProviderTransportStatus.COMPLETED,
+            ),
+            ProviderTransportResult(
+                content=json.dumps(["still", "not", "a", "bundle"]),
+                status=ProviderTransportStatus.COMPLETED,
+            ),
+        ]
+    )
+    gateway = ProviderGateway(RepoContext(tmp_path))
+
+    result = gateway.call(
+        _request(
+            provider=ProviderName.OPENAI,
+            model="gpt-test",
+            output_kind="worker_bundle",
+        ),
+        config=ProviderConfig(
+            provider=ProviderName.OPENAI,
+            mode=ProviderMode.OPENAI_COMPATIBLE,
+            model="gpt-test",
+            enabled=True,
+            api_key_env=None,
+            max_retries=1,
+        ),
+        provider=OpenAICompatibleProvider(transport=transport),
+    )
+
+    assert isinstance(result, ProviderError)
+    assert result.code == "provider_output_validation_failed"
+    assert len(transport.calls) == 2
+    log_path = result.details["log_path"]
+    log = json.loads((tmp_path / log_path).read_text(encoding="utf-8"))
+    assert log["status"] == "failed"
+    assert log["error_code"] == "provider_output_validation_failed"
+    assert log["attempt_count"] == 2
+    assert log["output_validation_retry_count"] == 1
+    assert log["output_validation_retry_code"] == "provider_output_validation_failed"
+    assert log["output_validation_retry_status"] == "completed"
+    assert log["output_validation_retry_final_status"] == "failed"
+    assert not (tmp_path / "kb").exists()
+
+
 def test_gateway_request_rejects_accepted_output_paths() -> None:
     with pytest.raises(ValidationError, match="accepted knowledge"):
         _request(expected_output_paths=["kb/accepted/claims/provider.yaml"])

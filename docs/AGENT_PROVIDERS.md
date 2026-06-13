@@ -299,6 +299,16 @@ authentication and authorization failures, HTTP errors, provider structured
 errors, invalid JSON, malformed model output, schema rejection, policy
 rejection, redaction failure, and log-write failure.
 
+For `worker_bundle` outputs, malformed JSON or schema-invalid WorkerBundle v2
+payloads return `provider_output_validation_failed`. When the configured retry
+budget permits it, the OpenAI-compatible gateway may make one deterministic
+output-validation retry with an added schema reminder. The retry is logged with
+`output_validation_retry_count`, `output_validation_retry_code`,
+`output_validation_retry_status`, and
+`output_validation_retry_final_status`. A retry never coerces malformed output
+into draft artifacts, accepted artifacts, verifier results, human review, or
+promotion.
+
 Run records may store provider/model id, policy and consent flags, context
 preview reference, request fingerprint, timeout/retry/cancellation metadata,
 latency, token/cost metadata when available, response validation status,

@@ -73,6 +73,13 @@ _RETRYABLE_STATUSES = frozenset(
     {ProviderTransportStatus.RATE_LIMITED, ProviderTransportStatus.ERROR}
 )
 
+OUTPUT_VALIDATION_RETRY_REMINDER = (
+    "Previous provider output failed WorkerBundle v2 validation. Return only a "
+    "single valid WorkerBundle JSON object matching the requested schema. Do "
+    "not include prose, markdown fences, accepted writes, human-review claims, "
+    "verifier results, or promotion output."
+)
+
 
 class ProviderConfig(BaseModel):
     """Explicit provider runtime configuration."""
@@ -525,62 +532,85 @@ class ProviderGateway:
             "retry_statuses": ",".join(status.value for status in retry_statuses),
             "unsupported_parameters": ",".join(capability.unsupported_parameters),
         }
-        if transport_result.status is ProviderTransportStatus.CANCELLED:
+        transport_error = _transport_error_fields(transport_result)
+        if transport_error is not None:
             return self._provider_error_result(
                 request,
                 config=config,
                 run_id=run_id,
                 started_at=started_at,
-                code="provider_cancelled",
-                message=transport_result.error_message or "provider call cancelled",
-                remediation="Retry only if the operator intended to continue.",
-                metadata={**transport_result.raw_metadata, **retry_metadata},
-            )
-        if transport_result.status is ProviderTransportStatus.TIMEOUT:
-            return self._provider_error_result(
-                request,
-                config=config,
-                run_id=run_id,
-                started_at=started_at,
-                code="provider_timeout",
-                message=transport_result.error_message or "provider timed out",
-                remediation="Retry with a larger timeout or inspect provider status.",
-                metadata={**transport_result.raw_metadata, **retry_metadata},
-            )
-        if transport_result.status is ProviderTransportStatus.RATE_LIMITED:
-            return self._provider_error_result(
-                request,
-                config=config,
-                run_id=run_id,
-                started_at=started_at,
-                code="provider_rate_limited",
-                message=transport_result.error_message or "provider rate limited",
-                remediation="Retry later or lower provider request volume.",
-                metadata={**transport_result.raw_metadata, **retry_metadata},
-            )
-        if transport_result.status is not ProviderTransportStatus.COMPLETED:
-            return self._provider_error_result(
-                request,
-                config=config,
-                run_id=run_id,
-                started_at=started_at,
-                code=transport_result.error_code or "provider_call_failed",
-                message=transport_result.error_message or "provider call failed",
-                remediation="Inspect provider configuration and mocked transport.",
+                code=transport_error[0],
+                message=transport_error[1],
+                remediation=transport_error[2],
                 metadata={**transport_result.raw_metadata, **retry_metadata},
             )
         validation_error = _validate_output_payload(request, transport_result.content)
         if validation_error is not None:
-            return self._provider_error_result(
+            retry_result = _retry_after_output_validation_failure(
+                provider,
                 request,
-                config=config,
-                run_id=run_id,
-                started_at=started_at,
-                code=validation_error.code,
-                message=validation_error.message,
-                remediation=validation_error.remediation,
-                metadata=retry_metadata,
+                config,
+                validation_error,
+                attempt_count=attempt_count,
             )
+            if retry_result is not None:
+                retry_transport, retry_metadata_extra = retry_result
+                attempt_count += 1
+                retry_metadata = {
+                    **retry_metadata,
+                    **retry_metadata_extra,
+                    "attempt_count": str(attempt_count),
+                }
+                retry_transport_error = _transport_error_fields(retry_transport)
+                if retry_transport_error is not None:
+                    return self._provider_error_result(
+                        request,
+                        config=config,
+                        run_id=run_id,
+                        started_at=started_at,
+                        code=retry_transport_error[0],
+                        message=retry_transport_error[1],
+                        remediation=retry_transport_error[2],
+                        metadata={
+                            **retry_transport.raw_metadata,
+                            **retry_metadata,
+                        },
+                    )
+                retry_validation_error = _validate_output_payload(
+                    request,
+                    retry_transport.content,
+                )
+                if retry_validation_error is None:
+                    transport_result = retry_transport
+                    validation_error = None
+                    retry_metadata = {
+                        **retry_metadata,
+                        "output_validation_retry_final_status": "completed",
+                    }
+                else:
+                    validation_error = retry_validation_error
+                    retry_metadata = {
+                        **retry_metadata,
+                        "output_validation_retry_final_status": "failed",
+                    }
+            if validation_error is not None:
+                retry_metadata = {
+                    **retry_metadata,
+                    "output_validation_retry_final_status": retry_metadata.get(
+                        "output_validation_retry_final_status",
+                        "not_attempted",
+                    ),
+                }
+                return self._provider_error_result(
+                    request,
+                    config=config,
+                    run_id=run_id,
+                    started_at=started_at,
+                    code=validation_error.code,
+                    message=validation_error.message,
+                    remediation=validation_error.remediation,
+                    metadata=retry_metadata,
+                )
 
         content, content_redacted = redact_text(transport_result.content)
         metadata, metadata_redacted = redact_mapping(transport_result.raw_metadata)
@@ -758,6 +788,71 @@ def _validate_output_payload(
             message=f"provider WorkerBundle output is invalid: {exc}",
             remediation="Ask the provider for a valid WorkerBundle v2 payload.",
             blocking=True,
+        )
+    return None
+
+
+def _retry_after_output_validation_failure(
+    provider: OpenAICompatibleProvider,
+    request: ProviderGatewayRequest,
+    config: ProviderConfig,
+    validation_error: ProviderError,
+    *,
+    attempt_count: int,
+) -> tuple[ProviderTransportResult, dict[str, str]] | None:
+    if request.output_kind != "worker_bundle" or config.max_retries < attempt_count:
+        return None
+    retry_request = request.model_copy(
+        update={"prompt": _output_validation_retry_prompt(request, validation_error)}
+    )
+    retry_result = provider.complete(retry_request, config)
+    return retry_result, {
+        "output_validation_retry_count": "1",
+        "output_validation_retry_code": validation_error.code,
+        "output_validation_retry_status": retry_result.status.value,
+    }
+
+
+def _output_validation_retry_prompt(
+    request: ProviderGatewayRequest,
+    validation_error: ProviderError,
+) -> str:
+    return "\n\n".join(
+        [
+            request.prompt,
+            OUTPUT_VALIDATION_RETRY_REMINDER,
+            f"Validation error code: {validation_error.code}",
+            f"Validation error message: {validation_error.message}",
+        ]
+    )
+
+
+def _transport_error_fields(
+    transport_result: ProviderTransportResult,
+) -> tuple[str, str, str] | None:
+    if transport_result.status is ProviderTransportStatus.CANCELLED:
+        return (
+            "provider_cancelled",
+            transport_result.error_message or "provider call cancelled",
+            "Retry only if the operator intended to continue.",
+        )
+    if transport_result.status is ProviderTransportStatus.TIMEOUT:
+        return (
+            "provider_timeout",
+            transport_result.error_message or "provider timed out",
+            "Retry with a larger timeout or inspect provider status.",
+        )
+    if transport_result.status is ProviderTransportStatus.RATE_LIMITED:
+        return (
+            "provider_rate_limited",
+            transport_result.error_message or "provider rate limited",
+            "Retry later or lower provider request volume.",
+        )
+    if transport_result.status is not ProviderTransportStatus.COMPLETED:
+        return (
+            transport_result.error_code or "provider_call_failed",
+            transport_result.error_message or "provider call failed",
+            "Inspect provider configuration and mocked transport.",
         )
     return None
 
@@ -1073,6 +1168,14 @@ def _write_provider_log(
     _copy_optional_int_log_field(log, metadata, "latency_ms")
     _copy_optional_int_log_field(log, metadata, "input_tokens")
     _copy_optional_int_log_field(log, metadata, "output_tokens")
+    _copy_optional_int_log_field(log, metadata, "output_validation_retry_count")
+    _copy_optional_text_log_field(log, metadata, "output_validation_retry_code")
+    _copy_optional_text_log_field(log, metadata, "output_validation_retry_status")
+    _copy_optional_text_log_field(
+        log,
+        metadata,
+        "output_validation_retry_final_status",
+    )
     cost_usd = metadata.get("cost_usd")
     if cost_usd is not None and cost_usd != "unavailable":
         log["cost_usd"] = cost_usd
@@ -1129,6 +1232,14 @@ def _write_provider_error_log(
         log["unsupported_parameters"] = unsupported_parameters.split(",")
     else:
         log["unsupported_parameters"] = []
+    _copy_optional_int_log_field(log, metadata, "output_validation_retry_count")
+    _copy_optional_text_log_field(log, metadata, "output_validation_retry_code")
+    _copy_optional_text_log_field(log, metadata, "output_validation_retry_status")
+    _copy_optional_text_log_field(
+        log,
+        metadata,
+        "output_validation_retry_final_status",
+    )
     path.write_text(
         json.dumps(log, ensure_ascii=True, indent=2) + "\n",
         encoding="utf-8",
@@ -1227,6 +1338,16 @@ def _copy_optional_int_log_field(
     if value is None or value == "unavailable":
         return
     log[key] = int(value)
+
+
+def _copy_optional_text_log_field(
+    log: dict[str, object],
+    metadata: Mapping[str, str],
+    key: str,
+) -> None:
+    value = metadata.get(key)
+    if value:
+        log[key] = value
 
 
 def _now() -> datetime:
