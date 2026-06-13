@@ -151,7 +151,9 @@ Completed framework scaffold pieces include:
 - Retrieval/context evaluation harnesses, structured run logging, and optional
   OpenTelemetry run-log export scaffolding.
 - Read-only MCP stdio surface. This exists as optional adapter work and must
-  not be treated as the primary agent path or a release blocker.
+  not be treated as the primary agent path or a release blocker. The
+  post-`v0.2.1` optional-adapter review keeps this surface read-only and does
+  not add controlled-write MCP or provider MCP tools.
 - Graph-theory, SAT/CNF, and formal-link pilot workflows that remain draft or
   example material and do not bypass review or promotion.
 - GitHub Actions CI and collaboration templates.
@@ -215,6 +217,10 @@ Near-term public KB work should remain:
   human review.
 - No mass imports.
 - No private conjectures or unreviewed LLM output under accepted public paths.
+
+Recent downstream hardening refreshed the public KB source-note/backlog policy
+and tightened one draft foundation artifact without promoting it to accepted
+knowledge.
 
 ## Next Named Milestones
 

@@ -81,6 +81,34 @@ cards. Private-scoped artifact-card or context resource requests return a
 structured `private_resource_denied` error unless a later private policy mode
 explicitly permits them.
 
+## Post-v0.2.1 Optional Adapter Review
+
+This review keeps MCP in its intended place after the CLI/provider hardening
+work: MCP is an optional read-only adapter, not the primary agent interface,
+not a provider transport, and not a release blocker for ordinary CLI-first
+workflows.
+
+No new MCP tools are introduced by this review. The existing read-only smoke is
+covered by `tests/test_mcp_server.py`, including tool whitelist checks, public
+scope resource reads, private-resource denial, public-only context build,
+governance-safe prompts, and stdio `tools/list` behavior.
+
+The current H.1 decision is:
+
+- keep `workspace_info`, `validate`, `gate_run`, `memory_search`,
+  `context_build`, `context_show`, and `orchestrator_plan` as the read-only
+  tool set;
+- keep stdio as the only implemented MCP transport;
+- keep private-scoped resources denied unless a later approved policy mode
+  explicitly permits them;
+- do not add controlled-write MCP, provider MCP tools, arbitrary shell,
+  arbitrary filesystem access, accepted writes, accepted promotion shortcuts,
+  human-review mutation, or verifier-result mutation.
+
+Future MCP maintenance should be limited to keeping this read-only adapter
+compatible with existing service contracts unless a separate maintainer-approved
+issue explicitly reopens scope.
+
 ## Transport
 
 The current MCP transport is stdio.
