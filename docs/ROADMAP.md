@@ -1,21 +1,71 @@
 # Roadmap
 
-TCS-Cosheaf has published the `v0.2.1` CLI Agent Access + Hosted Provider
-Gateway prerelease after the published `v0.2.0` local-MVP release and the
-earlier `v0.1.1` Formal Link Layer support baseline. The project is still not
-production-ready. This roadmap records durable direction and named milestones;
-live issue state belongs in GitHub issues.
+TCS-Cosheaf is preparing the `v0.2.2` Provider Transport + Agent Workflow
+Hardening release candidate after the published `v0.2.1` CLI Agent Access +
+Hosted Provider Gateway prerelease, the published `v0.2.0` local-MVP release,
+and the earlier `v0.1.1` Formal Link Layer support baseline. The project is
+still not production-ready. This roadmap records durable direction and named
+milestones; live issue state belongs in GitHub issues.
 
-## Current Baseline: v0.2.1 Prerelease
+## Current Baseline: v0.2.2 Release Candidate
+
+The `v0.2.2` release candidate packages the post-`v0.2.1` provider transport
+and agent workflow hardening work. It is a framework release candidate for
+explicit default-off real-provider calls, provider context-send policy checks,
+provider log scanning, failure/counterexample preservation, deterministic
+provider/failure evals, and three-repository smoke coverage without
+overclaiming production readiness, automatic theorem proving, Lean
+autoformalization, or accepted-knowledge automation.
+
+Completed release-candidate work includes:
+
+- Package metadata and release notes for `v0.2.2`.
+- Stable JSON/error contracts for core agent-facing CLI commands.
+- Controlled draft/proposal/bundle/source-note/review-request CLI write
+  surfaces.
+- CLI operator workflow documentation and optional operator Skill package.
+- Provider gateway design, fake provider path, and OpenAI-compatible mocked
+  transport boundary.
+- Provider CLI commands for list, config-check, preview-send, and fake-run.
+- Role-specific hosted worker service over fake or mocked provider calls.
+- Internal orchestrator dispatch to hosted workers when explicitly configured.
+- Agent-access security regression coverage and agent workflow evaluation
+  suite.
+- Optional stdlib OpenAI-compatible HTTP transport object, default-off and
+  explicitly configured/injected.
+- Explicit provider `real-run` CLI path with inline preview, consent, network,
+  endpoint/key, and private-context checks.
+- Provider context-send policy matrix and provider log leak scanner.
+- WorkerBundle failure/counterexample preservation and role-contract
+  hardening.
+- Provider malformed-output recovery plus provider-workflow and
+  failure/counterexample eval suites.
+- Three-repository ecosystem smoke matrix.
+- Required framework verification for the release-candidate PR.
+- Published `v0.2.1` tag and prerelease.
+- Workspace-template `@v0.2.1` pin update and demo/provider fake smoke
+  regression.
+- Workspace-template provider setup docs and public-only provider preview
+  smoke for the `v0.2.2` path.
+- Public KB `@v0.2.1` CI pin update, validation, gate, PR-checklist, and
+  repository-local policy guard regression.
+- Public KB source-note/backlog refresh and one draft-only foundation
+  tightening.
+- A post-`v0.2.0` rollback audit that identified no code or KB revert scope,
+  but did identify MCP-first roadmap language that needed rewrite.
+
+The public `v0.2.2` tag is created only after the release-candidate PR and
+required checks pass. Until then, downstream repositories should keep using
+the latest published tag that matches their required surface.
+
+## v0.2.1 Prerelease Baseline
 
 The `v0.2.1` prerelease packages the CLI-first agent-access and hosted
 provider gateway surfaces that landed after the `v0.2.0` local-MVP tag. It is a
 pin-able framework version for coding-agent workflows, deterministic fake
-provider runs, and explicit provider-worker orchestration without overclaiming
-production readiness, automatic theorem proving, Lean autoformalization, or
-accepted-knowledge automation.
+provider runs, and explicit provider-worker orchestration.
 
-Completed release-candidate work includes:
+Completed `v0.2.1` work included:
 
 - Package metadata and release notes for `v0.2.1`.
 - Stable JSON/error contracts for core agent-facing CLI commands.
@@ -38,16 +88,15 @@ Completed release-candidate work includes:
 - A post-`v0.2.0` rollback audit that identified no code or KB revert scope,
   but did identify MCP-first roadmap language that needed rewrite.
 
-## Next Focus: v0.2.2 Provider Transport + Agent Workflow Hardening
+## Current Release Focus: v0.2.2 Provider Transport + Agent Workflow Hardening
 
-The next focus after the prerelease and downstream compatibility checks is
+The current release focus after the prerelease and downstream compatibility checks is
 tracked in
 [`docs/CODEX_DEVELOPMENT_PLAN_V4.md`](CODEX_DEVELOPMENT_PLAN_V4.md) and
 ADR 0020. The target is `v0.2.2 Provider Transport + Agent Workflow
-Hardening`. The readiness audit is tracked in
-[`docs/releases/v0.2.2.md`](releases/v0.2.2.md); it records that `main` can
-move into release-candidate preparation after the audit merges and the release
-candidate reruns the full verification ladder.
+Hardening`. The release-candidate notes are tracked in
+[`docs/releases/v0.2.2.md`](releases/v0.2.2.md); they record the conservative
+scope and the required verification ladder before publication.
 
 This still does not mean turning the project into a production hosted
 multi-agent platform. It means improving the controlled agent-facing access

@@ -3,6 +3,32 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.2 Provider Transport And Workflow Hardening RC - 2026-06-14
+
+Issue 259 prepares `v0.2.2` as the Provider Transport + Agent Workflow
+Hardening release candidate after the readiness audit. The release-candidate
+branch updates package metadata and `cosheaf.__version__` to `0.2.2` and
+converts `docs/releases/v0.2.2.md` from readiness-audit evidence into
+conservative release-candidate notes.
+
+The candidate packages already-merged provider/workflow hardening work:
+optional default-off OpenAI-compatible HTTP transport, explicit provider
+`real-run` CLI with inline preview, consent, network, endpoint/key, and
+private-context checks, provider context-send policy matrix, provider log leak
+scanner, WorkerBundle failure/counterexample preservation, role-contract
+hardening, malformed-output recovery, deterministic provider-workflow and
+failure/counterexample evals, three-repository ecosystem smoke matrix,
+workspace provider setup/preview docs, public KB source-note/backlog refresh,
+one draft-only foundation tightening, and optional read-only MCP review.
+
+This release-candidate task does not implement new runtime provider behavior,
+does not add MCP tools, does not add controlled-write MCP, does not run real
+provider calls in CI, does not require API keys, does not write accepted
+knowledge, does not mark human review, does not promote artifacts, and does
+not change schema, gate, verifier, public/private policy, or accepted
+promotion semantics. The public `v0.2.2` tag is expected only after the
+release-candidate PR and required checks pass.
+
 ## Three-Repo Compatibility Smoke Matrix - 2026-06-14
 
 Issue 253 extends `scripts/ecosystem_smoke.py` with a structured
