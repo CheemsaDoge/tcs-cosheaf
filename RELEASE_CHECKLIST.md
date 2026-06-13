@@ -1,23 +1,29 @@
 # Three-Repository Release Checklist
 
-This checklist records the `v0.2.1` CLI Agent Access + Hosted Provider Gateway
-prerelease after the `v0.2.0` local-MVP release and the `v0.1.1` Formal Link
-Layer support baseline. It is an operator checklist for the framework package,
-public KB, and workspace template together. It is not a production-readiness
-claim.
+This checklist records the `v0.2.2` Provider Transport + Agent Workflow
+Hardening release-candidate state after the `v0.2.1` CLI Agent Access +
+Hosted Provider Gateway prerelease, the `v0.2.0` local-MVP release, and the
+`v0.1.1` Formal Link Layer support baseline. It is an operator checklist for
+the framework package, public KB, and workspace template together. It is not a
+production-readiness claim.
 
 `v0.1.1` remains the downstream tag baseline for early formal-link metadata.
 `v0.2.0` packages the deterministic local-MVP workflow. `v0.2.1` packages the
 CLI-first agent-access layer, controlled draft/staging write CLI, provider
-gateway, fake/mocked hosted-worker path, and conservative release docs. Do not
-assume a downstream pin to `@v0.2.0` includes `v0.2.1` agent/provider surfaces.
+gateway, fake/mocked hosted-worker path, and conservative release docs.
+`v0.2.2` packages the default-off real-provider transport path, context-send
+policy matrix, provider log leak scanner, failure/counterexample workflow
+hardening, provider workflow evals, and ecosystem smoke matrix. Do not assume a
+downstream pin to `@v0.2.0` includes `v0.2.1` or `v0.2.2` agent/provider
+surfaces.
 
 ## Scope
 
 - Framework repository: `tcs-cosheaf`.
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
-- Current framework package metadata version on `main`: `0.2.1`.
+- Current framework package metadata version on this release-candidate branch:
+  `0.2.2`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
@@ -25,13 +31,15 @@ assume a downstream pin to `@v0.2.0` includes `v0.2.1` agent/provider surfaces.
 - Intended downstream dependency for CLI-agent/provider-gateway workflows after
   publication:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.1`.
+- Intended downstream dependency for provider-transport/workflow-hardening
+  workflows after publication:
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.2`.
 
-## v0.2.2 Readiness Delta
+## v0.2.2 Release-Candidate Delta
 
-Before preparing a `v0.2.2` release candidate, confirm
-`docs/releases/v0.2.2.md` exists as a readiness audit and answers the explicit
-release-readiness questions. The release-candidate PR may update package
-metadata only after the audit says no blockers remain.
+Before publishing a `v0.2.2` tag, confirm `docs/releases/v0.2.2.md` exists as
+release-candidate notes, the readiness audit has no blockers, and the
+release-candidate PR reruns the full command ladder plus ecosystem smoke.
 
 - [x] Optional OpenAI-compatible HTTP transport exists and remains default-off.
 - [x] Explicit `provider real-run` fails closed without context preview,
@@ -53,15 +61,17 @@ metadata only after the audit says no blockers remain.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.2.1`.
-- [x] `cosheaf.__version__` records `0.2.1`.
+- [x] `pyproject.toml` records package version `0.2.2`.
+- [x] `cosheaf.__version__` records `0.2.2`.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
+- [ ] Remote tag `v0.2.2` is created only after the release-candidate PR and
+  required checks pass.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
-- [x] Workspace-template verification installs or pins `@v0.2.1` before relying
-  on CLI-agent/provider-gateway surfaces.
+- [ ] Workspace-template verification installs or pins `@v0.2.2` before
+  relying on provider-transport/workflow-hardening surfaces.
 
 ### License
 
@@ -80,7 +90,7 @@ PRs:
 - [x] `make validate`
 - [x] `make gate`
 - [x] `git diff --check`
-- [x] GitHub Actions checks passed for the `v0.2.1` release-candidate PR.
+- [ ] GitHub Actions checks pass for the `v0.2.2` release-candidate PR.
 
 Skipped verifier output is not a pass. Optional-tool skips must stay visible in
 gate output and release notes.
@@ -97,12 +107,13 @@ gate output and release notes.
 
 ### Smoke And Evaluation Status
 
-- [x] `python scripts/release_smoke.py --source
-  git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.1` runs against a
-  clean environment when network access is available.
+- [ ] `python scripts/release_smoke.py --source
+  git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.2` runs against a
+  clean environment when the `v0.2.2` tag exists and network access is
+  available.
 - [x] `python scripts/ecosystem_smoke.py --cosheaf cosheaf` runs without
   cloning remote repositories.
-- [x] `python scripts/ecosystem_smoke.py --matrix --cosheaf "python -m cosheaf.cli" --framework-root . --workspace-template-root ..\tcs-cosheaf-workspace-template --public-kb-root ..\tcs-kb-public --json`
+- [x] `python scripts/ecosystem_smoke.py --matrix --framework-tag v0.2.2 --cosheaf "python -m cosheaf.cli" --framework-root . --workspace-template-root ..\tcs-cosheaf-workspace-template --public-kb-root ..\tcs-kb-public --json`
   reports a structured three-repository compatibility matrix. The default
   no-network run executes local framework smoke, workspace-template
   CLI-agent demo, workspace-template fake-provider smoke, and public KB
@@ -122,7 +133,7 @@ gate output and release notes.
 
 ## Agent Access And Provider Status
 
-Implemented framework surfaces for `v0.2.1`:
+Implemented framework surfaces included in the `v0.2.2` release candidate:
 
 - CLI-first operator workflow with stable JSON output for core read/check
   commands.
@@ -134,13 +145,29 @@ Implemented framework surfaces for `v0.2.1`:
   mocked transport boundary.
 - Provider CLI commands for `list`, `config-check`, `preview-send`, and
   `fake-run`.
+- Optional stdlib OpenAI-compatible HTTP transport, default-off and explicitly
+  configured/injected.
+- Explicit `provider real-run` CLI path with inline context preview, send
+  consent, network permission, endpoint/key configuration, and private-context
+  consent checks.
+- Provider context-send policy matrix for public/private preview scope.
+- Provider log leak scanner and redacted provider run-record regression
+  coverage.
+- WorkerBundle v2 failure/counterexample preservation fields and reducer
+  warnings.
+- Role contracts for structured uncertainty, failures, verifier requests,
+  candidate counterexamples, formal-link limitations, and no-claim-invention
+  librarian summaries.
+- Provider malformed-output recovery and deterministic provider-workflow evals.
+- Failure/counterexample workflow evals.
+- Three-repository ecosystem smoke matrix.
 - Role-specific hosted worker service for fake or mocked provider worker
   calls.
 - Internal orchestrator dispatch to hosted workers through explicit provider
   selection.
 - Agent-access security regression tests and agent workflow evaluation suite.
 - Optional operator Skill package.
-- Optional read-only MCP surface. MCP is not required for `v0.2.1`.
+- Optional read-only MCP surface. MCP is not required for `v0.2.2`.
 
 Boundaries:
 
@@ -231,7 +258,7 @@ Boundaries:
 - No automatic informal/formal semantic alignment checking.
 - No multi-user permission system.
 - No default-on hosted provider calls.
-- No default real hosted HTTP transport.
+- No default-on real hosted HTTP transport.
 - External public KB integration is through local workspace roots, not a hosted
   registry service.
 - SAT, SMT, plain Lean, and external Lean reference adapters are intentionally
