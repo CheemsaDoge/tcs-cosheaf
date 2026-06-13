@@ -2,13 +2,19 @@
 
 ## Milestone
 
-`v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease closeout.
+Post-`v0.2.1` v4 plan landing and `v0.2.2` provider/workflow hardening prep.
 
 ## Goal
 
 Keep the published `v0.2.1` framework prerelease, downstream workspace
-template, and public KB compatibility state internally consistent. The
-`v0.2.1` tag packages the CLI-first agent-access surface, controlled
+template, and public KB compatibility state internally consistent while
+landing the post-`v0.2.1` v4 development plan. The next target is
+`v0.2.2 Provider Transport + Agent Workflow Hardening`: explicit,
+default-off real-provider transport work, stronger provider/context privacy
+boundaries, failure/counterexample workflow hardening, and regression evals
+without weakening review, gate, promotion, or public/private policy.
+
+The `v0.2.1` tag packages the CLI-first agent-access surface, controlled
 draft/staging write CLI, provider gateway, fake/mocked hosted-worker path,
 operator guidance, security regressions, and agent workflow evals that landed
 after the `v0.2.0` local-MVP baseline.
@@ -109,13 +115,17 @@ informal/formal semantic alignment.
 
 After the `v0.2.1` prerelease and downstream compatibility checks:
 
-1. Keep framework, workspace-template, and public KB status docs aligned with
-   the published tag.
-2. Continue post-`v0.2.1` hardening through small issue/branch/PR increments.
-3. Improve CLI-agent, provider fake/mocked, context-pack, evaluation, and
+1. Treat [`docs/POST_V021_STATE_AUDIT.md`](../docs/POST_V021_STATE_AUDIT.md)
+   as the current post-release evidence baseline.
+2. Treat [`docs/CODEX_DEVELOPMENT_PLAN_V4.md`](../docs/CODEX_DEVELOPMENT_PLAN_V4.md)
+   and ADR 0020 as the current next-stage plan.
+3. Start with the real-provider transport ADR and threat model before runtime
+   transport implementation.
+4. Continue post-`v0.2.1` hardening through small issue/branch/PR increments.
+5. Improve CLI-agent, provider fake/mocked, context-pack, evaluation, and
    failure/counterexample workflows without weakening review, gate, promotion,
    or public/private policy boundaries.
-4. Treat MCP as optional adapter work and do not implement controlled-write MCP
+6. Treat MCP as optional adapter work and do not implement controlled-write MCP
    without a separate approved issue.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue

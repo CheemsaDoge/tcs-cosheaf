@@ -38,13 +38,17 @@ Completed release-candidate work includes:
 - A post-`v0.2.0` rollback audit that identified no code or KB revert scope,
   but did identify MCP-first roadmap language that needed rewrite.
 
-## Next Focus: Post-v0.2.1 Hardening
+## Next Focus: v0.2.2 Provider Transport + Agent Workflow Hardening
 
 The next focus after the prerelease and downstream compatibility checks is
-small, reviewable hardening. This still does not mean turning the project into
-a production hosted multi-agent platform. It means improving the controlled
-agent-facing access layer across the framework package, workspace template,
-and public KB:
+tracked in
+[`docs/CODEX_DEVELOPMENT_PLAN_V4.md`](CODEX_DEVELOPMENT_PLAN_V4.md) and
+ADR 0020. The target is `v0.2.2 Provider Transport + Agent Workflow
+Hardening`.
+
+This still does not mean turning the project into a production hosted
+multi-agent platform. It means improving the controlled agent-facing access
+layer across the framework package, workspace template, and public KB:
 
 - CLI is the primary agent interface for coding agents.
 - CLI output for agent-facing commands should remain stable, structured, and
@@ -60,7 +64,9 @@ and public KB:
 - The internal orchestrator may call hosted API workers only when policy,
   configuration, consent, and context-sending rules permit.
 - MCP is an optional adapter for assistants that need resources/tools rather
-  than shell access. It is not required for `v0.2.1`.
+  than shell access. It is not required for ordinary CLI-first work.
+- Controlled-write MCP is not planned unless a separate maintainer-approved
+  issue explicitly reopens that scope.
 - Skill is an optional operator runbook, not a source of truth and not an
   authority expansion.
 
@@ -69,7 +75,10 @@ default tests must use fake or mocked providers. Missing credentials or
 unavailable optional tools must be reported as unavailable or skipped, never as
 pass.
 
-ADR 0015 records this direction change.
+ADR 0015 records the earlier CLI-first direction change. ADR 0020 records the
+post-`v0.2.1` provider/workflow hardening line. The first concrete task after
+the v4 plan lands is a real-provider transport ADR and threat model, not
+runtime implementation.
 
 ## Completed Baseline
 

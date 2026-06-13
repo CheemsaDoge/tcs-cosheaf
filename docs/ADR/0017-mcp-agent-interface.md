@@ -54,10 +54,12 @@ validation, gate execution, memory search, context build, context display, and
 orchestrator planning. These tools may produce runtime reports under ignored
 sidecar directories, but they must not change source-of-truth artifacts.
 
-Controlled-write tools are later optional additions. They may create draft
-artifacts, task records, worker bundles, proposal records, or reducer/review
-context only when the server is configured for write tools and the operator
-confirms the specific action.
+Controlled-write MCP tools are not planned unless a separate
+maintainer-approved issue explicitly reopens that scope. If such scope is
+approved later, any write tools may create only draft artifacts, task records,
+worker bundles, proposal records, or reducer/review context, and only when the
+server is configured for write tools and the operator confirms the specific
+action.
 
 Forbidden MCP tools include arbitrary shell, arbitrary filesystem read/write,
 environment or credential dumping, direct accepted promotion, direct
@@ -89,9 +91,8 @@ passes.
 ## Consequences
 
 The already-merged read-only MCP surface may stay as optional adapter code if
-it remains constrained and tested. Controlled-write MCP should wait until CLI
-agent workflows and provider boundaries are stable, unless the maintainer
-explicitly approves a narrower earlier task.
+it remains constrained and tested. Controlled-write MCP is not planned unless
+the maintainer explicitly approves a separate narrowed task.
 
 MCP code should call the service layer directly. It should not shell out to the
 CLI for core behavior, expose arbitrary shell, or create a second policy path.

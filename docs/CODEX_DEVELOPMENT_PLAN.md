@@ -1,13 +1,15 @@
 # Historical Codex Development Plan
 
 This document is historical project memory. It is superseded by
-[`CODEX_DEVELOPMENT_PLAN_V3.md`](CODEX_DEVELOPMENT_PLAN_V3.md), which records
-the current fixed CLI-first Codex execution plan for post-`v0.2.0` work.
+[`CODEX_DEVELOPMENT_PLAN_V4.md`](CODEX_DEVELOPMENT_PLAN_V4.md), which records
+the current post-`v0.2.1` provider transport and agent workflow hardening
+plan. The earlier fixed CLI-first plan remains available in
+[`CODEX_DEVELOPMENT_PLAN_V3.md`](CODEX_DEVELOPMENT_PLAN_V3.md).
 
 Do not use this file to select the next task. It remains in the repository for
 traceability only because it describes earlier local-MVP planning and fixed
-longplan work. If this file conflicts with `CODEX_DEVELOPMENT_PLAN_V3.md`, the
-fixed v3 plan controls.
+longplan work. If this file conflicts with `CODEX_DEVELOPMENT_PLAN_V4.md`, the
+V4 plan controls.
 
 Codex conversations are not project memory. If a decision, workflow
 constraint, known limitation, or operator pitfall matters after context
@@ -30,7 +32,7 @@ post-`v0.2.0` direction.
 
 ## Current Override
 
-The current durable plan is CLI-first:
+The durable CLI-first direction remains:
 
 - CLI is the first agent interface.
 - Hosted provider support is planned but controlled, default-off, and tested
@@ -41,5 +43,5 @@ The current durable plan is CLI-first:
   write accepted knowledge or bypass validation, gates, human review, and
   promotion.
 
-Use [`CODEX_DEVELOPMENT_PLAN_V3.md`](CODEX_DEVELOPMENT_PLAN_V3.md) for task
-order and PR scope.
+Use [`CODEX_DEVELOPMENT_PLAN_V4.md`](CODEX_DEVELOPMENT_PLAN_V4.md) for current
+task order and PR scope.
