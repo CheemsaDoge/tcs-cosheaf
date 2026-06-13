@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Literal
 
 from cosheaf.core.artifact import BaseArtifact
 from cosheaf.memory import ArtifactCard, MemoryRootScope, search_artifact_cards
@@ -111,6 +112,11 @@ class ContextSendPolicyService:
             artifact_ids=[item.artifact_id for item in items],
             root_scopes=list(root_scopes),
             estimated_tokens=sum(item.estimated_tokens for item in items),
+            card_count=len(items),
+            full_artifact_count=len(retrieval.full_artifact_pulls),
+            content_mode=_preview_content_mode(
+                full_artifact_count=len(retrieval.full_artifact_pulls)
+            ),
             risk_flags=list(risk_flags),
             items=list(items),
         )
@@ -263,6 +269,15 @@ def _preview_risk_flags(
     for item in items:
         flags.extend(item.risk_flags)
     return tuple(dict.fromkeys(flag for flag in flags if flag))
+
+
+def _preview_content_mode(
+    *,
+    full_artifact_count: int,
+) -> Literal["cards_only", "cards_with_full_artifacts"]:
+    if full_artifact_count > 0:
+        return "cards_with_full_artifacts"
+    return "cards_only"
 
 
 def _root_scope_for_loaded_record(loaded: LoadedRecord) -> MemoryRootScope:

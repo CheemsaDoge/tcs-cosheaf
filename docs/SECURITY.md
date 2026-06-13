@@ -15,6 +15,7 @@ checks:
 | Agent writes into readonly public KB | Controlled draft/source-note writes reject readonly roots | `test_cli_draft_write_rejects_readonly_public_root` |
 | Public context leaks private artifacts | Public provider previews include public scope only and policy filtering runs before ranking can include private results | `test_public_provider_preview_excludes_private_artifact`, `test_public_provider_preview_excludes_private_before_ranking_scores`, and `test_provider_preview_policy_matrix_allows_only_explicit_scopes` |
 | Hosted provider receives private context by default | Private provider context requires private-research policy and explicit consent | `test_hosted_provider_private_context_requires_policy_and_consent` and `test_provider_preview_policy_matrix_denials_have_stable_error_codes` |
+| Provider preview hides full-artifact pulls | Provider preview reports card count, full-artifact count, and content mode while keeping the implemented preview boundary metadata-only and cards-only | `test_provider_preview_policy_matrix_allows_only_explicit_scopes`, `test_provider_preview_cli_matrix_for_fake_and_openai_provider_metadata`, and `test_orchestrator_run_provider_fake_json_dispatches_hosted_workers` |
 | Provider logs expose secrets | Provider output and run logs redact common secret values and secret-looking metadata keys, and generated provider logs can be scanned for leaked API keys, bearer tokens, environment dumps, hidden reasoning, unapproved private context, and absolute private paths | `test_provider_logs_redact_secret_values`, `test_synthetic_provider_log_leaks_are_detected`, `test_redacted_provider_log_shape_passes_scanner`, and `test_scanner_accepts_generated_redacted_provider_log` |
 | Model output is malformed | Hosted worker output is rejected unless it validates as the expected structured payload | `test_malformed_provider_worker_output_is_rejected` |
 | Prompt or tool instructions override governance | Provider output cannot request accepted writes or bypass policy | `test_provider_output_cannot_override_accepted_write_policy` |
@@ -69,9 +70,12 @@ ranking result can be exposed to a provider path:
 The v4 plan name `public_research` maps to the current serialized mode
 `public`. `workspace` and `framework` cards are excluded from provider-send
 previews unless a later explicit design changes the matrix. Preview output is
-metadata-only: artifact IDs, root scopes, token estimates, and risk flags. It
-must not include full artifact statements, issue text, secrets, or provider
-credentials.
+metadata-only: artifact IDs, card counts, full-artifact counts, content mode,
+root scopes, token estimates, and risk flags. It must not include full artifact
+statements, issue text, secrets, or provider credentials. Current provider
+previews are expected to report `full_artifact_count=0` and
+`content_mode=cards_only`; any future nonzero count must remain explicit,
+audited, and policy-reviewed before it can be used for provider sending.
 
 ## CI Expectations
 

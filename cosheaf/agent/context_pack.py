@@ -157,6 +157,8 @@ def build_context_pack(
         context,
         _ordered_context_cards(cards),
         max_full_artifacts=full_artifact_budget,
+        role=role_value,
+        public_only=public_only,
     )
     retrieval = retrieval.model_copy(
         update={"full_artifact_pulls": list(full_artifact_pulls)}
@@ -640,6 +642,11 @@ def _render_retrieval_audit(
         "full_artifact_pulls": [
             pull.to_dict() for pull in retrieval.full_artifact_pulls
         ],
+        "context_payload": {
+            "card_count": len(retrieval.cards),
+            "full_artifact_count": len(retrieval.full_artifact_pulls),
+            "content_mode": _context_payload_mode(retrieval),
+        },
         "audit": retrieval.audit.to_dict(),
     }
     return json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n"
@@ -908,6 +915,8 @@ def _pull_full_artifacts(
     cards: tuple[ContextPackCard, ...],
     *,
     max_full_artifacts: int,
+    role: RetrievalRole,
+    public_only: bool,
 ) -> tuple[FullArtifactPull, ...]:
     if max_full_artifacts <= 0:
         return ()
@@ -927,7 +936,33 @@ def _pull_full_artifacts(
             FullArtifactPull(
                 artifact_id=card.id,
                 path=relative_path,
-                reason="explicit context-pack full-artifact budget",
+                reason=_full_artifact_pull_reason(
+                    role=role,
+                    public_only=public_only,
+                    max_full_artifacts=max_full_artifacts,
+                ),
             )
         )
     return tuple(pulls)
+
+
+def _context_payload_mode(
+    retrieval: RetrievalResult,
+) -> str:
+    if retrieval.full_artifact_pulls:
+        return "cards_with_full_artifacts"
+    return "cards_only"
+
+
+def _full_artifact_pull_reason(
+    *,
+    role: RetrievalRole,
+    public_only: bool,
+    max_full_artifacts: int,
+) -> str:
+    policy_scope = "public_only" if public_only else "workspace"
+    return (
+        "explicit context-pack full-artifact budget; "
+        f"role={role.value}; policy_scope={policy_scope}; "
+        f"max_full_artifacts={max_full_artifacts}"
+    )

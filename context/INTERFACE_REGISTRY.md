@@ -161,7 +161,8 @@
   private artifact IDs from the rendered context and retrieval audit.
 - `cosheaf context build <issue-id> --json`: emits a deterministic
   `ContextBuildResult` JSON payload with repository-local written file paths,
-  public-only status, and whether private context was included.
+  public-only status, whether private context was included, card count,
+  full-artifact count, and content mode.
 - `cosheaf context show <issue-id>`: builds the context pack and prints
   `CONTEXT.md`.
 - `cosheaf context show <issue-id> --repo-root <path>`: shows context for an
@@ -259,8 +260,9 @@
   private-context previews return structured policy errors.
 - `cosheaf provider preview-send --json`: emits deterministic JSON with
   provider id, mode, `real_run_performed: false`, the
-  `ProviderContextPreview` payload, artifact count, root scopes, estimated
-  token count, private-context inclusion, and risk flags.
+  `ProviderContextPreview` payload, artifact count, card count,
+  full-artifact count, content mode, root scopes, estimated token count,
+  private-context inclusion, and risk flags.
 - `cosheaf provider fake-run --input-json <path>`: runs the deterministic fake
   provider from a JSON `ProviderGatewayRequest`-compatible object. The command
   forces `provider: fake`, defaults the model and public consent when omitted,
@@ -369,7 +371,9 @@
   flag, and private-context permission flag.
 - `cosheaf.services.models.ContextBuildResult`: public context-build response
   DTO with issue, task directory, written files, public-only flag, and private
-  context inclusion flag.
+  context inclusion flag. It also reports `card_count`,
+  `full_artifact_count`, and `content_mode` so callers can distinguish
+  cards-only context from context that included full artifact pulls.
 - `cosheaf.services.models.CreateTaskRequest` and
   `cosheaf.services.models.CreateTaskResult`: public task-creation DTOs.
 - `cosheaf.services.models.WorkerBundleSubmitRequest` and
@@ -386,9 +390,10 @@
   and risk flags. It does not include artifact text.
 - `cosheaf.services.models.ProviderContextPreview`: public provider-send
   preview DTO with issue id, policy mode, public/private inclusion flags,
-  artifact ids, root scopes, estimated token count, risk flags, and preview
-  items. It does not include issue text, full artifact text, API keys, provider
-  credentials, or secrets.
+  artifact ids, root scopes, estimated token count, card count,
+  full-artifact count, content mode, risk flags, and preview items. It does
+  not include issue text, full artifact text, API keys, provider credentials,
+  or secrets.
 - `cosheaf.services.models.ModelCallRequest` and
   `cosheaf.services.models.ModelCallResult`: public provider-neutral model-call
   DTOs for future hosted workers.
@@ -487,7 +492,9 @@
   `public_only=false`, and explicit private-context permission. Workspace and
   framework scope cards are excluded from provider-send previews under the
   current matrix. The method returns metadata only: artifact IDs, root scopes,
-  token estimates, and risk flags. It does not call providers, implement MCP,
+  token estimates, card count, full-artifact count, content mode, and risk
+  flags. The implemented provider-send preview path remains cards-only and
+  reports `full_artifact_count=0`. It does not call providers, implement MCP,
   include full artifact text, include full issue text, or write files. Denials
   use stable `ErrorResult` codes including `private_context_requires_policy`,
   `private_context_requires_consent`, and `provider_context_scope_violation`.
@@ -1306,8 +1313,11 @@ default is `max_full_artifacts = 0`; full YAML can appear only in
 `FULL_ARTIFACTS.md` when the caller explicitly passes a positive
 `max_full_artifacts` budget. `RETRIEVAL_AUDIT.json` records the request, role,
 card bound, public-only flag, score breakdowns, filters, exclusions, warnings,
-and full-artifact pull audit entries. `public_only=True` excludes private cards
-and private artifact IDs from both rendered context and audit output.
+`context_payload` (`card_count`, `full_artifact_count`, and `content_mode`),
+and full-artifact pull audit entries. Full-artifact pull reasons include the
+retrieval role, policy scope, and explicit maximum pull budget.
+`public_only=True` excludes private cards and private artifact IDs from both
+rendered context and audit output.
 
 When a relevant artifact has formal-link metadata or policy-relevant formal
 settings, the artifact entry also includes compact formal-link metadata lines:

@@ -3,6 +3,25 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Full Artifact Pull Audit - 2026-06-14
+
+Issue 247 makes context payload shape visible across the context-pack and
+provider-preview surfaces. `ContextBuildResult` now reports card count,
+full-artifact count, and content mode. `RETRIEVAL_AUDIT.json` now records a
+`context_payload` object with `card_count`, `full_artifact_count`, and
+`content_mode`, and full-artifact pull reasons include the retrieval role,
+policy scope, and explicit full-artifact budget.
+
+Provider context-send previews now report the same card/full-artifact count
+and content-mode metadata while remaining metadata-only and cards-only under
+the implemented provider-send boundary. Orchestrator hosted-worker defaults
+continue to use provider previews with zero full-artifact pulls.
+
+This task does not add real provider/network tests, does not change provider
+default-off behavior, does not alter MCP behavior, does not change G10 or
+formal-link semantics, does not change artifact schemas or accepted-promotion
+policy, and does not touch public KB or workspace-template content.
+
 ## Provider Log Leak Scanner - 2026-06-14
 
 Issue 245 adds `cosheaf.security.provider_logs`, a deterministic scanner for

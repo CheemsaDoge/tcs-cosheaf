@@ -286,6 +286,11 @@ def test_context_pack_v2_uses_cards_and_audit_by_default(tmp_path: Path) -> None
     assert "SECRET FULL STATEMENT" not in full_artifacts
     assert audit["request"]["role"] == "orchestrator"
     assert audit["request"]["max_full_artifacts"] == 0
+    assert audit["context_payload"] == {
+        "card_count": 1,
+        "full_artifact_count": 0,
+        "content_mode": "cards_only",
+    }
     assert audit["full_artifact_pulls"] == []
 
 
@@ -344,6 +349,13 @@ def test_context_pack_worker_role_can_pull_bounded_full_artifacts(
     assert [pull["artifact_id"] for pull in audit["full_artifact_pulls"]] == [
         "claim.fixture.full-a"
     ]
+    assert audit["context_payload"] == {
+        "card_count": 2,
+        "full_artifact_count": 1,
+        "content_mode": "cards_with_full_artifacts",
+    }
+    assert "role=verifier" in audit["full_artifact_pulls"][0]["reason"]
+    assert "policy_scope=workspace" in audit["full_artifact_pulls"][0]["reason"]
     assert audit["request"]["role"] == "verifier"
     assert audit["request"]["max_full_artifacts"] == 1
 

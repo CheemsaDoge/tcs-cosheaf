@@ -142,10 +142,13 @@ After the `v0.2.1` prerelease and downstream compatibility checks:
 4. Treat `OpenAICompatibleHttpTransport` as the optional stdlib HTTP transport
    implementation: it remains explicit, default-off, injected/configured, and
    absent from default CI/provider demos.
-5. Treat the provider log leak scanner as the current regression guard for
-   generated provider logs; continue context privacy hardening with the
-   full-artifact pull audit.
-6. Continue post-`v0.2.1` hardening through small issue/branch/PR increments.
+5. Treat the provider log leak scanner and full-artifact pull audit as the
+   current context privacy and provider-log regression guards. Provider
+   previews remain metadata-only and cards-only under the implemented
+   provider-send boundary.
+6. Continue post-`v0.2.1` hardening through small issue/branch/PR increments,
+   with the next planned framework task moving into Phase E.1 provider workflow
+   eval coverage.
 7. Improve CLI-agent, provider fake/mocked, context-pack, evaluation, and
    failure/counterexample workflows without weakening review, gate, promotion,
    or public/private policy boundaries.

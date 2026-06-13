@@ -35,9 +35,9 @@ Implemented today:
   deterministic regression checks over generated run records;
 - provider CLI commands for listing supported provider modes, checking
   configuration without printing secrets, previewing context-send payload
-  shape, running the deterministic fake provider, and running one explicit
-  OpenAI-compatible real provider call when all consent/network/config gates
-  are satisfied;
+  shape including card/full-artifact counts, running the deterministic fake
+  provider, and running one explicit OpenAI-compatible real provider call when
+  all consent/network/config gates are satisfied;
 - explicit orchestrator dispatch to role-specific hosted workers through
   `cosheaf orchestrator run --issue <issue-id> --provider <provider>`;
 - fake-provider, mocked OpenAI-compatible, and stdlib HTTP-transport tests that
@@ -165,8 +165,12 @@ The current provider CLI surface is agent-facing and conservative:
   environment variable is present.
 - `cosheaf provider preview-send --issue <issue-id> --provider <provider>
   --json` previews the context-send payload shape without sending artifact
-  text to a provider. The preview includes artifact count, root scopes,
-  estimated token count, private-context inclusion, and risk flags.
+  text to a provider. The preview includes artifact count, card count,
+  full-artifact count, content mode, root scopes, estimated token count,
+  private-context inclusion, and risk flags. Current provider previews are
+  metadata-only and cards-only, so `full_artifact_count=0` and
+  `content_mode=cards_only` are expected for the implemented provider-send
+  boundary.
 - `cosheaf provider fake-run --input-json <path> --json` runs the
   deterministic fake provider and writes redacted provider logs under
   `.cosheaf/providers/`.
@@ -223,8 +227,8 @@ backward compatibility. Private context may be sent only when:
 - `public_only=false`;
 - the operator explicitly grants private-context consent;
 - a provider send preview was generated;
-- the preview exposes root scopes, artifact ids, estimated tokens, and risk
-  flags.
+- the preview exposes root scopes, artifact ids, estimated tokens, card count,
+  full-artifact count, content mode, and risk flags.
 
 The preview is a checkpoint, not authorization by itself. A real call still
 requires policy and consent.
@@ -241,8 +245,11 @@ The current provider-send preview matrix is deliberately conservative:
 
 `workspace` and `framework` scope cards are excluded from provider-send
 previews by the current matrix. Provider previews are metadata only: they list
-artifact IDs, root scopes, token estimates, and risk flags, and they do not
-include full artifact statements or issue text.
+artifact IDs, card counts, full-artifact counts, content mode, root scopes,
+token estimates, and risk flags, and they do not include full artifact
+statements or issue text. A nonzero full-artifact count would be a review
+signal that the send boundary has widened; the current implementation keeps
+provider previews at zero full pulls.
 
 ## Output Rules
 

@@ -238,6 +238,9 @@ def test_context_json_commands(tmp_path: Path) -> None:
     assert built_payload["schema_version"] == 1
     assert built_payload["issue_id"] == "issue.fixture.cli-json"
     assert built_payload["private_context_included"] is False
+    assert built_payload["card_count"] == 1
+    assert built_payload["full_artifact_count"] == 0
+    assert built_payload["content_mode"] == "cards_only"
     assert "context/TASKS/issue.fixture.cli-json/CONTEXT.md" in built_payload["files"]
     assert shown_payload["schema_version"] == 1
     assert shown_payload["issue_id"] == "issue.fixture.cli-json"

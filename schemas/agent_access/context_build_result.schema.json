@@ -31,6 +31,25 @@
       "default": false,
       "title": "Private Context Included",
       "type": "boolean"
+    },
+    "card_count": {
+      "default": 0,
+      "title": "Card Count",
+      "type": "integer"
+    },
+    "full_artifact_count": {
+      "default": 0,
+      "title": "Full Artifact Count",
+      "type": "integer"
+    },
+    "content_mode": {
+      "default": "cards_only",
+      "enum": [
+        "cards_only",
+        "cards_with_full_artifacts"
+      ],
+      "title": "Content Mode",
+      "type": "string"
     }
   },
   "required": [
