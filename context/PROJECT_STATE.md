@@ -3,6 +3,30 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Failure/Counterexample Workflow Eval - 2026-06-14
+
+Issue 251 adds a deterministic Python-level failure/counterexample workflow
+eval harness under `cosheaf.evals.failure_counterexample` plus the default case
+suite in `evals/failure_counterexample/cases.yaml`. The suite covers reasoner
+uncertainty, counterexampleer candidate evidence, verifier rejection of an
+invalid proof attempt, reducer preservation of failure records, and the
+accepted-write boundary.
+
+The report exposes regression metrics for failure preservation, uncertainty
+field presence, counterexample candidate flag accuracy, verifier request
+presence, and accepted-write violation count. Metrics are computed from each
+case's configured expectations, not inferred only from case kind, so custom
+negative cases can verify that missed preservation is scored as a failure.
+
+The harness writes deterministic WorkerBundle v2 fixtures under
+`.cosheaf/evals/failure_counterexample/` and invokes the existing reducer
+boundary. It does not add a failure/counterexample CLI command, does not call
+real provider networks, does not require API keys, does not add MCP behavior,
+does not write accepted knowledge, and does not change review, gate,
+promotion, public/private, formal-link, or schema semantics. Candidate
+counterexamples remain review-only evidence until checked and reviewed through
+ordinary verifier and human-review workflows.
+
 ## Provider Workflow Eval Suite - 2026-06-14
 
 Issue 249 adds a deterministic Python-level provider workflow eval harness

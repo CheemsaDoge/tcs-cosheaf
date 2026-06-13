@@ -910,11 +910,48 @@ promotion semantics beyond ordinary gatekeeper blocking behavior.
   `ProviderWorkflowEvalReport`.
 - `cosheaf.evals.provider_workflow.run_provider_workflow_eval_case(context, case)`:
   runs and scores one provider workflow eval case.
+- `cosheaf.evals.failure_counterexample.FailureCounterexampleEvalKind`: enum
+  for `reasoner_uncertainty`, `counterexample_candidate`,
+  `verifier_rejects_invalid_proof`, `reducer_preserves_failure`, and
+  `accepted_write_boundary` cases.
+- `cosheaf.evals.failure_counterexample.FailureCounterexampleEvalCase`:
+  Pydantic v2 model for one deterministic failure/counterexample eval case
+  with failure-preservation, uncertainty, candidate-counterexample,
+  verifier-request, reducer-rejection, and forbidden-output-path expectations.
+- `cosheaf.evals.failure_counterexample.FailureCounterexampleEvalSuite`:
+  Pydantic v2 model for a YAML suite of failure/counterexample eval cases.
+- `cosheaf.evals.failure_counterexample.FailureCounterexampleEvalMetrics`:
+  frozen dataclass with `failure_preservation_rate`,
+  `uncertainty_field_presence`, `counterexample_candidate_flag_accuracy`,
+  `verifier_request_presence`, and `accepted_write_violation_count` output.
+- `cosheaf.evals.failure_counterexample.FailureCounterexampleEvalCaseResult`:
+  frozen dataclass for one executed failure/counterexample eval case,
+  including worker role, reducer status, output paths, reducer warnings,
+  preserved-field flags, accepted-write flag, runtime paths, and failures.
+- `cosheaf.evals.failure_counterexample.FailureCounterexampleEvalReport`:
+  frozen dataclass for aggregate suite output with deterministic `to_dict()`
+  and `to_json()` helpers plus runtime paths.
+- `cosheaf.evals.failure_counterexample.FailureCounterexampleEvalError`:
+  expected error for failure/counterexample eval loading or execution
+  failures.
+- `cosheaf.evals.failure_counterexample.DEFAULT_FAILURE_COUNTEREXAMPLE_EVAL_CASES`:
+  default case path `evals/failure_counterexample/cases.yaml`.
+- `cosheaf.evals.failure_counterexample.load_failure_counterexample_eval_suite(path)`:
+  loads a failure/counterexample eval YAML suite.
+- `cosheaf.evals.failure_counterexample.resolve_failure_counterexample_eval_case_path(context, cases_path)`:
+  resolves and constrains an eval case path to the repository root.
+- `cosheaf.evals.failure_counterexample.run_failure_counterexample_eval_suite(context, suite)`:
+  writes deterministic WorkerBundle v2 fixtures under `.cosheaf/evals/`,
+  invokes the existing reducer boundary, and returns a
+  `FailureCounterexampleEvalReport`.
+- `cosheaf.evals.failure_counterexample.run_failure_counterexample_eval_case(context, case)`:
+  runs and scores one failure/counterexample eval case.
 
-The agent workflow and provider workflow eval harnesses are intentionally
-direct submodule APIs in this phase. They are not exported from
-`cosheaf.evals.__init__`, and no `cosheaf eval agent-workflow` or
-`cosheaf eval provider-workflow` CLI command is added.
+The agent workflow, provider workflow, and failure/counterexample eval
+harnesses are intentionally direct submodule APIs in this phase. They are not
+exported from `cosheaf.evals.__init__`, and no `cosheaf eval agent-workflow`,
+`cosheaf eval provider-workflow`, or `cosheaf eval failure-counterexample` CLI
+command is added.
 
 All memory models are strict (`extra="forbid"`), frozen, preserve enum values as
 enum instances in Python, and expose:
