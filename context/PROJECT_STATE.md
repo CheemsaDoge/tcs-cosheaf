@@ -3,6 +3,22 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## WorkerBundle Failure And Counterexample Preservation - 2026-06-13
+
+Issue 237 hardens WorkerBundle v2 with backward-compatible review-only fields
+for `assumptions`, `uncertainty`, `failed_attempts`, `counterexamples`, and
+`dependency_questions`. Existing bundles that only use the older
+`verification_requests`, `failures_or_counterexamples`, `risk_flags`, and
+`next_steps` fields remain valid.
+
+Bundle reducers and bundle submission now preserve assumptions, uncertainty,
+verification requests, failed attempts, candidate counterexamples, dependency
+questions, legacy failure/counterexample notes, risk flags, and confidence as
+labeled review warnings. Verification requests are not verifier results, and
+candidate counterexamples are not accepted refutations. WorkerBundle v2 still
+does not authorize accepted writes, accepted refutation of public knowledge,
+human review creation, verifier result creation, gate bypass, or promotion.
+
 ## Explicit Provider Real-Run CLI Path - 2026-06-13
 
 Issue 235 adds `cosheaf provider real-run --input-json <path> --provider

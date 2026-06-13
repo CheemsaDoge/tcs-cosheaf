@@ -76,8 +76,13 @@ def _bundle_json(
                     "summary": "Draft-only hosted worker proposal.",
                 }
             ],
+            "assumptions": ["Hosted worker output is review-only."],
+            "uncertainty": ["No human review was performed."],
             "verification_requests": ["Run validate and gate before review."],
+            "failed_attempts": [],
+            "counterexamples": [],
             "failures_or_counterexamples": ["No external verifier was run."],
+            "dependency_questions": [],
             "risk_flags": ["needs_human_review"],
             "next_steps": ["Request explicit human review."],
             "confidence": "low",
@@ -99,6 +104,10 @@ def test_fake_hosted_worker_produces_valid_worker_bundle(tmp_path: Path) -> None
     assert result.bundle is not None
     assert isinstance(result.bundle, WorkerBundleV2)
     assert result.bundle.worker_role.value == "reasoner"
+    assert result.bundle.assumptions == ["Hosted worker output is review-only."]
+    assert result.bundle.uncertainty == [
+        "No human review or semantic alignment review was run."
+    ]
     assert result.bundle.proposed_artifacts[0].path.startswith("kb/draft/")
     assert result.typed_result is None
     assert result.provider_log_path == ".cosheaf/providers/run.provider.0001.json"

@@ -31,6 +31,7 @@ WORKER_ROLES = (
 )
 REASONER = "reasoner"
 VERIFIER = "verifier"
+COUNTEREXAMPLER = "counterexampleer"
 
 
 def dry_run_worker_command(
@@ -115,8 +116,19 @@ def build_dry_run_bundle(
             "verification_requests": [
                 "Ask a verifier worker or external gate step to inspect the draft.",
             ],
+            "assumptions": [
+                "The proposed reasoning only uses the dry-run context bundle.",
+            ],
+            "uncertainty": [
+                "No source alignment or proof review has been performed.",
+            ],
+            "failed_attempts": [],
+            "counterexamples": [],
             "failures_or_counterexamples": [
                 "No proof checker or human review was performed.",
+            ],
+            "dependency_questions": [
+                "Which reviewed definitions should be cited before review?",
             ],
             "risk_flags": [
                 "dry_run_only",
@@ -139,9 +151,23 @@ def build_dry_run_bundle(
                 "Run repository validation and gates outside this dry-run.",
                 "Use real verifier adapters separately when a claim requires them.",
             ],
+            "assumptions": [
+                "Verifier dry-run only inspects workflow shape.",
+            ],
+            "uncertainty": [
+                "No verifier adapter result exists for this dry-run bundle.",
+            ],
+            "failed_attempts": [
+                (
+                    "No proof checker, SAT solver, SMT solver, Lean run, or "
+                    "gate was invoked."
+                ),
+            ],
+            "counterexamples": [],
             "failures_or_counterexamples": [
                 "No gate, Lean, SAT, SMT, or promotion result was produced.",
             ],
+            "dependency_questions": [],
             "risk_flags": [
                 "dry_run_only",
                 "not_machine_checked",
@@ -150,6 +176,49 @@ def build_dry_run_bundle(
             ],
             "next_steps": [
                 "Treat this as review context only, not as verification evidence.",
+            ],
+        }
+    if role == COUNTEREXAMPLER:
+        return {
+            **base,
+            "summary": (
+                f"Fake local counterexampleer recorded dry-run search for {node_id}."
+            ),
+            "claims": [
+                "Counterexample evidence is candidate review context only.",
+            ],
+            "assumptions": [
+                "The dry-run search did not enumerate the full problem space.",
+            ],
+            "uncertainty": [
+                "Candidate counterexamples require separate review or verifier checks.",
+            ],
+            "verification_requests": [
+                (
+                    "Ask a verifier worker to check any candidate "
+                    "counterexample separately."
+                ),
+            ],
+            "failed_attempts": [
+                "No exhaustive counterexample search was performed.",
+            ],
+            "counterexamples": [
+                "Candidate counterexample placeholder; not verified or reviewed.",
+            ],
+            "failures_or_counterexamples": [
+                "No verified counterexample was produced.",
+            ],
+            "dependency_questions": [
+                "Which reviewed claim would a verified counterexample target?",
+            ],
+            "risk_flags": [
+                "dry_run_only",
+                "candidate_counterexample_only",
+                "needs_verifier",
+                "needs_human_review",
+            ],
+            "next_steps": [
+                "Keep counterexample candidates as draft review context.",
             ],
         }
     return {
@@ -161,9 +230,18 @@ def build_dry_run_bundle(
         "verification_requests": [
             "Keep gate, review, and promotion as separate explicit steps.",
         ],
+        "assumptions": [
+            "This worker did not inspect mathematical truth claims.",
+        ],
+        "uncertainty": [
+            "Workflow progress does not imply artifact correctness.",
+        ],
+        "failed_attempts": [],
+        "counterexamples": [],
         "failures_or_counterexamples": [
             "No external service or authority-bearing review was invoked.",
         ],
+        "dependency_questions": [],
         "risk_flags": [
             "dry_run_only",
             "draft_proposal_only",

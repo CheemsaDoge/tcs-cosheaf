@@ -62,7 +62,8 @@ class ProposedArtifact(BaseModel):
 class WorkerBundleV2(BaseModel):
     """Strict Phase 4.3 worker-output bundle.
 
-    Workers may propose draft artifacts, verification requests, failures,
+    Workers may propose draft artifacts, assumptions, uncertainty, verification
+    requests, failed attempts, counterexample candidates, dependency questions,
     risks, and next steps. They may not create review authority or accepted
     knowledge.
     """
@@ -78,8 +79,13 @@ class WorkerBundleV2(BaseModel):
     used_sources: list[str] = Field(default_factory=list)
     claims: list[str] = Field(default_factory=list)
     proposed_artifacts: list[ProposedArtifact] = Field(default_factory=list)
+    assumptions: list[str] = Field(default_factory=list)
+    uncertainty: list[str] = Field(default_factory=list)
     verification_requests: list[str] = Field(default_factory=list)
+    failed_attempts: list[str] = Field(default_factory=list)
+    counterexamples: list[str] = Field(default_factory=list)
     failures_or_counterexamples: list[str] = Field(default_factory=list)
+    dependency_questions: list[str] = Field(default_factory=list)
     risk_flags: list[str] = Field(default_factory=list)
     next_steps: list[str] = Field(default_factory=list)
     confidence: WorkerBundleConfidence
@@ -119,8 +125,13 @@ class WorkerBundleV2(BaseModel):
     @field_validator(
         "used_sources",
         "claims",
+        "assumptions",
+        "uncertainty",
         "verification_requests",
+        "failed_attempts",
+        "counterexamples",
         "failures_or_counterexamples",
+        "dependency_questions",
         "risk_flags",
         "next_steps",
     )
@@ -159,17 +170,43 @@ def reduce_worker_bundle_v2(
 ) -> ReducerResult:
     """Validate and reduce a bundle v2 manifest into a deterministic result."""
     bundle = validate_worker_bundle_v2(context, bundle_path)
-    warnings = [
-        *bundle.failures_or_counterexamples,
-        *(f"risk: {flag}" for flag in bundle.risk_flags),
-        f"confidence: {bundle.confidence.value}",
-    ]
     return ReducerResult(
         reducer_id=reducer_id,
         status="accepted_for_review",
         summary=bundle.summary,
         output_paths=[artifact.path for artifact in bundle.proposed_artifacts],
-        warnings=warnings,
+        warnings=worker_bundle_review_warnings(bundle),
+    )
+
+
+def worker_bundle_review_warnings(bundle: WorkerBundleV2) -> list[str]:
+    """Return reducer/review warnings while preserving non-authoritative output.
+
+    Verification requests stay explicitly labeled as requests, and
+    counterexamples stay candidate review evidence. This function does not
+    create verifier results, refute accepted knowledge, or promote artifacts.
+    """
+    return _dedupe_preserving_order(
+        [
+            *(f"assumption: {item}" for item in bundle.assumptions),
+            *(f"uncertainty: {item}" for item in bundle.uncertainty),
+            *(
+                f"verification_request: {item}"
+                for item in bundle.verification_requests
+            ),
+            *(f"failed_attempt: {item}" for item in bundle.failed_attempts),
+            *(
+                f"counterexample_candidate: {item}"
+                for item in bundle.counterexamples
+            ),
+            *bundle.failures_or_counterexamples,
+            *(
+                f"dependency_question: {item}"
+                for item in bundle.dependency_questions
+            ),
+            *(f"risk: {flag}" for flag in bundle.risk_flags),
+            f"confidence: {bundle.confidence.value}",
+        ]
     )
 
 

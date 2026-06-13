@@ -83,6 +83,11 @@ follows that default-off, explicit-consent, no-real-provider-in-CI boundary.
 The provider `real-run` CLI now exists as a deliberately hard-to-trigger path
 with inline preview, confirmation, network, endpoint/key, and redacted-log
 checks. Hosted worker CLI commands remain separate future work.
+WorkerBundle v2 now preserves assumptions, uncertainty, failed attempts,
+candidate counterexamples, verification requests, dependency questions, risk
+flags, and next steps as review-only reducer warnings; candidate
+counterexamples are not accepted refutations and verification requests are not
+verifier results.
 
 ## Completed Baseline
 
@@ -116,6 +121,8 @@ Completed framework scaffold pieces include:
 - Explicit provider `real-run` CLI path that is default-off, requires inline
   context preview, send confirmation, explicit network permission,
   endpoint/API-key environment configuration, and writes redacted runtime logs.
+- WorkerBundle v2 failure/counterexample preservation fields that remain
+  backward-compatible with existing bundles and reducer-only.
 - Verifier adapter protocol, Python checker adapter, minimal optional SAT
   DIMACS adapter, minimal optional SMT-LIB adapter, minimal optional plain Lean
   adapter, and optional external Lean library reference checker.

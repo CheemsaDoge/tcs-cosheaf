@@ -70,6 +70,22 @@
         "$ref": "#/$defs/proposed_artifact"
       }
     },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "uncertainty": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
     "verification_requests": {
       "type": "array",
       "items": {
@@ -78,7 +94,31 @@
       },
       "uniqueItems": true
     },
+    "failed_attempts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "counterexamples": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
     "failures_or_counterexamples": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "dependency_questions": {
       "type": "array",
       "items": {
         "type": "string",

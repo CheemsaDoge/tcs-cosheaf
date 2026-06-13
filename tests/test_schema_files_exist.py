@@ -278,6 +278,15 @@ def test_worker_bundle_v2_schema_is_strict() -> None:
     ]
     assert schema["properties"]["confidence"]["enum"] == ["low", "medium", "high"]
     assert schema["properties"]["worker_role"] == {"$ref": "#/$defs/worker_type"}
+    for optional_review_field in [
+        "assumptions",
+        "uncertainty",
+        "failed_attempts",
+        "counterexamples",
+        "dependency_questions",
+    ]:
+        assert optional_review_field not in schema["required"]
+        assert schema["properties"][optional_review_field]["uniqueItems"] is True
     assert schema["$defs"]["worker_type"]["enum"] == [
         "reasoner",
         "verifier",

@@ -117,6 +117,9 @@ def test_agent_dry_run_workflow_uses_fake_reasoner_and_verifier_only(
 
     assert by_role["reasoner"]["bundle_id"].endswith(".reasoner-draft")
     assert by_role["reasoner"]["confidence"] == "low"
+    assert by_role["reasoner"]["assumptions"]
+    assert by_role["reasoner"]["uncertainty"]
+    assert by_role["reasoner"]["dependency_questions"]
     assert "needs_human_review" in by_role["reasoner"]["risk_flags"]
     assert any(
         artifact["path"].startswith(
@@ -127,6 +130,7 @@ def test_agent_dry_run_workflow_uses_fake_reasoner_and_verifier_only(
 
     assert by_role["verifier"]["bundle_id"].endswith(".verifier-check")
     assert "not_machine_checked" in by_role["verifier"]["risk_flags"]
+    assert by_role["verifier"]["failed_attempts"]
     assert any(
         "No gate, Lean, SAT, SMT, or promotion result was produced." == failure
         for failure in by_role["verifier"]["failures_or_counterexamples"]

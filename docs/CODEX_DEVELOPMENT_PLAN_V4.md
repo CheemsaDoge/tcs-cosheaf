@@ -155,13 +155,19 @@ live provider.
 
 ## Phase C: Provider Output And Worker Reliability
 
-Next implementation phase.
+Current implementation phase.
 
 Harden WorkerBundle and hosted-worker outputs so failures, uncertainty,
 counterexamples, verification requests, dependency questions, risk flags, and
 next steps are preserved rather than swallowed. Counterexamples and failures
 remain draft/proposal evidence until reviewed. Verifier requests are not
 verifier results.
+
+C.1 is complete in issue 237: WorkerBundle v2 accepts backward-compatible
+review-only fields for assumptions, uncertainty, failed attempts, candidate
+counterexamples, and dependency questions, and reducers preserve them as
+labeled warnings. C.2 is the next planned task: role prompt and output
+contract v2 for structured uncertainty, failures, and verifier requests.
 
 ## Phase D: Context Privacy And Send Preview
 
