@@ -1,38 +1,47 @@
 # Three-Repository Release Checklist
 
-This checklist is for post-release smoke and showcase checks for the
-`v0.2.0` local-MVP release after the `v0.1.1` Formal Link Layer support
-baseline. It is an operator checklist for the framework package, public KB,
-and workspace template together. It is not a production-readiness claim.
+This checklist is for the `v0.2.1` CLI Agent Access + Hosted Provider Gateway
+release candidate after the `v0.2.0` local-MVP release and the `v0.1.1` Formal
+Link Layer support baseline. It is an operator checklist for the framework
+package, public KB, and workspace template together. It is not a
+production-readiness claim.
 
-`v0.1.1` remains the downstream tag baseline for formal-link metadata.
-`v0.2.0` packages the later deterministic local workflow,
-including the optional external Lean library reference adapter. Do not assume a
-downstream pin to `@v0.1.1` includes `v0.2.0` features.
+`v0.1.1` remains the downstream tag baseline for early formal-link metadata.
+`v0.2.0` packages the deterministic local-MVP workflow. `v0.2.1` packages the
+CLI-first agent-access layer, controlled draft/staging write CLI, provider
+gateway, fake/mocked hosted-worker path, and release-candidate docs. Do not
+assume a downstream pin to `@v0.2.0` includes `v0.2.1` agent/provider surfaces.
 
 ## Scope
 
 - Framework repository: `tcs-cosheaf`.
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
-- Current framework package metadata version on the release tag: `0.2.0`.
+- Current framework package metadata version on the release-candidate branch:
+  `0.2.1`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.0`.
+- Intended downstream dependency for CLI-agent/provider-gateway workflows after
+  publication:
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.1`.
 
 ## Framework Checklist
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.2.0`.
+- [x] `pyproject.toml` records package version `0.2.1` on the release-candidate
+  branch.
+- [x] `cosheaf.__version__` records `0.2.1` on the release-candidate branch.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
-- [x] Remote tag `v0.2.0` points to a reviewed merge commit on the protected
-  default branch.
-- [x] Downstream repositories pin to an explicit release tag rather than
+- [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
+- [ ] Remote tag `v0.2.1` points to a reviewed merge commit on the protected
+  default branch after this release-candidate PR merges.
+- [ ] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
-- [x] Downstream workspace-template verification installs/pins `@v0.2.0`
-  before relying on local-MVP surfaces.
+- [ ] Workspace-template verification installs or pins `@v0.2.1` after the tag
+  exists before relying on CLI-agent/provider-gateway surfaces.
 
 ### License
 
@@ -42,7 +51,7 @@ downstream pin to `@v0.1.1` includes `v0.2.0` features.
 
 ### CI And Local Verification
 
-Run these before release or showcase PRs:
+Run these before release-candidate PRs and before publishing the tag:
 
 - [ ] `make lint`
 - [ ] `make typecheck`
@@ -50,7 +59,7 @@ Run these before release or showcase PRs:
 - [ ] `make validate`
 - [ ] `make gate`
 - [ ] `git diff --check`
-- [ ] GitHub Actions checks pass for the release or showcase PR.
+- [ ] GitHub Actions checks pass for the release-candidate PR.
 
 Skipped verifier output is not a pass. Optional-tool skips must stay visible in
 gate output and release notes.
@@ -65,11 +74,11 @@ gate output and release notes.
 - [ ] Gate reports are generated under `.cosheaf/reports/` and are not
   committed unless explicitly persisted for review.
 
-### Demo Status
+### Smoke And Evaluation Status
 
 - [ ] `python scripts/release_smoke.py --source
-  git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.0` runs against a
-  clean environment when network access is available.
+  git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.1` runs against a
+  clean environment after the tag exists and network access is available.
 - [ ] `python scripts/ecosystem_smoke.py --cosheaf cosheaf` runs without
   cloning remote repositories.
 - [ ] The ecosystem smoke covers a readonly public KB root, writable private KB
@@ -77,6 +86,43 @@ gate output and release notes.
   gatekeeper, index rebuild, and context-pack generation.
 - [ ] Expected policy failures in smoke helpers are verified as failures, not
   described as passes.
+- [ ] Retrieval, context-pack, security, and agent-workflow evals remain
+  deterministic and do not require network access or API keys.
+
+## Agent Access And Provider Status
+
+Implemented framework surfaces for `v0.2.1`:
+
+- CLI-first operator workflow with stable JSON output for core read/check
+  commands.
+- Controlled draft artifact, staged source-note, worker-bundle submission, and
+  draft review-request CLI commands.
+- Typed service-layer DTOs and stable `ErrorResult` codes for agent-facing
+  workflows.
+- Provider gateway with deterministic fake provider and OpenAI-compatible
+  mocked transport boundary.
+- Provider CLI commands for `list`, `config-check`, `preview-send`, and
+  `fake-run`.
+- Role-specific hosted worker service for fake or mocked provider worker
+  calls.
+- Internal orchestrator dispatch to hosted workers through explicit provider
+  selection.
+- Agent-access security regression tests and agent workflow evaluation suite.
+- Optional operator Skill package.
+- Optional read-only MCP surface. MCP is not required for `v0.2.1`.
+
+Boundaries:
+
+- Built-in real hosted HTTP transport is not enabled by default.
+- CI and default tests must not call real hosted providers.
+- Real provider paths require explicit configuration, credentials, policy
+  scope, preview, and consent.
+- Provider output is untrusted and may become WorkerBundle, typed sub-result,
+  draft proposal, draft artifact input, or review context only.
+- Provider output must not write accepted knowledge, mark human review, or
+  bypass reducers, validation, gates, verifier results, review, or promotion.
+- API keys, secrets, hidden reasoning, and unapproved private context must not
+  be committed or logged.
 
 ## Workspace Template Checklist
 
@@ -84,6 +130,9 @@ gate output and release notes.
 - [ ] The one-command demo runs from a clean clone.
 - [ ] Makefile shortcuts remain thin wrappers around documented `cosheaf`
   commands.
+- [ ] CLI-agent workflow commands demonstrate JSON output.
+- [ ] Fake provider smoke uses the deterministic fake provider only.
+- [ ] `.env.example`, if present, names variables only and contains no secrets.
 - [ ] `kb/public` is documented as seed/demo content unless replaced or mounted
   from `tcs-kb-public`.
 - [ ] `kb/private` is documented as the writable private research overlay.
@@ -114,10 +163,13 @@ gate output and release notes.
 - Accepted artifacts must not depend on draft or otherwise pre-accepted
   artifacts, even across KB roots.
 - Readonly KB roots must reject lifecycle write commands.
+- Provider-send previews must keep public/private root scopes visible.
+- Private KB context must not be sent to a real provider without explicit
+  private-research policy and operator consent.
 
 ## Formal Link Status
 
-Implemented framework surfaces on current `main`:
+Implemented framework surfaces:
 
 - Artifact metadata fields: `formalizations`, `alignment`, and
   `verification_policy`.
@@ -127,10 +179,6 @@ Implemented framework surfaces on current `main`:
 - SQLite/index/query formal-link surfaces.
 - Optional external Lean library reference checker for generated
   `import <module>` / `#check <symbol>` runs when Lean or lake is available.
-
-The `v0.2.0` tag includes formal-link metadata, G10, context, index, query
-surfaces, and the optional `LeanLibraryRefAdapter`. Downstream pinned work
-should use `@v0.2.0` before relying on that adapter.
 
 Boundaries:
 
@@ -143,22 +191,16 @@ Boundaries:
 - Missing Lean/lake is `skipped`, not `pass`.
 - Cosheaf does not fetch CSLib/mathlib or vendor Lean proof bodies.
 
-## Hosted LLM Status
-
-- Hosted LLM/model-provider worker execution is not implemented.
-- The model provider surface is provider-neutral and currently uses a
-  deterministic fake provider for tests and disabled hosted-runtime paths.
-- The orchestrator dry-run is local-only and does not call network services,
-  request human review, merge worker outputs, or promote accepted knowledge.
-
 ## Known Limitations
 
-- Pre-MVP framework, not production software.
+- Release candidate framework, not production software.
 - No web UI.
 - No automatic theorem-proving agent.
 - No full Lean autoformalization.
 - No automatic informal/formal semantic alignment checking.
 - No multi-user permission system.
+- No default-on hosted provider calls.
+- No built-in default real hosted HTTP transport.
 - External public KB integration is through local workspace roots, not a hosted
   registry service.
 - SAT, SMT, plain Lean, and external Lean reference adapters are intentionally
@@ -166,12 +208,13 @@ Boundaries:
 - MarkItDown, Headroom, CodeGraph, and Understand-Anything are optional or
   manual developer surfaces and are not source-of-truth dependencies.
 
-## Non-Goals For This Release-Hardening Phase
+## Non-Goals For This Release Candidate
 
 - Do not add a web UI.
-- Do not add a large agent runtime.
-- Do not make hosted LLM calls part of default workflows.
+- Do not make hosted provider calls part of default workflows.
+- Do not require real API keys, network access, or real provider calls in CI.
+- Do not make MCP mandatory.
 - Do not mass-import public KB artifacts.
 - Do not change accepted-promotion semantics.
-- Do not treat validation, gatekeeper, formal links, or skipped verifier
-  results as human review or proof.
+- Do not treat validation, gatekeeper, formal links, provider output, AI review,
+  or skipped verifier results as human review or proof.
