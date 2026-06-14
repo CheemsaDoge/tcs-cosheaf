@@ -3,6 +3,28 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.2 Release Closeout - 2026-06-14
+
+Issue 263 closes out `v0.2.2` after tag/release publication and downstream pin
+alignment. The annotated `v0.2.2` tag points to the reviewed post-audit main
+commit, and the GitHub release `v0.2.2 Provider Transport + Agent Workflow
+Hardening` is published. Release smoke installed `tcs-cosheaf==0.2.2` from
+`git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.2` and ran the clean
+workspace help, version, validate, gate, index rebuild, and context-pack
+checks.
+
+Downstream alignment is complete for the active repositories:
+`tcs-cosheaf-workspace-template` pins active demo, Makefile, CLI-agent,
+provider-preview, and fake-provider smoke paths to `v0.2.2`, and
+`tcs-kb-public` CI installs `tcs-cosheaf` from `v0.2.2`.
+
+This closeout is documentation/status only. It does not add runtime behavior,
+does not start `v0.2.3` code, does not add provider or MCP authority, does not
+write accepted knowledge, does not mark human review, does not promote
+artifacts, and does not change schema, gate, verifier, public/private policy,
+or accepted-promotion semantics. The next focus is `v0.2.3` Verification
+Evidence Hardening through small issue/branch/PR increments.
+
 ## v0.2.2 Pre-Tag Release Audit - 2026-06-14
 
 Issue 261 audits whether framework main is ready for `v0.2.2` tag and release
