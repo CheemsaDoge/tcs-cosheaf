@@ -20,9 +20,11 @@ failure/counterexample eval harness checks that WorkerBundle v2 reducer
 boundaries preserve failed attempts, uncertainty, candidate counterexamples,
 and verification requests as review context. The verifier evidence eval harness
 checks verifier-result, promotion-readiness, candidate-counterexample, and Lean
-`#check` boundaries with deterministic fake evidence records. These harnesses
-reuse existing runtime surfaces; they do not introduce new retrieval,
-context-pack, provider, MCP, verifier, or orchestration algorithms.
+`#check` boundaries with deterministic fake evidence records. The artifact
+failure-memory eval harness checks artifact-level failure-log retrieval and
+governance boundaries. These harnesses reuse existing runtime surfaces; they
+do not introduce new retrieval, context-pack, provider, MCP, verifier, or
+orchestration algorithms.
 
 ## Retrieval Eval Cases
 
@@ -373,6 +375,71 @@ These metrics are regression signals only. They are not proof evidence, human
 review, source review, verifier results, accepted status, accepted refutation,
 or promotion authority.
 
+## Artifact Failure-Memory Eval Cases
+
+Artifact failure-memory eval cases are YAML records under
+`evals/artifact_failure_memory/`. The default case file is:
+
+```text
+evals/artifact_failure_memory/cases.yaml
+```
+
+The harness is a Python API in `cosheaf.evals.artifact_failure_memory`; there
+is no dedicated `cosheaf eval artifact-failure-memory` CLI command in this
+phase. Tests load the suite and create deterministic temporary workspaces under
+`.cosheaf/evals/artifact_failure_memory/`. Each fixture contains a readonly
+public KB root, a writable private KB root, one accepted public artifact with
+failure memory, one private draft artifact with private failure memory, and an
+issue that references both. The harness searches the existing artifact-card
+surface and does not write accepted knowledge in the source repository.
+
+Case file format:
+
+```yaml
+schema_version: 1
+cases:
+  - id: case.failure-memory.retrieval-recall
+    kind: failure_retrieval
+    query: separator induction dead end
+    public_only: true
+    expect_failure_retrieved: true
+```
+
+Required case kinds for the default suite are:
+
+- `failure_retrieval`: public failure memory is retrievable by relevant query.
+- `repeat_failed_direction`: repeated failed directions are surfaced so they
+  can be avoided.
+- `public_scope_boundary`: public-only retrieval does not leak private
+  failure-log text or private artifact IDs.
+- `authority_boundary`: failure memory remains non-authoritative review
+  context and is not surfaced as proof, human review, verifier pass, accepted
+  status, or promotion evidence.
+- `candidate_counterexample_boundary`: candidate references in failure logs
+  remain candidates and are not mislabeled as checked counterexamples.
+
+## Artifact Failure-Memory Metrics
+
+The artifact failure-memory eval report records:
+
+- `failure_retrieval_recall`: fraction of expected failure-memory retrieval
+  cases where the public failure direction was returned.
+- `repeat_failed_direction_rate`: fraction of expected repeat-direction cases
+  where the repeated failed direction slipped through undetected; lower is
+  better.
+- `failure_scope_leak_count`: count of cases that leaked private failure-log
+  text or private artifact IDs into public-only output.
+- `failure_authority_violation_count`: count of cases that surfaced failure
+  memory as proof, human review, verifier pass, accepted status, checked
+  counterexample evidence, or promotion authority.
+- `candidate_counterexample_mislabel_count`: count of cases that mislabeled a
+  candidate counterexample reference as checked.
+
+These metrics are regression signals only. Artifact failure memory is not
+proof evidence, verifier success, checked counterexample evidence, human
+review, source review, gate success, accepted status, accepted refutation, or
+promotion authority.
+
 ## Verifier Evidence Eval Cases
 
 Verifier evidence eval cases are YAML records under `evals/verifier_evidence/`.
@@ -494,12 +561,12 @@ rebuild the SQLite index implicitly. The context eval does not rebuild the
 SQLite index implicitly, but it does build context packs through the existing
 context-pack writer.
 
-The agent workflow, provider workflow, failure/counterexample, and verifier
-evidence evals currently have no CLI commands. Running them from Python may
-refresh `context/TASKS/<issue-id>/` context packs, redacted provider logs under
-`.cosheaf/providers/`, and failure/counterexample bundle fixtures under
-`.cosheaf/evals/`. Verifier evidence evals use in-memory fake evidence records
-and typed candidate fixtures. Runtime outputs should not be committed.
+The agent workflow, provider workflow, failure/counterexample, artifact
+failure-memory, and verifier evidence evals currently have no CLI commands.
+Running them from Python may refresh `context/TASKS/<issue-id>/` context
+packs, redacted provider logs under `.cosheaf/providers/`, and eval fixtures
+under `.cosheaf/evals/`. Verifier evidence evals use in-memory fake evidence
+records and typed candidate fixtures. Runtime outputs should not be committed.
 
 ## Limitations
 

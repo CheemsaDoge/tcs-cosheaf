@@ -288,6 +288,11 @@ Add deterministic eval coverage for failure memory retrieval and governance:
 The eval must use deterministic fixtures only: no hosted provider call, no
 accepted write, and no MCP expansion.
 
+Implementation status as of 2026-06-15: complete through the Python-level
+`cosheaf.evals.artifact_failure_memory` harness and
+`evals/artifact_failure_memory/cases.yaml`. The next plan step is G.1, the
+v0.2.4 release-readiness audit.
+
 ## Phase G: v0.2.4 Release Readiness
 
 ### G.1 v0.2.4 Release Readiness Audit

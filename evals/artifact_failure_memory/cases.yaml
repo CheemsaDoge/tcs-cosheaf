@@ -1,0 +1,35 @@
+schema_version: 1
+cases:
+  - id: case.failure-memory.retrieval-recall
+    kind: failure_retrieval
+    query: separator induction dead end
+    public_only: true
+    expect_failure_retrieved: true
+
+  - id: case.failure-memory.repeat-direction
+    kind: repeat_failed_direction
+    query: separator induction dead end
+    public_only: true
+    expect_failure_retrieved: true
+    expect_repeat_detected: true
+
+  - id: case.failure-memory.public-scope-boundary
+    kind: public_scope_boundary
+    query: private-failure-secret-do-not-leak
+    public_only: true
+    expect_failure_retrieved: false
+    expect_no_scope_leak: true
+
+  - id: case.failure-memory.authority-boundary
+    kind: authority_boundary
+    query: separator induction dead end proof review
+    public_only: true
+    expect_failure_retrieved: true
+    expect_no_authority_violation: true
+
+  - id: case.failure-memory.candidate-counterexample-boundary
+    kind: candidate_counterexample_boundary
+    query: candidate failure separator
+    public_only: true
+    expect_failure_retrieved: true
+    expect_no_candidate_mislabel: true

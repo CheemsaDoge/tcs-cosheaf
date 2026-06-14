@@ -3,6 +3,29 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Artifact Failure-Memory Eval Suite - 2026-06-15
+
+Issue 322 adds deterministic artifact failure-memory retrieval/governance eval
+coverage. The new Python-level harness in
+`cosheaf.evals.artifact_failure_memory` loads
+`evals/artifact_failure_memory/cases.yaml`, creates local temporary workspace
+fixtures under `.cosheaf/evals/artifact_failure_memory/`, and exercises the
+existing artifact-card search surface.
+
+The default cases cover failure-memory retrieval recall, repeated failed
+direction detection, public-only private failure-log leakage, authority
+boundary preservation, and candidate-counterexample mislabel prevention. The
+report exposes retrieval recall, repeated-direction slip rate, scope leak
+count, authority violation count, and candidate-counterexample mislabel count.
+
+This is evaluation coverage only. It does not add a CLI command, does not
+change artifact schema, does not write accepted knowledge in the source
+repository, does not create verifier results, does not mark human review, does
+not run promotion, does not change gates or accepted-promotion semantics, does
+not expand provider/MCP authority, and does not make failure memory proof,
+verifier success, checked counterexample evidence, gate success, accepted
+status, or promotion evidence.
+
 ## Artifact Failure Log Security Regression - 2026-06-15
 
 Issue 320 adds executable security regression coverage for artifact-level

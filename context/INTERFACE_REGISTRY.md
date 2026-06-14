@@ -8,9 +8,10 @@
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
   and controlled append, artifact cards, memory search, compact context card
   summaries, explicit context-pack `Known Failed Directions` sections, and
-  read-only promotion-readiness warning reasons. Future failure-memory work
-  must keep failure memory labeled as non-authoritative and must not promote it
-  into proof, review, verifier, checked-counterexample, accepted-status, or
+  read-only promotion-readiness warning reasons, with deterministic
+  retrieval/governance eval coverage. Future failure-memory work must keep
+  failure memory labeled as non-authoritative and must not promote it into
+  proof, review, verifier, checked-counterexample, accepted-status, or
   promotion authority.
 - Hosted worker CLI commands and hosted-provider MCP tools are not implemented
   yet. Role-specific hosted worker service bridging for fake and mocked
@@ -1084,6 +1085,45 @@ promotion semantics beyond ordinary gatekeeper blocking behavior.
   `FailureCounterexampleEvalReport`.
 - `cosheaf.evals.failure_counterexample.run_failure_counterexample_eval_case(context, case)`:
   runs and scores one failure/counterexample eval case.
+- `cosheaf.evals.artifact_failure_memory.ArtifactFailureMemoryEvalKind`: enum
+  for `failure_retrieval`, `repeat_failed_direction`,
+  `public_scope_boundary`, `authority_boundary`, and
+  `candidate_counterexample_boundary` cases.
+- `cosheaf.evals.artifact_failure_memory.ArtifactFailureMemoryEvalCase`:
+  Pydantic v2 model for one deterministic artifact failure-memory eval case
+  with query, public-only, failure-retrieval, repeat-direction, scope,
+  authority, and candidate-counterexample expectations.
+- `cosheaf.evals.artifact_failure_memory.ArtifactFailureMemoryEvalSuite`:
+  Pydantic v2 model for a YAML suite of artifact failure-memory eval cases.
+- `cosheaf.evals.artifact_failure_memory.ArtifactFailureMemoryEvalMetrics`:
+  frozen dataclass with `failure_retrieval_recall`,
+  `repeat_failed_direction_rate`, `failure_scope_leak_count`,
+  `failure_authority_violation_count`, and
+  `candidate_counterexample_mislabel_count` output.
+- `cosheaf.evals.artifact_failure_memory.ArtifactFailureMemoryEvalCaseResult`:
+  frozen dataclass for one executed artifact failure-memory eval case,
+  including retrieved artifact IDs, retrieved failure directions, repeated
+  failed-direction detection, scope leak, authority violation,
+  candidate-counterexample mislabel status, warnings, runtime paths, and
+  failures.
+- `cosheaf.evals.artifact_failure_memory.ArtifactFailureMemoryEvalReport`:
+  frozen dataclass for aggregate suite output with deterministic `to_dict()`
+  and `to_json()` helpers plus runtime paths.
+- `cosheaf.evals.artifact_failure_memory.ArtifactFailureMemoryEvalError`:
+  expected error for artifact failure-memory eval loading or execution
+  failures.
+- `cosheaf.evals.artifact_failure_memory.DEFAULT_ARTIFACT_FAILURE_MEMORY_EVAL_CASES`:
+  default case path `evals/artifact_failure_memory/cases.yaml`.
+- `cosheaf.evals.artifact_failure_memory.load_artifact_failure_memory_eval_suite(path)`:
+  loads an artifact failure-memory eval YAML suite.
+- `cosheaf.evals.artifact_failure_memory.resolve_artifact_failure_memory_eval_case_path(context, cases_path)`:
+  resolves and constrains an eval case path to the repository root.
+- `cosheaf.evals.artifact_failure_memory.run_artifact_failure_memory_eval_suite(context, suite)`:
+  writes deterministic workspace fixtures under
+  `.cosheaf/evals/artifact_failure_memory/`, invokes the existing artifact-card
+  search surface, and returns an `ArtifactFailureMemoryEvalReport`.
+- `cosheaf.evals.artifact_failure_memory.run_artifact_failure_memory_eval_case(context, case)`:
+  runs and scores one artifact failure-memory eval case.
 - `cosheaf.evals.verifier_evidence.VerifierEvidenceEvalKind`: enum for
   `pass_evidence_policy_allowed`, `failed_evidence_blocks_readiness`,
   `skipped_checker_required`, `counterexample_remains_candidate`, and
@@ -1123,11 +1163,13 @@ promotion semantics beyond ordinary gatekeeper blocking behavior.
 - `cosheaf.evals.verifier_evidence.run_verifier_evidence_eval_case(context, case)`:
   runs and scores one verifier evidence eval case.
 
-The agent workflow, provider workflow, failure/counterexample, and verifier
-evidence eval harnesses are intentionally direct submodule APIs in this phase. They are not
-exported from `cosheaf.evals.__init__`, and no `cosheaf eval agent-workflow`,
-`cosheaf eval provider-workflow`, `cosheaf eval failure-counterexample`, or
-`cosheaf eval verifier-evidence` CLI command is added.
+The agent workflow, provider workflow, failure/counterexample, artifact
+failure-memory, and verifier evidence eval harnesses are intentionally direct
+submodule APIs in this phase. They are not exported from
+`cosheaf.evals.__init__`, and no `cosheaf eval agent-workflow`,
+`cosheaf eval provider-workflow`, `cosheaf eval failure-counterexample`,
+`cosheaf eval artifact-failure-memory`, or `cosheaf eval verifier-evidence`
+CLI command is added.
 
 All memory models are strict (`extra="forbid"`), frozen, preserve enum values as
 enum instances in Python, and expose:
