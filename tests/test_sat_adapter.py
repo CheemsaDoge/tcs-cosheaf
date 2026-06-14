@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,7 @@ class FakeSatBackend:
     command_value: tuple[str, ...] = ("fake-sat",)
     version_value: str | None = "fake-sat 1.0"
     expected_cwd: Path | None = None
+    exception: Exception | None = None
 
     def command(self, cnf_path: Path) -> tuple[str, ...]:
         return (*self.command_value, cnf_path.as_posix())
@@ -42,6 +44,8 @@ class FakeSatBackend:
     ) -> SatBackendResult:
         if self.expected_cwd is not None:
             assert cwd == self.expected_cwd
+        if self.exception is not None:
+            raise self.exception
         if self.result is None:
             raise AssertionError("fake backend solve called without a result")
         return self.result
@@ -54,10 +58,14 @@ def _write_yaml(repo_root: Path, relative_path: str, data: dict[str, Any]) -> Pa
     return path
 
 
-def _write_cnf(repo_root: Path, relative_path: str) -> Path:
+def _write_cnf(
+    repo_root: Path,
+    relative_path: str,
+    content: str = "p cnf 1 1\n1 0\n",
+) -> Path:
     path = repo_root / relative_path
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("p cnf 1 1\n1 0\n", encoding="utf-8")
+    path.write_text(content, encoding="utf-8")
     return path
 
 
@@ -168,6 +176,56 @@ def test_sat_adapter_passes_satisfiable_toy_cnf_with_fake_backend(
     assert (tmp_path / result.stderr_path).read_text(encoding="utf-8") == ""
 
 
+def test_sat_adapter_passes_unsatisfiable_toy_cnf_with_fake_backend(
+    tmp_path: Path,
+) -> None:
+    _write_cnf(
+        tmp_path,
+        "examples/sat/tiny-unsat.cnf",
+        "p cnf 1 2\n1 0\n-1 0\n",
+    )
+    artifact = _artifact(
+        artifact_id="construction.fixture.unsat",
+        evidence_path="examples/sat/tiny-unsat.cnf",
+        expected_satisfiable=False,
+    )
+    adapter = SatAdapter(
+        backend=FakeSatBackend(
+            name="fake-sat",
+            available=True,
+            expected_cwd=tmp_path,
+            result=SatBackendResult(
+                exit_code=20,
+                stdout="s UNSATISFIABLE\n",
+                stderr="",
+                result="unsat",
+            ),
+        )
+    )
+
+    result = adapter.verify(artifact, RepoContext(tmp_path))
+
+    assert result.status is VerificationStatus.PASS
+    assert result.exit_code == 20
+    assert result.command == ("fake-sat", "examples/sat/tiny-unsat.cnf")
+    assert result.cwd == str(tmp_path)
+    assert result.timeout_seconds == 30.0
+    assert result.input_paths == ("examples/sat/tiny-unsat.cnf",)
+    assert result.stdout_path
+    assert result.stderr_path
+    assert result.tool_name == "fake-sat"
+    assert result.tool_version == "fake-sat 1.0"
+    assert result.environment is not None
+    assert "result=unsat" in result.environment
+    assert "SAT backend result matched expected satisfiability: unsat" == (
+        result.message
+    )
+    assert (tmp_path / result.stdout_path).read_text(encoding="utf-8") == (
+        "s UNSATISFIABLE\n"
+    )
+    assert (tmp_path / result.stderr_path).read_text(encoding="utf-8") == ""
+
+
 def test_sat_adapter_reports_mismatched_backend_result_as_fail(
     tmp_path: Path,
 ) -> None:
@@ -192,6 +250,88 @@ def test_sat_adapter_reports_mismatched_backend_result_as_fail(
     assert result.status is VerificationStatus.FAIL
     assert result.exit_code == 20
     assert "expected sat, got unsat" in result.message
+
+
+def test_sat_adapter_reports_malformed_dimacs_as_error_with_logs(
+    tmp_path: Path,
+) -> None:
+    _write_cnf(
+        tmp_path,
+        "examples/sat/malformed.cnf",
+        "this is not a DIMACS CNF file\n",
+    )
+    artifact = _artifact(
+        artifact_id="construction.fixture.malformed-sat",
+        evidence_path="examples/sat/malformed.cnf",
+    )
+    adapter = SatAdapter(
+        backend=FakeSatBackend(
+            name="fake-sat",
+            available=True,
+            expected_cwd=tmp_path,
+            result=SatBackendResult(
+                exit_code=1,
+                stdout="",
+                stderr="parse error: expected DIMACS header\n",
+                result="unknown",
+            ),
+        )
+    )
+
+    result = adapter.verify(artifact, RepoContext(tmp_path))
+
+    assert result.status is VerificationStatus.ERROR
+    assert result.exit_code == 1
+    assert result.command == ("fake-sat", "examples/sat/malformed.cnf")
+    assert result.cwd == str(tmp_path)
+    assert result.input_paths == ("examples/sat/malformed.cnf",)
+    assert result.output_paths == (result.stderr_path, result.stdout_path)
+    assert result.stdout_path
+    assert result.stderr_path
+    assert "unknown result" in result.message
+    assert (tmp_path / result.stdout_path).read_text(encoding="utf-8") == ""
+    assert (tmp_path / result.stderr_path).read_text(encoding="utf-8") == (
+        "parse error: expected DIMACS header\n"
+    )
+
+
+def test_sat_adapter_reports_timeout_as_error_with_logs(
+    tmp_path: Path,
+) -> None:
+    _write_cnf(tmp_path, "examples/sat/slow.cnf")
+    artifact = _artifact(
+        artifact_id="construction.fixture.timeout-sat",
+        evidence_path="examples/sat/slow.cnf",
+    )
+    adapter = SatAdapter(
+        timeout_seconds=0.25,
+        backend=FakeSatBackend(
+            name="fake-sat",
+            available=True,
+            expected_cwd=tmp_path,
+            exception=subprocess.TimeoutExpired(
+                cmd=("fake-sat", "examples/sat/slow.cnf"),
+                timeout=0.25,
+            ),
+        ),
+    )
+
+    result = adapter.verify(artifact, RepoContext(tmp_path))
+
+    assert result.status is VerificationStatus.ERROR
+    assert result.exit_code is None
+    assert result.command == ("fake-sat", "examples/sat/slow.cnf")
+    assert result.cwd == str(tmp_path)
+    assert result.timeout_seconds == 0.25
+    assert result.input_paths == ("examples/sat/slow.cnf",)
+    assert result.output_paths == (result.stderr_path, result.stdout_path)
+    assert result.stdout_path
+    assert result.stderr_path
+    assert "timed out after 0.25 second(s)" in result.message
+    assert (tmp_path / result.stdout_path).read_text(encoding="utf-8") == ""
+    assert "timed out after 0.25 second(s)" in (
+        tmp_path / result.stderr_path
+    ).read_text(encoding="utf-8")
 
 
 def test_sat_adapter_reports_malformed_expected_metadata_as_error(

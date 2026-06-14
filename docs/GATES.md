@@ -222,6 +222,12 @@ paths, and result summary. If the artifact statement has a `CHECKER_DATA`
 result matches it, `fail` on mismatch, and `error` for unknown, timeout, missing
 evidence, or runtime errors.
 
+The SAT result-depth fixtures use fake backends so CI does not require a real
+SAT solver. They cover satisfiable and unsatisfiable matches, mismatches,
+malformed DIMACS surfaced as backend parse-error/`unknown` output, timeout
+errors, and unavailable backend skips. Skipped SAT results remain skipped, not
+pass, and no fixture turns SAT output into a theorem-proving claim.
+
 The SMT verifier adapter supports a minimal optional SMT-LIB invocation path.
 It does not add a hard dependency on Z3, cvc5, or any external solver binary.
 The default backend checks for the configured external command, currently `z3`,

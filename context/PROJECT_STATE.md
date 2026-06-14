@@ -3,6 +3,20 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.3 SAT Adapter Result-Depth Fixtures - 2026-06-14
+
+Issue 278 expands SAT adapter result-depth coverage with fake-backend fixtures
+for satisfiable, unsatisfiable, malformed DIMACS, timeout, and unavailable
+solver paths. The coverage asserts normalized `pass`, `fail`, `error`, and
+`skipped` behavior, plus command metadata, repository-root cwd, timeout
+metadata, stdout/stderr log paths, and skipped-not-pass boundaries.
+
+This task does not add a mandatory SAT solver dependency, does not require
+`kissat` in CI, does not claim theorem proving, does not write accepted
+knowledge, and does not change accepted-promotion semantics. Malformed DIMACS
+coverage is represented as backend `unknown`/parse-error output normalized to
+`error`, preserving the existing result taxonomy.
+
 ## v0.2.3 Promotion Readiness Report - 2026-06-14
 
 Issue 274 adds read-only promotion-readiness reporting through

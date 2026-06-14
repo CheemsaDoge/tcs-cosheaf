@@ -79,7 +79,10 @@ closeout. It is Verification Evidence Hardening, not provider/MCP expansion.
   blockers, and does not replace `cosheaf artifact promote`.
 - [ ] Follow-up evidence taxonomy work distinguishes `verifier_request`,
   `candidate_counterexample`, and `checked_counterexample`.
-- [ ] SAT/SMT/Lean deepening keeps all external tools optional and preserves
+- [x] SAT result-depth fixture coverage keeps the SAT solver optional and
+  covers satisfiable, unsatisfiable, malformed DIMACS, timeout, and
+  unavailable-solver paths without treating skipped as pass.
+- [ ] SMT/Lean deepening keeps all external tools optional and preserves
   unavailable-tool results as skipped or unavailable, not pass.
 
 ## Framework Checklist

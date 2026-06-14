@@ -173,6 +173,17 @@ not replace `cosheaf artifact promote`.
 
 Deepen optional backend ergonomics without making any external tool mandatory.
 
+### D.1 SAT Result-Depth Fixtures
+
+Status: implemented as fake-backend fixture coverage for satisfiable,
+unsatisfiable, malformed DIMACS, timeout, and unavailable-solver paths.
+
+The SAT adapter still remains a minimal optional DIMACS invocation path. The
+D.1 fixtures harden normalized `pass`, `fail`, `error`, and `skipped` behavior
+and assert command, cwd, timeout, stdout/stderr log, tool metadata, and
+skipped-not-pass evidence. They do not add a mandatory solver dependency and
+do not claim SAT theorem proving.
+
 Potential work:
 
 - SAT: clearer DIMACS command metadata, model/counterexample capture, and
