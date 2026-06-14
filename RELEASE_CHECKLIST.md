@@ -77,8 +77,12 @@ closeout. It is Verification Evidence Hardening, not provider/MCP expansion.
   skipped verifier results, missing source metadata, dependency risk, private
   dependencies, draft status, readonly KB roots, and repository gatekeeper
   blockers, and does not replace `cosheaf artifact promote`.
-- [ ] Follow-up evidence taxonomy work distinguishes `verifier_request`,
-  `candidate_counterexample`, and `checked_counterexample`.
+- [x] WorkerBundle v2 typed counterexample candidate records distinguish
+  proposed/needs-check candidates from checked candidate evidence while still
+  keeping all candidates review-only and outside accepted promotion authority.
+- [ ] Follow-up evidence taxonomy work still needs a dedicated checked
+  counterexample review artifact or report path beyond WorkerBundle candidate
+  records.
 - [x] SAT result-depth fixture coverage keeps the SAT solver optional and
   covers satisfiable, unsatisfiable, malformed DIMACS, timeout, and
   unavailable-solver paths without treating skipped as pass.

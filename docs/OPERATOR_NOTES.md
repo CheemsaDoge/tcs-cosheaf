@@ -449,6 +449,43 @@ python -c "import sys, cosheaf.cli; print(sys.executable); print(cosheaf.cli.__f
 Do not report bare `pytest` success or failure as the repository test result
 when the required command is `make test`.
 
+In managed sandboxed Codex sessions, pytest can fail before exercising the
+target tests if its default temporary root points outside the writable
+workspace, for example:
+
+```text
+PermissionError: [WinError 5] ... C:\Users\<user>\AppData\Local\Temp\pytest-of-<user>
+```
+
+This is an environment/temp-root failure, not product behavior. Keep pytest
+runtime files inside the repository and disable cache writes when doing a
+focused rerun:
+
+```powershell
+$env:TMP = 'H:\ai4tcs\tcs-cosheaf\.cosheaf\tmp'
+$env:TEMP = 'H:\ai4tcs\tcs-cosheaf\.cosheaf\tmp'
+$env:PYTEST_DEBUG_TEMPROOT = 'H:\ai4tcs\tcs-cosheaf\.cosheaf\pytest-tmp'
+New-Item -ItemType Directory -Force -Path $env:TMP,$env:PYTEST_DEBUG_TEMPROOT | Out-Null
+python -m pytest <tests> -q -p no:cacheprovider
+```
+
+For the literal `make test` command, prefer a fresh per-run base temp directory
+when a stale pytest temp directory has bad Windows ACLs:
+
+```powershell
+$stamp = Get-Date -Format 'yyyyMMddHHmmss'
+$env:TMP = 'H:\ai4tcs\tcs-cosheaf\.cosheaf\tmp'
+$env:TEMP = 'H:\ai4tcs\tcs-cosheaf\.cosheaf\tmp'
+$env:PYTEST_ADDOPTS = "--basetemp=.cosheaf/pytest-basetemp-$stamp"
+New-Item -ItemType Directory -Force -Path $env:TMP | Out-Null
+make test
+```
+
+If the literal required command is `make test`, still run and report that
+literal command when the environment permits it. If sandboxing prevents the
+literal command from creating temp/cache files, report the exact failure and
+the scoped rerun separately.
+
 ## Runtime Outputs
 
 Framework and KB commands may generate reports, indexes, context packs, or logs

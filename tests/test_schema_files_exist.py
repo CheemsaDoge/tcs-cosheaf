@@ -284,10 +284,16 @@ def test_worker_bundle_v2_schema_is_strict() -> None:
         "uncertainty",
         "failed_attempts",
         "counterexamples",
+        "counterexample_candidates",
         "dependency_questions",
     ]:
         assert optional_review_field not in schema["required"]
-        assert schema["properties"][optional_review_field]["uniqueItems"] is True
+        if optional_review_field == "counterexample_candidates":
+            assert schema["properties"][optional_review_field]["items"] == {
+                "$ref": "#/$defs/counterexample_candidate"
+            }
+        else:
+            assert schema["properties"][optional_review_field]["uniqueItems"] is True
     assert schema["$defs"]["worker_type"]["enum"] == [
         "reasoner",
         "verifier",
@@ -300,3 +306,21 @@ def test_worker_bundle_v2_schema_is_strict() -> None:
     proposed_artifact = schema["$defs"]["proposed_artifact"]
     assert proposed_artifact["additionalProperties"] is False
     assert proposed_artifact["required"] == ["path", "summary"]
+    counterexample_candidate = schema["$defs"]["counterexample_candidate"]
+    assert counterexample_candidate["additionalProperties"] is False
+    assert counterexample_candidate["required"] == [
+        "candidate_id",
+        "construction_summary",
+        "evidence_paths",
+        "verifier_request_ids",
+        "status",
+        "limitations",
+    ]
+    assert counterexample_candidate["properties"]["status"]["enum"] == [
+        "proposed",
+        "needs_check",
+        "checked_false",
+        "checked_true",
+        "rejected",
+        "superseded",
+    ]

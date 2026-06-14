@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from cosheaf.agent.task import WorkerType
 from cosheaf.agent.worker_bundle_v2 import (
+    CounterexampleCandidateStatus,
     WorkerBundleV2,
     WorkerBundleV2Error,
     reduce_worker_bundle_v2,
@@ -80,6 +81,19 @@ def _bundle_data(
         "counterexamples": [
             "Candidate counterexample remains unverified and draft-only."
         ],
+        "counterexample_candidates": [
+            {
+                "candidate_id": "candidate.fixture.counterexample.0001",
+                "target_claim": "claim.fixture.worker-bundle-v2",
+                "construction_summary": (
+                    "A two-node fixture construction that still needs checking."
+                ),
+                "evidence_paths": [".cosheaf/evidence/candidate-0001.json"],
+                "verifier_request_ids": ["verifier.request.fixture.0001"],
+                "status": "proposed",
+                "limitations": "Not checked by a verifier or human reviewer.",
+            }
+        ],
         "failures_or_counterexamples": [
             "No machine proof or Lean check was performed."
         ],
@@ -105,6 +119,12 @@ def test_worker_bundle_v2_is_strict_and_deterministic() -> None:
     assert bundle.counterexamples == [
         "Candidate counterexample remains unverified and draft-only."
     ]
+    assert bundle.counterexample_candidates[0].candidate_id == (
+        "candidate.fixture.counterexample.0001"
+    )
+    assert bundle.counterexample_candidates[0].status is (
+        CounterexampleCandidateStatus.PROPOSED
+    )
     assert bundle.dependency_questions == [
         "Should definition.path be an explicit dependency?"
     ]
@@ -121,6 +141,7 @@ def test_worker_bundle_v2_keeps_legacy_bundle_fields_optional() -> None:
         "uncertainty",
         "failed_attempts",
         "counterexamples",
+        "counterexample_candidates",
         "dependency_questions",
     ):
         legacy.pop(field)
@@ -131,7 +152,44 @@ def test_worker_bundle_v2_keeps_legacy_bundle_fields_optional() -> None:
     assert bundle.uncertainty == []
     assert bundle.failed_attempts == []
     assert bundle.counterexamples == []
+    assert bundle.counterexample_candidates == []
     assert bundle.dependency_questions == []
+
+
+def test_worker_bundle_v2_rejects_checked_candidate_without_evidence() -> None:
+    data = _bundle_data()
+    data["counterexample_candidates"] = [
+        {
+            "candidate_id": "candidate.fixture.counterexample.checked",
+            "target_claim": "claim.fixture.worker-bundle-v2",
+            "construction_summary": "Claims a checked refutation without evidence.",
+            "evidence_paths": [],
+            "verifier_request_ids": ["verifier.request.fixture.0001"],
+            "status": "checked_false",
+            "limitations": "No verifier evidence was attached.",
+        }
+    ]
+
+    with pytest.raises(ValidationError, match="checked_false requires evidence_paths"):
+        WorkerBundleV2.model_validate(data)
+
+
+def test_worker_bundle_v2_rejects_candidate_accepted_evidence_path() -> None:
+    data = _bundle_data()
+    data["counterexample_candidates"] = [
+        {
+            "candidate_id": "candidate.fixture.counterexample.badpath",
+            "target_claim": "claim.fixture.worker-bundle-v2",
+            "construction_summary": "Uses an accepted path as candidate evidence.",
+            "evidence_paths": ["kb/accepted/counterexamples/unsafe.yaml"],
+            "verifier_request_ids": ["verifier.request.fixture.0001"],
+            "status": "proposed",
+            "limitations": "Path should be rejected before review.",
+        }
+    ]
+
+    with pytest.raises(ValidationError, match="accepted knowledge"):
+        WorkerBundleV2.model_validate(data)
 
 
 def test_validate_worker_bundle_v2_rejects_paths_outside_repo(tmp_path: Path) -> None:
@@ -223,6 +281,13 @@ def test_reduce_worker_bundle_v2_preserves_failures_and_uncertainty(
         warning.startswith("counterexample_candidate: Candidate counterexample")
         for warning in result.warnings
     )
+    assert any(
+        warning.startswith(
+            "counterexample_candidate: candidate.fixture.counterexample.0001 "
+            "status=proposed"
+        )
+        for warning in result.warnings
+    )
     assert any("No machine proof" in warning for warning in result.warnings)
     assert any(
         warning.startswith("dependency_question: Should definition.path")
@@ -254,3 +319,40 @@ def test_counterexample_evidence_stays_review_warning_not_output_path(
         "counterexample_candidate: Candidate counterexample to an accepted theorem; "
         "not reviewed."
     ) in result.warnings
+
+
+def test_checked_counterexample_candidate_stays_review_warning_not_output_path(
+    tmp_path: Path,
+) -> None:
+    data = _bundle_data()
+    data["proposed_artifacts"] = []
+    data["counterexamples"] = []
+    data["counterexample_candidates"] = [
+        {
+            "candidate_id": "candidate.fixture.counterexample.checked",
+            "target_claim": "claim.fixture.accepted-target",
+            "construction_summary": "Checked candidate construction summary.",
+            "evidence_paths": [".cosheaf/evidence/checked-counterexample.json"],
+            "verifier_request_ids": ["verifier.request.fixture.0001"],
+            "status": "checked_false",
+            "limitations": "Still requires ordinary review before refutation.",
+        }
+    ]
+    _write_yaml(tmp_path, "outputs/bundle.yaml", data)
+
+    result = reduce_worker_bundle_v2(
+        RepoContext(tmp_path),
+        "outputs/bundle.yaml",
+        reducer_id="reducer.issue.fixture.checked-counterexample.0001",
+    )
+
+    assert result.status == "accepted_for_review"
+    assert result.output_paths == []
+    assert not (tmp_path / "kb" / "accepted").exists()
+    assert any(
+        warning.startswith(
+            "counterexample_candidate: candidate.fixture.counterexample.checked "
+            "status=checked_false target=claim.fixture.accepted-target"
+        )
+        for warning in result.warnings
+    )

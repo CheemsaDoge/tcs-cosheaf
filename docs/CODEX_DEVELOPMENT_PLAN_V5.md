@@ -240,6 +240,35 @@ counterexample evidence:
 - Make context packs and review reports surface known failures and candidate
   counterexamples clearly.
 
+### E.1 Typed Counterexample Candidate Record
+
+Status: implemented as optional WorkerBundle v2 typed candidate records.
+
+WorkerBundle v2 now accepts `counterexample_candidates` in addition to the
+legacy string `counterexamples` list. Each typed candidate records a
+`candidate_id`, optional `target_claim`, `construction_summary`,
+`evidence_paths`, `verifier_request_ids`, `status`, and `limitations`.
+Candidate statuses are `proposed`, `needs_check`, `checked_false`,
+`checked_true`, `rejected`, and `superseded`.
+
+Reducers preserve typed candidates as labeled review warnings. They do not
+write accepted knowledge, create verifier results, create human review, mark
+accepted refutations, or promote artifacts. `checked_false` and `checked_true`
+require at least one evidence path in the bundle schema, but that evidence
+still remains review context until ordinary verifier and human-review workflows
+handle it.
+
+### E.2 Failure-Preserving Review Request Generator
+
+Next implementation task.
+
+Generate review-request drafts from WorkerBundle assumptions, uncertainty,
+failed attempts, typed counterexample candidates, verifier requests, risk
+flags, and limitations without making review decisions. Generated requests
+must remain draft/review-context only and must not mark `human_reviewed`,
+approve or reject claims, create verifier results, write accepted knowledge,
+or promote artifacts.
+
 ## Phase F: Review And Promotion Readiness Reporting
 
 Add operator-facing readiness summaries that explain what remains before a

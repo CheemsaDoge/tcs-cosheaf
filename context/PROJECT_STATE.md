@@ -3,6 +3,28 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.3 Typed Counterexample Candidate Records - 2026-06-14
+
+Issue 284 adds optional typed WorkerBundle v2 `counterexample_candidates` for
+reviewable counterexample evidence. Each candidate records a candidate ID,
+optional target claim, construction summary, evidence paths,
+verifier-request IDs, status, and limitations. Candidate statuses are
+`proposed`, `needs_check`, `checked_false`, `checked_true`, `rejected`, and
+`superseded`.
+
+The legacy string `counterexamples` field remains backward-compatible.
+Reducers preserve both legacy and typed candidates as labeled review warnings.
+Typed candidate records do not write accepted knowledge, do not create
+verifier results, do not mark human review, do not promote artifacts, and do
+not refute accepted claims by themselves. `checked_false` and `checked_true`
+candidate statuses require at least one evidence path in the bundle schema,
+but that evidence still remains review context until ordinary verifier and
+human-review workflows handle it.
+
+This task does not change accepted-promotion semantics, does not add provider
+or MCP authority, does not write KB artifacts, and does not treat candidate
+counterexamples as accepted refutations.
+
 ## v0.2.3 Lean External Reference Ergonomics - 2026-06-14
 
 Issue 282 improves optional external Lean library reference `#check`
