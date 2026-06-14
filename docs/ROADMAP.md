@@ -143,28 +143,30 @@ and skipped-not-pass boundaries.
 ## Current Planning Focus: v0.2.4 Artifact Failure Memory
 
 The post-v0.2.3 state audit is tracked in
-[`docs/POST_V023_STATE_AUDIT.md`](POST_V023_STATE_AUDIT.md). It confirms that
-WorkerBundle v2, draft review requests, verifier evidence evals,
-failure/counterexample evals, and promotion-readiness reports already preserve
-failure and counterexample context, but durable artifact records do not yet
-have an artifact-level `failure_log` field.
+[`docs/POST_V023_STATE_AUDIT.md`](POST_V023_STATE_AUDIT.md). It identified
+that WorkerBundle v2, draft review requests, verifier evidence evals,
+failure/counterexample evals, and promotion-readiness reports already preserved
+failure and counterexample context before durable artifact-level failure
+memory existed.
 
 The active `v0.2.4` plan is
 [`docs/CODEX_DEVELOPMENT_PLAN_V6.md`](CODEX_DEVELOPMENT_PLAN_V6.md), with ADR
-0023 recording the artifact failure-memory architecture decision. The line
-should add Artifact Failure Memory + Attempt Traceability through small
+0023 recording the artifact failure-memory architecture decision. The current
+line has added Artifact Failure Memory + Attempt Traceability through small
 issue-scoped PRs:
 
-- design the optional `failure_log` schema before runtime changes;
-- implement `failure_log` as an optional backward-compatible artifact field;
-- add read-only and controlled draft write CLI surfaces;
-- bridge WorkerBundle failed attempts into artifact failure-log proposals
-  without granting authority;
-- surface failure memory in retrieval, context packs, and promotion-readiness
-  reports without treating it as proof, verifier success, human review,
-  checked refutation, or promotion evidence;
-- update workspace-template and public KB policy surfaces conservatively; and
-- add security/eval regression coverage before a v0.2.4 readiness audit.
+- optional `failure_log` schema and model support;
+- read-only and controlled draft/pre-accepted failure-log CLI surfaces;
+- WorkerBundle failed-attempt planning and controlled append bridges without
+  granting authority;
+- failure-memory surfacing in artifact cards, memory search, context packs,
+  and promotion-readiness reports without treating it as proof, verifier
+  success, human review, checked refutation, or promotion evidence;
+- workspace-template demonstration and public KB policy surfaces; and
+- security regression and deterministic eval coverage for retrieval,
+  public/private scope, authority, and candidate-counterexample boundaries.
+
+The next step is a v0.2.4 readiness audit before any release-candidate task.
 
 This focus must not make failure memory authoritative by itself. It must not
 change accepted-promotion semantics, add default real provider calls, make MCP

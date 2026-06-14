@@ -74,6 +74,10 @@ informal/formal semantic alignment.
   failure memory cannot claim human review, verifier pass, checked
   counterexample status, accepted artifact status, or accepted evidence paths,
   and public-only context excludes private failure-log text.
+- Deterministic artifact failure-memory eval coverage now checks retrieval
+  recall, repeated failed-direction detection, public-only scope leakage,
+  authority-boundary preservation, and candidate-counterexample mislabel
+  prevention through local temporary workspace fixtures.
 - `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
   result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
@@ -140,12 +144,13 @@ WorkerBundle-to-failure-log planning/controlled append support is implemented.
 Failure-log memory indexing is implemented for artifact cards, memory search,
 compact context-pack card summaries, and explicit context-pack failure
 sections. Promotion-readiness failure-memory warning reporting is implemented.
-Workspace failure-log demonstration, public-KB failure-log policy surfaces, and
-security regression coverage for failure-log misuse are implemented. New work
-should continue from deterministic failure-memory evaluation coverage, while
-avoiding runtime authority expansion, default real provider calls, generated
-review-as-human-review, accepted writes, artifact promotion bypasses, and
-treating skipped verifier results as passes.
+Workspace failure-log demonstration, public-KB failure-log policy surfaces,
+security regression coverage for failure-log misuse, and deterministic
+artifact failure-memory eval coverage are implemented. New work should
+continue from the v0.2.4 readiness audit, while avoiding runtime authority
+expansion, default real provider calls, generated review-as-human-review,
+accepted writes, artifact promotion bypasses, and treating skipped verifier
+results as passes.
 
 ## Recently Completed Tasks
 
@@ -196,6 +201,17 @@ separate public KB verifier-policy self-test. The matrix keeps network rows
 opt-in, counts optional verifier absence as skipped rather than pass, and
 continues to identify the failing repository and command for failures.
 
+F.2 deterministic artifact failure-memory eval suite added
+`cosheaf.evals.artifact_failure_memory` and
+`evals/artifact_failure_memory/cases.yaml`. The Python-level harness uses local
+temporary workspace fixtures to score failure-memory retrieval recall,
+repeated failed-direction detection, public-only private leakage, authority
+boundary preservation, and candidate-counterexample mislabel prevention. It
+does not add a CLI command, write accepted knowledge in the source repository,
+create verifier results, mark human review, promote artifacts, expand
+provider/MCP authority, or turn failure memory into proof or promotion
+evidence.
+
 G.3 v0.2.3 release readiness audit added `docs/releases/v0.2.3.md` as a
 readiness-audit draft and recorded that main could enter the release-candidate
 task. The audit kept package metadata at `0.2.2`, created no tag, changed no
@@ -212,13 +228,12 @@ downstream workspace-template plus public KB active pins were updated to
 
 ## Next Focus
 
-After artifact failure-log security regression coverage lands, proceed to the
-deterministic artifact failure-log eval suite. Retrieval, context-pack,
-readiness, workspace, policy, security, and eval work must keep failure memory
-labeled as failed or unresolved attempt memory, preserve public/private scope,
-and avoid promoting failure memory into proof, verifier success, human review,
-checked counterexample evidence, accepted status, or promotion evidence by
-itself.
+After deterministic artifact failure-memory eval coverage lands, proceed to the
+v0.2.4 release-readiness audit. Retrieval, context-pack, readiness, workspace,
+policy, security, and eval work must keep failure memory labeled as failed or
+unresolved attempt memory, preserve public/private scope, and avoid promoting
+failure memory into proof, verifier success, human review, checked
+counterexample evidence, accepted status, or promotion evidence by itself.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
