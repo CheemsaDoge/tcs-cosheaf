@@ -417,6 +417,38 @@ Do not describe `mingw32-make` as if it were the literal `make` command unless
 summaries should distinguish an unavailable literal command from any successful
 fallback.
 
+## Python Test Entry Points
+
+Prefer the repository Makefile or `python -m` entry points for Python tools:
+
+```powershell
+make test
+python -m pytest
+python -m ruff check .
+python -m mypy cosheaf tests
+```
+
+On 2026-06-14, bare `pytest tests/test_promotion_readiness_cli.py` produced a
+stale CLI-command failure (`No such command 'promotion'`) while the same
+workspace and interpreter succeeded with:
+
+```powershell
+python -m pytest tests/test_promotion_readiness_cli.py
+```
+
+The Makefile already uses `$(PYTHON) -m pytest`, so required verification
+should follow `make test` or `python -m pytest`. If bare `pytest` disagrees
+with `python -m pytest`, inspect command resolution before debugging the code:
+
+```powershell
+Get-Command pytest -All
+where.exe pytest
+python -c "import sys, cosheaf.cli; print(sys.executable); print(cosheaf.cli.__file__)"
+```
+
+Do not report bare `pytest` success or failure as the repository test result
+when the required command is `make test`.
+
 ## Runtime Outputs
 
 Framework and KB commands may generate reports, indexes, context packs, or logs

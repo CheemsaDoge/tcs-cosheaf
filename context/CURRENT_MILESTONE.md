@@ -8,8 +8,9 @@
 
 Move from the published `v0.2.2` Provider Transport + Agent Workflow
 Hardening release into `v0.2.3` Verification Evidence Hardening. The immediate
-audit is complete; the current goal is to add verifier evidence record v1
-without changing verifier, gatekeeper, or promotion semantics.
+audit and verifier evidence record v1 are complete; the current goal is to add
+read-only promotion-readiness reporting without changing accepted-promotion
+semantics.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -88,36 +89,38 @@ evidence around optional verifier and failure workflows:
 
 ## Current Task
 
-The current implementation task is C.2 verifier evidence record v1.
+The current implementation task is C.3 promotion-readiness reporting.
 
-This task adds a typed, serializable `VerifierEvidenceRecord` and
-`schemas/verifier_evidence.schema.json` for verifier output records. It keeps
-current normalized result states as `pass`, `fail`, `error`, and `skipped`;
-keeps skipped verifier output distinct from pass; and preserves the boundary
-that Lean `#check` is import/symbol resolution only, not semantic alignment.
+This task adds `cosheaf promotion readiness --artifact <artifact-id> --json`
+and `cosheaf promotion readiness --issue <issue-id> --json`, backed by a
+read-only promotion-readiness report model. The report explains gate, review,
+dependency, source metadata, readonly-root, draft-status, and target verifier
+evidence conditions without promoting artifacts or changing accepted status.
 
-The record is not human review, does not auto-promote accepted knowledge, and
-does not change the fresh gatekeeper run used by promotion.
+The report is not human review, does not auto-promote accepted knowledge, does
+not replace `cosheaf artifact promote`, and does not make skipped verifier
+output pass. AI/provider output still cannot satisfy human-review requirements.
 
-## Completion Criteria For This Planning Milestone
+## Completion Criteria For This Task
 
-- `docs/CODEX_DEVELOPMENT_PLAN_V5.md` exists and is identified as the current
-  durable plan.
-- ADR 0022 exists and records the verification/evidence hardening decision.
-- `docs/CODEX_DEVELOPMENT_PLAN_V4.md` is marked historical/completed after the
-  `v0.2.2` closeout.
-- README/roadmap/release checklist/current milestone do not overclaim
+- `cosheaf promotion readiness --artifact <artifact-id> --json` works for a
+  target artifact and is read-only.
+- `cosheaf promotion readiness --issue <issue-id> --json` works for an issue's
+  direct `related_artifacts` and is read-only.
+- Reports distinguish missing review, failed verifier, skipped verifier,
+  missing source metadata, dependency risk, private dependency, draft status,
+  readonly KB roots, and repository gatekeeper blockers.
+- Skipped verifier output blocks checker-required readiness claims and remains
+  distinct from pass.
+- Documentation and interface registry describe the command without claiming
   automatic theorem proving, Lean semantic alignment, production readiness,
-  provider/MCP authority, or accepted promotion.
-- No runtime, schema, gate, verifier, promotion, provider, MCP, KB artifact, or
-  public/private policy changes are made in the planning PR.
+  AI-as-human-review, or automatic accepted promotion.
 
 ## Next Focus
 
-After the verifier evidence record v1 lands, proceed to C.3: add a read-only
-promotion-readiness report that explains gate, review, dependency, source, and
-verifier evidence status without promoting artifacts or converting skipped
-results into passes.
+After the promotion-readiness report lands, proceed to Phase D optional
+SAT/SMT/Lean backend depth. Keep all external tools optional, fake-backend
+tested, and skipped-not-pass.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

@@ -3,6 +3,23 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.3 Promotion Readiness Report - 2026-06-14
+
+Issue 274 adds read-only promotion-readiness reporting through
+`cosheaf promotion readiness --artifact <artifact-id> --json` and
+`cosheaf promotion readiness --issue <issue-id> --json`. The report evaluates
+target artifacts from validation, gatekeeper output, review metadata,
+dependency status, public/private KB roots, source metadata, readonly-root
+status, draft status, target verifier results, and repository-wide gatekeeper
+blockers.
+
+The report is advisory and records `accepted_write_performed: false`. It does
+not call accepted promotion, does not move artifacts, does not change artifact
+status, does not create human review, does not satisfy human-review policy,
+and does not convert skipped verifier output into a pass. Accepted promotion
+continues to use `cosheaf artifact promote <artifact-id>` with a fresh
+validation and gatekeeper run.
+
 ## v0.2.3 Verifier Evidence Record v1 - 2026-06-14
 
 Issue 272 adds a typed, serializable verifier evidence record v1 after the

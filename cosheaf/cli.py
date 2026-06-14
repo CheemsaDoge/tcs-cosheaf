@@ -72,6 +72,7 @@ from cosheaf.gates.gatekeeper import (
     validate_artifact_file,
     validate_repository,
 )
+from cosheaf.gates.promotion_readiness import build_promotion_readiness_report
 from cosheaf.gates.source_metadata_gate import missing_required_source_metadata
 from cosheaf.graph.claim_graph import DependencyGraph, build_dependency_graph
 from cosheaf.ingest import IngestError, MarkItDownIngestAdapter
@@ -216,6 +217,11 @@ provider_app = typer.Typer(
     help="Provider gateway preview and fake-run commands.",
     no_args_is_help=True,
 )
+promotion_app = typer.Typer(
+    add_completion=False,
+    help="Read-only promotion readiness reports.",
+    no_args_is_help=True,
+)
 app.add_typer(artifact_app, name="artifact")
 app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
@@ -232,6 +238,7 @@ app.add_typer(eval_app, name="eval")
 app.add_typer(memory_app, name="memory")
 app.add_typer(mcp_app, name="mcp")
 app.add_typer(provider_app, name="provider")
+app.add_typer(promotion_app, name="promotion")
 memory_app.add_typer(memory_graph_app, name="graph")
 
 _SUPPORTED_PROVIDER_CLI_NAMES = (ProviderName.FAKE, ProviderName.OPENAI)
@@ -689,6 +696,75 @@ def artifact_promote(
     )
     console.print(f"- from: {old_path.as_posix()}")
     console.print(f"- to: {new_path.as_posix()}")
+
+
+@promotion_app.command("readiness")
+def promotion_readiness(
+    artifact_id: str | None = typer.Option(
+        None,
+        "--artifact",
+        help="Artifact ID to evaluate for promotion readiness.",
+    ),
+    issue_id: str | None = typer.Option(
+        None,
+        "--issue",
+        help="Issue ID whose related_artifacts should be evaluated.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Report promotion readiness without promoting or writing accepted artifacts."""
+    console = Console(width=120, markup=False)
+    if (artifact_id is None) == (issue_id is None):
+        payload = {
+            "schema_version": 1,
+            "code": "invalid_promotion_readiness_target",
+            "message": "provide exactly one of --artifact or --issue",
+            "blocking": True,
+        }
+        if json_output:
+            _emit_json(payload)
+        else:
+            console.print(
+                "Promotion readiness failed: provide exactly one of "
+                "--artifact or --issue"
+            )
+        raise typer.Exit(code=1) from None
+
+    try:
+        report = build_promotion_readiness_report(
+            RepoContext(repo_root),
+            artifact_id=artifact_id,
+            issue_id=issue_id,
+        )
+    except (ValueError, WorkspaceConfigError) as exc:
+        payload = {
+            "schema_version": 1,
+            "code": "promotion_readiness_failed",
+            "message": str(exc),
+            "blocking": True,
+        }
+        if json_output:
+            _emit_json(payload)
+        else:
+            console.print(f"Promotion readiness failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        _emit_json(report.to_dict())
+    else:
+        _print_promotion_readiness_report(console, report.to_dict())
+
+    if not report.ready:
+        raise typer.Exit(code=1)
 
 
 @index_app.command("rebuild")
@@ -2288,6 +2364,40 @@ def _emit_json(payload: dict[str, Any] | list[Any]) -> None:
 
 def _emit_model(model: AgentAccessModel) -> None:
     typer.echo(model.to_json(), nl=False)
+
+
+def _print_promotion_readiness_report(
+    console: Console,
+    payload: dict[str, Any],
+) -> None:
+    ready = str(payload.get("ready", False)).lower()
+    target = payload.get("target", {})
+    if not isinstance(target, dict):
+        target = {}
+    mode = str(target.get("mode", ""))
+    target_id = str(target.get("artifact_id") or target.get("issue_id") or "")
+    console.print(f"Promotion readiness: ready={ready} | {mode}={target_id}")
+    console.print("- accepted write: not performed")
+    artifacts = payload.get("artifacts", [])
+    if not isinstance(artifacts, list):
+        return
+    for artifact in artifacts:
+        if not isinstance(artifact, dict):
+            continue
+        artifact_ready = str(artifact.get("ready", False)).lower()
+        artifact_id = str(artifact.get("artifact_id", ""))
+        status = str(artifact.get("status", ""))
+        console.print(f"- {artifact_id}: ready={artifact_ready} | status={status}")
+        reasons = artifact.get("reasons", [])
+        if not isinstance(reasons, list):
+            continue
+        for reason in reasons:
+            if not isinstance(reason, dict):
+                continue
+            code = str(reason.get("code", "reason"))
+            severity = str(reason.get("severity", ""))
+            message = str(reason.get("message", ""))
+            console.print(f"  - {severity} {code}: {message}")
 
 
 def _emit_error(error: ErrorResult) -> None:

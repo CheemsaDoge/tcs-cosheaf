@@ -69,10 +69,16 @@ closeout. It is Verification Evidence Hardening, not provider/MCP expansion.
   adapters, result records, log capture, gate integration, promotion evidence,
   skipped-not-pass tests, and Lean `#check` boundaries before runtime/schema
   changes.
-- [ ] Evidence taxonomy work distinguishes `verifier_request`,
-  `verifier_result`, `candidate_counterexample`, and `checked_counterexample`.
-  The `verifier_result` record v1 schema/model is underway; request and
-  counterexample records remain follow-up work.
+- [x] The `verifier_result` record v1 schema/model is implemented for
+  serialized verifier evidence records; request and counterexample records
+  remain follow-up work.
+- [x] Promotion-readiness reporting is read-only, reports
+  `accepted_write_performed: false`, distinguishes missing review, failed and
+  skipped verifier results, missing source metadata, dependency risk, private
+  dependencies, draft status, readonly KB roots, and repository gatekeeper
+  blockers, and does not replace `cosheaf artifact promote`.
+- [ ] Follow-up evidence taxonomy work distinguishes `verifier_request`,
+  `candidate_counterexample`, and `checked_counterexample`.
 - [ ] SAT/SMT/Lean deepening keeps all external tools optional and preserves
   unavailable-tool results as skipped or unavailable, not pass.
 

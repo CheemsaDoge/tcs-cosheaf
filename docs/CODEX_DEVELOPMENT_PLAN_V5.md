@@ -133,7 +133,7 @@ The audit must answer:
 
 ### C.2 Evidence Record Taxonomy
 
-Status: current implementation focus for verifier evidence record v1.
+Status: verifier evidence record v1 is complete.
 
 Define a normalized evidence vocabulary before broadening verifier behavior.
 The design should cover:
@@ -155,9 +155,19 @@ results is required unless a narrow migration is explicitly justified.
 
 ### C.3 Gate And Promotion Evidence Reporting
 
+Status: read-only promotion-readiness reporting is implemented in the current
+framework line.
+
 Improve reports so operators can see which evidence is missing, skipped,
 failed, stale, or sufficient for a specific lifecycle decision. Reporting must
 not promote artifacts or convert skipped results into passes.
+
+The implemented `cosheaf promotion readiness` CLI supports artifact and issue
+targets, emits deterministic JSON, reports `accepted_write_performed: false`,
+and distinguishes missing human review, failed verifiers, skipped verifiers,
+missing source metadata, dependency risk, private dependencies, draft status,
+readonly KB roots, and repository gatekeeper blockers. It is advisory and does
+not replace `cosheaf artifact promote`.
 
 ## Phase D: Optional SAT/SMT/Lean Backend Deepening
 
@@ -204,6 +214,11 @@ draft artifact can be reviewed or promoted:
 
 Readiness reports are advisory. They must not bypass validation, gates, human
 review, verifier evidence requirements, or `cosheaf artifact promote`.
+
+The C.3 promotion-readiness CLI provides the first artifact/issue-scoped
+read-only report. Later Phase F work may broaden review UX and evidence
+explanations, but it must keep the same no-accepted-write and skipped-not-pass
+boundaries.
 
 ## Phase G: Three-Repository v0.2.3 Readiness
 
