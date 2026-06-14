@@ -140,6 +140,35 @@ runtime expansion, provider work, release work, or KB growth should start from
 a new issue-scoped plan and preserve the same review, gate, public/private,
 and skipped-not-pass boundaries.
 
+## Proposed Next Focus: v0.2.4 Artifact Failure Memory
+
+The post-v0.2.3 state audit is tracked in
+[`docs/POST_V023_STATE_AUDIT.md`](POST_V023_STATE_AUDIT.md). It confirms that
+WorkerBundle v2, draft review requests, verifier evidence evals,
+failure/counterexample evals, and promotion-readiness reports already preserve
+failure and counterexample context, but durable artifact records do not yet
+have an artifact-level `failure_log` field.
+
+The proposed `v0.2.4` line should add Artifact Failure Memory + Attempt
+Traceability through small issue-scoped PRs:
+
+- land a V6 plan and ADR for artifact failure memory;
+- design the optional `failure_log` schema before runtime changes;
+- implement `failure_log` as an optional backward-compatible artifact field;
+- add read-only and controlled draft write CLI surfaces;
+- bridge WorkerBundle failed attempts into artifact failure-log proposals
+  without granting authority;
+- surface failure memory in retrieval, context packs, and promotion-readiness
+  reports without treating it as proof, verifier success, human review,
+  checked refutation, or promotion evidence;
+- update workspace-template and public KB policy surfaces conservatively; and
+- add security/eval regression coverage before a v0.2.4 readiness audit.
+
+This focus must not make failure memory authoritative by itself. It must not
+change accepted-promotion semantics, add default real provider calls, make MCP
+primary, leak private failure content into public-only context, or mass-update
+accepted public KB artifacts.
+
 ## v0.2.1 Prerelease Baseline
 
 The `v0.2.1` prerelease packages the CLI-first agent-access and hosted
