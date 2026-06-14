@@ -1,12 +1,11 @@
 # Three-Repository Release Checklist
 
-This checklist records the `v0.2.2` Provider Transport + Agent Workflow
-Hardening release state and the current `v0.2.3` Verification Evidence
-Hardening release-candidate state after the `v0.2.1` CLI Agent Access + Hosted
-Provider Gateway prerelease, the `v0.2.0` local-MVP release, and the `v0.1.1`
-Formal Link Layer support baseline. It is an operator checklist for the
-framework package, public KB, and workspace template together. It is not a
-production-readiness claim.
+This checklist records the published `v0.2.3` Verification Evidence Hardening
+release state after the `v0.2.2` Provider Transport + Agent Workflow Hardening
+release, the `v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease,
+the `v0.2.0` local-MVP release, and the `v0.1.1` Formal Link Layer support
+baseline. It is an operator checklist for the framework package, public KB,
+and workspace template together. It is not a production-readiness claim.
 
 `v0.1.1` remains the downstream tag baseline for early formal-link metadata.
 `v0.2.0` packages the deterministic local-MVP workflow. `v0.2.1` packages the
@@ -17,11 +16,9 @@ policy matrix, provider log leak scanner, failure/counterexample workflow
 hardening, provider workflow evals, and ecosystem smoke matrix. Do not assume a
 downstream pin to `@v0.2.0` includes `v0.2.1` or `v0.2.2` agent/provider
 surfaces.
-`v0.2.3` is a release candidate, not a published tag yet. It packages
-verification-evidence hardening after the readiness audit. Package metadata now
-records `0.2.3`; tag publication, GitHub release publication, and downstream
-pin updates remain follow-up release actions after the release-candidate PR
-passes and merges.
+`v0.2.3` packages verification-evidence hardening after the readiness audit.
+Package metadata records `0.2.3`; the public tag, GitHub release, release
+smoke, and downstream workspace/public KB pin updates are complete.
 
 ## Scope
 
@@ -39,8 +36,7 @@ passes and merges.
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.1`.
 - Downstream dependency for provider-transport/workflow-hardening workflows:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.2`.
-- Intended downstream dependency for verification-evidence-hardening workflows
-  after publication:
+- Downstream dependency for verification-evidence-hardening workflows:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.3`.
 
 ## v0.2.2 Release Delta
@@ -65,10 +61,10 @@ no publication blockers.
 - [x] MCP remains optional read-only adapter work; controlled-write MCP and
   provider MCP tools remain out of scope.
 
-## v0.2.3 Planning Baseline
+## v0.2.3 Completed Planning Baseline
 
-`v0.2.3` is the next planned framework milestone after the `v0.2.2` release
-closeout. It is Verification Evidence Hardening, not provider/MCP expansion.
+`v0.2.3` was the framework milestone after the `v0.2.2` release closeout. It
+is Verification Evidence Hardening, not provider/MCP expansion.
 
 - [x] `docs/CODEX_DEVELOPMENT_PLAN_V5.md` records the durable `v0.2.3` plan.
 - [x] ADR 0022 records the verification/evidence hardening decision.
@@ -113,11 +109,11 @@ closeout. It is Verification Evidence Hardening, not provider/MCP expansion.
   row that counts unavailable SAT/SMT/Lean/lake tools as skipped rather than
   pass.
 
-## v0.2.3 Release Readiness Audit And Candidate
+## v0.2.3 Release Readiness Audit, Candidate, And Publication
 
-`docs/releases/v0.2.3.md` is now the release-candidate note. It is not a
-published release note until the maintainer release action creates and verifies
-the public tag and GitHub release.
+`docs/releases/v0.2.3.md` is now the published release note. The maintainer
+release action created and verified the public tag, GitHub release, release
+smoke, and downstream pin updates.
 
 - [x] The previous readiness-audit PR recorded that package metadata and
   `cosheaf.__version__` still reported `0.2.2` before the release-candidate
@@ -148,10 +144,14 @@ the public tag and GitHub release.
   provider/MCP boundaries.
 - [x] The release-candidate branch reran the full local command ladder and
   ecosystem matrix before any tag or release was created.
-- [ ] The public `v0.2.3` tag must be created only after the release-candidate
-  PR merges cleanly.
-- [ ] Downstream pins must remain on `v0.2.2` until the public `v0.2.3` tag
-  exists and release smoke passes.
+- [x] The public `v0.2.3` tag was created only after the release-candidate PR
+  merged cleanly and main was re-synced.
+- [x] GitHub release `v0.2.3 Verification Evidence Hardening` is published.
+- [x] Release smoke from
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.3` passed.
+- [x] Workspace-template active pins moved to `@v0.2.3` after tag publication
+  and release smoke.
+- [x] Public KB CI moved to `@v0.2.3` after tag publication and release smoke.
 
 ## Framework Checklist
 
@@ -177,22 +177,21 @@ the public tag and GitHub release.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.2.3` on the
-  release-candidate branch.
-- [x] `cosheaf.__version__` records `0.2.3` on the release-candidate branch.
+- [x] `pyproject.toml` records package version `0.2.3` on `main`.
+- [x] `cosheaf.__version__` records `0.2.3` on `main`.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
 - [x] Remote tag `v0.2.2` exists and points to the reviewed post-audit main
   commit.
-- [ ] Remote tag `v0.2.3` is intentionally absent until the maintainer release
-  action after this release-candidate PR merges.
+- [x] Remote tag `v0.2.3` exists and points through the annotated tag to the
+  reviewed release-candidate main commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
-- [x] Workspace-template verification installs or pins `@v0.2.2` before
-  relying on provider-transport/workflow-hardening surfaces.
-- [ ] Workspace-template and public KB active pins move to `@v0.2.3` only
-  after tag publication and release smoke succeed.
+- [x] Workspace-template verification installs or pins `@v0.2.3` for
+  verification-evidence-hardening surfaces.
+- [x] Workspace-template and public KB active pins moved to `@v0.2.3` only
+  after tag publication and release smoke succeeded.
 
 ### License
 
@@ -222,9 +221,9 @@ gate output and release notes.
 - [x] `cosheaf validate` passes on the framework checkout.
 - [x] `cosheaf gate run` passes or reports only intentional nonblocking
   skipped/not-applicable gates.
-- [ ] `cosheaf gate run --pr-checklist <local-pr-body.md>` passes before a PR
+- [x] `cosheaf gate run --pr-checklist <local-pr-body.md>` passes before a PR
   is marked ready when a local PR body draft is available.
-- [ ] Gate reports are generated under `.cosheaf/reports/` and are not
+- [x] Gate reports are generated under `.cosheaf/reports/` and are not
   committed unless explicitly persisted for review.
 
 ### Smoke And Evaluation Status
@@ -232,20 +231,21 @@ gate output and release notes.
 - [x] `python scripts/release_smoke.py --source
   git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.2` runs against a
   clean environment after the `v0.2.2` tag exists.
+- [x] `python scripts/release_smoke.py --source
+  git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.3` runs against a
+  clean environment after the `v0.2.3` tag exists.
 - [x] `python scripts/ecosystem_smoke.py --cosheaf cosheaf` runs without
   cloning remote repositories.
-- [x] `python scripts/ecosystem_smoke.py --matrix --framework-tag v0.2.2 --cosheaf "python -m cosheaf.cli" --framework-root . --workspace-template-root ..\tcs-cosheaf-workspace-template --public-kb-root ..\tcs-kb-public --json`
+- [x] `python scripts/ecosystem_smoke.py --matrix --include-network --framework-tag v0.2.3 --cosheaf "python -m cosheaf.cli" --framework-root . --workspace-template-root ..\tcs-cosheaf-workspace-template --public-kb-root ..\tcs-kb-public --json`
   reports a structured three-repository compatibility matrix. The default
   no-network run executes local framework smoke, framework verifier-evidence
   eval smoke, workspace-template CLI-agent demo, workspace-template
   fake-provider smoke, workspace-template verifier-evidence demo, public KB
-  policy guard, and public KB verifier-policy self-test. It reports
-  framework-tag and workspace demo install rows as `skipped`, not `pass`.
-  The optional verifier availability row is also skipped rather than passed
-  when SAT/SMT/Lean/lake tools are unavailable.
-- [ ] Run the network-enabled rows with `--include-network` before a release
-  announcement when package install/git clone access is available. This runs
-  the framework tag release smoke and the workspace-template install demo.
+  policy guard, and public KB verifier-policy self-test. With
+  `--include-network`, the framework tag release smoke and workspace-template
+  install demo ran against `v0.2.3`; the matrix reported 9 pass, 0 fail, and 1
+  skipped. The skipped row was optional verifier availability because
+  SAT/SMT/Lean/lake tools were unavailable, and it was not counted as pass.
 - [x] The ecosystem smoke covers a readonly public KB root, writable private KB
   root, private draft depending on public accepted knowledge, validation,
   gatekeeper, index rebuild, and context-pack generation.
@@ -257,7 +257,8 @@ gate output and release notes.
 
 ## Agent Access And Provider Status
 
-Implemented framework surfaces included in the `v0.2.2` release:
+Framework surfaces introduced through `v0.2.2` and retained in the `v0.2.3`
+release:
 
 - CLI-first operator workflow with stable JSON output for core read/check
   commands.
