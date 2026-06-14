@@ -70,6 +70,10 @@ informal/formal semantic alignment.
 - Promotion-readiness reports now surface unresolved artifact failure memory as
   `unresolved_failure_memory` warning reasons. These warnings are distinct
   from verifier failures and are not promotion blockers by themselves.
+- Security regression coverage now fixes failure-log misuse boundaries:
+  failure memory cannot claim human review, verifier pass, checked
+  counterexample status, accepted artifact status, or accepted evidence paths,
+  and public-only context excludes private failure-log text.
 - `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
   result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
@@ -136,10 +140,12 @@ WorkerBundle-to-failure-log planning/controlled append support is implemented.
 Failure-log memory indexing is implemented for artifact cards, memory search,
 compact context-pack card summaries, and explicit context-pack failure
 sections. Promotion-readiness failure-memory warning reporting is implemented.
-New work should continue from workspace/public-KB failure-log demonstration and
-policy surfaces, while avoiding runtime authority expansion, default real
-provider calls, generated review-as-human-review, accepted writes, artifact
-promotion bypasses, and treating skipped verifier results as passes.
+Workspace failure-log demonstration, public-KB failure-log policy surfaces, and
+security regression coverage for failure-log misuse are implemented. New work
+should continue from deterministic failure-memory evaluation coverage, while
+avoiding runtime authority expansion, default real provider calls, generated
+review-as-human-review, accepted writes, artifact promotion bypasses, and
+treating skipped verifier results as passes.
 
 ## Recently Completed Tasks
 
@@ -206,9 +212,9 @@ downstream workspace-template plus public KB active pins were updated to
 
 ## Next Focus
 
-After promotion-readiness failure-memory reporting lands, proceed to workspace
-failure-log demonstration and public-KB failure-log policy. Retrieval,
-context-pack, readiness, workspace, and policy work must keep failure memory
+After artifact failure-log security regression coverage lands, proceed to the
+deterministic artifact failure-log eval suite. Retrieval, context-pack,
+readiness, workspace, policy, security, and eval work must keep failure memory
 labeled as failed or unresolved attempt memory, preserve public/private scope,
 and avoid promoting failure memory into proof, verifier success, human review,
 checked counterexample evidence, accepted status, or promotion evidence by
