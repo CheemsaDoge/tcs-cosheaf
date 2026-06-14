@@ -2,7 +2,7 @@
 
 This checklist records the `v0.2.2` Provider Transport + Agent Workflow
 Hardening release state and the current `v0.2.3` Verification Evidence
-Hardening readiness-audit state after the `v0.2.1` CLI Agent Access + Hosted
+Hardening release-candidate state after the `v0.2.1` CLI Agent Access + Hosted
 Provider Gateway prerelease, the `v0.2.0` local-MVP release, and the `v0.1.1`
 Formal Link Layer support baseline. It is an operator checklist for the
 framework package, public KB, and workspace template together. It is not a
@@ -17,9 +17,11 @@ policy matrix, provider log leak scanner, failure/counterexample workflow
 hardening, provider workflow evals, and ecosystem smoke matrix. Do not assume a
 downstream pin to `@v0.2.0` includes `v0.2.1` or `v0.2.2` agent/provider
 surfaces.
-`v0.2.3` is not published yet. Its readiness audit is tracked in
-`docs/releases/v0.2.3.md`, while package metadata remains `0.2.2` until the
-release-candidate task updates it.
+`v0.2.3` is a release candidate, not a published tag yet. It packages
+verification-evidence hardening after the readiness audit. Package metadata now
+records `0.2.3`; tag publication, GitHub release publication, and downstream
+pin updates remain follow-up release actions after the release-candidate PR
+passes and merges.
 
 ## Scope
 
@@ -27,7 +29,7 @@ release-candidate task updates it.
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
 - Current framework package metadata version:
-  `0.2.2`.
+  `0.2.3`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
@@ -111,14 +113,15 @@ closeout. It is Verification Evidence Hardening, not provider/MCP expansion.
   row that counts unavailable SAT/SMT/Lean/lake tools as skipped rather than
   pass.
 
-## v0.2.3 Release Readiness Audit
+## v0.2.3 Release Readiness Audit And Candidate
 
-`docs/releases/v0.2.3.md` is a readiness-audit draft, not a published release
-note. It must remain conservative until the release-candidate PR updates
-package metadata, reruns verification, and records the final release result.
+`docs/releases/v0.2.3.md` is now the release-candidate note. It is not a
+published release note until the maintainer release action creates and verifies
+the public tag and GitHub release.
 
-- [x] The audit records that package metadata and `cosheaf.__version__` still
-  report `0.2.2`.
+- [x] The previous readiness-audit PR recorded that package metadata and
+  `cosheaf.__version__` still reported `0.2.2` before the release-candidate
+  branch.
 - [x] The audit does not create a tag, GitHub release, downstream pin update,
   or runtime behavior.
 - [x] Verifier evidence records are stable enough for the release-candidate
@@ -137,9 +140,18 @@ package metadata, reruns verification, and records the final release result.
   clones or network installs.
 - [x] At audit start, the only open issue was the audit issue itself and there
   were no open PRs.
-- [ ] The release-candidate PR must update package metadata to `0.2.3`.
-- [ ] The release-candidate PR must rerun the full command ladder and ecosystem
-  matrix before any tag or release is created.
+- [x] The release-candidate branch updates `pyproject.toml` and
+  `cosheaf.__version__` to `0.2.3`.
+- [x] The release-candidate note states optional verifier evidence hardening,
+  skipped-not-pass preservation, no automatic theorem proving, no automatic
+  accepted promotion, no production hosted multi-agent claim, and unchanged
+  provider/MCP boundaries.
+- [x] The release-candidate branch reran the full local command ladder and
+  ecosystem matrix before any tag or release was created.
+- [ ] The public `v0.2.3` tag must be created only after the release-candidate
+  PR merges cleanly.
+- [ ] Downstream pins must remain on `v0.2.2` until the public `v0.2.3` tag
+  exists and release smoke passes.
 
 ## Framework Checklist
 
@@ -165,17 +177,22 @@ package metadata, reruns verification, and records the final release result.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.2.2`.
-- [x] `cosheaf.__version__` records `0.2.2`.
+- [x] `pyproject.toml` records package version `0.2.3` on the
+  release-candidate branch.
+- [x] `cosheaf.__version__` records `0.2.3` on the release-candidate branch.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
 - [x] Remote tag `v0.2.2` exists and points to the reviewed post-audit main
   commit.
+- [ ] Remote tag `v0.2.3` is intentionally absent until the maintainer release
+  action after this release-candidate PR merges.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
 - [x] Workspace-template verification installs or pins `@v0.2.2` before
   relying on provider-transport/workflow-hardening surfaces.
+- [ ] Workspace-template and public KB active pins move to `@v0.2.3` only
+  after tag publication and release smoke succeed.
 
 ### License
 
