@@ -25,9 +25,11 @@ commands.
 - `verifier`: Describes a checker, proof assistant invocation, script, SAT/SMT query, or other validation mechanism.
 - `issue`: Records a known problem, open question, inconsistency, or follow-up item.
 
-## Planned Common Fields
+## Common Fields
 
-The base artifact schema currently defines these common fields:
+The base artifact schema currently defines these common fields. Planned
+additions are listed separately so readers can distinguish design intent from
+implemented schema/model support:
 
 - `id`
 - `type`
@@ -48,6 +50,64 @@ The base artifact schema currently defines these common fields:
 - `verification_policy`
 - `review`
 - `risk`
+
+## Planned Artifact Failure Log
+
+`failure_log` is the planned artifact-level home for failed proof attempts,
+dead reduction directions, construction failures, counterexample-search dead
+ends, formalization stalls, retrieval misses, and verifier attempts that should
+not be repeated without new evidence.
+
+The field is planned as optional and backward compatible:
+
+- artifacts that omit `failure_log` remain valid;
+- omitted `failure_log` behaves like an empty list;
+- existing artifact lifecycle, review, verifier, gate, and promotion semantics
+  remain unchanged.
+
+A failure-log entry is research memory. It is not proof, verifier success,
+human review, source metadata, checked counterexample evidence, gate success,
+or accepted-promotion evidence by itself.
+
+Planned entry fields:
+
+| Field | Required | Meaning | Authority boundary |
+| --- | --- | --- | --- |
+| `failure_id` | yes | Dot-separated identifier for one failed attempt memory entry. | Identifies memory only, not evidence, review, or promotion authority. |
+| `attempted_at` | yes | Timezone-aware timestamp for the attempt or reconstructed attempt. | Timestamp metadata only; it does not prove review or completeness. |
+| `recorded_by` | yes | Human, agent, provider, verifier, or import label that recorded the entry. | Provenance label only; it does not create human review. |
+| `origin` | yes | `human`, `agent`, `provider`, `verifier`, or `imported_bundle`. | Origin is not trust level. `origin: human` is separate from `review.state: human_reviewed`. |
+| `attempt_kind` | yes | `proof_attempt`, `reduction_attempt`, `construction_attempt`, `counterexample_search`, `formalization_attempt`, `verifier_attempt`, `retrieval_attempt`, or `other`. | Routing/classification metadata only. |
+| `target` | no | Current artifact, another local artifact ID, or explicit `external:<ref>` target. | Does not create a dependency, proof obligation, or refutation. |
+| `direction` | yes | Short attempted direction. | Retrieval hint only. |
+| `summary` | yes | What was tried. | Explanatory text only. |
+| `failed_because` | yes | Why the attempt failed, stalled, or was abandoned. | Does not refute the artifact without separate checked or reviewed evidence. |
+| `evidence_paths` | no | Repository-local supporting paths. | References only; referenced files keep their own authority and must not be direct accepted-write targets. |
+| `related_verifier_results` | no | Verifier evidence IDs or repository-local verifier result paths. | Links only; skipped remains skipped, failed remains failed, and no result is converted to pass. |
+| `related_counterexample_candidates` | no | Candidate IDs or repository-local candidate references. | Candidate references only; not checked refutations. |
+| `next_possible_directions` | no | Follow-up directions that may be worth trying. | Advisory only. |
+| `status` | yes | `open`, `superseded`, `invalidated`, `resolved`, or `archived`. | Status of the memory entry only. `resolved` does not mean proven, refuted, reviewed, or accepted. |
+| `limitations` | yes | Non-empty anti-overclaiming note. | Required reminder that the entry does not bypass validation, gates, review, verifier evidence, or promotion. |
+
+The planned model/schema should reject unsafe repository paths, invalid IDs,
+timezone-naive timestamps, empty required text fields, and any structured claim
+that a failure-log entry itself grants human review, verifier pass, checked
+counterexample status, accepted status, or promotion readiness.
+
+WorkerBundle v2 `failed_attempts` and artifact `failure_log` have different
+scope. WorkerBundle failures are run-scoped worker output and can be noisy,
+agent/provider-originated, or transient. Artifact failure logs are durable,
+artifact-local metadata added through a controlled path. A later bridge may
+convert WorkerBundle failures into proposed failure-log entries, but that
+bridge must preserve origin and cannot create accepted knowledge, human review,
+or verifier evidence.
+
+Accepted public KB artifacts may include failure memory only through ordinary
+public-KB policy: complete source metadata where required, human review where
+required, validation/gate success, accepted or explicit external dependencies,
+and explicit promotion. Validation and gate success do not replace human
+review, and unreviewed agent/provider failure logs must not enter accepted
+public knowledge.
 
 ## Source Metadata
 
@@ -289,3 +349,8 @@ optional external reference checker can generate a temporary Lean file with
 `import <import_path>` and `#check <symbol>` for linked external-library
 references when Lean or lake is available; a pass means only that the import
 and symbol resolved.
+
+Artifact-level `failure_log` is designed for the `v0.2.4` line but is not yet
+implemented in `BaseArtifact` or `schemas/artifact.schema.json`. Until the
+model/schema task lands, artifacts containing `failure_log` should not be
+expected to validate.

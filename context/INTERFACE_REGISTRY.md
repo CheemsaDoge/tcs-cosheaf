@@ -4,6 +4,21 @@
 
 ### Planned Interfaces Not Yet Implemented
 
+- Artifact-level `failure_log` is planned for the `v0.2.4` line as an optional
+  `BaseArtifact`/`schemas/artifact.schema.json` field. It is not implemented
+  yet. The planned entry shape records durable failed-attempt memory with
+  `failure_id`, timezone-aware `attempted_at`, `recorded_by`, `origin`,
+  `attempt_kind`, optional `target`, `direction`, `summary`, `failed_because`,
+  reference lists for evidence, verifier results, and counterexample
+  candidates, `next_possible_directions`, entry `status`, and required
+  `limitations`. The field is research memory only: it is not proof, verifier
+  success, checked counterexample evidence, human review, gate success,
+  accepted status, or promotion evidence.
+- Planned failure-log CLI surfaces are not implemented yet. Future read/write
+  commands should expose deterministic JSON, keep writes controlled and
+  dry-run-capable, reject direct accepted-path writes, reject readonly public
+  roots, preserve public/private scope, and keep WorkerBundle imports labeled
+  by origin.
 - Hosted worker CLI commands and hosted-provider MCP tools are not implemented
   yet. Role-specific hosted worker service bridging for fake and mocked
   provider calls is implemented under `cosheaf.agent.hosted_workers`, the
@@ -2254,6 +2269,8 @@ working directory.
   policy metadata. Formalization references are separate from `evidence`; this
   schema does not add formal-link CLI commands or verifier execution, but G10,
   context packs, and the deterministic index/query surfaces read this metadata.
+  Artifact-level `failure_log` is planned but not yet implemented in this
+  schema.
 - `schemas/formal_library.schema.json`: formal library manifest schema for
   pinned external Lean library metadata. It requires `schema_version: 1` and at
   least one library entry with `id`, `name`, `system`, `git`, `commit`,
