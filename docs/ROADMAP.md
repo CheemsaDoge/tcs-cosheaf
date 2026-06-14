@@ -155,7 +155,7 @@ runtime expansion, provider work, release work, or KB growth should start from
 a new issue-scoped plan and preserve the same review, gate, public/private,
 and skipped-not-pass boundaries.
 
-## Current Planning Focus: v0.2.4 Artifact Failure Memory
+## Completed Release Focus: v0.2.4 Artifact Failure Memory
 
 The post-v0.2.3 state audit is tracked in
 [`docs/POST_V023_STATE_AUDIT.md`](POST_V023_STATE_AUDIT.md). It identified
@@ -164,10 +164,10 @@ failure/counterexample evals, and promotion-readiness reports already preserved
 failure and counterexample context before durable artifact-level failure
 memory existed.
 
-The active `v0.2.4` plan is
+The completed `v0.2.4` plan is
 [`docs/CODEX_DEVELOPMENT_PLAN_V6.md`](CODEX_DEVELOPMENT_PLAN_V6.md), with ADR
-0023 recording the artifact failure-memory architecture decision. The current
-line has added Artifact Failure Memory + Attempt Traceability through small
+0023 recording the artifact failure-memory architecture decision. The completed
+line added Artifact Failure Memory + Attempt Traceability through small
 issue-scoped PRs:
 
 - optional `failure_log` schema and model support;
@@ -184,12 +184,14 @@ issue-scoped PRs:
 The v0.2.4 readiness audit, release-candidate packaging, tag publication,
 GitHub release, release smoke from `@v0.2.4`, and downstream workspace/public
 KB pin updates are tracked in
-[`docs/releases/v0.2.4.md`](releases/v0.2.4.md).
+[`docs/releases/v0.2.4.md`](releases/v0.2.4.md). The V6 completion/code-surface
+audit is tracked in
+[`docs/POST_V024_V6_COMPLETION_AUDIT.md`](POST_V024_V6_COMPLETION_AUDIT.md).
 
-This focus must not make failure memory authoritative by itself. It must not
-change accepted-promotion semantics, add default real provider calls, make MCP
-primary, leak private failure content into public-only context, or mass-update
-accepted public KB artifacts.
+Future work building on this completed focus must not make failure memory
+authoritative by itself. It must not change accepted-promotion semantics, add
+default real provider calls, make MCP primary, leak private failure content
+into public-only context, or mass-update accepted public KB artifacts.
 
 ## v0.2.1 Prerelease Baseline
 
