@@ -3,6 +3,27 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.3 Failure-Preserving Review Request Generation - 2026-06-14
+
+Issue 286 adds `cosheaf review request-from-bundle --bundle <path>` for
+turning WorkerBundle v2 failure and counterexample evidence into draft
+informational review-request records. The command validates the bundle through
+the existing WorkerBundle v2 boundary and writes or previews a
+`reviews/requests/*.yaml` record through the same controlled review-request
+write path used by `cosheaf review request`.
+
+Generated requests preserve assumptions, uncertainty, failed attempts,
+verifier requests, legacy string counterexamples, typed
+`counterexample_candidates`, dependency questions, risk flags, next steps,
+confidence, and candidate limitations as findings. They remain draft review
+context only. They do not mark `human_reviewed`, approve or reject claims,
+create verifier results, write accepted knowledge, or promote artifacts.
+
+Unsafe bundles that target accepted paths or stage human-reviewed proposed
+artifacts are rejected before any review request is written. This task does
+not change accepted-promotion semantics, provider/MCP authority, verifier
+execution, or gate behavior.
+
 ## v0.2.3 Typed Counterexample Candidate Records - 2026-06-14
 
 Issue 284 adds optional typed WorkerBundle v2 `counterexample_candidates` for

@@ -95,11 +95,50 @@ def _bundle_data() -> dict[str, Any]:
                 "summary": "Draft proposal.",
             }
         ],
+        "assumptions": ["The draft depends on a convention still under review."],
+        "uncertainty": ["No human review has been performed."],
         "verification_requests": ["Run validate and gate before review."],
+        "failed_attempts": ["A direct proof attempt stalled at the induction step."],
+        "counterexamples": ["A legacy candidate counterexample remains unreviewed."],
+        "counterexample_candidates": [
+            {
+                "candidate_id": "candidate.fixture.controlled.counterexample.0001",
+                "target_claim": "claim.fixture.controlled-draft",
+                "construction_summary": "A small fixture construction needs checking.",
+                "evidence_paths": [".cosheaf/evidence/candidate-0001.json"],
+                "verifier_request_ids": ["verifier.request.fixture.controlled.0001"],
+                "status": "needs_check",
+                "limitations": "No verifier or human reviewer has checked it.",
+            }
+        ],
         "failures_or_counterexamples": ["No proof was checked."],
+        "dependency_questions": ["Should this cite definition.path?"],
         "risk_flags": ["needs_human_review"],
         "next_steps": ["Request human review."],
         "confidence": "low",
+    }
+
+
+def _draft_claim_artifact(
+    *,
+    review_state: str = "requested",
+) -> dict[str, Any]:
+    return {
+        "id": "claim.fixture.controlled-draft",
+        "type": "claim",
+        "title": "Controlled draft claim",
+        "domain": ["testing"],
+        "status": "draft",
+        "created_at": "2026-06-09T00:00:00Z",
+        "updated_at": "2026-06-09T00:00:00Z",
+        "authors": ["tester"],
+        "depends_on": [],
+        "supersedes": [],
+        "tags": ["controlled-write"],
+        "statement": "A draft artifact written through the controlled CLI.",
+        "evidence": [],
+        "review": {"state": review_state, "notes": "Pending review."},
+        "risk": {"level": "low", "notes": "Fixture risk."},
     }
 
 
@@ -335,23 +374,7 @@ def test_bundle_submit_json_validates_bundle_without_promotion(tmp_path: Path) -
     _write_yaml(
         tmp_path,
         "kb/draft/claims/claim.fixture.controlled-draft.yaml",
-        {
-            "id": "claim.fixture.controlled-draft",
-            "type": "claim",
-            "title": "Controlled draft claim",
-            "domain": ["testing"],
-            "status": "draft",
-            "created_at": "2026-06-09T00:00:00Z",
-            "updated_at": "2026-06-09T00:00:00Z",
-            "authors": ["tester"],
-            "depends_on": [],
-            "supersedes": [],
-            "tags": ["controlled-write"],
-            "statement": "A draft artifact written through the controlled CLI.",
-            "evidence": [],
-            "review": {"state": "requested", "notes": "Pending review."},
-            "risk": {"level": "low", "notes": "Fixture risk."},
-        },
+        _draft_claim_artifact(),
     )
     bundle = _write_yaml(tmp_path, "outputs/bundle.yaml", _bundle_data())
     request = _write_json(
@@ -440,4 +463,151 @@ def test_review_request_rejects_human_reviewed_status(tmp_path: Path) -> None:
     assert result.exit_code == 1
     payload = _assert_json(result.output)
     assert payload["code"] == "human_review_forbidden"
+    assert not (tmp_path / "reviews").exists()
+
+
+def test_review_request_from_bundle_writes_failure_preserving_draft(
+    tmp_path: Path,
+) -> None:
+    _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.controlled-draft.yaml",
+        _draft_claim_artifact(),
+    )
+    bundle = _write_yaml(tmp_path, "outputs/bundle.yaml", _bundle_data())
+
+    result = runner.invoke(
+        app,
+        [
+            "review",
+            "request-from-bundle",
+            "--bundle",
+            str(bundle),
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json(result.output)
+    assert payload["kind"] == "review_request"
+    assert payload["bundle_id"] == "bundle.issue.fixture.controlled.reasoner.0001"
+    assert payload["review_id"] == (
+        "review.request.bundle.issue.fixture.controlled.reasoner.0001"
+    )
+    assert payload["accepted_write_performed"] is False
+    assert payload["written_paths"] == [payload["path"]]
+
+    review = yaml.safe_load((tmp_path / payload["path"]).read_text(encoding="utf-8"))
+    assert review["status"] == "draft"
+    assert review["decision"] == "informational"
+    assert review["target"] == "task.issue.fixture.controlled.reasoner"
+    assert any(
+        finding.startswith("assumption: The draft depends")
+        for finding in review["findings"]
+    )
+    assert "uncertainty: No human review has been performed." in review["findings"]
+    assert any(
+        finding.startswith("failed_attempt: A direct proof attempt")
+        for finding in review["findings"]
+    )
+    assert any(
+        finding.startswith("counterexample_candidate: candidate.fixture.controlled")
+        and "limitations=No verifier or human reviewer has checked it." in finding
+        for finding in review["findings"]
+    )
+    assert "verification_request: Run validate and gate before review." in review[
+        "findings"
+    ]
+    assert "next_step: Request human review." in review["findings"]
+    assert not (tmp_path / "kb" / "accepted").exists()
+
+
+def test_review_request_from_bundle_dry_run_writes_nothing(tmp_path: Path) -> None:
+    bundle = _write_yaml(tmp_path, "outputs/bundle.yaml", _bundle_data())
+
+    result = runner.invoke(
+        app,
+        [
+            "review",
+            "request-from-bundle",
+            "--bundle",
+            str(bundle),
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json(result.output)
+    assert payload["dry_run"] is True
+    assert payload["written_paths"] == []
+    assert payload["generated_request"]["status"] == "draft"
+    assert payload["generated_request"]["decision"] == "informational"
+    assert not (tmp_path / payload["path"]).exists()
+
+
+def test_review_request_from_bundle_rejects_accepted_authority(
+    tmp_path: Path,
+) -> None:
+    data = _bundle_data()
+    data["proposed_artifacts"] = [
+        {
+            "path": "kb/accepted/claims/claim.fixture.unsafe.yaml",
+            "summary": "Unsafe accepted write attempt.",
+        }
+    ]
+    bundle = _write_yaml(tmp_path, "outputs/bundle.yaml", data)
+
+    result = runner.invoke(
+        app,
+        [
+            "review",
+            "request-from-bundle",
+            "--bundle",
+            str(bundle),
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = _assert_json(result.output)
+    assert payload["code"] == "review_request_failed"
+    assert "accepted knowledge" in payload["message"]
+    assert not (tmp_path / "reviews").exists()
+    assert not (tmp_path / "kb" / "accepted").exists()
+
+
+def test_review_request_from_bundle_rejects_human_reviewed_authority(
+    tmp_path: Path,
+) -> None:
+    _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.controlled-draft.yaml",
+        _draft_claim_artifact(review_state="human_reviewed"),
+    )
+    bundle = _write_yaml(tmp_path, "outputs/bundle.yaml", _bundle_data())
+
+    result = runner.invoke(
+        app,
+        [
+            "review",
+            "request-from-bundle",
+            "--bundle",
+            str(bundle),
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = _assert_json(result.output)
+    assert payload["code"] == "review_request_failed"
+    assert "human_reviewed" in payload["message"]
     assert not (tmp_path / "reviews").exists()

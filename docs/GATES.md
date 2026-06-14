@@ -72,6 +72,12 @@ status `proposed` or `needs_check` is not a refutation. A candidate with status
 schema, but it still cannot change accepted artifact status, create human
 review, satisfy promotion, or bypass gatekeeper checks.
 
+Draft review requests generated through
+`cosheaf review request-from-bundle --bundle <path>` are also not gate results,
+verifier results, or human review. They preserve WorkerBundle assumptions,
+uncertainty, failed attempts, verifier requests, counterexample candidates,
+risk flags, next steps, and limitations as informational findings only.
+
 Formal library manifest metadata, such as
 `formal-libs/lean-libraries.example.yaml`, pins external library IDs and
 versions for reference checking. The manifest does not change gate or promotion

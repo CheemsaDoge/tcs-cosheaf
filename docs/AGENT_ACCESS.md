@@ -157,12 +157,22 @@ input:
 - `cosheaf draft write-source-note --input-json <path> --json`
 - `cosheaf bundle submit --input-json <path> --json`
 - `cosheaf review request --input-json <path> --json`
+- `cosheaf review request-from-bundle --bundle <path> --json`
 
 Each command also supports `--dry-run`, which validates and reports target
 paths without writing files. These commands refuse accepted paths, readonly KB
 roots, accepted artifact status, and `human_reviewed` review spoofing. They do
 not run promotion, do not create human review, do not call hosted providers,
 and do not change gate or verifier results.
+
+`review request-from-bundle` derives a draft informational review request from
+a WorkerBundle v2. It preserves assumptions, uncertainty, failed attempts,
+verification requests, legacy and typed counterexample candidates, dependency
+questions, risk flags, next steps, confidence, and candidate limitations as
+review findings. It reuses the same `reviews/requests/*.yaml` controlled-write
+path as `review request`; it does not approve or reject claims, mark
+`human_reviewed`, create verifier results, write accepted knowledge, or promote
+artifacts.
 
 ### Forbidden Agent Actions
 
@@ -338,6 +348,9 @@ remain unverified candidates, and `checked_false` or `checked_true` still do
 not alter accepted knowledge or create human review. Those fields must remain
 draft/proposal context until ordinary review, gate, verifier, and promotion
 workflows handle them explicitly.
+`cosheaf review request-from-bundle --bundle <path> --json` can turn that
+preserved review-only state into a draft informational review request, but the
+generated request remains review context and never counts as human review.
 Hosted-worker role prompts include required/optional output fields and
 forbidden authority so providers see the same contract that local validators
 enforce.

@@ -80,6 +80,11 @@ closeout. It is Verification Evidence Hardening, not provider/MCP expansion.
 - [x] WorkerBundle v2 typed counterexample candidate records distinguish
   proposed/needs-check candidates from checked candidate evidence while still
   keeping all candidates review-only and outside accepted promotion authority.
+- [x] Failure-preserving review request generation writes or previews draft
+  informational `reviews/requests/*.yaml` records from WorkerBundle v2
+  assumptions, uncertainty, failed attempts, verifier requests, counterexample
+  candidates, risk flags, next steps, and limitations without creating human
+  review, verifier results, accepted knowledge, or promotion authority.
 - [ ] Follow-up evidence taxonomy work still needs a dedicated checked
   counterexample review artifact or report path beyond WorkerBundle candidate
   records.

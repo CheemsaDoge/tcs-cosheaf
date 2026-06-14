@@ -170,6 +170,7 @@ review-staging writes:
 - `cosheaf draft write-source-note --input-json <path> --json`
 - `cosheaf bundle submit --input-json <path> --json`
 - `cosheaf review request --input-json <path> --json`
+- `cosheaf review request-from-bundle --bundle <path> --json`
 
 Prefer `--dry-run` before a real write when an agent is proposing changes.
 These commands validate the JSON request, report exact target paths, and refuse
@@ -178,6 +179,11 @@ accepted paths, readonly KB roots, accepted artifact status, and
 manifests for review only; it does not complete tasks, merge outputs, promote
 artifacts, or write accepted knowledge. `review request` writes draft
 informational review-request records only; it does not create human review.
+`review request-from-bundle` generates the same draft informational review
+request from WorkerBundle assumptions, uncertainty, failed attempts,
+verification requests, counterexample candidates, risk flags, next steps, and
+limitations. It does not approve, reject, mark human review, create verifier
+results, or write accepted knowledge.
 
 After any controlled write, run validation and gate commands required by the
 task. Validation and gate success remain evidence for review, not a substitute
@@ -326,6 +332,7 @@ commands when the result will be parsed by a program:
 - `cosheaf draft write-source-note --input-json <path> --json --dry-run`
 - `cosheaf bundle submit --input-json <path> --json --dry-run`
 - `cosheaf review request --input-json <path> --json --dry-run`
+- `cosheaf review request-from-bundle --bundle <path> --json --dry-run`
 
 JSON mode keeps human text rendering out of stdout and uses structured
 `ErrorResult` payloads for expected command failures. Human output remains the
