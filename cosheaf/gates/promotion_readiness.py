@@ -21,6 +21,7 @@ from cosheaf.storage.repo import RepoContext
 
 PROMOTION_REVIEW_STATES = frozenset({"human_reviewed", "accepted"})
 BLOCKING_VERIFIER_STATUSES = frozenset({"fail", "error"})
+UNRESOLVED_FAILURE_MEMORY_STATUSES = frozenset({"open"})
 DRAFT_STATUSES = frozenset({ArtifactStatus.RAW, ArtifactStatus.DRAFT})
 READY_PREACCEPTED_STATUSES = frozenset(
     {
@@ -293,6 +294,7 @@ def _artifact_report(
             verifier_results=verifier_results,
             checker_required=checker_required,
         )
+        + _failure_memory_reasons(artifact)
         + _repository_gate_reasons(gatekeeper, artifact.id)
         + _target_gate_reasons(gatekeeper, artifact.id)
     )
@@ -512,6 +514,40 @@ def _verifier_reasons(
                     message=f"{rendered_message} {suffix}",
                 )
             )
+    return tuple(reasons)
+
+
+def _failure_memory_reasons(
+    artifact: BaseArtifact,
+) -> tuple[PromotionReadinessReason, ...]:
+    reasons: list[PromotionReadinessReason] = []
+    for entry in sorted(
+        artifact.failure_log,
+        key=lambda item: (item.attempted_at, item.failure_id),
+        reverse=True,
+    ):
+        if entry.status not in UNRESOLVED_FAILURE_MEMORY_STATUSES:
+            continue
+        next_text = (
+            "; ".join(entry.next_possible_directions)
+            if entry.next_possible_directions
+            else "-"
+        )
+        reasons.append(
+            PromotionReadinessReason(
+                code="unresolved_failure_memory",
+                severity="warning",
+                artifact_id=artifact.id,
+                status=entry.status,
+                message=(
+                    "unresolved artifact failure memory only; not verifier "
+                    "evidence and not a promotion blocker by itself: "
+                    f"{entry.direction}; failed_because={entry.failed_because}; "
+                    f"origin={entry.origin}; kind={entry.attempt_kind}; "
+                    f"next={next_text}"
+                ),
+            )
+        )
     return tuple(reasons)
 
 

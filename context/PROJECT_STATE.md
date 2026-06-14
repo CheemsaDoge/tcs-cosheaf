@@ -3,6 +3,20 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Promotion Readiness Failure Memory Reporting - 2026-06-15
+
+Issue 318 adds read-only promotion-readiness surfacing for unresolved artifact
+failure memory. `cosheaf promotion readiness --artifact ... --json` and
+`--issue ... --json` now include `unresolved_failure_memory` warning reasons
+for `failure_log` entries with `status: open`. The warnings include the failed
+direction, failed reason, origin, attempt kind, and next possible directions.
+
+These warnings are advisory review context only. They are distinct from
+verifier failures, do not create verifier evidence, do not satisfy or replace
+human review, do not write accepted knowledge, do not change artifact status,
+do not run promotion, and are not automatic promotion blockers by themselves.
+Resolved failure-memory entries do not clutter readiness reports.
+
 ## Context Pack Failure Sections - 2026-06-15
 
 Issue 316 adds explicit failure-memory sections to context packs. When visible

@@ -254,6 +254,12 @@ verifier state, review state, accepted status, gate results, or promotion
 readiness by themselves, and public-only context must not include private
 failure-log text.
 
+`cosheaf promotion readiness --artifact <artifact-id> --json` and
+`cosheaf promotion readiness --issue <issue-id> --json` surface unresolved
+failure memory as `unresolved_failure_memory` warning reasons. These warnings
+are review context only. They are distinct from verifier failures and are not
+promotion blockers by themselves.
+
 Public KB accepted artifacts may include failure memory only through ordinary
 review and promotion policy. Validation/gate success remains insufficient by
 itself for accepted public knowledge, and unreviewed agent/provider failure

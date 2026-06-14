@@ -67,6 +67,9 @@ informal/formal semantic alignment.
   `failure_log` entries. `RETRIEVAL_AUDIT.json` exposes the same structured
   entries in `failure_memory` and counts them in
   `context_payload.failure_entry_count`.
+- Promotion-readiness reports now surface unresolved artifact failure memory as
+  `unresolved_failure_memory` warning reasons. These warnings are distinct
+  from verifier failures and are not promotion blockers by themselves.
 - `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
   result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
@@ -132,10 +135,11 @@ controlled draft/pre-accepted failure-log append support is implemented, and
 WorkerBundle-to-failure-log planning/controlled append support is implemented.
 Failure-log memory indexing is implemented for artifact cards, memory search,
 compact context-pack card summaries, and explicit context-pack failure
-sections. New work should continue from promotion-readiness failure-memory
-surfacing, while avoiding runtime authority expansion, default real provider
-calls, generated review-as-human-review, accepted writes, artifact promotion
-bypasses, and treating skipped verifier results as passes.
+sections. Promotion-readiness failure-memory warning reporting is implemented.
+New work should continue from workspace/public-KB failure-log demonstration and
+policy surfaces, while avoiding runtime authority expansion, default real
+provider calls, generated review-as-human-review, accepted writes, artifact
+promotion bypasses, and treating skipped verifier results as passes.
 
 ## Recently Completed Tasks
 
@@ -202,12 +206,13 @@ downstream workspace-template plus public KB active pins were updated to
 
 ## Next Focus
 
-After explicit context-pack failure sections land, proceed to
-promotion-readiness failure-memory reporting. Retrieval, context-pack, and
-readiness work must keep failure memory labeled as failed or unresolved attempt
-memory, preserve public/private scope, and avoid promoting failure memory into
-proof, verifier success, human review, checked counterexample evidence,
-accepted status, or promotion evidence by itself.
+After promotion-readiness failure-memory reporting lands, proceed to workspace
+failure-log demonstration and public-KB failure-log policy. Retrieval,
+context-pack, readiness, workspace, and policy work must keep failure memory
+labeled as failed or unresolved attempt memory, preserve public/private scope,
+and avoid promoting failure memory into proof, verifier success, human review,
+checked counterexample evidence, accepted status, or promotion evidence by
+itself.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
