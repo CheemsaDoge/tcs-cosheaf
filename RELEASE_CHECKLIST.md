@@ -1,7 +1,8 @@
 # Three-Repository Release Checklist
 
-This checklist records the published `v0.2.3` Verification Evidence Hardening
-release state after the `v0.2.2` Provider Transport + Agent Workflow Hardening
+This checklist records the published `v0.2.4` Artifact Failure Memory +
+Attempt Traceability release state after the `v0.2.3` Verification Evidence
+Hardening release, the `v0.2.2` Provider Transport + Agent Workflow Hardening
 release, the `v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease,
 the `v0.2.0` local-MVP release, and the `v0.1.1` Formal Link Layer support
 baseline. It is an operator checklist for the framework package, public KB,
@@ -19,10 +20,10 @@ surfaces.
 `v0.2.3` packages verification-evidence hardening after the readiness audit.
 Package metadata records `0.2.3`; the public tag, GitHub release, release
 smoke, and downstream workspace/public KB pin updates are complete.
-`v0.2.4` is in release-candidate state for Artifact Failure Memory + Attempt
-Traceability. Package metadata records `0.2.4`, but the public tag, GitHub
-release, release smoke, and downstream pin updates are still pending follow-up
-release tasks. Until then, downstream pins remain on `@v0.2.3`.
+`v0.2.4` packages Artifact Failure Memory + Attempt Traceability after the
+readiness audit. Package metadata records `0.2.4`; the public tag, GitHub
+release, release smoke, and downstream workspace/public KB pin updates are
+complete.
 
 ## Scope
 
@@ -42,16 +43,16 @@ release tasks. Until then, downstream pins remain on `@v0.2.3`.
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.2`.
 - Downstream dependency for verification-evidence-hardening workflows:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.3`.
-- Candidate downstream dependency for artifact-failure-memory workflows after
-  publication:
+- Downstream dependency for artifact-failure-memory workflows:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.4`.
 
 ## v0.2.4 Readiness Audit Baseline
 
-`docs/releases/v0.2.4.md` is the release-candidate note for Artifact Failure
-Memory + Attempt Traceability. The earlier readiness audit did not create the
-`v0.2.4` tag, publish a GitHub release, update downstream pins, or change
-runtime behavior.
+`docs/releases/v0.2.4.md` is the published release note for Artifact Failure
+Memory + Attempt Traceability. The earlier readiness audit and release
+candidate did not create the public tag, publish a GitHub release, or update
+downstream pins; the later maintainer release action completed those steps
+after the release-candidate PR merged cleanly.
 
 - [x] Artifact-level `failure_log` is optional and backward compatible.
 - [x] `cosheaf artifact failures` is read-only and reports an explicit
@@ -75,9 +76,13 @@ runtime behavior.
   pull requests before the audit issue was created.
 - [x] `v0.2.4` release-candidate metadata update is prepared in the release
   candidate branch.
-- [ ] `v0.2.4` tag publication, GitHub release, release smoke, and downstream
-  pin updates are still pending follow-up tasks after the release-candidate PR
-  merges.
+- [x] The annotated `v0.2.4` tag is published.
+- [x] GitHub release `v0.2.4 Artifact Failure Memory` is published.
+- [x] Release smoke from
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.4` passed.
+- [x] Workspace-template active pins moved to `@v0.2.4` after tag publication
+  and release smoke.
+- [x] Public KB CI moved to `@v0.2.4` after tag publication and release smoke.
 
 ## v0.2.2 Release Delta
 
@@ -218,9 +223,8 @@ smoke, and downstream pin updates.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.2.4` on the
-  release-candidate branch.
-- [x] `cosheaf.__version__` records `0.2.4` on the release-candidate branch.
+- [x] `pyproject.toml` records package version `0.2.4` on `main`.
+- [x] `cosheaf.__version__` records `0.2.4` on `main`.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
@@ -228,16 +232,16 @@ smoke, and downstream pin updates.
   commit.
 - [x] Remote tag `v0.2.3` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
-- [ ] Remote tag `v0.2.4` is not published yet; it must be created only after
-  the release-candidate PR merges cleanly and main is re-synced.
+- [x] Remote tag `v0.2.4` exists and points through the annotated tag to the
+  reviewed release-candidate main commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
-- [x] Workspace-template verification installs or pins `@v0.2.3` for
-  verification-evidence-hardening surfaces.
+- [x] Workspace-template verification installs or pins `@v0.2.4` for
+  artifact-failure-memory surfaces.
 - [x] Workspace-template and public KB active pins moved to `@v0.2.3` only
-  after tag publication and release smoke succeeded.
-- [ ] Workspace-template and public KB active pins must move to `@v0.2.4` only
-  after tag publication and release smoke succeeds.
+  after v0.2.3 tag publication and release smoke succeeded.
+- [x] Workspace-template and public KB active pins moved to `@v0.2.4` only
+  after v0.2.4 tag publication and release smoke succeeded.
 
 ### License
 

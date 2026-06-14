@@ -2,16 +2,16 @@
 
 ## Milestone
 
-`v0.2.4` Artifact Failure Memory + Attempt Traceability implementation.
+`v0.2.4` Artifact Failure Memory + Attempt Traceability published release.
 
 ## Goal
 
-Implement the active V6 plan for `v0.2.4` Artifact Failure Memory + Attempt
-Traceability after the post-`v0.2.3` state audit and plan landing. The line
-targets durable artifact-level failure memory for failed attempts, dead
-directions, blocked approaches, and lessons learned while preserving all
-review, verifier, gate, promotion, public/private, provider, and MCP
-boundaries.
+Maintain the published `v0.2.4` Artifact Failure Memory + Attempt
+Traceability baseline after tag publication, GitHub release, release smoke, and
+downstream workspace/public KB pin alignment. The line adds durable
+artifact-level failure memory for failed attempts, dead directions, blocked
+approaches, and lessons learned while preserving all review, verifier, gate,
+promotion, public/private, provider, and MCP boundaries.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -21,18 +21,20 @@ informal/formal semantic alignment.
 
 ## Current Baseline
 
-- Framework package metadata and `cosheaf.__version__` record `0.2.4` on the
-  release-candidate branch.
-- Remote tags `v0.1.1`, `v0.2.0`, `v0.2.1`, `v0.2.2`, and `v0.2.3` exist.
-- Remote tag `v0.2.4` is not published yet.
+- Framework package metadata and `cosheaf.__version__` record `0.2.4` on
+  `main`.
+- Remote tags `v0.1.1`, `v0.2.0`, `v0.2.1`, `v0.2.2`, `v0.2.3`, and
+  `v0.2.4` exist.
+- The GitHub release `v0.2.4 Artifact Failure Memory` is published and is not
+  a production-readiness claim.
 - The GitHub release `v0.2.3 Verification Evidence Hardening` is published and
   is not a production-readiness claim.
 - The GitHub release `v0.2.2 Provider Transport + Agent Workflow Hardening`
   is published and is not a production-readiness claim.
 - `tcs-cosheaf-workspace-template` pins active demo, Makefile, CLI-agent,
   provider-preview, fake-provider smoke, and verifier-evidence demo paths to
-  `@v0.2.3`.
-- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.2.3`.
+  `@v0.2.4`.
+- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.2.4`.
 - `docs/CODEX_DEVELOPMENT_PLAN_V4.md` is historical/completed after the
   `v0.2.2` release closeout.
 - `docs/CODEX_DEVELOPMENT_PLAN_V5.md` is the completed durable record of the
@@ -80,9 +82,9 @@ informal/formal semantic alignment.
   recall, repeated failed-direction detection, public-only scope leakage,
   authority-boundary preservation, and candidate-counterexample mislabel
   prevention through local temporary workspace fixtures.
-- `docs/releases/v0.2.4.md` is the release-candidate note for Artifact Failure
-  Memory + Attempt Traceability. It is not yet a tag, GitHub release,
-  downstream pin update, or production-readiness claim.
+- `docs/releases/v0.2.4.md` is the published release note for Artifact Failure
+  Memory + Attempt Traceability. It records the release-candidate verification,
+  tag publication, GitHub release, release smoke, and downstream pin updates.
 - `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
   result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
@@ -151,13 +153,12 @@ compact context-pack card summaries, and explicit context-pack failure
 sections. Promotion-readiness failure-memory warning reporting is implemented.
 Workspace failure-log demonstration, public-KB failure-log policy surfaces,
 security regression coverage for failure-log misuse, and deterministic
-artifact failure-memory eval coverage are implemented. The v0.2.4
-release-candidate branch updates version and release metadata only. New work
-after a passing release-candidate PR should continue from tag publication,
-release smoke, and downstream pin updates, while avoiding runtime authority
-expansion, default real provider calls, generated review-as-human-review,
-accepted writes, artifact promotion bypasses, and treating skipped verifier
-results as passes.
+artifact failure-memory eval coverage are implemented. The v0.2.4 tag, GitHub
+release, release smoke, and downstream workspace/public KB pin updates are
+complete. New work should start from a post-v0.2.4 state audit or a separate
+maintainer-approved plan, while avoiding runtime authority expansion, default
+real provider calls, generated review-as-human-review, accepted writes,
+artifact promotion bypasses, and treating skipped verifier results as passes.
 
 ## Recently Completed Tasks
 
@@ -235,6 +236,13 @@ publish a GitHub release, run release smoke, update downstream pins, add
 runtime behavior, expand provider/MCP authority, change verifier or promotion
 semantics, write accepted knowledge, or claim production readiness.
 
+G.3 v0.2.4 publication closeout publishes the annotated `v0.2.4` tag, GitHub
+release, release smoke, and downstream workspace/public KB pin updates after
+the release-candidate PR merges cleanly. It updates documentation/status only
+and does not add runtime behavior, expand provider/MCP authority, change
+verifier or promotion semantics, write accepted knowledge, or claim production
+readiness.
+
 G.3 v0.2.3 release readiness audit added `docs/releases/v0.2.3.md` as a
 readiness-audit draft and recorded that main could enter the release-candidate
 task. The audit kept package metadata at `0.2.2`, created no tag, changed no
@@ -251,10 +259,8 @@ downstream workspace-template plus public KB active pins were updated to
 
 ## Next Focus
 
-After the v0.2.4 release-candidate PR lands and CI passes, proceed to the
-maintainer release action: re-sync main, verify no public `v0.2.4` tag exists,
-create the annotated tag, publish the GitHub release, run release smoke from
-the tag, and update downstream pins only after release smoke passes. Retrieval,
+After the v0.2.4 publication closeout lands, proceed only through a focused
+post-v0.2.4 state audit or a separate maintainer-approved plan. Retrieval,
 context-pack, readiness, workspace, policy, security, eval, and release work
 must keep failure memory labeled as failed or unresolved attempt memory,
 preserve public/private scope, and avoid promoting failure memory into proof,

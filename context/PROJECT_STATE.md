@@ -3,6 +3,26 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.4 Artifact Failure Memory Published Release Closeout - 2026-06-15
+
+Issue 328 closes out `v0.2.4` after tag/release publication, release smoke, and
+downstream pin alignment. The annotated `v0.2.4` tag points through the
+reviewed `Prepare v0.2.4 release candidate` main commit, and the GitHub
+release `v0.2.4 Artifact Failure Memory` is published.
+
+Release smoke installed `tcs-cosheaf==0.2.4` from
+`git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.4` and ran help,
+version, validation, gate, index rebuild, and context-build checks. The
+workspace-template active demo/Makefile/CLI-agent/provider/verifier paths now
+pin `v0.2.4`, and `tcs-kb-public` CI installs `tcs-cosheaf` from `v0.2.4`.
+
+This closeout is documentation/status only. It does not add runtime behavior,
+change schemas, alter verifier semantics, expand provider or MCP authority,
+write accepted knowledge, mark human review, promote artifacts, or claim
+production readiness. Failure memory remains non-authoritative research memory,
+not proof, verifier success, checked counterexample evidence, human review,
+gate success, accepted status, or promotion evidence.
+
 ## v0.2.4 Artifact Failure Memory Release Candidate - 2026-06-15
 
 Issue 326 prepares `v0.2.4` as the Artifact Failure Memory + Attempt

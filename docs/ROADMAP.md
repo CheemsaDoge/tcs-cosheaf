@@ -1,8 +1,8 @@
 # Roadmap
 
-TCS-Cosheaf has prepared the `v0.2.4` Artifact Failure Memory + Attempt
-Traceability release candidate after the published `v0.2.3` Verification
-Evidence Hardening release, the published `v0.2.2` Provider Transport + Agent
+TCS-Cosheaf has published the `v0.2.4` Artifact Failure Memory + Attempt
+Traceability release after the published `v0.2.3` Verification Evidence
+Hardening release, the published `v0.2.2` Provider Transport + Agent
 Workflow Hardening
 release, the published `v0.2.1` CLI Agent Access + Hosted Provider Gateway
 prerelease, the published `v0.2.0` local-MVP release, and the earlier `v0.1.1`
@@ -10,20 +10,20 @@ Formal Link Layer support baseline. The project is still not production-ready.
 This roadmap records durable direction and named milestones; live issue state
 belongs in GitHub issues.
 
-## Current Candidate: v0.2.4 Artifact Failure Memory
+## Current Baseline: v0.2.4 Artifact Failure Memory
 
-Package metadata and `cosheaf.__version__` record `0.2.4` on the
-release-candidate branch. The public `v0.2.4` tag, GitHub release, release
-smoke, and downstream workspace/public KB pin updates are still pending.
+Package metadata and `cosheaf.__version__` record `0.2.4`. The public
+`v0.2.4` tag and GitHub release are published, release smoke from `@v0.2.4`
+passed, and downstream workspace/public KB active pins now use `v0.2.4`.
 
-The candidate packages optional artifact-level `failure_log` support, read-only
+The release packages optional artifact-level `failure_log` support, read-only
 and controlled draft failure-log CLI surfaces, WorkerBundle failure-log
 bridges, retrieval/context/promotion-readiness surfacing, workspace-template
 demonstration, public KB policy, and security/eval regression coverage without
 turning failure memory into proof, verifier success, checked counterexample
 evidence, human review, accepted status, or promotion evidence.
 
-## Current Baseline: v0.2.3 Published Release
+## Completed Baseline: v0.2.3 Published Release
 
 The `v0.2.3` release packages the post-`v0.2.2`
 verification/evidence-hardening line. It adds normalized verifier evidence
@@ -181,11 +181,10 @@ issue-scoped PRs:
 - security regression and deterministic eval coverage for retrieval,
   public/private scope, authority, and candidate-counterexample boundaries.
 
-The v0.2.4 readiness audit is tracked in
-[`docs/releases/v0.2.4.md`](releases/v0.2.4.md), which now also records the
-release-candidate notes. If the release-candidate PR and required checks pass,
-the next step is maintainer tag publication, GitHub release creation, release
-smoke from `@v0.2.4`, and downstream pin updates after smoke passes.
+The v0.2.4 readiness audit, release-candidate packaging, tag publication,
+GitHub release, release smoke from `@v0.2.4`, and downstream workspace/public
+KB pin updates are tracked in
+[`docs/releases/v0.2.4.md`](releases/v0.2.4.md).
 
 This focus must not make failure memory authoritative by itself. It must not
 change accepted-promotion semantics, add default real provider calls, make MCP
