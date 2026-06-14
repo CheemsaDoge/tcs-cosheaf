@@ -20,6 +20,7 @@ checks:
 | Model output is malformed | Hosted worker output is rejected unless it validates as the expected structured payload | `test_malformed_provider_worker_output_is_rejected` |
 | Prompt or tool instructions override governance | Provider output cannot request accepted writes or bypass policy | `test_provider_output_cannot_override_accepted_write_policy` |
 | Promotion bypasses review/gate workflow | Direct accepted status movement is refused and promotion still requires review and gates | `test_promotion_remains_explicit_review_and_gate_gated` |
+| Failure memory is used as authority or leaks private context | Failure-log writes reject human-review, verifier-pass, checked-counterexample, accepted-status, and accepted-path claims; public-only context excludes private failure-log text | `test_failure_log_add_rejects_authority_claim_fields`, `test_failure_log_add_rejects_accepted_evidence_path`, `test_provider_origin_failure_log_cannot_claim_accepted_status`, and `test_public_only_context_excludes_private_failure_log_text` |
 | Optional MCP exposes arbitrary shell | The MCP surface remains read-only and whitelist-based | `test_optional_mcp_surface_exposes_no_arbitrary_shell` |
 | Real provider is triggered accidentally | Real transport must be default-off and require explicit provider config, context preview, send consent, and network permission | `test_http_transport_fails_closed_without_explicit_config_or_network` plus existing preview/consent tests |
 | Real provider CLI is triggered accidentally | `provider real-run` must fail closed without `--confirm-send`, `--allow-network`, inline preview, endpoint/key config, an environment-provided key, and private-context consent when needed | `test_provider_real_run_requires_confirm_send`, `test_provider_real_run_requires_allow_network`, `test_provider_real_run_requires_inline_context_preview`, `test_provider_real_run_requires_config_and_api_key`, and `test_provider_real_run_requires_private_context_consent` |
@@ -53,6 +54,10 @@ checks:
 - Optional MCP is an adapter over typed services. It must not expose arbitrary
   shell, environment dumps, arbitrary filesystem access, direct promotion,
   human-review marking, or accepted-path writes.
+- Failure memory is research memory only. It must not claim proof, refutation,
+  verifier pass, checked counterexample evidence, human review, gate success,
+  accepted status, or promotion evidence, and public-only context must not
+  expose private failure-log text.
 
 ## Context-Send Matrix
 

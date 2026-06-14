@@ -3,6 +3,20 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Artifact Failure Log Security Regression - 2026-06-15
+
+Issue 320 adds executable security regression coverage for artifact-level
+failure memory misuse. The new tests reject failure-log inputs that try to
+claim human review, verifier pass, checked counterexample status, accepted
+artifact status, or accepted evidence paths, including provider-origin inputs
+that attempt to claim accepted authority.
+
+The suite also verifies that public-only context builds exclude private
+failure-log text and private artifact IDs. This is regression coverage only:
+it does not change promotion semantics, verifier semantics, provider/MCP
+authority, accepted-write policy, artifact schema, or public/private root
+semantics.
+
 ## Promotion Readiness Failure Memory Reporting - 2026-06-15
 
 Issue 318 adds read-only promotion-readiness surfacing for unresolved artifact
