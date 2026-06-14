@@ -8,10 +8,10 @@
 
 Move from the published `v0.2.2` Provider Transport + Agent Workflow
 Hardening release into `v0.2.3` Verification Evidence Hardening. The verifier
-evidence audit, verifier evidence record v1, and read-only
-promotion-readiness report are complete; the current goal is optional SAT
-adapter result-depth fixture coverage without adding a mandatory solver
-dependency.
+evidence audit, verifier evidence record v1, read-only promotion-readiness
+report, and optional SAT result-depth fixtures are complete; the current goal
+is optional SMT adapter result-depth fixture coverage without adding a
+mandatory solver dependency.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -90,33 +90,34 @@ evidence around optional verifier and failure workflows:
 
 ## Current Task
 
-The current implementation task is D.1 SAT adapter result-depth fixtures.
+The current implementation task is D.2 SMT adapter result-depth fixtures.
 
-This task expands fake-backend SAT adapter coverage for satisfiable,
-unsatisfiable, malformed DIMACS, timeout, and unavailable-solver paths. It
-checks normalized `pass`, `fail`, `error`, and `skipped` behavior plus command,
-cwd, timeout, stdout/stderr log, tool metadata, and skipped-not-pass evidence.
+This task expands fake-backend SMT adapter coverage for `sat`, `unsat`,
+`unknown`, malformed SMT-LIB, timeout, and unavailable-solver paths. It checks
+normalized `pass`, `fail`, `error`, and `skipped` behavior plus command, cwd,
+timeout, stdout/stderr log, tool metadata, and skipped-not-pass evidence.
 
-The task does not add `kissat` or any other SAT solver as a required
-dependency, does not claim theorem proving, does not write accepted knowledge,
-and does not change promotion semantics.
+The task does not add `z3` or any other SMT solver as a required dependency,
+does not claim theorem proving, does not write accepted knowledge, and does
+not change promotion semantics.
 
 ## Completion Criteria For This Task
 
-- SAT fake-backend fixtures cover satisfiable and unsatisfiable expected
-  results.
-- Malformed DIMACS backend output is normalized to an `error` result with
+- SMT fake-backend fixtures cover `sat` and `unsat` expected results.
+- `unknown` backend output is normalized to an `error` result and remains not
+  pass.
+- Malformed SMT-LIB backend output is normalized to an `error` result with
   stderr logs.
 - Timeout behavior is normalized to an `error` result with command, cwd,
   timeout, and stderr metadata.
 - Solver-unavailable behavior remains `skipped`, not pass.
-- Documentation records the SAT depth as optional fixture coverage rather than
-  a full SAT theorem-proving integration.
+- Documentation records the SMT depth as optional fixture coverage rather than
+  a full SMT theorem-proving integration.
 
 ## Next Focus
 
-After SAT result-depth fixtures land, proceed to D.2 SMT adapter result-depth
-fixtures. Keep all external tools optional, fake-backend tested, and
+After SMT result-depth fixtures land, proceed to D.3 Lean external reference
+ergonomics. Keep all external tools optional, fake-backend tested, and
 skipped-not-pass.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue

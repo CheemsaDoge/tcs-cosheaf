@@ -82,7 +82,10 @@ closeout. It is Verification Evidence Hardening, not provider/MCP expansion.
 - [x] SAT result-depth fixture coverage keeps the SAT solver optional and
   covers satisfiable, unsatisfiable, malformed DIMACS, timeout, and
   unavailable-solver paths without treating skipped as pass.
-- [ ] SMT/Lean deepening keeps all external tools optional and preserves
+- [x] SMT result-depth fixture coverage keeps the SMT solver optional and
+  covers `sat`, `unsat`, `unknown`, malformed SMT-LIB, timeout, and
+  unavailable-solver paths without treating skipped or unknown as pass.
+- [ ] Lean deepening keeps all external tools optional and preserves
   unavailable-tool results as skipped or unavailable, not pass.
 
 ## Framework Checklist

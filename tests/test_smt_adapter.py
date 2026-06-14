@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,7 @@ class FakeSmtBackend:
     command_value: tuple[str, ...] = ("fake-smt", "-smt2")
     version_value: str | None = "fake-smt 1.0"
     expected_cwd: Path | None = None
+    exception: Exception | None = None
 
     def command(self, smt_path: Path) -> tuple[str, ...]:
         return (*self.command_value, smt_path.as_posix())
@@ -46,6 +48,8 @@ class FakeSmtBackend:
     ) -> SmtBackendResult:
         if self.expected_cwd is not None:
             assert cwd == self.expected_cwd
+        if self.exception is not None:
+            raise self.exception
         if self.result is None:
             raise AssertionError("fake backend solve called without a result")
         return self.result
@@ -58,13 +62,14 @@ def _write_yaml(repo_root: Path, relative_path: str, data: dict[str, Any]) -> Pa
     return path
 
 
-def _write_smt2(repo_root: Path, relative_path: str) -> Path:
+def _write_smt2(
+    repo_root: Path,
+    relative_path: str,
+    content: str = "(set-logic QF_BOOL)\n(assert true)\n(check-sat)\n",
+) -> Path:
     path = repo_root / relative_path
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        "(set-logic QF_BOOL)\n(assert true)\n(check-sat)\n",
-        encoding="utf-8",
-    )
+    path.write_text(content, encoding="utf-8")
     return path
 
 
@@ -222,6 +227,63 @@ def test_smt_adapter_passes_satisfiable_toy_smt_with_fake_backend(
     assert (tmp_path / result.stderr_path).read_text(encoding="utf-8") == ""
 
 
+def test_smt_adapter_passes_unsatisfiable_toy_smt_with_fake_backend(
+    tmp_path: Path,
+) -> None:
+    _write_smt2(
+        tmp_path,
+        "examples/smt/tiny-unsat.smt2",
+        "\n".join(
+            [
+                "(set-logic QF_BOOL)",
+                "(declare-const x Bool)",
+                "(assert x)",
+                "(assert (not x))",
+                "(check-sat)",
+                "",
+            ]
+        ),
+    )
+    artifact = _artifact(
+        artifact_id="construction.fixture.unsat-smt",
+        evidence_path="examples/smt/tiny-unsat.smt2",
+        expected_satisfiable=False,
+    )
+    adapter = SmtAdapter(
+        backend=FakeSmtBackend(
+            name="fake-smt",
+            available=True,
+            expected_cwd=tmp_path,
+            result=SmtBackendResult(
+                exit_code=0,
+                stdout="unsat\n",
+                stderr="",
+                result="unsat",
+            ),
+        )
+    )
+
+    result = adapter.verify(artifact, RepoContext(tmp_path))
+
+    assert result.status is VerificationStatus.PASS
+    assert result.exit_code == 0
+    assert result.command == ("fake-smt", "-smt2", "examples/smt/tiny-unsat.smt2")
+    assert result.cwd == str(tmp_path)
+    assert result.timeout_seconds == 30.0
+    assert result.input_paths == ("examples/smt/tiny-unsat.smt2",)
+    assert result.stdout_path
+    assert result.stderr_path
+    assert result.tool_name == "fake-smt"
+    assert result.tool_version == "fake-smt 1.0"
+    assert result.environment is not None
+    assert "result=unsat" in result.environment
+    assert result.message == (
+        "SMT backend result matched expected satisfiability: unsat"
+    )
+    assert (tmp_path / result.stdout_path).read_text(encoding="utf-8") == "unsat\n"
+    assert (tmp_path / result.stderr_path).read_text(encoding="utf-8") == ""
+
+
 def test_smt_adapter_reports_mismatched_backend_result_as_fail(
     tmp_path: Path,
 ) -> None:
@@ -270,6 +332,88 @@ def test_smt_adapter_reports_unknown_backend_result_as_error(tmp_path: Path) -> 
     assert result.status is VerificationStatus.ERROR
     assert result.exit_code == 0
     assert "returned unknown" in result.message
+
+
+def test_smt_adapter_reports_malformed_smtlib_as_error_with_logs(
+    tmp_path: Path,
+) -> None:
+    _write_smt2(
+        tmp_path,
+        "examples/smt/malformed.smt2",
+        "(set-logic QF_BOOL\n(assert true)\n(check-sat)\n",
+    )
+    artifact = _artifact(
+        artifact_id="construction.fixture.malformed-smt",
+        evidence_path="examples/smt/malformed.smt2",
+    )
+    adapter = SmtAdapter(
+        backend=FakeSmtBackend(
+            name="fake-smt",
+            available=True,
+            expected_cwd=tmp_path,
+            result=SmtBackendResult(
+                exit_code=1,
+                stdout="",
+                stderr="parse error: expected ')' before end of file\n",
+                result="unknown",
+            ),
+        )
+    )
+
+    result = adapter.verify(artifact, RepoContext(tmp_path))
+
+    assert result.status is VerificationStatus.ERROR
+    assert result.exit_code == 1
+    assert result.command == ("fake-smt", "-smt2", "examples/smt/malformed.smt2")
+    assert result.cwd == str(tmp_path)
+    assert result.input_paths == ("examples/smt/malformed.smt2",)
+    assert result.output_paths == (result.stderr_path, result.stdout_path)
+    assert result.stdout_path
+    assert result.stderr_path
+    assert "unknown result" in result.message
+    assert (tmp_path / result.stdout_path).read_text(encoding="utf-8") == ""
+    assert (tmp_path / result.stderr_path).read_text(encoding="utf-8") == (
+        "parse error: expected ')' before end of file\n"
+    )
+
+
+def test_smt_adapter_reports_timeout_as_error_with_logs(
+    tmp_path: Path,
+) -> None:
+    _write_smt2(tmp_path, "examples/smt/slow.smt2")
+    artifact = _artifact(
+        artifact_id="construction.fixture.timeout-smt",
+        evidence_path="examples/smt/slow.smt2",
+    )
+    adapter = SmtAdapter(
+        timeout_seconds=0.25,
+        backend=FakeSmtBackend(
+            name="fake-smt",
+            available=True,
+            expected_cwd=tmp_path,
+            exception=subprocess.TimeoutExpired(
+                cmd=("fake-smt", "-smt2", "examples/smt/slow.smt2"),
+                timeout=0.25,
+            ),
+        ),
+    )
+
+    result = adapter.verify(artifact, RepoContext(tmp_path))
+
+    assert result.status is VerificationStatus.ERROR
+    assert result.exit_code is None
+    assert result.command == ("fake-smt", "-smt2", "examples/smt/slow.smt2")
+    assert result.cwd == str(tmp_path)
+    assert result.timeout_seconds == 0.25
+    assert result.input_paths == ("examples/smt/slow.smt2",)
+    assert result.output_paths == (result.stderr_path, result.stdout_path)
+    assert result.stdout_path
+    assert result.stderr_path
+    assert "timed out after 0.25 second(s)" in result.message
+    assert (tmp_path / result.stdout_path).read_text(encoding="utf-8") == ""
+    assert "timed out after 0.25 second(s)" in (
+        tmp_path / result.stderr_path
+    ).read_text(encoding="utf-8")
 
 
 def test_smt_adapter_executed_result_satisfies_reproducibility_metadata(

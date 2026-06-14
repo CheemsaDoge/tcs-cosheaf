@@ -247,6 +247,13 @@ paths, and result summary. If the artifact statement has a `CHECKER_DATA`
 result matches it, `fail` on mismatch, and `error` for unknown, timeout, missing
 evidence, malformed metadata, or runtime errors.
 
+The SMT result-depth fixtures use fake backends so CI does not require a real
+SMT solver. They cover `sat` and `unsat` matches, mismatches, `unknown`
+results, malformed SMT-LIB surfaced as backend parse-error/`unknown` output,
+timeout errors, exact status-line parsing, and unavailable backend skips.
+Skipped and unknown SMT results remain non-pass evidence, and no fixture turns
+SMT output into a theorem-proving claim.
+
 The Lean verifier adapter supports a minimal optional plain Lean file
 invocation path. It does not add a hard dependency on Lean, mathlib, or lake.
 The default backend checks for external `lean` through PATH detection; tests may

@@ -3,6 +3,20 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.3 SMT Adapter Result-Depth Fixtures - 2026-06-14
+
+Issue 280 expands SMT adapter result-depth coverage with fake-backend fixtures
+for `sat`, `unsat`, `unknown`, malformed SMT-LIB, timeout, and unavailable
+solver paths. The coverage asserts normalized `pass`, `fail`, `error`, and
+`skipped` behavior, plus command metadata, repository-root cwd, timeout
+metadata, stdout/stderr log paths, and skipped-not-pass boundaries.
+
+This task does not add a mandatory SMT solver dependency, does not require
+`z3` in CI, does not claim theorem proving, does not write accepted knowledge,
+and does not change accepted-promotion semantics. Malformed SMT-LIB coverage
+is represented as backend parse-error/`unknown` output normalized to `error`,
+preserving the existing result taxonomy.
+
 ## v0.2.3 SAT Adapter Result-Depth Fixtures - 2026-06-14
 
 Issue 278 expands SAT adapter result-depth coverage with fake-backend fixtures
