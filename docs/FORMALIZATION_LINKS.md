@@ -138,6 +138,10 @@ checking through a locally available `lean` command. It does not add Lean,
 CSLib, mathlib, or lake as dependencies. It does not fetch libraries and does
 not require network access.
 
+For the current verifier evidence status audit, including the boundary between
+plain Lean checks, external Lean library references, G6 verifier evidence, and
+G10 metadata checks, see `docs/VERIFIER_EVIDENCE_AUDIT.md`.
+
 When optional Lean tooling is unavailable, Lean verification remains
 `skipped`, not `pass`. Skipped verifier output must not be used to claim a
 successful formal check.

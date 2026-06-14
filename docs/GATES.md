@@ -88,6 +88,9 @@ are treated as external references and are not required to resolve locally.
 
 Runs configured verifier adapters and normalizes results. Missing optional
 external tools should produce skipped verifier results, not core system crashes.
+See `docs/VERIFIER_EVIDENCE_AUDIT.md` for the current adapter, result-state,
+log-capture, gate-integration, promotion-blocking, and test-coverage audit that
+precedes the `v0.2.3` verifier evidence record work.
 
 #### Verification Capability Matrix
 
