@@ -17,7 +17,7 @@ from typing import Any
 ISSUE_ID = "issue.ecosystem-smoke.private-context"
 PUBLIC_ARTIFACT_ID = "definition.ecosystem.graph"
 PRIVATE_ARTIFACT_ID = "claim.ecosystem.private"
-DEFAULT_FRAMEWORK_TAG = "v0.2.1"
+DEFAULT_FRAMEWORK_TAG = "v0.2.2"
 
 
 @dataclass(frozen=True)
@@ -56,6 +56,7 @@ class MatrixCommand:
     """One command belonging to a release matrix case."""
 
     argv: tuple[str, ...]
+    skip_returncodes: tuple[int, ...] = ()
 
     @property
     def display(self) -> str:
@@ -303,6 +304,35 @@ def build_ecosystem_smoke_matrix(
             ),
         ),
         EcosystemSmokeMatrixCase(
+            id="framework.verifier-evidence-eval",
+            repo="tcs-cosheaf",
+            cwd=framework_root,
+            commands=(
+                MatrixCommand(
+                    (
+                        sys.executable,
+                        "scripts/ecosystem_smoke.py",
+                        "--verifier-evidence-eval",
+                    )
+                ),
+            ),
+        ),
+        EcosystemSmokeMatrixCase(
+            id="framework.optional-verifier-availability",
+            repo="tcs-cosheaf",
+            cwd=framework_root,
+            commands=(
+                MatrixCommand(
+                    (
+                        sys.executable,
+                        "scripts/ecosystem_smoke.py",
+                        "--optional-verifier-availability",
+                    ),
+                    skip_returncodes=(77,),
+                ),
+            ),
+        ),
+        EcosystemSmokeMatrixCase(
             id="framework.git-tag",
             repo="tcs-cosheaf",
             cwd=framework_root,
@@ -349,18 +379,18 @@ def build_ecosystem_smoke_matrix(
             env=local_env,
         ),
         EcosystemSmokeMatrixCase(
+            id="workspace-template.verifier-evidence-demo",
+            repo="tcs-cosheaf-workspace-template",
+            cwd=workspace_template_root,
+            commands=(MatrixCommand((make_executable, "verifier-evidence-demo")),),
+            env=local_env,
+        ),
+        EcosystemSmokeMatrixCase(
             id="public-kb.policy-guard",
             repo="tcs-kb-public",
             cwd=public_kb_root,
             commands=(
                 MatrixCommand((sys.executable, "scripts/check_public_kb_policy.py")),
-                MatrixCommand(
-                    (
-                        sys.executable,
-                        "scripts/check_public_kb_policy.py",
-                        "--self-test",
-                    )
-                ),
                 MatrixCommand((*shlex.split(cosheaf), "workspace", "info")),
                 MatrixCommand((*shlex.split(cosheaf), "validate")),
                 MatrixCommand((*shlex.split(cosheaf), "gate", "run")),
@@ -371,6 +401,21 @@ def build_ecosystem_smoke_matrix(
                         "run",
                         "--pr-checklist",
                         ".github/pull_request_template.md",
+                    )
+                ),
+            ),
+            env=public_kb_env,
+        ),
+        EcosystemSmokeMatrixCase(
+            id="public-kb.verifier-policy-self-test",
+            repo="tcs-kb-public",
+            cwd=public_kb_root,
+            commands=(
+                MatrixCommand(
+                    (
+                        sys.executable,
+                        "scripts/check_public_kb_policy.py",
+                        "--self-test",
                     )
                 ),
             ),
@@ -410,11 +455,26 @@ def run_ecosystem_smoke_matrix(
             continue
 
         failed_result: EcosystemSmokeMatrixCaseResult | None = None
+        skipped_result: EcosystemSmokeMatrixCaseResult | None = None
         for command in case.commands:
             if command_runner is None:
                 returncode = _run_matrix_command(command.argv, case.cwd, case.env)
             else:
                 returncode = command_runner(command.argv, case.cwd)
+            if returncode in command.skip_returncodes:
+                message = (
+                    f"repo={case.repo} command={command.display} "
+                    f"returncode={returncode} skipped"
+                )
+                skipped_result = EcosystemSmokeMatrixCaseResult(
+                    id=case.id,
+                    repo=case.repo,
+                    status=MatrixCaseStatus.SKIPPED,
+                    command=command.display,
+                    returncode=returncode,
+                    message=message,
+                )
+                break
             if returncode != 0:
                 message = (
                     f"repo={case.repo} command={command.display} "
@@ -429,6 +489,9 @@ def run_ecosystem_smoke_matrix(
                     message=message,
                 )
                 break
+        if skipped_result is not None:
+            results.append(skipped_result)
+            continue
         if failed_result is not None:
             results.append(failed_result)
             continue
@@ -670,7 +733,26 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="Emit the --matrix report as deterministic JSON.",
     )
+    parser.add_argument(
+        "--verifier-evidence-eval",
+        action="store_true",
+        help="Run the local verifier-evidence eval smoke used by --matrix.",
+    )
+    parser.add_argument(
+        "--optional-verifier-availability",
+        action="store_true",
+        help=(
+            "Probe optional SAT/SMT/Lean tool availability. Exit 77 means "
+            "skipped, not pass."
+        ),
+    )
     args = parser.parse_args(argv)
+
+    if args.verifier_evidence_eval:
+        return _run_verifier_evidence_eval_smoke(Path.cwd())
+
+    if args.optional_verifier_availability:
+        return _run_optional_verifier_availability_probe()
 
     if args.matrix:
         matrix = build_ecosystem_smoke_matrix(
@@ -742,6 +824,46 @@ def _run_with_workdir(
 
 def _network_skip_reason(include_network: bool, reason: str) -> str | None:
     return None if include_network else reason
+
+
+def _run_verifier_evidence_eval_smoke(repo_root: Path) -> int:
+    repo_root = repo_root.resolve()
+    repo_root_text = str(repo_root)
+    if repo_root_text not in sys.path:
+        sys.path.insert(0, repo_root_text)
+
+    from cosheaf.evals.verifier_evidence import (
+        DEFAULT_VERIFIER_EVIDENCE_EVAL_CASES,
+        load_verifier_evidence_eval_suite,
+        run_verifier_evidence_eval_suite,
+    )
+    from cosheaf.storage.repo import RepoContext
+
+    suite = load_verifier_evidence_eval_suite(
+        repo_root / DEFAULT_VERIFIER_EVIDENCE_EVAL_CASES
+    )
+    with tempfile.TemporaryDirectory(prefix="cosheaf-verifier-eval-") as temp_dir:
+        report = run_verifier_evidence_eval_suite(RepoContext(Path(temp_dir)), suite)
+    print(report.to_json(), end="")
+    return 0 if report.passed else 1
+
+
+def _run_optional_verifier_availability_probe() -> int:
+    optional_tools = ("kissat", "z3", "lean", "lake")
+    available = tuple(tool for tool in optional_tools if shutil.which(tool))
+    if available:
+        print(
+            "optional verifier tools available: "
+            + ", ".join(available),
+            file=sys.stderr,
+        )
+        return 0
+    print(
+        "optional verifier tools unavailable: kissat, z3, lean, lake; "
+        "matrix row is skipped, not pass",
+        file=sys.stderr,
+    )
+    return 77
 
 
 def _run_matrix_command(

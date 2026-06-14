@@ -10,7 +10,7 @@ from cosheaf.cli import app
 from scripts.ecosystem_smoke import (
     ISSUE_ID,
     PUBLIC_ARTIFACT_ID,
-    MatrixCaseStatus,
+    _run_verifier_evidence_eval_smoke,
     build_ecosystem_smoke_matrix,
     build_ecosystem_smoke_plan,
     run_ecosystem_smoke_matrix,
@@ -189,13 +189,19 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
 
     assert set(cases) == {
         "framework.local-checkout",
+        "framework.verifier-evidence-eval",
+        "framework.optional-verifier-availability",
         "framework.git-tag",
         "workspace-template.demo",
         "workspace-template.cli-agent-demo",
         "workspace-template.provider-fake-smoke",
+        "workspace-template.verifier-evidence-demo",
         "public-kb.policy-guard",
+        "public-kb.verifier-policy-self-test",
     }
     assert cases["framework.local-checkout"].repo == "tcs-cosheaf"
+    assert cases["framework.verifier-evidence-eval"].repo == "tcs-cosheaf"
+    assert cases["framework.optional-verifier-availability"].repo == "tcs-cosheaf"
     assert cases["framework.git-tag"].requires_network is True
     assert cases["framework.git-tag"].skip_reason == (
         "requires --include-network because it installs a framework git tag"
@@ -203,7 +209,23 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
     assert cases["workspace-template.provider-fake-smoke"].argv[-1] == (
         "provider-fake-smoke"
     )
+    assert cases["workspace-template.verifier-evidence-demo"].argv[-1] == (
+        "verifier-evidence-demo"
+    )
     assert cases["public-kb.policy-guard"].repo == "tcs-kb-public"
+    assert cases["public-kb.verifier-policy-self-test"].repo == "tcs-kb-public"
+
+
+def test_ecosystem_smoke_matrix_defaults_to_current_release_tag(
+    tmp_path: Path,
+) -> None:
+    matrix = build_ecosystem_smoke_matrix(
+        framework_root=tmp_path / "tcs-cosheaf",
+        workspace_template_root=tmp_path / "tcs-cosheaf-workspace-template",
+        public_kb_root=tmp_path / "tcs-kb-public",
+    )
+
+    assert matrix.framework_tag == "v0.2.2"
 
 
 def test_ecosystem_smoke_matrix_report_is_structured_and_identifies_failures(
@@ -219,23 +241,63 @@ def test_ecosystem_smoke_matrix_report_is_structured_and_identifies_failures(
     )
 
     def fake_runner(argv: tuple[str, ...], cwd: Path) -> int:
-        if cwd.name == "tcs-kb-public":
+        command = " ".join(argv)
+        if "--optional-verifier-availability" in command:
+            return 77
+        if cwd.name == "tcs-kb-public" and "--self-test" not in argv:
             return 2
         return 0
 
     report = run_ecosystem_smoke_matrix(matrix, command_runner=fake_runner)
 
     assert report.passed is False
-    assert report.case_count == 6
-    assert report.pass_count == 3
+    assert report.case_count == 10
+    assert report.pass_count == 6
     assert report.fail_count == 1
-    assert report.skip_count == 2
-    assert report.results[1].status is MatrixCaseStatus.SKIPPED
+    assert report.skip_count == 3
+    skipped = [result for result in report.results if result.status == "skipped"]
+    assert {result.id for result in skipped} == {
+        "framework.optional-verifier-availability",
+        "framework.git-tag",
+        "workspace-template.demo",
+    }
     failure = [result for result in report.results if result.status == "fail"][0]
     assert failure.repo == "tcs-kb-public"
     assert "check_public_kb_policy.py" in failure.command
     assert "repo=tcs-kb-public command=" in failure.message
-    assert report.to_dict()["results"][1]["status"] == "skipped"
+    optional_skip = [
+        result
+        for result in report.results
+        if result.id == "framework.optional-verifier-availability"
+    ][0]
+    assert optional_skip.returncode == 77
+    assert "repo=tcs-cosheaf command=" in optional_skip.message
+    assert report.to_dict()["skip_count"] == 3
+
+
+def test_verifier_evidence_eval_smoke_uses_clean_eval_context(
+    tmp_path: Path,
+) -> None:
+    repo_root = tmp_path / "framework"
+    cases_path = repo_root / "evals" / "verifier_evidence" / "cases.yaml"
+    cases_path.parent.mkdir(parents=True)
+    cases_path.write_text(
+        "\n".join(
+            [
+                "schema_version: 1",
+                "cases:",
+                "  - id: case.verifier.pass-policy",
+                "    kind: pass_evidence_policy_allowed",
+                "    expect_ready: true",
+                "    expect_evidence_result: pass",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (repo_root / "kb" / "accepted").mkdir(parents=True)
+
+    assert _run_verifier_evidence_eval_smoke(repo_root) == 0
 
 
 def _latest_gate_report(repo_root: Path) -> dict[str, Any]:

@@ -98,6 +98,11 @@ closeout. It is Verification Evidence Hardening, not provider/MCP expansion.
   preserves unavailable Lean/lake as skipped or unavailable rather than pass,
   records missing import/symbol stderr logs through fake-backend coverage, and
   keeps external `#check` documented as symbol/import resolution only.
+- [x] The v0.2.3 ecosystem readiness matrix includes framework verifier
+  evidence eval smoke, workspace-template verifier-evidence demo coverage, a
+  public KB verifier-policy self-test, and an optional verifier availability
+  row that counts unavailable SAT/SMT/Lean/lake tools as skipped rather than
+  pass.
 
 ## Framework Checklist
 
@@ -177,10 +182,13 @@ gate output and release notes.
   cloning remote repositories.
 - [x] `python scripts/ecosystem_smoke.py --matrix --framework-tag v0.2.2 --cosheaf "python -m cosheaf.cli" --framework-root . --workspace-template-root ..\tcs-cosheaf-workspace-template --public-kb-root ..\tcs-kb-public --json`
   reports a structured three-repository compatibility matrix. The default
-  no-network run executes local framework smoke, workspace-template
-  CLI-agent demo, workspace-template fake-provider smoke, and public KB
-  policy guard. It reports framework-tag and workspace demo install rows as
-  `skipped`, not `pass`.
+  no-network run executes local framework smoke, framework verifier-evidence
+  eval smoke, workspace-template CLI-agent demo, workspace-template
+  fake-provider smoke, workspace-template verifier-evidence demo, public KB
+  policy guard, and public KB verifier-policy self-test. It reports
+  framework-tag and workspace demo install rows as `skipped`, not `pass`.
+  The optional verifier availability row is also skipped rather than passed
+  when SAT/SMT/Lean/lake tools are unavailable.
 - [ ] Run the network-enabled rows with `--include-network` before a release
   announcement when package install/git clone access is available. This runs
   the framework tag release smoke and the workspace-template install demo.
@@ -189,9 +197,9 @@ gate output and release notes.
   gatekeeper, index rebuild, and context-pack generation.
 - [x] Expected policy failures in smoke helpers are verified as failures, not
   described as passes.
-- [x] Retrieval, context-pack, security, agent-workflow, provider-workflow, and
-  failure/counterexample evals remain deterministic and do not require network
-  access or API keys.
+- [x] Retrieval, context-pack, security, agent-workflow, provider-workflow,
+  failure/counterexample, verifier-evidence, and ecosystem readiness evals
+  remain deterministic and do not require network access or API keys.
 
 ## Agent Access And Provider Status
 

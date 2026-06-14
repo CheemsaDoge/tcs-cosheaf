@@ -142,13 +142,20 @@ symbol-resolution-only limitations. It uses fake evidence records and typed
 fixtures only: no SAT, SMT, Lean, lake, hosted provider, MCP, accepted write,
 human review, or promotion is performed.
 
+G.2 three-repository readiness matrix extends `scripts/ecosystem_smoke.py
+--matrix` with framework verifier-evidence eval smoke, an optional verifier
+availability probe, workspace-template verifier-evidence demo coverage, and a
+separate public KB verifier-policy self-test. The matrix keeps network rows
+opt-in, counts optional verifier absence as skipped rather than pass, and
+continues to identify the failing repository and command for failures.
+
 ## Next Focus
 
-Proceed with the next active v5 task after G.1: extend the three-repository
-v0.2.3 readiness matrix. Candidate counterexamples must remain candidates until
-explicitly checked and reviewed, generated review requests must remain draft
-review context, and readiness/eval work must keep skipped results separate
-from passes.
+Proceed with the next active v5 task after G.2: the v0.2.3 release readiness
+audit. Candidate counterexamples must remain candidates until explicitly
+checked and reviewed, generated review requests must remain draft review
+context, and readiness/eval work must keep skipped results separate from
+passes.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
