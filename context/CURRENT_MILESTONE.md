@@ -2,22 +2,22 @@
 
 ## Milestone
 
-Post-`v0.2.3` artifact failure-memory state audit.
+`v0.2.4` Artifact Failure Memory + Attempt Traceability plan landing.
 
 ## Goal
 
-Audit the current three-repository state after the published `v0.2.3`
-Verification Evidence Hardening release and confirm the implementation gap for
-artifact-level failure memory. The next target line is proposed as `v0.2.4`
-Artifact Failure Memory + Attempt Traceability, but schema/runtime work should
-not begin until the V6 plan and ADR land in a separate issue-scoped PR.
+Land the active V6 plan and ADR for `v0.2.4` Artifact Failure Memory + Attempt
+Traceability after the post-`v0.2.3` state audit. The plan targets durable
+artifact-level failure memory for failed attempts, dead directions, blocked
+approaches, and lessons learned while preserving all review, verifier, gate,
+promotion, public/private, provider, and MCP boundaries.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
 automatic Lean autoformalization, automatic accepted promotion,
 AI-as-human-review, provider/MCP authority expansion, automatic
 informal/formal semantic alignment, or artifact-level `failure_log`
-implementation.
+implementation in the plan-landing task.
 
 ## Current Baseline
 
@@ -38,6 +38,10 @@ implementation.
 - ADR 0022 records the `v0.2.3` Verification Evidence Hardening decision.
 - `docs/POST_V023_STATE_AUDIT.md` records the current artifact failure-memory
   gap after v0.2.3.
+- `docs/CODEX_DEVELOPMENT_PLAN_V6.md` is the active durable plan for the
+  `v0.2.4` artifact failure-memory line.
+- ADR 0023 records the artifact failure-memory decision and authority
+  boundaries.
 - `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
   result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
@@ -96,17 +100,12 @@ evidence around optional verifier and failure workflows:
 
 ## Current Operating State
 
-The active task is issue 300, a documentation/status audit for artifact-level
-failure memory after v0.2.3. The audit confirms that `BaseArtifact` and
-`schemas/artifact.schema.json` do not yet expose `failure_log`, while
-WorkerBundle v2, draft review requests, failure/counterexample evals, verifier
-evidence evals, and promotion-readiness reports already preserve related
-failure/counterexample context outside durable artifact records.
-
-The audit is not schema/runtime implementation. New work should continue from a
-focused issue, branch, and PR, and it must avoid runtime authority expansion,
-default real provider calls, generated review-as-human-review, accepted writes,
-artifact promotion bypasses, and treating skipped verifier results as passes.
+The active task is issue 302, landing the V6 plan and ADR for artifact-level
+failure memory after the post-v0.2.3 state audit. This task is not
+schema/runtime implementation. New work should continue from focused issues,
+branches, and PRs, and it must avoid runtime authority expansion, default real
+provider calls, generated review-as-human-review, accepted writes, artifact
+promotion bypasses, and treating skipped verifier results as passes.
 
 ## Recently Completed Tasks
 
@@ -173,11 +172,11 @@ downstream workspace-template plus public KB active pins were updated to
 
 ## Next Focus
 
-After the post-v0.2.3 state audit, land the V6 plan and ADR for artifact
-failure memory. The first implementation must keep `failure_log` optional and
-backward compatible. Failure memory must remain research memory: not proof, not
-verifier success, not human review, not a checked counterexample, and not
-promotion evidence by itself.
+After the V6 plan and ADR land, proceed to the artifact failure-log schema ADR
+before runtime implementation. The first implementation must keep `failure_log`
+optional and backward compatible. Failure memory must remain research memory:
+not proof, not verifier success, not human review, not a checked
+counterexample, and not promotion evidence by itself.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

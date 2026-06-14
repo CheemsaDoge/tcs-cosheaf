@@ -140,7 +140,7 @@ runtime expansion, provider work, release work, or KB growth should start from
 a new issue-scoped plan and preserve the same review, gate, public/private,
 and skipped-not-pass boundaries.
 
-## Proposed Next Focus: v0.2.4 Artifact Failure Memory
+## Current Planning Focus: v0.2.4 Artifact Failure Memory
 
 The post-v0.2.3 state audit is tracked in
 [`docs/POST_V023_STATE_AUDIT.md`](POST_V023_STATE_AUDIT.md). It confirms that
@@ -149,10 +149,12 @@ failure/counterexample evals, and promotion-readiness reports already preserve
 failure and counterexample context, but durable artifact records do not yet
 have an artifact-level `failure_log` field.
 
-The proposed `v0.2.4` line should add Artifact Failure Memory + Attempt
-Traceability through small issue-scoped PRs:
+The active `v0.2.4` plan is
+[`docs/CODEX_DEVELOPMENT_PLAN_V6.md`](CODEX_DEVELOPMENT_PLAN_V6.md), with ADR
+0023 recording the artifact failure-memory architecture decision. The line
+should add Artifact Failure Memory + Attempt Traceability through small
+issue-scoped PRs:
 
-- land a V6 plan and ADR for artifact failure memory;
 - design the optional `failure_log` schema before runtime changes;
 - implement `failure_log` as an optional backward-compatible artifact field;
 - add read-only and controlled draft write CLI surfaces;
