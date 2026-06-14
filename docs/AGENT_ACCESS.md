@@ -174,6 +174,38 @@ path as `review request`; it does not approve or reject claims, mark
 `human_reviewed`, create verifier results, write accepted knowledge, or promote
 artifacts.
 
+### Planned Artifact Failure Memory Surface
+
+Artifact-level `failure_log` is planned for `v0.2.4` as durable failed-attempt
+memory on artifacts. It is not implemented as a CLI write surface in the
+current release line.
+
+When implemented, agent-facing failure-log access should follow the same
+CLI-first and service-layer discipline as other controlled-write features:
+
+- read-only inspection before write support;
+- deterministic JSON output for agent callers;
+- `--dry-run` for any write command;
+- repository-local path validation;
+- readonly public-root refusal;
+- direct accepted-path write refusal;
+- no review, verifier, gate, or promotion authority;
+- preserved `origin` labels for human, agent, provider, verifier, and imported
+  WorkerBundle entries; and
+- explicit limitations so failed-attempt memory is not overread as proof,
+  refutation, human review, or verifier success.
+
+WorkerBundle v2 `failed_attempts` may later be converted into proposed
+artifact `failure_log` entries, but the conversion must preserve their
+agent/provider origin and remain draft or controlled artifact metadata. It
+must not make those attempts accepted knowledge, checked counterexamples,
+verifier evidence, or human review.
+
+Public KB accepted artifacts may include failure memory only through ordinary
+review and promotion policy. Validation/gate success remains insufficient by
+itself for accepted public knowledge, and unreviewed agent/provider failure
+logs must not be written into accepted public KB paths.
+
 ### Forbidden Agent Actions
 
 External coding agents must not:
@@ -188,6 +220,9 @@ External coding agents must not:
 - treat skipped verifier/provider/tool results as passes;
 - write into readonly public KB roots;
 - copy private artifacts into public KB or readonly roots;
+- use `failure_log` text or references to claim proof, refutation, verifier
+  pass, checked counterexample status, human review, accepted status, or
+  promotion readiness;
 - send private KB context to hosted providers without explicit policy,
   preview, configuration, and operator consent;
 - require MCP for ordinary CLI-first work.
