@@ -1,0 +1,31 @@
+schema_version: 1
+cases:
+  - id: case.verifier.pass-policy
+    kind: pass_evidence_policy_allowed
+    expect_ready: true
+    expect_evidence_result: pass
+
+  - id: case.verifier.failed-blocks
+    kind: failed_evidence_blocks_readiness
+    expect_ready: false
+    expect_evidence_result: fail
+    expected_reason_codes:
+      - failed_verifier
+
+  - id: case.verifier.skipped-required
+    kind: skipped_checker_required
+    expect_ready: false
+    expect_evidence_result: skipped
+    expected_reason_codes:
+      - skipped_verifier
+    expect_skipped_not_pass: true
+
+  - id: case.verifier.candidate-remains-candidate
+    kind: counterexample_remains_candidate
+    expect_candidate_review_only: true
+
+  - id: case.verifier.lean-symbol-only
+    kind: lean_check_symbol_only
+    expect_evidence_result: pass
+    expect_lean_symbol_only: true
+    expect_semantic_alignment_claim: false

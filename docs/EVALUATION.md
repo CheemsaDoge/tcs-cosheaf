@@ -18,9 +18,11 @@ policy denials, validation rejections, context-scope boundaries, and provider
 log leakage by calling local services with fake or mocked transports. The
 failure/counterexample eval harness checks that WorkerBundle v2 reducer
 boundaries preserve failed attempts, uncertainty, candidate counterexamples,
-and verification requests as review context. These harnesses reuse existing
-runtime surfaces; they do not introduce new retrieval, context-pack, provider,
-MCP, or orchestration algorithms.
+and verification requests as review context. The verifier evidence eval harness
+checks verifier-result, promotion-readiness, candidate-counterexample, and Lean
+`#check` boundaries with deterministic fake evidence records. These harnesses
+reuse existing runtime surfaces; they do not introduce new retrieval,
+context-pack, provider, MCP, verifier, or orchestration algorithms.
 
 ## Retrieval Eval Cases
 
@@ -371,6 +373,70 @@ These metrics are regression signals only. They are not proof evidence, human
 review, source review, verifier results, accepted status, accepted refutation,
 or promotion authority.
 
+## Verifier Evidence Eval Cases
+
+Verifier evidence eval cases are YAML records under `evals/verifier_evidence/`.
+The default case file is:
+
+```text
+evals/verifier_evidence/cases.yaml
+```
+
+The harness is a Python API in `cosheaf.evals.verifier_evidence`; there is no
+dedicated `cosheaf eval verifier-evidence` CLI command in this phase. Tests load
+the suite and exercise deterministic fake verifier evidence records plus typed
+counterexample candidate fixtures. It does not run SAT, SMT, Lean, lake, or any
+external checker.
+
+Case file format:
+
+```yaml
+schema_version: 1
+cases:
+  - id: case.verifier.skipped-required
+    kind: skipped_checker_required
+    expect_ready: false
+    expect_evidence_result: skipped
+    expected_reason_codes:
+      - skipped_verifier
+    expect_skipped_not_pass: true
+```
+
+Required case kinds for the default suite are:
+
+- `pass_evidence_policy_allowed`: passing verifier evidence supports readiness
+  only in a fixture where ordinary policy requirements are satisfied.
+- `failed_evidence_blocks_readiness`: failed verifier evidence records a stable
+  `failed_verifier` readiness blocker.
+- `skipped_checker_required`: skipped checker-required evidence records a
+  stable `skipped_verifier` blocker and is not treated as pass.
+- `counterexample_remains_candidate`: typed counterexample candidates remain
+  review-only evidence rather than checked counterexamples or accepted
+  refutations.
+- `lean_check_symbol_only`: external Lean `#check` pass evidence is recorded as
+  symbol/import resolution only, not semantic alignment.
+
+## Verifier Evidence Metrics
+
+The verifier evidence eval report records:
+
+- `readiness_boundary_accuracy`: fraction of readiness expectations that match
+  the reported ready/not-ready boundary.
+- `failed_evidence_block_count`: count of failed verifier cases that produce a
+  `failed_verifier` blocker.
+- `skipped_not_pass_count`: count of skipped verifier cases that remain
+  skipped and are not treated as pass.
+- `candidate_counterexample_review_only_count`: count of candidate
+  counterexample cases that remain review-only evidence.
+- `lean_alignment_claim_count`: count of cases that incorrectly claim semantic
+  alignment from Lean symbol resolution.
+- `accepted_write_violation_count`: count of cases that opened or reported an
+  accepted write.
+
+These metrics are regression signals only. They are not proof evidence, human
+review, source review, accepted status, accepted refutation, or promotion
+authority.
+
 ## CLI
 
 Run the default retrieval eval suite:
@@ -403,11 +469,12 @@ rebuild the SQLite index implicitly. The context eval does not rebuild the
 SQLite index implicitly, but it does build context packs through the existing
 context-pack writer.
 
-The agent workflow, provider workflow, and failure/counterexample evals
-currently have no CLI commands. Running them from Python may refresh
-`context/TASKS/<issue-id>/` context packs, redacted provider logs under
+The agent workflow, provider workflow, failure/counterexample, and verifier
+evidence evals currently have no CLI commands. Running them from Python may
+refresh `context/TASKS/<issue-id>/` context packs, redacted provider logs under
 `.cosheaf/providers/`, and failure/counterexample bundle fixtures under
-`.cosheaf/evals/`. These are runtime outputs and should not be committed.
+`.cosheaf/evals/`. Verifier evidence evals use in-memory fake evidence records
+and typed candidate fixtures. Runtime outputs should not be committed.
 
 ## Limitations
 
@@ -421,6 +488,8 @@ currently have no CLI commands. Running them from Python may refresh
 - Optional MCP cases only cover the existing read-only whitelist surface; they
   do not make MCP required and do not authorize arbitrary shell or controlled
   writes.
+- Verifier evidence eval cases use deterministic fake evidence records. They
+  do not run external checkers and do not prove mathematical truth.
 - It does not judge mathematical truth or informal/formal alignment.
 - It does not replace validation, gatekeeper, verifier adapters, source review,
   human review, or accepted promotion.

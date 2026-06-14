@@ -3,6 +3,26 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.3 Verifier Evidence Eval Suite - 2026-06-14
+
+Issue 288 adds a deterministic Python-level verifier evidence eval harness
+under `cosheaf.evals.verifier_evidence` plus the default case suite in
+`evals/verifier_evidence/cases.yaml`. The suite covers passing verifier
+evidence supporting readiness only when policy allows, failed evidence blocking
+readiness, skipped checker-required evidence remaining not-a-pass, typed
+candidate counterexamples staying review-only, and external Lean `#check`
+evidence staying limited to symbol/import resolution rather than semantic
+alignment.
+
+The report exposes readiness boundary accuracy, failed-evidence blocker count,
+skipped-not-pass count, candidate-counterexample review-only count, Lean
+alignment-claim count, and accepted-write violation count. The harness uses
+deterministic fake `VerifierEvidenceRecord` fixtures and typed
+`CounterexampleCandidate` records only. It does not run SAT, SMT, Lean, lake,
+or hosted providers; does not add MCP behavior; does not write accepted
+knowledge; does not create human review; and does not change promotion,
+gatekeeper, verifier, public/private, or formal-link semantics.
+
 ## v0.2.3 Failure-Preserving Review Request Generation - 2026-06-14
 
 Issue 286 adds `cosheaf review request-from-bundle --bundle <path>` for

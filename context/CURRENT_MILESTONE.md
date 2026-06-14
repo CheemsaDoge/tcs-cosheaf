@@ -11,9 +11,11 @@ Hardening release into `v0.2.3` Verification Evidence Hardening. The verifier
 evidence audit, verifier evidence record v1, read-only promotion-readiness
 report, optional SAT result-depth fixtures, optional SMT result-depth fixtures,
 Lean external reference ergonomics, typed counterexample candidate records, and
-failure-preserving review-request generation are complete; the next goal is
-post-E.2 review/evidence integration and readiness work without expanding
-provider or MCP authority.
+failure-preserving review-request generation are complete. Workspace and public
+KB integration follow-up is complete through the verifier-evidence workspace
+demo, public KB source/backlog hygiene, and one draft-only foundation artifact
+tightening. The next goal is v0.2.3 ecosystem readiness matrix work without
+expanding provider or MCP authority.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -92,11 +94,11 @@ evidence around optional verifier and failure workflows:
 
 ## Current Task
 
-The current implementation line is post-E.2 review and evidence integration.
-The next concrete task should be chosen from the active v5 longplan, such as
-workspace/public-KB verification-evidence integration or the v0.2.3 readiness
-eval matrix. It must not expand provider/MCP authority or turn generated
-review requests into human review.
+The current implementation line is v0.2.3 evaluation and release hardening.
+After the verifier evidence eval suite, the next concrete task is the
+three-repository v0.2.3 readiness matrix. It must not expand provider/MCP
+authority, run real provider calls by default, turn generated review requests
+into human review, or treat skipped verifier results as passes.
 
 ## Recently Completed Tasks
 
@@ -132,12 +134,21 @@ findings. It rejects accepted-path and human-reviewed-authority spoofing before
 writing anything and never creates verifier results, human review, accepted
 knowledge, or promotion authority.
 
+G.1 verifier evidence eval suite added `cosheaf.evals.verifier_evidence` and
+`evals/verifier_evidence/cases.yaml`. The deterministic Python-level harness
+scores pass/failed/skipped verifier evidence readiness boundaries, typed
+candidate counterexample review-only behavior, and Lean external `#check`
+symbol-resolution-only limitations. It uses fake evidence records and typed
+fixtures only: no SAT, SMT, Lean, lake, hosted provider, MCP, accepted write,
+human review, or promotion is performed.
+
 ## Next Focus
 
-Proceed with the next active v5 task after E.2. Candidate counterexamples must
-remain candidates until explicitly checked and reviewed, generated review
-requests must remain draft review context, and readiness/eval work must keep
-skipped results separate from passes.
+Proceed with the next active v5 task after G.1: extend the three-repository
+v0.2.3 readiness matrix. Candidate counterexamples must remain candidates until
+explicitly checked and reviewed, generated review requests must remain draft
+review context, and readiness/eval work must keep skipped results separate
+from passes.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
