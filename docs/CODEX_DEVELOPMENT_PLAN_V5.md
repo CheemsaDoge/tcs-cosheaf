@@ -260,14 +260,20 @@ handle it.
 
 ### E.2 Failure-Preserving Review Request Generator
 
-Next implementation task.
+Status: implemented as `cosheaf review request-from-bundle`.
 
-Generate review-request drafts from WorkerBundle assumptions, uncertainty,
-failed attempts, typed counterexample candidates, verifier requests, risk
-flags, and limitations without making review decisions. Generated requests
-must remain draft/review-context only and must not mark `human_reviewed`,
-approve or reject claims, create verifier results, write accepted knowledge,
-or promote artifacts.
+`cosheaf review request-from-bundle --bundle <path>` validates a WorkerBundle
+v2 and writes or previews a draft informational review request under
+`reviews/requests/`. The generated request preserves assumptions,
+uncertainty, failed attempts, verifier requests, legacy and typed
+counterexample candidates, dependency questions, risk flags, next steps,
+confidence, and candidate limitations as findings.
+
+The generated request remains draft/review context only. It does not mark
+`human_reviewed`, approve or reject claims, create verifier results, write
+accepted knowledge, or promote artifacts. Unsafe bundles that target accepted
+knowledge or try to stage human-reviewed proposed artifacts are rejected before
+any review request is written.
 
 ## Phase F: Review And Promotion Readiness Reporting
 
@@ -286,9 +292,10 @@ Readiness reports are advisory. They must not bypass validation, gates, human
 review, verifier evidence requirements, or `cosheaf artifact promote`.
 
 The C.3 promotion-readiness CLI provides the first artifact/issue-scoped
-read-only report. Later Phase F work may broaden review UX and evidence
-explanations, but it must keep the same no-accepted-write and skipped-not-pass
-boundaries.
+read-only report. The E.2 review-request-from-bundle command provides the
+first bundle-to-review-request bridge. Later Phase F work may broaden review
+UX and evidence explanations, but it must keep the same no-accepted-write,
+no-human-review-spoofing, and skipped-not-pass boundaries.
 
 ## Phase G: Three-Repository v0.2.3 Readiness
 

@@ -78,10 +78,11 @@ human review, or treat Lean `#check` as informal/formal semantic alignment.
 The verifier evidence status audit, verifier evidence record v1, read-only
 promotion-readiness reporting, SAT result-depth fixtures, SMT result-depth
 fixtures, Lean external reference ergonomics, and typed counterexample
-candidate records are complete. Current work should continue with
-failure-preserving review-request generation without granting accepted-write
-authority, making review decisions, or treating candidate counterexamples as
-accepted refutations.
+candidate records are complete. Failure-preserving review-request generation
+is also implemented through `cosheaf review request-from-bundle`, which writes
+or previews draft informational review requests from WorkerBundle review-only
+fields without granting accepted-write authority, making review decisions, or
+treating candidate counterexamples as accepted refutations.
 
 ## v0.2.1 Prerelease Baseline
 

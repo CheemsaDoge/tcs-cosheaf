@@ -10,9 +10,10 @@ Move from the published `v0.2.2` Provider Transport + Agent Workflow
 Hardening release into `v0.2.3` Verification Evidence Hardening. The verifier
 evidence audit, verifier evidence record v1, read-only promotion-readiness
 report, optional SAT result-depth fixtures, optional SMT result-depth fixtures,
-Lean external reference ergonomics, and typed counterexample candidate records
-are complete; the next goal is generating review-request drafts from bundles
-without making review decisions.
+Lean external reference ergonomics, typed counterexample candidate records, and
+failure-preserving review-request generation are complete; the next goal is
+post-E.2 review/evidence integration and readiness work without expanding
+provider or MCP authority.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -91,15 +92,11 @@ evidence around optional verifier and failure workflows:
 
 ## Current Task
 
-The current implementation task is E.2 failure-preserving review request
-generator.
-
-This task should generate review-request drafts from WorkerBundle failures,
-typed counterexample candidates, verifier requests, assumptions, uncertainty,
-and limitations without making review decisions. Generated requests must remain
-draft/review-context only and must not mark `human_reviewed`, approve or reject
-claims, write accepted knowledge, create verifier results, or promote
-artifacts.
+The current implementation line is post-E.2 review and evidence integration.
+The next concrete task should be chosen from the active v5 longplan, such as
+workspace/public-KB verification-evidence integration or the v0.2.3 readiness
+eval matrix. It must not expand provider/MCP authority or turn generated
+review requests into human review.
 
 ## Recently Completed Tasks
 
@@ -125,11 +122,22 @@ authority. `checked_false` and `checked_true` candidate statuses require
 evidence paths in the bundle schema, but they still do not change accepted
 artifact status.
 
+E.2 failure-preserving review request generation added
+`cosheaf review request-from-bundle --bundle <path>`. It validates WorkerBundle
+v2 manifests and writes or previews draft informational review requests under
+`reviews/requests/`, preserving assumptions, uncertainty, failed attempts,
+verifier requests, legacy and typed counterexample candidates, dependency
+questions, risk flags, next steps, confidence, and candidate limitations as
+findings. It rejects accepted-path and human-reviewed-authority spoofing before
+writing anything and never creates verifier results, human review, accepted
+knowledge, or promotion authority.
+
 ## Next Focus
 
-Proceed with E.2 failure-preserving review request generator. Candidate
-counterexamples must remain candidates until explicitly checked and reviewed,
-and generated review requests must remain draft review context.
+Proceed with the next active v5 task after E.2. Candidate counterexamples must
+remain candidates until explicitly checked and reviewed, generated review
+requests must remain draft review context, and readiness/eval work must keep
+skipped results separate from passes.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

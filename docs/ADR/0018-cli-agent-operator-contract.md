@@ -65,6 +65,7 @@ draft/proposal/review-staging writes:
 - `cosheaf draft write-source-note --input-json <path> --json`
 - `cosheaf bundle submit --input-json <path> --json`
 - `cosheaf review request --input-json <path> --json`
+- `cosheaf review request-from-bundle --bundle <path> --json`
 
 Human-readable forms of the same commands remain useful for operator review,
 but machine consumers should prefer deterministic JSON output.

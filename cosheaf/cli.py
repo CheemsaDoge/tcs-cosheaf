@@ -595,6 +595,70 @@ def review_request(
     _emit_controlled_write(result, json_output=json_output, console=console)
 
 
+@review_app.command("request-from-bundle")
+def review_request_from_bundle(
+    bundle_path: Path = typer.Option(
+        ...,
+        "--bundle",
+        help="Repository-local WorkerBundle v2 YAML path.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for controlled review requests.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Validate and report target paths without writing files.",
+    ),
+) -> None:
+    """Generate a draft informational review request from a WorkerBundle."""
+    console = Console(width=120, markup=False)
+    try:
+        result = DraftWriteService(
+            RepoContext(repo_root)
+        ).write_review_request_from_bundle(
+            bundle_path,
+            dry_run=dry_run,
+        )
+    except DraftWriteServiceError as exc:
+        _exit_with_error(
+            exc.to_error_result(),
+            json_output=json_output,
+            console=console,
+        )
+
+    write_result = result.write_result
+    if json_output:
+        _emit_json(
+            {
+                "schema_version": 1,
+                "kind": write_result.kind,
+                "bundle_id": result.bundle.bundle_id,
+                "task_id": result.bundle.task_id,
+                "review_id": write_result.record_id,
+                "path": write_result.relative_path.as_posix(),
+                "written_paths": [
+                    path.as_posix() for path in write_result.written_paths
+                ],
+                "dry_run": write_result.dry_run,
+                "accepted_write_performed": False,
+                "generated_request": dict(result.request),
+            }
+        )
+        return
+
+    console.print(f"Review request staged: {write_result.relative_path.as_posix()}")
+    console.print("- accepted knowledge merge: not performed")
+    console.print("- human review decision: not performed")
+
+
 @bundle_app.command("submit")
 def bundle_submit(
     input_json: Path = typer.Option(

@@ -111,6 +111,15 @@ class ControlledWriteResult:
     record_id: str = ""
 
 
+@dataclass(frozen=True)
+class ReviewRequestFromBundleResult:
+    """Generated draft review request plus controlled write metadata."""
+
+    bundle: WorkerBundleV2
+    request: Mapping[str, Any]
+    write_result: ControlledWriteResult
+
+
 class ServiceError(ValueError):
     """Expected service-layer failure with a stable machine-readable code."""
 
@@ -753,6 +762,33 @@ class DraftWriteService:
             validator=_validate_review_request_file,
         )
 
+    def write_review_request_from_bundle(
+        self,
+        bundle_path: str | Path,
+        *,
+        dry_run: bool = False,
+    ) -> ReviewRequestFromBundleResult:
+        """Generate and write or preview a draft request from a worker bundle."""
+        try:
+            bundle = validate_worker_bundle_v2(self.context, bundle_path)
+        except WorkerBundleV2Error as exc:
+            raise DraftWriteServiceError(
+                str(exc),
+                code="review_request_failed",
+                remediation=(
+                    "Fix the worker bundle before generating a review request. "
+                    "Bundles cannot claim accepted or human-reviewed authority."
+                ),
+            ) from exc
+
+        request = _review_request_from_bundle(bundle)
+        result = self.write_review_request(request, dry_run=dry_run)
+        return ReviewRequestFromBundleResult(
+            bundle=bundle,
+            request=request,
+            write_result=result,
+        )
+
     def _validate_artifact_request_without_write(
         self,
         request: DraftArtifactWriteRequest,
@@ -1080,6 +1116,78 @@ def _validate_review_request_file(context: RepoContext, relative_path: Path) -> 
         )
 
 
+def _review_request_from_bundle(bundle: WorkerBundleV2) -> dict[str, Any]:
+    review_id = f"review.request.{bundle.bundle_id}"
+    findings = _review_findings_from_bundle(bundle)
+    return {
+        "review_id": review_id,
+        "title": f"Review request for {bundle.bundle_id}",
+        "status": "draft",
+        "authors": ["cosheaf-cli"],
+        "target": bundle.task_id,
+        "summary": (
+            f"Draft informational review request generated from WorkerBundle "
+            f"{bundle.bundle_id}: {bundle.summary}"
+        ),
+        "findings": findings,
+        "decision": "informational",
+    }
+
+
+def _review_findings_from_bundle(bundle: WorkerBundleV2) -> list[str]:
+    findings = [
+        "review_request_limitation: Generated from WorkerBundle output; this is "
+        "not human review, verifier evidence, accepted knowledge, or promotion "
+        "authority.",
+        f"worker_role: {bundle.worker_role.value}",
+        f"confidence: {bundle.confidence.value}",
+    ]
+    findings.extend(f"used_artifact: {item}" for item in bundle.used_artifacts)
+    findings.extend(f"used_source: {item}" for item in bundle.used_sources)
+    findings.extend(f"claim: {item}" for item in bundle.claims)
+    findings.extend(
+        f"proposed_artifact: {artifact.path} | {artifact.summary}"
+        for artifact in bundle.proposed_artifacts
+    )
+    findings.extend(f"assumption: {item}" for item in bundle.assumptions)
+    findings.extend(f"uncertainty: {item}" for item in bundle.uncertainty)
+    findings.extend(
+        f"verification_request: {item}" for item in bundle.verification_requests
+    )
+    findings.extend(f"failed_attempt: {item}" for item in bundle.failed_attempts)
+    findings.extend(
+        f"counterexample_candidate: {item}" for item in bundle.counterexamples
+    )
+    findings.extend(
+        f"counterexample_candidate: {candidate.candidate_id} "
+        f"status={candidate.status.value} "
+        f"target={candidate.target_claim or 'none'} "
+        f"evidence_paths={','.join(candidate.evidence_paths) or 'none'} "
+        f"verifier_request_ids={','.join(candidate.verifier_request_ids) or 'none'} "
+        f"summary={candidate.construction_summary} "
+        f"limitations={candidate.limitations}"
+        for candidate in bundle.counterexample_candidates
+    )
+    findings.extend(bundle.failures_or_counterexamples)
+    findings.extend(
+        f"dependency_question: {item}" for item in bundle.dependency_questions
+    )
+    findings.extend(f"risk: {item}" for item in bundle.risk_flags)
+    findings.extend(f"next_step: {item}" for item in bundle.next_steps)
+    return _dedupe_preserving_order(findings)
+
+
+def _dedupe_preserving_order(values: Sequence[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        result.append(value)
+    return result
+
+
 def _workspace_lifecycle_artifact_path(
     *,
     context: RepoContext,
@@ -1164,6 +1272,7 @@ __all__ = [
     "KbRootInfo",
     "MemorySearchService",
     "OrchestratorPlanService",
+    "ReviewRequestFromBundleResult",
     "ServiceError",
     "TaskService",
     "ValidationService",

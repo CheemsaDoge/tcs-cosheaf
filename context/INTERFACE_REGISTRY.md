@@ -126,6 +126,21 @@
   controlled-write JSON shape and uses `ErrorResult` for expected failures.
 - `cosheaf review request --input-json <path> --dry-run`: validates the review
   request and reports the target path without writing files.
+- `cosheaf review request-from-bundle --bundle <path>`: validates a
+  WorkerBundle v2 manifest and writes a draft informational review-request
+  record under `reviews/requests/`. It preserves bundle assumptions,
+  uncertainty, failed attempts, verifier requests, legacy and typed
+  counterexample candidates, dependency questions, risk flags, next steps,
+  confidence, and candidate limitations as findings. It does not approve or
+  reject claims, mark `human_reviewed`, create verifier results, write accepted
+  knowledge, or promote artifacts.
+- `cosheaf review request-from-bundle --bundle <path> --json`: emits
+  deterministic JSON with `kind`, `bundle_id`, `task_id`, `review_id`, `path`,
+  `written_paths`, `dry_run`, `accepted_write_performed=false`, and the
+  generated draft informational request payload.
+- `cosheaf review request-from-bundle --bundle <path> --dry-run`: validates
+  the bundle and generated review request, reports the target path and payload,
+  and writes no files.
 - `cosheaf eval retrieval`: runs the default deterministic retrieval
   regression suite from `evals/retrieval/cases.yaml`.
 - `cosheaf eval retrieval --repo-root <path>`: runs retrieval evals against an
@@ -549,6 +564,14 @@
 - `cosheaf.services.DraftWriteService.write_review_request(request, *, dry_run=False) -> ControlledWriteResult`:
   writes or previews a draft informational review-request record and refuses
   human-review spoofing.
+- `cosheaf.services.DraftWriteService.write_review_request_from_bundle(bundle_path, *, dry_run=False) -> ReviewRequestFromBundleResult`:
+  validates a WorkerBundle v2, generates a draft informational review request
+  from its failure/counterexample/review-only fields, and writes or previews it
+  through `write_review_request`.
+- `cosheaf.services.ReviewRequestFromBundleResult`: frozen dataclass with the
+  validated `bundle`, generated request mapping, and `ControlledWriteResult`.
+  It is review context only and has no accepted-write, verifier-result,
+  human-review, or promotion authority.
 - `cosheaf.services.ServiceError`: expected service-layer failure base class
   with stable `code`, `remediation`, `blocking`, `details`, and
   `to_error_result() -> ErrorResult`.
