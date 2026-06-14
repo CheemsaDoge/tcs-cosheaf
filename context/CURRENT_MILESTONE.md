@@ -21,8 +21,10 @@ informal/formal semantic alignment.
 
 ## Current Baseline
 
-- Framework package metadata and `cosheaf.__version__` record `0.2.3`.
+- Framework package metadata and `cosheaf.__version__` record `0.2.4` on the
+  release-candidate branch.
 - Remote tags `v0.1.1`, `v0.2.0`, `v0.2.1`, `v0.2.2`, and `v0.2.3` exist.
+- Remote tag `v0.2.4` is not published yet.
 - The GitHub release `v0.2.3 Verification Evidence Hardening` is published and
   is not a production-readiness claim.
 - The GitHub release `v0.2.2 Provider Transport + Agent Workflow Hardening`
@@ -78,8 +80,8 @@ informal/formal semantic alignment.
   recall, repeated failed-direction detection, public-only scope leakage,
   authority-boundary preservation, and candidate-counterexample mislabel
   prevention through local temporary workspace fixtures.
-- `docs/releases/v0.2.4.md` is the readiness-audit draft for deciding whether
-  the line can enter release-candidate work. It is not a tag, GitHub release,
+- `docs/releases/v0.2.4.md` is the release-candidate note for Artifact Failure
+  Memory + Attempt Traceability. It is not yet a tag, GitHub release,
   downstream pin update, or production-readiness claim.
 - `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
   result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
@@ -149,12 +151,13 @@ compact context-pack card summaries, and explicit context-pack failure
 sections. Promotion-readiness failure-memory warning reporting is implemented.
 Workspace failure-log demonstration, public-KB failure-log policy surfaces,
 security regression coverage for failure-log misuse, and deterministic
-artifact failure-memory eval coverage are implemented. The v0.2.4 readiness
-audit draft is being used to decide release-candidate entry. New work after a
-passing audit should continue from the release-candidate task, while avoiding
-runtime authority expansion, default real provider calls, generated
-review-as-human-review, accepted writes, artifact promotion bypasses, and
-treating skipped verifier results as passes.
+artifact failure-memory eval coverage are implemented. The v0.2.4
+release-candidate branch updates version and release metadata only. New work
+after a passing release-candidate PR should continue from tag publication,
+release smoke, and downstream pin updates, while avoiding runtime authority
+expansion, default real provider calls, generated review-as-human-review,
+accepted writes, artifact promotion bypasses, and treating skipped verifier
+results as passes.
 
 ## Recently Completed Tasks
 
@@ -225,6 +228,13 @@ and required checks pass. It does not change runtime behavior, version
 metadata, tags, downstream pins, provider/MCP authority, verifier semantics,
 accepted-promotion policy, or KB artifacts.
 
+G.2 v0.2.4 release candidate updates package metadata and
+`cosheaf.__version__` to `0.2.4` and converts `docs/releases/v0.2.4.md` into
+conservative release-candidate notes. It does not create the public tag,
+publish a GitHub release, run release smoke, update downstream pins, add
+runtime behavior, expand provider/MCP authority, change verifier or promotion
+semantics, write accepted knowledge, or claim production readiness.
+
 G.3 v0.2.3 release readiness audit added `docs/releases/v0.2.3.md` as a
 readiness-audit draft and recorded that main could enter the release-candidate
 task. The audit kept package metadata at `0.2.2`, created no tag, changed no
@@ -241,12 +251,15 @@ downstream workspace-template plus public KB active pins were updated to
 
 ## Next Focus
 
-After the v0.2.4 release-readiness audit lands and CI passes, proceed to the
-v0.2.4 release-candidate task. Retrieval, context-pack, readiness, workspace,
-policy, security, eval, and release work must keep failure memory labeled as
-failed or unresolved attempt memory, preserve public/private scope, and avoid
-promoting failure memory into proof, verifier success, human review, checked
-counterexample evidence, accepted status, or promotion evidence by itself.
+After the v0.2.4 release-candidate PR lands and CI passes, proceed to the
+maintainer release action: re-sync main, verify no public `v0.2.4` tag exists,
+create the annotated tag, publish the GitHub release, run release smoke from
+the tag, and update downstream pins only after release smoke passes. Retrieval,
+context-pack, readiness, workspace, policy, security, eval, and release work
+must keep failure memory labeled as failed or unresolved attempt memory,
+preserve public/private scope, and avoid promoting failure memory into proof,
+verifier success, human review, checked counterexample evidence, accepted
+status, or promotion evidence by itself.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

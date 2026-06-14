@@ -7,20 +7,24 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.2.3 Verification Evidence Hardening published release**.
-The package metadata records `0.2.3`, the public `v0.2.3` tag and GitHub
-release are published, release smoke from `@v0.2.3` passed, and the active
-workspace-template and public-KB pins have been updated to `v0.2.3`. The
-`v0.1.1` tag remains the downstream Formal Link Layer support baseline; the
-`v0.2.0` tag packages the deterministic local-MVP workflow; the `v0.2.1` tag
-packages the CLI-first agent and hosted-provider gateway surfaces as a
-pin-able framework prerelease; and the `v0.2.2` tag packages the explicit
-default-off provider transport and agent workflow hardening surfaces as a
-conservative pin-able release. The `v0.2.3` release packages verifier evidence
-records, promotion-readiness reporting, optional SAT/SMT/Lean result-depth
-fixtures, failure/counterexample evidence workflow hardening,
-verifier-evidence evals, and the expanded three-repository readiness matrix.
-The repository has working Python
+Current status: **v0.2.4 Artifact Failure Memory + Attempt Traceability release
+candidate**. The package metadata records `0.2.4`, but the public `v0.2.4` tag,
+GitHub release, release smoke, and downstream workspace/public-KB pin updates
+are still pending follow-up release tasks. The public `v0.2.3` tag and GitHub
+release remain the latest published release until `v0.2.4` is tagged and
+published. The `v0.1.1` tag remains the downstream Formal Link Layer support
+baseline; the `v0.2.0` tag packages the deterministic local-MVP workflow; the
+`v0.2.1` tag packages the CLI-first agent and hosted-provider gateway surfaces
+as a pin-able framework prerelease; `v0.2.2` packages the explicit default-off
+provider transport and agent workflow hardening surfaces; and `v0.2.3` packages
+verifier evidence records, promotion-readiness reporting, optional
+SAT/SMT/Lean result-depth fixtures, failure/counterexample evidence workflow
+hardening, verifier-evidence evals, and the expanded three-repository
+readiness matrix. The `v0.2.4` candidate packages optional artifact-level
+failure memory, failure-log CLI inspection and controlled draft writes,
+WorkerBundle failure-log bridges, retrieval/context/promotion-readiness
+surfacing, workspace/public-KB policy updates, and security/eval regression
+coverage. The repository has working Python
 scaffolding, typed artifact models, filesystem loading, validation, dependency
 graph indexing, workspace-aware KB root loading, artifact lifecycle CLI
 commands, gatekeeper reports including the G10 Formal Link Gate, ranked
