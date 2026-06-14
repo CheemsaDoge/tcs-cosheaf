@@ -2,7 +2,7 @@
 
 ## Milestone
 
-`v0.2.3` Verification Evidence Hardening implementation.
+`v0.2.3` Verification Evidence Hardening release candidate.
 
 ## Goal
 
@@ -15,8 +15,8 @@ failure-preserving review-request generation are complete. Workspace and public
 KB integration follow-up is complete through the verifier-evidence workspace
 demo, public KB source/backlog hygiene, and one draft-only foundation artifact
 tightening. The v0.2.3 ecosystem readiness matrix is complete. The current
-goal is the v0.2.3 release readiness audit without expanding provider or MCP
-authority.
+goal is the v0.2.3 release candidate without expanding provider or MCP
+authority, creating a tag, or updating downstream pins before release smoke.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -26,8 +26,10 @@ informal/formal semantic alignment.
 
 ## Current Baseline
 
-- Framework package metadata and `cosheaf.__version__` record `0.2.2`.
-- Remote tags `v0.1.1`, `v0.2.0`, `v0.2.1`, and `v0.2.2` exist.
+- Framework package metadata and `cosheaf.__version__` record `0.2.3` on the
+  release-candidate branch.
+- Remote tags `v0.1.1`, `v0.2.0`, `v0.2.1`, and `v0.2.2` exist. The
+  `v0.2.3` tag is intentionally pending until the maintainer release action.
 - The GitHub release `v0.2.2 Provider Transport + Agent Workflow Hardening`
   is published and is not a production-readiness claim.
 - `tcs-cosheaf-workspace-template` pins active demo, Makefile, CLI-agent,
@@ -96,11 +98,11 @@ evidence around optional verifier and failure workflows:
 ## Current Task
 
 The current implementation line is v0.2.3 release hardening. The active task is
-the v0.2.3 release readiness audit. It is documentation/status only: it does
-not bump the package version, create a tag or release, change runtime behavior,
-expand provider/MCP authority, run real provider calls by default, turn
-generated review requests into human review, or treat skipped verifier results
-as passes.
+the v0.2.3 release-candidate PR. It updates package metadata and release docs
+only: it does not create a tag or release, change runtime behavior, expand
+provider/MCP authority, run real provider calls by default, turn generated
+review requests into human review, or treat skipped verifier results as
+passes.
 
 ## Recently Completed Tasks
 
@@ -151,17 +153,22 @@ separate public KB verifier-policy self-test. The matrix keeps network rows
 opt-in, counts optional verifier absence as skipped rather than pass, and
 continues to identify the failing repository and command for failures.
 
+G.3 v0.2.3 release readiness audit added `docs/releases/v0.2.3.md` as a
+readiness-audit draft and recorded that main could enter the release-candidate
+task. The audit kept package metadata at `0.2.2`, created no tag, changed no
+runtime behavior, and answered verifier evidence, optional-tool,
+skipped-not-pass, counterexample, promotion-readiness, workspace/public KB, and open
+issue/PR readiness questions.
+
 ## Next Focus
 
-Proceed with the v0.2.3 release-candidate task only after the readiness audit
-PR merges and the required verification ladder passes. The release-candidate
-task should update package metadata to `0.2.3`, convert
-`docs/releases/v0.2.3.md` from audit draft to final release notes, rerun the
-ecosystem readiness matrix, and prepare the tag/release and downstream pin
-updates. Candidate counterexamples must remain candidates until explicitly
-checked and reviewed, generated review requests must remain draft review
-context, and readiness/eval work must keep skipped results separate from
-passes.
+After the release-candidate PR merges and the required verification ladder
+passes, perform the maintainer release action: re-sync main, verify no
+unexpected `v0.2.3` tag exists, create the tag, publish the GitHub release,
+run release smoke from `@v0.2.3`, and only then update downstream pins.
+Candidate counterexamples must remain candidates until explicitly checked and
+reviewed, generated review requests must remain draft review context, and
+readiness/eval work must keep skipped results separate from passes.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

@@ -7,13 +7,19 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.2.2 Provider Transport + Agent Workflow Hardening
-release**. The `v0.1.1` tag remains the downstream Formal Link Layer support
-baseline; the `v0.2.0` tag packages the deterministic local-MVP workflow; the
-`v0.2.1` tag packages the CLI-first agent and hosted-provider gateway surfaces
-as a pin-able framework prerelease; and the `v0.2.2` tag packages the explicit
-default-off provider transport and agent workflow hardening surfaces as a
-conservative pin-able release. The repository has working Python
+Current status: **v0.2.3 Verification Evidence Hardening release candidate**.
+The package metadata records `0.2.3`, but the public `v0.2.3` tag/release and
+downstream pin updates are deferred until the release-candidate PR is merged
+and release smoke is verified. The `v0.1.1` tag remains the downstream Formal
+Link Layer support baseline; the `v0.2.0` tag packages the deterministic
+local-MVP workflow; the `v0.2.1` tag packages the CLI-first agent and
+hosted-provider gateway surfaces as a pin-able framework prerelease; and the
+`v0.2.2` tag packages the explicit default-off provider transport and agent
+workflow hardening surfaces as a conservative pin-able release. The `v0.2.3`
+release candidate packages verifier evidence records, promotion-readiness
+reporting, optional SAT/SMT/Lean result-depth fixtures, failure/counterexample
+evidence workflow hardening, verifier-evidence evals, and the expanded
+three-repository readiness matrix. The repository has working Python
 scaffolding, typed artifact models, filesystem loading, validation, dependency
 graph indexing, workspace-aware KB root loading, artifact lifecycle CLI
 commands, gatekeeper reports including the G10 Formal Link Gate, ranked
@@ -270,7 +276,9 @@ local-MVP workflow can pin to `v0.2.0`. Downstream repositories that need the
 CLI-agent and hosted-provider gateway surfaces can pin to `v0.2.1`.
 Downstream repositories that need the provider transport hardening,
 context-send policy matrix, provider log scanner, and failure/counterexample
-workflow evals can pin to `v0.2.2`.
+workflow evals can pin to `v0.2.2`. After the public `v0.2.3` tag is
+published and release smoke passes, downstream repositories that need
+verification-evidence hardening can pin to `v0.2.3`.
 
 ## Development Commands
 

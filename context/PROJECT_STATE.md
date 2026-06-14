@@ -3,6 +3,38 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.3 Verification Evidence Hardening RC - 2026-06-14
+
+Issue 294 prepares `v0.2.3` as the Verification Evidence Hardening release
+candidate after the readiness audit. The release-candidate branch updates
+`pyproject.toml` and `cosheaf.__version__` to `0.2.3` and converts
+`docs/releases/v0.2.3.md` from readiness-audit draft into conservative
+release-candidate notes.
+
+The candidate packages already-merged verification/evidence hardening work:
+verifier evidence record v1, read-only promotion-readiness reporting, SAT and
+SMT result-depth fake-backend fixtures, Lean external reference ergonomics,
+typed counterexample candidate records, failure-preserving review-request
+generation, verifier-evidence evals, and the v0.2.3 three-repository readiness
+matrix.
+
+This release-candidate task does not create the public `v0.2.3` tag, publish a
+GitHub release, update downstream repository pins, add runtime behavior, expand
+provider or MCP authority, run real provider calls in CI, require API keys,
+write accepted knowledge, mark human review, promote artifacts, or change
+schema, gate, verifier, public/private policy, or accepted-promotion
+semantics. The public `v0.2.3` tag is expected only after the
+release-candidate PR and required checks pass, main is re-synced, and the
+maintainer release action verifies the tag target and release smoke.
+
+Local release-candidate verification passed: `python -m cosheaf.cli version
+--json` reported `0.2.3`; `make lint`, `make typecheck`, `make test`,
+`make validate`, and `make gate` passed; the no-network ecosystem matrix
+reported 10 rows with 7 pass, 0 fail, and 3 skipped; and `git diff --check`
+exited 0 with CRLF warnings only. The skipped matrix rows were optional
+verifier availability, framework git-tag network install, and workspace demo
+network install; they were not counted as pass.
+
 ## v0.2.3 Release Readiness Audit - 2026-06-14
 
 Issue 292 audits whether the current framework main line can enter the
