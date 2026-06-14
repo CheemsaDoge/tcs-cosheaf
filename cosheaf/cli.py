@@ -138,6 +138,11 @@ artifact_app = typer.Typer(
     help="Artifact commands.",
     no_args_is_help=True,
 )
+artifact_failure_app = typer.Typer(
+    add_completion=False,
+    help="Artifact failure-log write commands.",
+    no_args_is_help=True,
+)
 index_app = typer.Typer(
     add_completion=False,
     help="Index commands.",
@@ -223,6 +228,7 @@ promotion_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(artifact_app, name="artifact")
+artifact_app.add_typer(artifact_failure_app, name="failure")
 app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
 app.add_typer(gate_app, name="gate")
@@ -462,6 +468,53 @@ def artifact_failures(
             f"- {entry['failure_id']} | {entry['attempt_kind']} | "
             f"{entry['status']} | {entry['direction']}"
         )
+
+
+@artifact_failure_app.command("add")
+def artifact_failure_add(
+    artifact_id: str = typer.Option(
+        ...,
+        "--artifact",
+        help="Artifact ID whose failure_log should receive the entry.",
+    ),
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="JSON failure-log entry to append.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for the controlled write.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Validate and report target path without writing files.",
+    ),
+) -> None:
+    """Append or preview one failure-log entry on a writable artifact."""
+    console = Console(width=120, markup=False)
+    raw = _read_input_json_or_exit(input_json, json_output=json_output)
+    try:
+        result = DraftWriteService(RepoContext(repo_root)).append_failure_log_entry(
+            artifact_id,
+            raw,
+            dry_run=dry_run,
+        )
+    except DraftWriteServiceError as exc:
+        _exit_with_error(
+            exc.to_error_result(),
+            json_output=json_output,
+            console=console,
+        )
+
+    _emit_controlled_write(result, json_output=json_output, console=console)
 
 
 @artifact_app.command("create")

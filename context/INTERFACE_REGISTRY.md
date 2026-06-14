@@ -4,12 +4,13 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- Planned failure-log write CLI surfaces are not implemented yet. The
-  read-only `cosheaf artifact failures <artifact-id> --json` surface exists.
-  Future write commands should expose deterministic JSON, keep writes
-  controlled and dry-run-capable, reject direct accepted-path writes, reject
-  readonly public roots, preserve public/private scope, and keep WorkerBundle
-  imports labeled by origin.
+- WorkerBundle-to-artifact-failure-log bridge commands are not implemented yet.
+  The current runtime supports read-only artifact failure-log inspection through
+  `cosheaf artifact failures <artifact-id> --json` and controlled append-only
+  draft writes through `cosheaf artifact failure add`. Future bundle bridge
+  commands must preserve WorkerBundle origin labels and must not grant proof,
+  review, verifier, checked-counterexample, accepted-status, or promotion
+  authority.
 - Hosted worker CLI commands and hosted-provider MCP tools are not implemented
   yet. Role-specific hosted worker service bridging for fake and mocked
   provider calls is implemented under `cosheaf.agent.hosted_workers`, the
@@ -88,6 +89,22 @@
   authority notice.
 - `cosheaf artifact failures <artifact-id> --repo-root <path>`: inspects an
   explicit repository root.
+- `cosheaf artifact failure add --artifact <artifact-id> --input-json <path>`:
+  appends one validated `FailureLogEntry` to a writable draft/pre-accepted
+  artifact and refreshes `updated_at`. It refuses direct `kb/accepted/`
+  mutation, accepted artifact status, readonly KB roots, and input fields that
+  claim human review, accepted status, verifier pass, or checked counterexample
+  authority.
+- `cosheaf artifact failure add --artifact <artifact-id> --input-json <path> --json`:
+  emits deterministic controlled-write JSON with `schema_version`,
+  `kind=artifact_failure_log_entry`, target `path`, `written_paths`, `dry_run`,
+  `accepted_write_performed=false`, and `record_id` set to the failure ID.
+  Expected failures emit `ErrorResult`.
+- `cosheaf artifact failure add --artifact <artifact-id> --input-json <path> --dry-run`:
+  validates the failure-log entry and reports the target artifact path without
+  changing the artifact file or `updated_at`.
+- `cosheaf artifact failure add ... --repo-root <path>`: performs the
+  controlled append for an explicit repository root.
 - `cosheaf promotion readiness --artifact <artifact-id> --json`: emits a
   read-only promotion-readiness report for a single artifact. The command
   runs validation and gatekeeper reporting, distinguishes missing review,
@@ -449,8 +466,9 @@
   currently stable machine-readable agent-access error codes. Current values:
   `accepted_write_forbidden`, `artifact_file_validation_failed`,
   `artifact_id_exists`, `artifact_model_validation_failed`,
-  `artifact_not_found`, `artifact_path_exists`, `bundle_complete_forbidden`,
-  `bundle_submit_failed`, `context_build_failed`, `context_show_failed`,
+  `artifact_not_found`, `artifact_path_exists`, `authority_claim_forbidden`,
+  `bundle_complete_forbidden`, `bundle_submit_failed`, `context_build_failed`,
+  `context_show_failed`,
   `draft_write_failed`, `gate_issue`, `hosted_worker_policy_violation`,
   `human_review_forbidden`,
   `invalid_artifact_id`, `invalid_artifact_target_path`,
@@ -584,6 +602,10 @@
   validates a WorkerBundle v2, generates a draft informational review request
   from its failure/counterexample/review-only fields, and writes or previews it
   through `write_review_request`.
+- `cosheaf.services.DraftWriteService.append_failure_log_entry(artifact_id, request, *, dry_run=False) -> ControlledWriteResult`:
+  validates and appends one `FailureLogEntry` to a writable non-accepted
+  artifact, or previews the append in dry-run mode. It refuses accepted paths,
+  accepted artifact status, readonly KB roots, and authority-spoofing fields.
 - `cosheaf.services.ReviewRequestFromBundleResult`: frozen dataclass with the
   validated `bundle`, generated request mapping, and `ControlledWriteResult`.
   It is review context only and has no accepted-write, verifier-result,

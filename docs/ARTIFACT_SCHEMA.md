@@ -120,6 +120,22 @@ stored `failure_log` entries, and an explicit non-authority notice. It does not
 write files, create verifier results, mark human review, run gates, or promote
 artifacts.
 
+Controlled append support for draft/pre-accepted writable artifacts is available
+through:
+
+```bash
+cosheaf artifact failure add --artifact <artifact-id> --input-json <path> --json
+cosheaf artifact failure add --artifact <artifact-id> --input-json <path> --dry-run --json
+```
+
+The input JSON must be one `FailureLogEntry`. The command appends to the target
+artifact's `failure_log` only when the artifact is writable and is not accepted.
+It refuses direct `kb/accepted/` mutation, readonly KB roots, accepted artifact
+status, and input that attempts to claim human review, accepted status, verifier
+pass, or checked counterexample authority. Dry-runs validate and report without
+writing. Actual writes refresh `updated_at` and report
+`accepted_write_performed=false`.
+
 ## Source Metadata
 
 Artifacts may carry structured source metadata in `sources`. The field is
