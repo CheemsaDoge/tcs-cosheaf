@@ -1,7 +1,6 @@
 # TCS-Cosheaf Development Plan v6
 
-Status: active plan after the published `v0.2.3` release closeout and
-post-v0.2.3 state audit
+Status: completed after the published `v0.2.4` release closeout
 
 Target:
 
@@ -326,8 +325,24 @@ automation, or AI-as-human-review.
 Implementation status as of 2026-06-15: the release-candidate branch updates
 package metadata and `cosheaf.__version__` to `0.2.4` and converts
 `docs/releases/v0.2.4.md` into release-candidate notes. Tag publication,
-GitHub release creation, release smoke, and downstream pin updates remain
-follow-up release tasks after this PR passes and merges.
+GitHub release creation, release smoke, and downstream pin updates were
+completed later by G.3 after the release-candidate PR passed and merged.
+
+### G.3 v0.2.4 Publication Closeout
+
+Publish the reviewed release after the release-candidate PR merges cleanly and
+main is re-synced.
+
+Publication-closeout work may update status documentation only. It must not add
+runtime behavior, change schema, change verifier or promotion semantics, expand
+provider/MCP authority, write accepted knowledge, mark human review, or claim
+production readiness.
+
+Implementation status as of 2026-06-15: the annotated `v0.2.4` tag and GitHub
+release are published, release smoke from `@v0.2.4` passed, workspace-template
+active pins moved to `@v0.2.4`, public KB CI moved to `@v0.2.4`, and this plan
+is complete. Future work should start from a post-v0.2.4 state audit or a
+separate maintainer-approved plan.
 
 ## Per-PR Requirements
 
