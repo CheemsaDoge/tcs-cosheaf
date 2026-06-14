@@ -126,6 +126,7 @@ Agent-safe read/check commands include:
 - `cosheaf workspace info --json`
 - `cosheaf validate --json`
 - `cosheaf gate run --json`
+- `cosheaf artifact failures <artifact-id> --json`
 - `cosheaf memory cards --json`
 - `cosheaf memory search "<query>" --issue <issue-id> --json`
 - `cosheaf context build <issue-id> --json`
@@ -176,16 +177,18 @@ artifacts.
 
 ### Planned Artifact Failure Memory Surface
 
-Artifact-level `failure_log` is planned for `v0.2.4` as durable failed-attempt
-memory on artifacts. It is not implemented as a CLI write surface in the
-current release line.
+Artifact-level `failure_log` is implemented for `v0.2.4` as durable
+failed-attempt memory on artifacts. Read-only inspection is available through
+`cosheaf artifact failures <artifact-id> --json`. A CLI write surface is not
+implemented in the current release line.
 
-When implemented, agent-facing failure-log access should follow the same
-CLI-first and service-layer discipline as other controlled-write features:
+Agent-facing failure-log access follows the same CLI-first and service-layer
+discipline as other controlled-write features:
 
-- read-only inspection before write support;
+- read-only inspection before write support, currently through
+  `cosheaf artifact failures`;
 - deterministic JSON output for agent callers;
-- `--dry-run` for any write command;
+- `--dry-run` for any future write command;
 - repository-local path validation;
 - readonly public-root refusal;
 - direct accepted-path write refusal;
@@ -275,6 +278,7 @@ The stable error-code list is exported as
 - `artifact_file_validation_failed`
 - `artifact_id_exists`
 - `artifact_model_validation_failed`
+- `artifact_not_found`
 - `artifact_path_exists`
 - `bundle_complete_forbidden`
 - `bundle_submit_failed`

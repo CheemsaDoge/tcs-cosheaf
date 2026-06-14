@@ -242,6 +242,11 @@ app.add_typer(promotion_app, name="promotion")
 memory_app.add_typer(memory_graph_app, name="graph")
 
 _SUPPORTED_PROVIDER_CLI_NAMES = (ProviderName.FAKE, ProviderName.OPENAI)
+_FAILURE_LOG_AUTHORITY_NOTICE = (
+    "failure_log is research memory only; it is not proof, verifier success, "
+    "checked counterexample evidence, human review, gate success, accepted "
+    "status, or promotion evidence"
+)
 
 
 @app.command()
@@ -364,6 +369,99 @@ def artifact_validate(
         failure_message="Artifact validation failed",
         debug=debug,
     )
+
+
+@artifact_app.command("failures")
+def artifact_failures(
+    artifact_id: str = typer.Argument(..., help="Artifact ID to inspect."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Inspect artifact failure-log entries without writing anything."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+    except WorkspaceConfigError as exc:
+        _exit_with_error(
+            ErrorResult(
+                code="workspace_config_failed",
+                message=str(exc),
+                remediation="Fix cosheaf.toml and rerun artifact failures.",
+                blocking=True,
+                related_path="cosheaf.toml",
+            ),
+            json_output=json_output,
+            console=console,
+        )
+
+    try:
+        validate_artifact_id(artifact_id)
+    except ValueError as exc:
+        _exit_with_error(
+            ErrorResult(
+                code="invalid_artifact_id",
+                message=str(exc),
+                remediation="Use a dot-separated lowercase artifact ID.",
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+
+    try:
+        loaded = _find_failure_log_artifact(context, artifact_id)
+    except LoadError as exc:
+        _exit_with_error(
+            ErrorResult(
+                code="repository_load_failed",
+                message=f"cannot load repository records: {exc}",
+                remediation="Fix repository YAML load errors and rerun the command.",
+                blocking=True,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+    except ArtifactLifecycleError as exc:
+        code = "artifact_not_found"
+        remediation = "Check the artifact ID and rerun the command."
+        if not str(exc).startswith("artifact not found:"):
+            code = "repository_load_failed"
+            remediation = "Fix duplicate or non-artifact record state and retry."
+        _exit_with_error(
+            ErrorResult(
+                code=code,
+                message=str(exc),
+                remediation=remediation,
+                blocking=True,
+                related_artifact=artifact_id,
+            ),
+            json_output=json_output,
+            console=console,
+        )
+
+    payload = _artifact_failure_log_payload(context, loaded)
+    if json_output:
+        _emit_json(payload)
+        return
+
+    console.print(f"Artifact failure log: {payload['artifact_id']}")
+    console.print(f"- path: {payload['artifact_path']}")
+    console.print(f"- root_scope: {payload['root_scope']}")
+    console.print(f"- failure_count: {payload['failure_count']}")
+    console.print(f"- authority: {payload['authority_notice']}")
+    for entry in payload["failure_log"]:
+        console.print(
+            f"- {entry['failure_id']} | {entry['attempt_kind']} | "
+            f"{entry['status']} | {entry['direction']}"
+        )
 
 
 @artifact_app.command("create")
@@ -2927,6 +3025,42 @@ def _kb_root_scope(root: KbRootConfig) -> MemoryRootScope:
     if name == "framework":
         return MemoryRootScope.FRAMEWORK
     return MemoryRootScope.WORKSPACE
+
+
+def _find_failure_log_artifact(
+    context: RepoContext,
+    artifact_id: str,
+) -> LoadedRecord:
+    records = tuple(load_artifacts(context))
+    return _find_unique_base_artifact(records, artifact_id)
+
+
+def _artifact_failure_log_payload(
+    context: RepoContext,
+    loaded: LoadedRecord,
+) -> dict[str, Any]:
+    artifact = loaded.record
+    if not isinstance(artifact, BaseArtifact):
+        raise AssertionError("unreachable non-artifact failure-log record")
+    root = (
+        context.workspace_config.root_by_name(loaded.kb_root_name)
+        if loaded.kb_root_name is not None
+        else None
+    )
+    root_scope = _kb_root_scope(root) if root is not None else MemoryRootScope.WORKSPACE
+    failure_log = [entry.model_dump(mode="json") for entry in artifact.failure_log]
+    return {
+        "schema_version": 1,
+        "kind": "artifact_failure_log",
+        "artifact_id": artifact.id,
+        "artifact_path": loaded.source_path.as_posix(),
+        "root_name": loaded.kb_root_name,
+        "root_scope": root_scope.value,
+        "root_readonly": loaded.kb_root_readonly,
+        "failure_count": len(failure_log),
+        "failure_log": failure_log,
+        "authority_notice": _FAILURE_LOG_AUTHORITY_NOTICE,
+    }
 
 
 def _validation_report_to_result(report: ValidationReport) -> ValidateResult:

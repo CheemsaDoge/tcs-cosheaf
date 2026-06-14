@@ -270,6 +270,122 @@ def test_orchestrator_plan_json_remains_parseable(tmp_path: Path) -> None:
     assert payload["issue_id"] == "issue.fixture.cli-json"
 
 
+def test_artifact_failures_json_empty_for_artifact_without_failure_log(
+    tmp_path: Path,
+) -> None:
+    _write_repo(tmp_path)
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "failures",
+            "claim.fixture.cli-json",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json_output(result.output)
+    assert payload == {
+        "schema_version": 1,
+        "kind": "artifact_failure_log",
+        "artifact_id": "claim.fixture.cli-json",
+        "artifact_path": "kb/accepted/claims/public.yaml",
+        "root_name": "default",
+        "root_scope": "workspace",
+        "root_readonly": False,
+        "failure_count": 0,
+        "failure_log": [],
+        "authority_notice": (
+            "failure_log is research memory only; it is not proof, verifier "
+            "success, checked counterexample evidence, human review, gate "
+            "success, accepted status, or promotion evidence"
+        ),
+    }
+
+
+def test_artifact_failures_json_returns_failure_log_entries(tmp_path: Path) -> None:
+    data = _artifact_data(
+        "claim.fixture.failure-log",
+        title="Failure log fixture",
+        status="draft",
+    )
+    data["failure_log"] = [
+        {
+            "failure_id": "failure.fixture.0001",
+            "attempted_at": "2026-06-14T00:00:00Z",
+            "recorded_by": "tester",
+            "origin": "human",
+            "attempt_kind": "proof_attempt",
+            "target": "claim.fixture.failure-log",
+            "direction": "Try direct induction.",
+            "summary": "Checked the direct induction setup.",
+            "failed_because": "The invariant is not preserved.",
+            "evidence_paths": [".cosheaf/logs/failure-fixture.log"],
+            "related_verifier_results": [],
+            "related_counterexample_candidates": [],
+            "next_possible_directions": ["Try a stronger invariant."],
+            "status": "open",
+            "limitations": "This failed direction does not refute the claim.",
+        }
+    ]
+    _write_yaml(tmp_path, "kb/draft/claims/failure-log.yaml", data)
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "failures",
+            "claim.fixture.failure-log",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json_output(result.output)
+    assert payload["artifact_path"] == "kb/draft/claims/failure-log.yaml"
+    assert payload["root_scope"] == "workspace"
+    assert payload["failure_count"] == 1
+    assert payload["failure_log"][0]["failure_id"] == "failure.fixture.0001"
+    assert payload["failure_log"][0]["origin"] == "human"
+    assert payload["failure_log"][0]["status"] == "open"
+    assert "not proof" in payload["authority_notice"]
+
+
+def test_artifact_failures_json_missing_artifact_error(tmp_path: Path) -> None:
+    _write_repo(tmp_path)
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "failures",
+            "claim.fixture.missing",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = _assert_json_output(result.output)
+    assert payload == {
+        "schema_version": 1,
+        "code": "artifact_not_found",
+        "message": "artifact not found: claim.fixture.missing",
+        "remediation": "Check the artifact ID and rerun the command.",
+        "blocking": True,
+        "related_path": None,
+        "related_artifact": "claim.fixture.missing",
+        "details": {},
+    }
+
+
 def test_readonly_json_errors_are_structured(tmp_path: Path) -> None:
     result = runner.invoke(
         app,

@@ -4,11 +4,12 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- Planned failure-log CLI surfaces are not implemented yet. Future read/write
-  commands should expose deterministic JSON, keep writes controlled and
-  dry-run-capable, reject direct accepted-path writes, reject readonly public
-  roots, preserve public/private scope, and keep WorkerBundle imports labeled
-  by origin.
+- Planned failure-log write CLI surfaces are not implemented yet. The
+  read-only `cosheaf artifact failures <artifact-id> --json` surface exists.
+  Future write commands should expose deterministic JSON, keep writes
+  controlled and dry-run-capable, reject direct accepted-path writes, reject
+  readonly public roots, preserve public/private scope, and keep WorkerBundle
+  imports labeled by origin.
 - Hosted worker CLI commands and hosted-provider MCP tools are not implemented
   yet. Role-specific hosted worker service bridging for fake and mocked
   provider calls is implemented under `cosheaf.agent.hosted_workers`, the
@@ -77,6 +78,16 @@
 - `cosheaf artifact move-status <artifact-id> <new-status> --repo-root <path>`: moves the artifact status for an explicit repository root.
 - `cosheaf artifact promote <artifact-id>`: promotes an eligible lifecycle artifact into `kb/accepted/<type-dir>/<artifact-id>.yaml` after repository validation, gatekeeper, target verifier, dependency, review, readonly-root, and accepted-public source metadata checks.
 - `cosheaf artifact promote <artifact-id> --repo-root <path>`: promotes the artifact for an explicit repository root.
+- `cosheaf artifact failures <artifact-id>`: prints a read-only summary of
+  the target artifact's `failure_log` entries with an explicit
+  non-authority notice. It does not write files, create verifier results, mark
+  human review, run gates, or promote artifacts.
+- `cosheaf artifact failures <artifact-id> --json`: emits deterministic JSON
+  with `schema_version`, `kind=artifact_failure_log`, artifact ID/path, KB root
+  name/scope/readonly metadata, `failure_count`, `failure_log` entries, and an
+  authority notice.
+- `cosheaf artifact failures <artifact-id> --repo-root <path>`: inspects an
+  explicit repository root.
 - `cosheaf promotion readiness --artifact <artifact-id> --json`: emits a
   read-only promotion-readiness report for a single artifact. The command
   runs validation and gatekeeper reporting, distinguishes missing review,
@@ -438,7 +449,7 @@
   currently stable machine-readable agent-access error codes. Current values:
   `accepted_write_forbidden`, `artifact_file_validation_failed`,
   `artifact_id_exists`, `artifact_model_validation_failed`,
-  `artifact_path_exists`, `bundle_complete_forbidden`,
+  `artifact_not_found`, `artifact_path_exists`, `bundle_complete_forbidden`,
   `bundle_submit_failed`, `context_build_failed`, `context_show_failed`,
   `draft_write_failed`, `gate_issue`, `hosted_worker_policy_violation`,
   `human_review_forbidden`,

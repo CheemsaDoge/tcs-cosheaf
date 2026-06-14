@@ -44,8 +44,10 @@ informal/formal semantic alignment.
   boundaries.
 - Artifact-level `failure_log` is now implemented as optional
   `BaseArtifact`/`schemas/artifact.schema.json` metadata with default empty
-  list behavior. It remains non-authoritative research memory and has no CLI
-  read/write surface yet.
+  list behavior. It remains non-authoritative research memory.
+- `cosheaf artifact failures <artifact-id> --json` provides read-only
+  failure-log inspection with artifact path, root scope metadata, failure
+  entries, and an explicit non-authority notice.
 - `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
   result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
@@ -105,10 +107,10 @@ evidence around optional verifier and failure workflows:
 ## Current Operating State
 
 The active task line is implementing V6 in focused issue/branch/PR increments.
-The plan and ADR have landed, and the optional artifact `failure_log`
-model/schema support is implemented. New work should continue from the
-read-only failure-log CLI surface, then controlled draft writes, while avoiding
-runtime authority expansion, default real provider calls, generated
+The plan and ADR have landed, optional artifact `failure_log` model/schema
+support is implemented, and read-only failure-log CLI inspection is
+implemented. New work should continue from controlled draft writes, while
+avoiding runtime authority expansion, default real provider calls, generated
 review-as-human-review, accepted writes, artifact promotion bypasses, and
 treating skipped verifier results as passes.
 
@@ -177,10 +179,11 @@ downstream workspace-template plus public KB active pins were updated to
 
 ## Next Focus
 
-After optional artifact `failure_log` model/schema support lands, proceed to
-the read-only failure-log CLI surface. Failure memory must remain research
-memory: not proof, not verifier success, not human review, not a checked
-counterexample, and not promotion evidence by itself.
+After read-only failure-log CLI inspection lands, proceed to controlled draft
+write support with dry-run, accepted-path refusal, readonly-root refusal, and
+authority-spoofing rejection. Failure memory must remain research memory: not
+proof, not verifier success, not human review, not a checked counterexample,
+and not promotion evidence by itself.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
