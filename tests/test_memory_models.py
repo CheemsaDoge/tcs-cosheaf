@@ -67,6 +67,8 @@ def test_artifact_card_serializes_deterministically() -> None:
         "review_state",
         "verifier_state",
         "formalization_state",
+        "failure_count",
+        "recent_failure_directions",
         "trust_score",
         "retrieval_score",
         "why_relevant",

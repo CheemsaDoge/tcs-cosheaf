@@ -88,6 +88,8 @@ def artifact_card_from_loaded_record(loaded: LoadedRecord) -> ArtifactCard:
         review_state=artifact.review.state,
         verifier_state="not_run",
         formalization_state=_formalization_state(artifact),
+        failure_count=len(artifact.failure_log),
+        recent_failure_directions=_recent_failure_directions(artifact),
         trust_score=_trust_score(artifact.status.value),
         retrieval_score=0.0,
         why_relevant="repository artifact metadata",
@@ -158,6 +160,19 @@ def _formalization_state(artifact: BaseArtifact) -> str:
     return ",".join(statuses)
 
 
+def _recent_failure_directions(
+    artifact: BaseArtifact,
+    *,
+    limit: int = 3,
+) -> list[str]:
+    entries = sorted(
+        artifact.failure_log,
+        key=lambda entry: (entry.attempted_at, entry.failure_id),
+        reverse=True,
+    )
+    return [entry.direction for entry in entries[:limit]]
+
+
 def _risk_flags(
     artifact: BaseArtifact,
     root_scope: MemoryRootScope,
@@ -171,6 +186,10 @@ def _risk_flags(
         flags.append(artifact.status.value)
     if artifact.risk.level != "low":
         flags.append(f"risk:{artifact.risk.level}")
+    flags.extend(
+        f"failure-log:{status}"
+        for status in sorted({entry.status for entry in artifact.failure_log})
+    )
     return flags
 
 

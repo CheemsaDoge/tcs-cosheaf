@@ -47,6 +47,7 @@ def _artifact_data(
     formalizations: list[dict[str, Any]] | None = None,
     alignment: dict[str, Any] | None = None,
     verification_policy: dict[str, Any] | None = None,
+    failure_log: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     data: dict[str, Any] = {
         "id": artifact_id,
@@ -71,7 +72,34 @@ def _artifact_data(
         data["alignment"] = alignment
     if verification_policy is not None:
         data["verification_policy"] = verification_policy
+    if failure_log is not None:
+        data["failure_log"] = failure_log
     return data
+
+
+def _failure_log_entry(
+    *,
+    failure_id: str = "failure.fixture.0001",
+    direction: str = "Try a separator induction on the bad component",
+    failed_because: str = "The separator premise is unavailable for the draft.",
+) -> dict[str, Any]:
+    return {
+        "failure_id": failure_id,
+        "attempted_at": "2026-06-02T00:00:00Z",
+        "recorded_by": "tester",
+        "origin": "human",
+        "attempt_kind": "proof_attempt",
+        "target": "",
+        "direction": direction,
+        "summary": "Fixture failed attempt memory.",
+        "failed_because": failed_because,
+        "evidence_paths": [],
+        "related_verifier_results": [],
+        "related_counterexample_candidates": [],
+        "next_possible_directions": [],
+        "status": "open",
+        "limitations": "Failure memory only; not proof or refutation.",
+    }
 
 
 def _formalization_fixture(
@@ -418,6 +446,120 @@ def test_context_pack_public_only_does_not_leak_private_cards(
     assert "Private graph conjecture" not in context_md
     assert "PRIVATE FULL STATEMENT" not in context_md
     assert "claim.fixture.private-graph" not in audit_text
+    assert "private scope exclusions" in audit_text
+
+
+def test_context_pack_includes_failure_memory_card_summary(
+    tmp_path: Path,
+) -> None:
+    _write_context_docs(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "issues/open/failure-memory.yaml",
+        _issue_data(
+            related_artifacts=["claim.fixture.failure-memory"],
+            description="Need graph failure memory context.",
+            tags=["graph"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/draft/claims/failure-memory.yaml",
+        _artifact_data(
+            "claim.fixture.failure-memory",
+            status="draft",
+            title="Draft claim with failure memory",
+            domain=["graph-theory"],
+            tags=["graph"],
+            failure_log=[
+                _failure_log_entry(
+                    direction="Search for a triangle-free gadget counterexample",
+                    failed_because="The candidate gadget still contains a triangle.",
+                )
+            ],
+        ),
+    )
+
+    result = build_context_pack(RepoContext(tmp_path), "issue.fixture.context")
+
+    context_md = (result.task_dir / "CONTEXT.md").read_text(encoding="utf-8")
+    audit = json.loads((result.task_dir / "RETRIEVAL_AUDIT.json").read_text())
+
+    assert "[DRAFT] claim.fixture.failure-memory" in context_md
+    assert "failures: 1" in context_md
+    assert "Search for a triangle-free gadget counterexample" in context_md
+    assert audit["retrieval"]["cards"][0]["failure_count"] == 1
+    assert audit["retrieval"]["cards"][0]["recent_failure_directions"] == [
+        "Search for a triangle-free gadget counterexample"
+    ]
+
+
+def test_context_pack_public_only_excludes_private_failure_log_text(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    _write_context_docs(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "issues/open/private-failure.yaml",
+        _issue_data(
+            related_artifacts=[
+                "definition.fixture.public-graph",
+                "claim.fixture.private-failure-memory",
+            ],
+            description="Need graph context.",
+            tags=["graph"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/public/accepted/definitions/public-graph.yaml",
+        _artifact_data(
+            "definition.fixture.public-graph",
+            status="accepted",
+            title="Public graph definition",
+            domain=["graph-theory"],
+            tags=["graph"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/private/draft/claims/private-failure-memory.yaml",
+        _artifact_data(
+            "claim.fixture.private-failure-memory",
+            status="draft",
+            title="Private graph conjecture",
+            domain=["graph-theory"],
+            tags=["graph"],
+            depends_on=["definition.fixture.public-graph"],
+            failure_log=[
+                _failure_log_entry(
+                    direction="PRIVATE SECRET separator failure direction",
+                    failed_because="PRIVATE SECRET failed reason",
+                )
+            ],
+        ),
+    )
+
+    result = build_context_pack(
+        RepoContext(tmp_path),
+        "issue.fixture.context",
+        public_only=True,
+    )
+
+    context_md = (result.task_dir / "CONTEXT.md").read_text(encoding="utf-8")
+    known_failures = (result.task_dir / "KNOWN_FAILURES.md").read_text(
+        encoding="utf-8"
+    )
+    audit_text = (result.task_dir / "RETRIEVAL_AUDIT.json").read_text(
+        encoding="utf-8"
+    )
+
+    assert "definition.fixture.public-graph" in context_md
+    assert "claim.fixture.private-failure-memory" not in context_md
+    assert "PRIVATE SECRET" not in context_md
+    assert "PRIVATE SECRET" not in known_failures
+    assert "PRIVATE SECRET" not in audit_text
     assert "private scope exclusions" in audit_text
 
 

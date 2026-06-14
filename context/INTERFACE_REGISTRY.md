@@ -4,14 +4,14 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- Failure-log memory search, context-pack failure sections, and
-  promotion-readiness failure-memory surfacing are not implemented yet. The
-  current runtime supports read-only artifact failure-log inspection,
-  controlled append-only draft writes, and WorkerBundle-to-failure-log planning
-  and controlled append. Future retrieval/context/readiness work must keep
-  failure memory labeled as non-authoritative and must not promote it into
-  proof, review, verifier, checked-counterexample, accepted-status, or
-  promotion authority.
+- Explicit context-pack failure sections and promotion-readiness
+  failure-memory surfacing are not implemented yet. The current runtime
+  supports read-only artifact failure-log inspection, controlled append-only
+  draft writes, WorkerBundle-to-failure-log planning and controlled append,
+  and failure-log visibility in artifact cards, memory search, and context
+  card summaries. Future context/readiness work must keep failure memory
+  labeled as non-authoritative and must not promote it into proof, review,
+  verifier, checked-counterexample, accepted-status, or promotion authority.
 - Hosted worker CLI commands and hosted-provider MCP tools are not implemented
   yet. Role-specific hosted worker service bridging for fake and mocked
   provider calls is implemented under `cosheaf.agent.hosted_workers`, the
@@ -260,12 +260,17 @@
   direct `related_artifacts`, after scope/status filters.
 - `cosheaf memory cards --status <status>`: filters cards by artifact-card
   lifecycle/trust status, such as `accepted` or `draft`.
-- `cosheaf memory cards --json`: emits deterministic JSON card DTOs.
+- `cosheaf memory cards --json`: emits deterministic JSON card DTOs,
+  including `failure_count` and `recent_failure_directions` for artifact-level
+  failed-attempt memory when present.
 - `cosheaf memory search <query>`: searches deterministic artifact cards with
   local SQLite FTS5/BM25 when available, deterministic lexical fallback
   otherwise, and issue-conditioned graph ranking signals. Default text output
   prints compact card lines with total score, not full artifact YAML or
-  statements.
+  statements. Recent failure-log directions are searchable with explicit
+  failure-memory relevance reasons; they do not alter trust score, review
+  state, verifier state, artifact status, gate results, or promotion
+  authority.
 - `cosheaf memory search <query> --repo-root <path>`: searches cards for an
   explicit repository root.
 - `cosheaf memory search <query> --issue <issue-id>`: uses the issue and its
@@ -285,8 +290,10 @@
 - `cosheaf memory search <query> --explain`: prints score component
   breakdowns and relevance reasons in text output.
 - `cosheaf memory search <query> --json`: emits a deterministic
-  `RetrievalResult` JSON payload with card hits, score breakdowns, and audit
-  metadata.
+  `RetrievalResult` JSON payload with card hits, score breakdowns, failure
+  memory card metadata, and audit metadata. Results that surface failure-log
+  memory include warnings that failure memory is not proof, verifier success,
+  human review, checked counterexample evidence, or accepted-status evidence.
 - `cosheaf memory graph build`: rebuilds
   `.cosheaf/memory/graph_snapshot.json` from repository YAML plus optional
   local sidecar signals such as gate reports and task run records.
@@ -1142,6 +1149,8 @@ enum instances in Python, and expose:
 - `review_state`
 - `verifier_state`
 - `formalization_state`
+- `failure_count`
+- `recent_failure_directions`
 - `trust_score`
 - `retrieval_score`
 - `why_relevant`
@@ -1549,17 +1558,18 @@ Generated context pack files are:
 
 `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, and the artifact sections inside
 `CONTEXT.md` use card-level lines containing artifact ID, title, status,
-source path, retrieval score, root scope, and combined issue/retrieval reasons.
-Full artifact YAML is not included in those card sections. The orchestrator
-default is `max_full_artifacts = 0`; full YAML can appear only in
-`FULL_ARTIFACTS.md` when the caller explicitly passes a positive
-`max_full_artifacts` budget. `RETRIEVAL_AUDIT.json` records the request, role,
-card bound, public-only flag, score breakdowns, filters, exclusions, warnings,
+source path, retrieval score, root scope, optional `failure_count` plus recent
+failed directions, and combined issue/retrieval reasons. Full artifact YAML is
+not included in those card sections. The orchestrator default is
+`max_full_artifacts = 0`; full YAML can appear only in `FULL_ARTIFACTS.md` when
+the caller explicitly passes a positive `max_full_artifacts` budget.
+`RETRIEVAL_AUDIT.json` records the request, role, card bound, public-only flag,
+score breakdowns, failure memory card metadata, filters, exclusions, warnings,
 `context_payload` (`card_count`, `full_artifact_count`, and `content_mode`),
 and full-artifact pull audit entries. Full-artifact pull reasons include the
 retrieval role, policy scope, and explicit maximum pull budget.
 `public_only=True` excludes private cards and private artifact IDs from both
-rendered context and audit output.
+rendered context and audit output, including private failure-log text.
 
 When a relevant artifact has formal-link metadata or policy-relevant formal
 settings, the artifact entry also includes compact formal-link metadata lines:
