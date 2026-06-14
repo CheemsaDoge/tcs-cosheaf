@@ -4,15 +4,14 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- Promotion-readiness failure-memory surfacing is not implemented yet. The
-  current runtime supports read-only artifact failure-log inspection,
+- Artifact failure-memory surfacing is implemented for read-only inspection,
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
-  and controlled append, failure-log visibility in artifact cards and memory
-  search, compact context card summaries, and explicit context-pack
-  `Known Failed Directions` sections. Future readiness work must keep failure
-  memory labeled as non-authoritative and must not promote it into proof,
-  review, verifier, checked-counterexample, accepted-status, or promotion
-  authority.
+  and controlled append, artifact cards, memory search, compact context card
+  summaries, explicit context-pack `Known Failed Directions` sections, and
+  read-only promotion-readiness warning reasons. Future failure-memory work
+  must keep failure memory labeled as non-authoritative and must not promote it
+  into proof, review, verifier, checked-counterexample, accepted-status, or
+  promotion authority.
 - Hosted worker CLI commands and hosted-provider MCP tools are not implemented
   yet. Role-specific hosted worker service bridging for fake and mocked
   provider calls is implemented under `cosheaf.agent.hosted_workers`, the
@@ -126,7 +125,9 @@
   runs validation and gatekeeper reporting, distinguishes missing review,
   failed verifier, skipped verifier, missing source metadata, dependency risk,
   private dependency, draft status, readonly-root conditions, and repository
-  gatekeeper blockers, and does not write accepted knowledge.
+  gatekeeper blockers. It also reports unresolved artifact failure memory as
+  `unresolved_failure_memory` warning reasons distinct from verifier failures.
+  It does not write accepted knowledge.
 - `cosheaf promotion readiness --issue <issue-id> --json`: emits the same
   read-only report for the issue record's direct `related_artifacts`.
 - `cosheaf promotion readiness ... --repo-root <path>`: evaluates readiness
@@ -1946,14 +1947,16 @@ knowledge writes, accepted refutations, or promotion.
 - `cosheaf.gates.promotion_readiness.ArtifactPromotionReadiness`: per-artifact
   readiness dataclass with status, source path, KB root, readonly flag, review
   state, checker-required flag, source metadata status, gate verdict, verifier
-  results, reasons, `ready`, and `to_dict()`.
+  results, reasons, `ready`, and `to_dict()`. Unresolved artifact failure
+  memory appears as warning reasons with code `unresolved_failure_memory`.
 - `cosheaf.gates.promotion_readiness.PromotionReadinessReason`: reason
   dataclass with `code`, `severity`, `message`, artifact/source/gate/verifier
   metadata, `blocking`, and `to_dict()`.
 
 Promotion readiness objects are advisory reporting surfaces only. They do not
 change accepted-promotion semantics, do not satisfy human review, and do not
-convert skipped verifier results into passes.
+convert skipped verifier results into passes. Failure-memory warning reasons
+are not verifier evidence and are not promotion blockers by themselves.
 
 #### Verification
 

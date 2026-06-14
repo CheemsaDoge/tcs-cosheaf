@@ -96,6 +96,7 @@ def _artifact_data(
     sources: list[dict[str, Any]] | None = None,
     formalizations: list[dict[str, Any]] | None = None,
     verification_policy: dict[str, Any] | None = None,
+    failure_log: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     data: dict[str, Any] = {
         "id": artifact_id,
@@ -119,7 +120,32 @@ def _artifact_data(
         data["formalizations"] = formalizations
     if verification_policy is not None:
         data["verification_policy"] = verification_policy
+    if failure_log is not None:
+        data["failure_log"] = failure_log
     return data
+
+
+def _failure_log_entry(
+    *,
+    status: str = "open",
+) -> dict[str, Any]:
+    return {
+        "failure_id": "failure.fixture.readiness.0001",
+        "attempted_at": "2026-06-14T00:00:00Z",
+        "recorded_by": "tester",
+        "origin": "human",
+        "attempt_kind": "proof_attempt",
+        "target": "",
+        "direction": "Try a separator induction",
+        "summary": "A failed proof attempt fixture.",
+        "failed_because": "The induction hypothesis was too weak.",
+        "evidence_paths": [],
+        "related_verifier_results": [],
+        "related_counterexample_candidates": [],
+        "next_possible_directions": ["Try a decomposition lemma first."],
+        "status": status,
+        "limitations": "Failure memory only; not proof or refutation.",
+    }
 
 
 def _issue_data(issue_id: str, related_artifacts: list[str]) -> dict[str, Any]:
@@ -220,6 +246,85 @@ def test_promotion_readiness_artifact_json_is_readonly(tmp_path: Path) -> None:
     assert not (
         tmp_path / "kb/private/accepted/claims/claim.fixture.ready.yaml"
     ).exists()
+
+
+def test_promotion_readiness_reports_unresolved_failure_memory_as_warning(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "kb/private/draft/claims/claim.fixture.failure-memory.yaml",
+        _artifact_data(
+            "claim.fixture.failure-memory",
+            failure_log=[_failure_log_entry()],
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "promotion",
+            "readiness",
+            "--artifact",
+            "claim.fixture.failure-memory",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json_output(result.output)
+    assert payload["ready"] is True
+    assert payload["accepted_write_performed"] is False
+    artifact_report = payload["artifacts"][0]
+    assert artifact_report["ready"] is True
+    reasons = artifact_report["reasons"]
+    assert [reason["code"] for reason in reasons] == [
+        "unresolved_failure_memory"
+    ]
+    warning = reasons[0]
+    assert warning["severity"] == "warning"
+    assert warning["status"] == "open"
+    assert "Try a separator induction" in warning["message"]
+    assert "The induction hypothesis was too weak" in warning["message"]
+    assert "failure memory only" in warning["message"]
+    assert "not verifier evidence" in warning["message"]
+    assert "not a promotion blocker by itself" in warning["message"]
+    assert "failed_verifier" not in {reason["code"] for reason in reasons}
+
+
+def test_promotion_readiness_ignores_resolved_failure_memory(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "kb/private/draft/claims/claim.fixture.resolved-failure.yaml",
+        _artifact_data(
+            "claim.fixture.resolved-failure",
+            failure_log=[_failure_log_entry(status="resolved")],
+        ),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "promotion",
+            "readiness",
+            "--artifact",
+            "claim.fixture.resolved-failure",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json_output(result.output)
+    assert payload["ready"] is True
+    assert payload["artifacts"][0]["reasons"] == []
 
 
 def test_promotion_readiness_issue_json_uses_related_artifacts(

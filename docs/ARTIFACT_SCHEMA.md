@@ -120,6 +120,12 @@ stored `failure_log` entries, and an explicit non-authority notice. It does not
 write files, create verifier results, mark human review, run gates, or promote
 artifacts.
 
+Read-only promotion-readiness reports include unresolved failure memory as
+warning reasons with code `unresolved_failure_memory`. These warnings help
+reviewers notice failed directions before promotion, but they are not verifier
+failures, not proof or refutation, not human review, not gate results, and not
+automatic promotion blockers by themselves.
+
 Controlled append support for draft/pre-accepted writable artifacts is available
 through:
 

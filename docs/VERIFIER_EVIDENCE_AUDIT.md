@@ -191,6 +191,13 @@ prove:
 This boundary is documented in `docs/FORMALIZATION_LINKS.md` and reinforced in
 adapter messages with `alignment not checked`.
 
+Artifact-level `failure_log` entries are separate from verifier evidence.
+Promotion-readiness reports may surface unresolved failure memory as
+`unresolved_failure_memory` warning reasons so reviewers can see dead
+directions, but those warnings are not verifier failures, verifier passes,
+checked counterexamples, proof, refutation, human review, or automatic
+promotion blockers by themselves.
+
 ## Source Of Truth Versus Sidecars
 
 | Record or file | Current role | Source-of-truth status |
