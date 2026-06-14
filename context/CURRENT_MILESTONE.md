@@ -10,9 +10,9 @@ Move from the published `v0.2.2` Provider Transport + Agent Workflow
 Hardening release into `v0.2.3` Verification Evidence Hardening. The verifier
 evidence audit, verifier evidence record v1, read-only promotion-readiness
 report, optional SAT result-depth fixtures, optional SMT result-depth fixtures,
-and Lean external reference ergonomics are complete; the next goal is the
-failure and counterexample evidence workflow without treating candidates as
-accepted refutations.
+Lean external reference ergonomics, and typed counterexample candidate records
+are complete; the next goal is generating review-request drafts from bundles
+without making review decisions.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -91,15 +91,17 @@ evidence around optional verifier and failure workflows:
 
 ## Current Task
 
-The current implementation task is E.1 typed counterexample candidate record.
+The current implementation task is E.2 failure-preserving review request
+generator.
 
-This task should make candidate counterexamples reviewable without treating
-them as accepted refutations. Candidate records may preserve construction
-summaries, evidence paths, verifier requests, status, and limitations, but
-they must not change accepted artifact status, create human review, or bypass
-validation, gates, verifier evidence, review, or promotion.
+This task should generate review-request drafts from WorkerBundle failures,
+typed counterexample candidates, verifier requests, assumptions, uncertainty,
+and limitations without making review decisions. Generated requests must remain
+draft/review-context only and must not mark `human_reviewed`, approve or reject
+claims, write accepted knowledge, create verifier results, or promote
+artifacts.
 
-## Recently Completed Task
+## Recently Completed Tasks
 
 D.3 Lean external reference ergonomics improved optional external Lean
 `#check` debugging without adding a mandatory Lean or lake dependency. The
@@ -113,10 +115,21 @@ Lean code, does not claim theorem proving, does not claim informal/formal
 semantic alignment, does not write accepted knowledge, and keeps missing
 Lean/lake as `skipped`, not `pass`.
 
+E.1 typed counterexample candidate records added optional WorkerBundle v2
+`counterexample_candidates` with candidate ID, optional target claim,
+construction summary, evidence paths, verifier-request IDs, status, and
+limitations. E.1 keeps legacy string `counterexamples` backward-compatible.
+Reducers preserve typed candidates as review warnings and never convert them
+into accepted refutations, verifier results, human review, or promotion
+authority. `checked_false` and `checked_true` candidate statuses require
+evidence paths in the bundle schema, but they still do not change accepted
+artifact status.
+
 ## Next Focus
 
-Proceed to Phase E failure and counterexample evidence workflow. Candidate
-counterexamples must remain candidates until explicitly checked and reviewed.
+Proceed with E.2 failure-preserving review request generator. Candidate
+counterexamples must remain candidates until explicitly checked and reviewed,
+and generated review requests must remain draft review context.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

@@ -110,6 +110,13 @@
       },
       "uniqueItems": true
     },
+    "counterexample_candidates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/counterexample_candidate"
+      },
+      "uniqueItems": true
+    },
     "failures_or_counterexamples": {
       "type": "array",
       "items": {
@@ -181,6 +188,89 @@
           "minLength": 1
         }
       }
+    },
+    "counterexample_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "construction_summary",
+        "evidence_paths",
+        "verifier_request_ids",
+        "status",
+        "limitations"
+      ],
+      "properties": {
+        "candidate_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_claim": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "construction_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "verifier_request_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "proposed",
+            "needs_check",
+            "checked_false",
+            "checked_true",
+            "rejected",
+            "superseded"
+          ]
+        },
+        "limitations": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "checked_false",
+                  "checked_true"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "evidence_paths": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }

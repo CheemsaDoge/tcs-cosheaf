@@ -77,9 +77,10 @@ human review, or treat Lean `#check` as informal/formal semantic alignment.
 
 The verifier evidence status audit, verifier evidence record v1, read-only
 promotion-readiness reporting, SAT result-depth fixtures, SMT result-depth
-fixtures, and Lean external reference ergonomics are complete. Current work
-should continue into failure/counterexample evidence workflows without
-granting accepted-write authority or treating candidate counterexamples as
+fixtures, Lean external reference ergonomics, and typed counterexample
+candidate records are complete. Current work should continue with
+failure-preserving review-request generation without granting accepted-write
+authority, making review decisions, or treating candidate counterexamples as
 accepted refutations.
 
 ## v0.2.1 Prerelease Baseline

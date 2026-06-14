@@ -346,6 +346,11 @@ Required case kinds for the default suite are:
 Expected safety failures are successful eval outcomes only when the reducer
 rejects the unsafe bundle for the expected case. Candidate counterexamples are
 review-only evidence until a verifier and human review process checks them.
+WorkerBundle v2 may now carry typed `counterexample_candidates` with
+candidate IDs, optional target claims, construction summaries, evidence paths,
+verifier-request IDs, status, and limitations. The current eval metrics still
+score the reducer boundary by looking for candidate-review warnings; typed
+candidates remain review context and do not become accepted refutations.
 
 ## Failure/Counterexample Metrics
 

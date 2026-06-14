@@ -46,7 +46,7 @@ CLI-first/provider track:
 | --- | --- | --- | --- |
 | `reasoner` | WorkerBundle v2 | `none` | Separates conjectures, proof ideas, assumptions, uncertainty, and verification requests. |
 | `verifier` | WorkerBundle v2 | `verifier_tools` | Separates natural-language concerns from tool results; skipped remains skipped. |
-| `counterexampleer` | WorkerBundle v2 | `local_tools` | Separates candidate counterexamples from verified counterexamples; neither is accepted refutation. |
+| `counterexampleer` | WorkerBundle v2 | `local_tools` | Separates candidate counterexamples from verified counterexamples; typed candidates remain review records, not accepted refutations. |
 | `explorer` | typed sub-result | `read_only` | Preserves uncertainty and dependency questions; exploration is not mass import or accepted-artifact creation. |
 | `formalizer` | WorkerBundle v2 | `read_only` | Separates symbol resolution from semantic-alignment questions. |
 | `librarian_summarizer` | typed sub-result | `read_only` | Summarizes bounded retrieval context and must not invent new claims or review authority. |
@@ -89,6 +89,12 @@ Every role contract forbids:
 Individual roles add further role-specific forbidden actions, such as refusing
 fabricated source locators, hidden skipped verifier results, or claimed
 informal/formal equivalence without alignment review.
+
+Counterexampleer output may include typed WorkerBundle v2
+`counterexample_candidates`. These records preserve candidate IDs, optional
+target claims, construction summaries, evidence paths, verifier-request IDs,
+status, and limitations for review. They do not update accepted artifact
+status, create verifier results, mark human review, or promote artifacts.
 
 ## Usage
 

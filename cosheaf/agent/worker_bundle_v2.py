@@ -12,10 +12,17 @@ import json
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Any
+from typing import Any, Self
 
 import yaml  # type: ignore[import-untyped]
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 from yaml import YAMLError
 
 from cosheaf.agent.orchestrator_state import ReducerResult
@@ -40,6 +47,17 @@ class WorkerBundleConfidence(StrEnum):
     HIGH = "high"
 
 
+class CounterexampleCandidateStatus(StrEnum):
+    """Review lifecycle label for a proposed counterexample candidate."""
+
+    PROPOSED = "proposed"
+    NEEDS_CHECK = "needs_check"
+    CHECKED_FALSE = "checked_false"
+    CHECKED_TRUE = "checked_true"
+    REJECTED = "rejected"
+    SUPERSEDED = "superseded"
+
+
 class ProposedArtifact(BaseModel):
     """One proposed repository-local artifact output."""
 
@@ -57,6 +75,83 @@ class ProposedArtifact(BaseModel):
     @classmethod
     def _validate_summary(cls, value: str) -> str:
         return _validate_non_empty_text(value, field_name="proposed artifact summary")
+
+
+class CounterexampleCandidate(BaseModel):
+    """One typed counterexample candidate preserved for review.
+
+    This record is evidence-routing metadata. It does not refute accepted
+    knowledge, create verifier results, create human review, or promote
+    artifacts.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    candidate_id: str
+    target_claim: str | None = None
+    construction_summary: str
+    evidence_paths: list[str]
+    verifier_request_ids: list[str]
+    status: CounterexampleCandidateStatus
+    limitations: str
+
+    @field_validator("candidate_id")
+    @classmethod
+    def _validate_candidate_id(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("target_claim")
+    @classmethod
+    def _validate_target_claim(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        if not stripped:
+            return None
+        return validate_artifact_id(stripped)
+
+    @field_validator("construction_summary")
+    @classmethod
+    def _validate_construction_summary(cls, value: str) -> str:
+        return _validate_non_empty_text(
+            value,
+            field_name="counterexample construction summary",
+        )
+
+    @field_validator("evidence_paths")
+    @classmethod
+    def _validate_evidence_paths(cls, values: list[str]) -> list[str]:
+        return _dedupe_preserving_order(
+            _validate_repo_local_path(value) for value in values
+        )
+
+    @field_validator("verifier_request_ids")
+    @classmethod
+    def _validate_verifier_request_ids(cls, values: list[str]) -> list[str]:
+        return _dedupe_preserving_order(
+            validate_artifact_id(value.strip()) for value in values
+        )
+
+    @field_validator("limitations")
+    @classmethod
+    def _validate_limitations(cls, value: str) -> str:
+        return _validate_non_empty_text(
+            value,
+            field_name="counterexample limitations",
+        )
+
+    @model_validator(mode="after")
+    def _checked_candidates_need_evidence(self) -> Self:
+        if (
+            self.status
+            in {
+                CounterexampleCandidateStatus.CHECKED_FALSE,
+                CounterexampleCandidateStatus.CHECKED_TRUE,
+            }
+            and not self.evidence_paths
+        ):
+            raise ValueError(f"{self.status.value} requires evidence_paths")
+        return self
 
 
 class WorkerBundleV2(BaseModel):
@@ -84,6 +179,9 @@ class WorkerBundleV2(BaseModel):
     verification_requests: list[str] = Field(default_factory=list)
     failed_attempts: list[str] = Field(default_factory=list)
     counterexamples: list[str] = Field(default_factory=list)
+    counterexample_candidates: list[CounterexampleCandidate] = Field(
+        default_factory=list
+    )
     failures_or_counterexamples: list[str] = Field(default_factory=list)
     dependency_questions: list[str] = Field(default_factory=list)
     risk_flags: list[str] = Field(default_factory=list)
@@ -199,6 +297,10 @@ def worker_bundle_review_warnings(bundle: WorkerBundleV2) -> list[str]:
                 f"counterexample_candidate: {item}"
                 for item in bundle.counterexamples
             ),
+            *(
+                _counterexample_candidate_warning(candidate)
+                for candidate in bundle.counterexample_candidates
+            ),
             *bundle.failures_or_counterexamples,
             *(
                 f"dependency_question: {item}"
@@ -207,6 +309,26 @@ def worker_bundle_review_warnings(bundle: WorkerBundleV2) -> list[str]:
             *(f"risk: {flag}" for flag in bundle.risk_flags),
             f"confidence: {bundle.confidence.value}",
         ]
+    )
+
+
+def _counterexample_candidate_warning(candidate: CounterexampleCandidate) -> str:
+    target = f" target={candidate.target_claim}" if candidate.target_claim else ""
+    evidence = (
+        ",".join(candidate.evidence_paths) if candidate.evidence_paths else "none"
+    )
+    verifier_requests = (
+        ",".join(candidate.verifier_request_ids)
+        if candidate.verifier_request_ids
+        else "none"
+    )
+    return (
+        "counterexample_candidate: "
+        f"{candidate.candidate_id} status={candidate.status.value}{target} "
+        f"evidence_paths={evidence} "
+        f"verifier_request_ids={verifier_requests} "
+        f"summary={candidate.construction_summary} "
+        f"limitations={candidate.limitations}"
     )
 
 

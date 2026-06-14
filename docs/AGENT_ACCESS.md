@@ -328,11 +328,16 @@ A provider result can become worker output, a draft proposal, or review
 context. It cannot become accepted knowledge by itself.
 
 WorkerBundle v2 can preserve assumptions, uncertainty, failed attempts,
-candidate counterexamples, verification requests, dependency questions, risk
-flags, and next steps as review-only material. Verification requests are not
-verifier results, and candidate counterexamples are not accepted refutations.
-Those fields must remain draft/proposal context until ordinary review, gate,
-verifier, and promotion workflows handle them explicitly.
+candidate counterexamples, typed `counterexample_candidates`, verification
+requests, dependency questions, risk flags, and next steps as review-only
+material. Verification requests are not verifier results, and candidate
+counterexamples are not accepted refutations. Typed candidate records carry a
+candidate ID, optional target claim, construction summary, evidence paths,
+verifier-request IDs, status, and limitations; `proposed` and `needs_check`
+remain unverified candidates, and `checked_false` or `checked_true` still do
+not alter accepted knowledge or create human review. Those fields must remain
+draft/proposal context until ordinary review, gate, verifier, and promotion
+workflows handle them explicitly.
 Hosted-worker role prompts include required/optional output fields and
 forbidden authority so providers see the same contract that local validators
 enforce.

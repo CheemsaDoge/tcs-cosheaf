@@ -65,6 +65,13 @@ not verifier evidence. They are not stored in `evidence`, do not make Lean run
 automatically, and do not satisfy target verifier checks for accepted
 promotion.
 
+WorkerBundle v2 `counterexample_candidates` are reducer review records, not
+accepted counterexample artifacts and not verifier results. A candidate with
+status `proposed` or `needs_check` is not a refutation. A candidate with status
+`checked_false` or `checked_true` must carry evidence paths in the bundle
+schema, but it still cannot change accepted artifact status, create human
+review, satisfy promotion, or bypass gatekeeper checks.
+
 Formal library manifest metadata, such as
 `formal-libs/lean-libraries.example.yaml`, pins external library IDs and
 versions for reference checking. The manifest does not change gate or promotion
