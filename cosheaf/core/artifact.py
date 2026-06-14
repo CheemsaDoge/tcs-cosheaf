@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
+from pathlib import PurePosixPath
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -225,6 +227,91 @@ class Risk(BaseModel):
     notes: str = ""
 
 
+class FailureLogEntry(BaseModel):
+    """Durable failed-attempt memory attached to an artifact."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    failure_id: str
+    attempted_at: datetime
+    recorded_by: str
+    origin: Literal["human", "agent", "provider", "verifier", "imported_bundle"]
+    attempt_kind: Literal[
+        "proof_attempt",
+        "reduction_attempt",
+        "construction_attempt",
+        "counterexample_search",
+        "formalization_attempt",
+        "verifier_attempt",
+        "retrieval_attempt",
+        "other",
+    ]
+    target: str = ""
+    direction: str
+    summary: str
+    failed_because: str
+    evidence_paths: list[str] = Field(default_factory=list)
+    related_verifier_results: list[str] = Field(default_factory=list)
+    related_counterexample_candidates: list[str] = Field(default_factory=list)
+    next_possible_directions: list[str] = Field(default_factory=list)
+    status: Literal["open", "superseded", "invalidated", "resolved", "archived"]
+    limitations: str
+
+    @field_validator("failure_id")
+    @classmethod
+    def _validate_failure_id(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("attempted_at")
+    @classmethod
+    def _validate_attempt_timestamp(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("attempted_at must include timezone information")
+        return value
+
+    @field_validator(
+        "recorded_by",
+        "direction",
+        "summary",
+        "failed_because",
+        "limitations",
+    )
+    @classmethod
+    def _strip_required_strings(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("failure_log text fields must not be empty")
+        return stripped
+
+    @field_validator("target")
+    @classmethod
+    def _validate_target(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            return ""
+        return validate_dependency_ref(stripped)
+
+    @field_validator("evidence_paths")
+    @classmethod
+    def _validate_evidence_paths(cls, values: list[str]) -> list[str]:
+        return [_validate_failure_log_path(value) for value in values]
+
+    @field_validator(
+        "related_verifier_results",
+        "related_counterexample_candidates",
+        "next_possible_directions",
+    )
+    @classmethod
+    def _strip_reference_list(cls, values: list[str]) -> list[str]:
+        stripped_values: list[str] = []
+        for value in values:
+            stripped = value.strip()
+            if not stripped:
+                raise ValueError("failure_log list entries must not be empty")
+            stripped_values.append(stripped)
+        return stripped_values
+
+
 class BaseArtifact(BaseModel):
     """Base typed artifact model shared by current artifact examples."""
 
@@ -251,6 +338,7 @@ class BaseArtifact(BaseModel):
     )
     review: ReviewRef = Field(default_factory=ReviewRef)
     risk: Risk = Field(default_factory=Risk)
+    failure_log: list[FailureLogEntry] = Field(default_factory=list)
 
     @field_validator("id")
     @classmethod
@@ -297,3 +385,22 @@ def validate_dependency_ref(value: str) -> str:
     if is_external_dependency_ref(stripped):
         return stripped
     return validate_artifact_id(stripped)
+
+
+def _validate_failure_log_path(value: str) -> str:
+    """Validate a repository-local failure-log support path."""
+    normalized = value.strip().replace("\\", "/")
+    if not normalized:
+        raise ValueError("failure_log evidence path must not be empty")
+    if normalized.startswith("/") or re.match(r"^[A-Za-z]:", normalized):
+        raise ValueError("failure_log evidence path must be repository-local")
+
+    path = PurePosixPath(normalized)
+    parts = path.parts
+    if ".." in parts:
+        raise ValueError("failure_log evidence path must not traverse parents")
+    if parts and parts[0] == "kb" and "accepted" in parts[1:]:
+        raise ValueError(
+            "failure_log evidence path must not target accepted KB paths"
+        )
+    return path.as_posix()

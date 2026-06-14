@@ -168,6 +168,62 @@ def test_artifact_schema_defines_optional_formal_link_fields() -> None:
     )
 
 
+def test_artifact_schema_defines_optional_failure_log() -> None:
+    schema = json.loads(
+        (ROOT / "schemas/artifact.schema.json").read_text(encoding="utf-8")
+    )
+    properties = schema["properties"]
+
+    assert "failure_log" not in schema["required"]
+    failure_log = properties["failure_log"]
+    assert failure_log["type"] == "array"
+    failure_entry = failure_log["items"]
+    assert failure_entry["additionalProperties"] is False
+    assert failure_entry["required"] == [
+        "failure_id",
+        "attempted_at",
+        "recorded_by",
+        "origin",
+        "attempt_kind",
+        "direction",
+        "summary",
+        "failed_because",
+        "status",
+        "limitations",
+    ]
+    assert failure_entry["properties"]["origin"]["enum"] == [
+        "human",
+        "agent",
+        "provider",
+        "verifier",
+        "imported_bundle",
+    ]
+    assert failure_entry["properties"]["attempt_kind"]["enum"] == [
+        "proof_attempt",
+        "reduction_attempt",
+        "construction_attempt",
+        "counterexample_search",
+        "formalization_attempt",
+        "verifier_attempt",
+        "retrieval_attempt",
+        "other",
+    ]
+    assert failure_entry["properties"]["status"]["enum"] == [
+        "open",
+        "superseded",
+        "invalidated",
+        "resolved",
+        "archived",
+    ]
+    assert failure_entry["properties"]["attempted_at"] == {
+        "type": "string",
+        "format": "date-time",
+    }
+    assert failure_entry["properties"]["evidence_paths"]["items"] == {
+        "$ref": "#/$defs/repository_local_nonaccepted_path"
+    }
+
+
 def test_formal_library_schema_defines_manifest_contract() -> None:
     schema = json.loads(
         (ROOT / "schemas/formal_library.schema.json").read_text(encoding="utf-8")

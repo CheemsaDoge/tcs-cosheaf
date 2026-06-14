@@ -51,25 +51,25 @@ implemented schema/model support:
 - `review`
 - `risk`
 
-## Planned Artifact Failure Log
+## Artifact Failure Log
 
-`failure_log` is the planned artifact-level home for failed proof attempts,
-dead reduction directions, construction failures, counterexample-search dead
-ends, formalization stalls, retrieval misses, and verifier attempts that should
-not be repeated without new evidence.
+`failure_log` is the artifact-level home for failed proof attempts, dead
+reduction directions, construction failures, counterexample-search dead ends,
+formalization stalls, retrieval misses, and verifier attempts that should not
+be repeated without new evidence.
 
-The field is planned as optional and backward compatible:
+The field is optional and backward compatible:
 
 - artifacts that omit `failure_log` remain valid;
 - omitted `failure_log` behaves like an empty list;
 - existing artifact lifecycle, review, verifier, gate, and promotion semantics
   remain unchanged.
 
-A failure-log entry is research memory. It is not proof, verifier success,
+Each failure-log entry is research memory. It is not proof, verifier success,
 human review, source metadata, checked counterexample evidence, gate success,
 or accepted-promotion evidence by itself.
 
-Planned entry fields:
+Entry fields:
 
 | Field | Required | Meaning | Authority boundary |
 | --- | --- | --- | --- |
@@ -89,10 +89,10 @@ Planned entry fields:
 | `status` | yes | `open`, `superseded`, `invalidated`, `resolved`, or `archived`. | Status of the memory entry only. `resolved` does not mean proven, refuted, reviewed, or accepted. |
 | `limitations` | yes | Non-empty anti-overclaiming note. | Required reminder that the entry does not bypass validation, gates, review, verifier evidence, or promotion. |
 
-The planned model/schema should reject unsafe repository paths, invalid IDs,
-timezone-naive timestamps, empty required text fields, and any structured claim
-that a failure-log entry itself grants human review, verifier pass, checked
-counterexample status, accepted status, or promotion readiness.
+The model/schema rejects unsafe repository paths, invalid IDs,
+timezone-naive timestamps, empty required text fields, and structured fields
+that would try to grant human review, verifier pass, checked counterexample
+status, accepted status, or promotion readiness.
 
 WorkerBundle v2 `failed_attempts` and artifact `failure_log` have different
 scope. WorkerBundle failures are run-scoped worker output and can be noisy,
@@ -293,6 +293,7 @@ The initial Pydantic v2 model layer lives under `cosheaf/core/`:
 - `cosheaf.core.artifact.FormalizationRef`
 - `cosheaf.core.artifact.AlignmentReview`
 - `cosheaf.core.artifact.VerificationPolicy`
+- `cosheaf.core.artifact.FailureLogEntry`
 - `cosheaf.core.formal_library.FormalLibrary`
 - `cosheaf.core.formal_library.FormalLibraryManifest`
 - `cosheaf.core.artifact.Risk`
@@ -302,7 +303,7 @@ The initial Pydantic v2 model layer lives under `cosheaf/core/`:
 The model layer validates artifact IDs, enum values, timezone-aware timestamps,
 dependency references, evidence records, source metadata shape, formalization
 link shape, alignment review state, verification policy values, review state,
-and risk state.
+failure-log shape, and risk state.
 Path/status rules are exposed as pure helper functions; they do not scan the
 repository.
 
@@ -350,7 +351,10 @@ optional external reference checker can generate a temporary Lean file with
 references when Lean or lake is available; a pass means only that the import
 and symbol resolved.
 
-Artifact-level `failure_log` is designed for the `v0.2.4` line but is not yet
-implemented in `BaseArtifact` or `schemas/artifact.schema.json`. Until the
-model/schema task lands, artifacts containing `failure_log` should not be
-expected to validate.
+Artifact-level `failure_log` is implemented as optional Pydantic model and JSON
+Schema metadata. It defaults to an empty list, validates timezone-aware
+`attempted_at` timestamps, non-empty required text, failure IDs, optional local
+or explicit external targets, repository-local non-accepted evidence paths,
+origin labels, attempt kinds, and failure-log entry status values. It remains
+research memory only and does not change review, verifier, gate, or promotion
+authority.

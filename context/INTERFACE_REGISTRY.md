@@ -4,16 +4,6 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- Artifact-level `failure_log` is planned for the `v0.2.4` line as an optional
-  `BaseArtifact`/`schemas/artifact.schema.json` field. It is not implemented
-  yet. The planned entry shape records durable failed-attempt memory with
-  `failure_id`, timezone-aware `attempted_at`, `recorded_by`, `origin`,
-  `attempt_kind`, optional `target`, `direction`, `summary`, `failed_because`,
-  reference lists for evidence, verifier results, and counterexample
-  candidates, `next_possible_directions`, entry `status`, and required
-  `limitations`. The field is research memory only: it is not proof, verifier
-  success, checked counterexample evidence, human review, gate success,
-  accepted status, or promotion evidence.
 - Planned failure-log CLI surfaces are not implemented yet. Future read/write
   commands should expose deterministic JSON, keep writes controlled and
   dry-run-capable, reject direct accepted-path writes, reject readonly public
@@ -719,6 +709,8 @@ gates, index rebuilds, context packs, promotion, or default installation.
   declaration.
 - `cosheaf.core.artifact.VerificationPolicy`: Pydantic v2 model for
   per-artifact formal-link, Lean-check, and alignment-review expectations.
+- `cosheaf.core.artifact.FailureLogEntry`: Pydantic v2 model for one
+  artifact-local failed-attempt memory entry.
 - `cosheaf.core.formal_library.FormalLibrary`: Pydantic v2 model for one
   pinned external Lean library manifest entry.
 - `cosheaf.core.formal_library.FormalLibraryManifest`: Pydantic v2 model for a
@@ -741,6 +733,32 @@ gates, index rebuilds, context packs, promotion, or default installation.
 - `formalizations: list[FormalizationRef]`
 - `alignment: AlignmentReview`
 - `verification_policy: VerificationPolicy`
+- `failure_log: list[FailureLogEntry]`
+
+`FailureLogEntry` fields are:
+
+- `failure_id`
+- `attempted_at`
+- `recorded_by`
+- `origin`: `human`, `agent`, `provider`, `verifier`, or `imported_bundle`
+- `attempt_kind`: `proof_attempt`, `reduction_attempt`,
+  `construction_attempt`, `counterexample_search`, `formalization_attempt`,
+  `verifier_attempt`, `retrieval_attempt`, or `other`
+- `target`
+- `direction`
+- `summary`
+- `failed_because`
+- `evidence_paths`
+- `related_verifier_results`
+- `related_counterexample_candidates`
+- `next_possible_directions`
+- `status`: `open`, `superseded`, `invalidated`, `resolved`, or `archived`
+- `limitations`
+
+`FailureLogEntry` is durable research memory only. It is not proof, verifier
+success, checked counterexample evidence, human review, gate success, accepted
+status, or promotion evidence. Its `evidence_paths` must be repository-local
+and must not target accepted KB paths.
 
 `SourceMetadata` fields are:
 
@@ -2269,8 +2287,11 @@ working directory.
   policy metadata. Formalization references are separate from `evidence`; this
   schema does not add formal-link CLI commands or verifier execution, but G10,
   context packs, and the deterministic index/query surfaces read this metadata.
-  Artifact-level `failure_log` is planned but not yet implemented in this
-  schema.
+  Artifact-level `failure_log` is optional and records durable failed-attempt
+  memory with strict origin, attempt-kind, status, timestamp, ID, required-text,
+  and repository-local non-accepted evidence-path validation. It does not add
+  failure-log CLI commands and does not grant proof, verifier, review, gate, or
+  promotion authority.
 - `schemas/formal_library.schema.json`: formal library manifest schema for
   pinned external Lean library metadata. It requires `schema_version: 1` and at
   least one library entry with `id`, `name`, `system`, `git`, `commit`,

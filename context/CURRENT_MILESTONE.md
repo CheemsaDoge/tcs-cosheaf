@@ -2,22 +2,22 @@
 
 ## Milestone
 
-`v0.2.4` Artifact Failure Memory + Attempt Traceability plan landing.
+`v0.2.4` Artifact Failure Memory + Attempt Traceability implementation.
 
 ## Goal
 
-Land the active V6 plan and ADR for `v0.2.4` Artifact Failure Memory + Attempt
-Traceability after the post-`v0.2.3` state audit. The plan targets durable
-artifact-level failure memory for failed attempts, dead directions, blocked
-approaches, and lessons learned while preserving all review, verifier, gate,
-promotion, public/private, provider, and MCP boundaries.
+Implement the active V6 plan for `v0.2.4` Artifact Failure Memory + Attempt
+Traceability after the post-`v0.2.3` state audit and plan landing. The line
+targets durable artifact-level failure memory for failed attempts, dead
+directions, blocked approaches, and lessons learned while preserving all
+review, verifier, gate, promotion, public/private, provider, and MCP
+boundaries.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
 automatic Lean autoformalization, automatic accepted promotion,
-AI-as-human-review, provider/MCP authority expansion, automatic
-informal/formal semantic alignment, or artifact-level `failure_log`
-implementation in the plan-landing task.
+AI-as-human-review, provider/MCP authority expansion, or automatic
+informal/formal semantic alignment.
 
 ## Current Baseline
 
@@ -42,6 +42,10 @@ implementation in the plan-landing task.
   `v0.2.4` artifact failure-memory line.
 - ADR 0023 records the artifact failure-memory decision and authority
   boundaries.
+- Artifact-level `failure_log` is now implemented as optional
+  `BaseArtifact`/`schemas/artifact.schema.json` metadata with default empty
+  list behavior. It remains non-authoritative research memory and has no CLI
+  read/write surface yet.
 - `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
   result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
@@ -100,12 +104,13 @@ evidence around optional verifier and failure workflows:
 
 ## Current Operating State
 
-The active task is issue 302, landing the V6 plan and ADR for artifact-level
-failure memory after the post-v0.2.3 state audit. This task is not
-schema/runtime implementation. New work should continue from focused issues,
-branches, and PRs, and it must avoid runtime authority expansion, default real
-provider calls, generated review-as-human-review, accepted writes, artifact
-promotion bypasses, and treating skipped verifier results as passes.
+The active task line is implementing V6 in focused issue/branch/PR increments.
+The plan and ADR have landed, and the optional artifact `failure_log`
+model/schema support is implemented. New work should continue from the
+read-only failure-log CLI surface, then controlled draft writes, while avoiding
+runtime authority expansion, default real provider calls, generated
+review-as-human-review, accepted writes, artifact promotion bypasses, and
+treating skipped verifier results as passes.
 
 ## Recently Completed Tasks
 
@@ -172,10 +177,9 @@ downstream workspace-template plus public KB active pins were updated to
 
 ## Next Focus
 
-After the V6 plan and ADR land, proceed to the artifact failure-log schema ADR
-before runtime implementation. The first implementation must keep `failure_log`
-optional and backward compatible. Failure memory must remain research memory:
-not proof, not verifier success, not human review, not a checked
+After optional artifact `failure_log` model/schema support lands, proceed to
+the read-only failure-log CLI surface. Failure memory must remain research
+memory: not proof, not verifier success, not human review, not a checked
 counterexample, and not promotion evidence by itself.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue

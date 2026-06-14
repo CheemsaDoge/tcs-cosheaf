@@ -20,6 +20,8 @@ def _to_plain_data(data: Any) -> Any:
             dumped.pop("alignment", None)
         if data.verification_policy == VerificationPolicy():
             dumped.pop("verification_policy", None)
+        if not data.failure_log:
+            dumped.pop("failure_log", None)
         return dumped
     if isinstance(data, BaseModel):
         return data.model_dump(mode="json")

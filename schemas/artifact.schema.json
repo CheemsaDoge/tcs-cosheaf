@@ -385,9 +385,150 @@
           "type": "string"
         }
       }
+    },
+    "failure_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "failure_id",
+          "attempted_at",
+          "recorded_by",
+          "origin",
+          "attempt_kind",
+          "direction",
+          "summary",
+          "failed_because",
+          "status",
+          "limitations"
+        ],
+        "properties": {
+          "failure_id": {
+            "$ref": "#/$defs/artifact_id"
+          },
+          "attempted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "recorded_by": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "human",
+              "agent",
+              "provider",
+              "verifier",
+              "imported_bundle"
+            ]
+          },
+          "attempt_kind": {
+            "type": "string",
+            "enum": [
+              "proof_attempt",
+              "reduction_attempt",
+              "construction_attempt",
+              "counterexample_search",
+              "formalization_attempt",
+              "verifier_attempt",
+              "retrieval_attempt",
+              "other"
+            ]
+          },
+          "target": {
+            "$ref": "#/$defs/dependency_ref"
+          },
+          "direction": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          },
+          "summary": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          },
+          "failed_because": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          },
+          "evidence_paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/repository_local_nonaccepted_path"
+            },
+            "uniqueItems": true
+          },
+          "related_verifier_results": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": ".*\\S.*"
+            },
+            "uniqueItems": true
+          },
+          "related_counterexample_candidates": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": ".*\\S.*"
+            },
+            "uniqueItems": true
+          },
+          "next_possible_directions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": ".*\\S.*"
+            },
+            "uniqueItems": true
+          },
+          "status": {
+            "type": "string",
+            "enum": ["open", "superseded", "invalidated", "resolved", "archived"]
+          },
+          "limitations": {
+            "type": "string",
+            "pattern": ".*\\S.*"
+          }
+        }
+      }
     }
   },
   "$defs": {
+    "artifact_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|[0-9]+))+$"
+    },
+    "dependency_ref": {
+      "type": "string",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/artifact_id"
+        },
+        {
+          "pattern": "^external:\\S.*$"
+        }
+      ]
+    },
+    "repository_local_nonaccepted_path": {
+      "type": "string",
+      "pattern": ".*\\S.*",
+      "not": {
+        "anyOf": [
+          {
+            "pattern": "^(?:/|[A-Za-z]:)"
+          },
+          {
+            "pattern": "(^|[\\\\/])\\.\\.([\\\\/]|$)"
+          },
+          {
+            "pattern": "^kb[\\\\/](?:.*[\\\\/])?accepted(?:[\\\\/]|$)"
+          }
+        ]
+      }
+    },
     "status": {
       "type": "string",
       "enum": [
