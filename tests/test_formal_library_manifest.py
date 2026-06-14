@@ -117,6 +117,41 @@ def test_formalization_refs_must_resolve_against_manifest() -> None:
         )
 
 
+def test_unknown_library_ref_error_lists_available_manifest_ids() -> None:
+    manifest = FormalLibraryManifest.model_validate(
+        {
+            "schema_version": 1,
+            "libraries": [
+                {
+                    "id": "cslib-main",
+                    "name": "CSLib",
+                    "system": "lean4",
+                    "git": "https://example.invalid/cslib.git",
+                    "commit": "0123456789abcdef0123456789abcdef01234567",
+                    "lean_version": "lean4-example",
+                    "lake_manifest": "lake-manifest.json",
+                },
+                {
+                    "id": "mathlib-main",
+                    "name": "mathlib",
+                    "system": "lean4",
+                    "git": "https://example.invalid/mathlib.git",
+                    "commit": "abcdef0123456789abcdef0123456789abcdef01",
+                    "lean_version": "lean4-example",
+                    "lake_manifest": "lake-manifest.json",
+                },
+            ],
+        }
+    )
+
+    with pytest.raises(FormalLibraryManifestError) as excinfo:
+        manifest.require_library_ref("unknown-lib")
+
+    message = str(excinfo.value)
+    assert "unknown library_ref: unknown-lib" in message
+    assert "available library_ref ids: cslib-main, mathlib-main" in message
+
+
 def test_example_lean_libraries_manifest_loads() -> None:
     manifest = load_formal_library_manifest(
         ROOT / "formal-libs" / "lean-libraries.example.yaml"

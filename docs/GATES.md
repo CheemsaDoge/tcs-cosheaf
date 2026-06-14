@@ -330,6 +330,8 @@ enforces policy consistency only:
   check; schema/model validation normally catches violations first.
 - `library_ref` values must resolve in a local formal library manifest such as
   `formal-libs/lean-libraries.yaml` or the checked-in example manifest.
+  Unknown `library_ref` blocking issues include the available manifest IDs when
+  a manifest was loaded, so operators can correct stale or mistyped metadata.
 - `import_path` and `symbol` must be non-empty for `linked` and `checked`
   references; model validation normally catches empty values first.
 - `alignment.status: rejected` is blocking when alignment review is required

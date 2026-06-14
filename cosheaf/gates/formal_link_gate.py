@@ -212,10 +212,10 @@ def _check_artifact(
             try:
                 manifest_lookup.manifest.require_library_ref(ref.library_ref)
                 resolved_library_ref_count += 1
-            except FormalLibraryManifestError:
+            except FormalLibraryManifestError as exc:
                 blocking.append(
                     f"formalization {ref.id} references unknown library_ref: "
-                    f"{ref.library_ref}"
+                    f"{ref.library_ref}; {_available_library_ref_detail(exc)}"
                 )
         if (
             ref.status == "checked"
@@ -363,6 +363,14 @@ def _has_matching_lean_pass(
 
 def _formalization_label(formalization_id: str) -> str:
     return f"formalization:{formalization_id}"
+
+
+def _available_library_ref_detail(exc: FormalLibraryManifestError) -> str:
+    message = str(exc)
+    marker = "available library_ref ids: "
+    if marker in message:
+        return f"{marker}{message.split(marker, 1)[1]}"
+    return message
 
 
 def _failures_from_messages(
