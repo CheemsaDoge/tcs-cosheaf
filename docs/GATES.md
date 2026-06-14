@@ -78,6 +78,50 @@ Direct accepted creation remains refused by `cosheaf artifact create`.
 instead of moving anything into `kb/accepted/`. This preserves the invariant
 that accepted knowledge is introduced only through the explicit promotion flow.
 
+## Read-Only Promotion Readiness Reports
+
+`cosheaf promotion readiness` explains whether a target artifact, or the
+artifacts directly listed on an issue, appear ready for the explicit promotion
+workflow. It is a report-only command. It does not move files, does not set
+`status: accepted`, does not create human review, and does not replace
+`cosheaf artifact promote`.
+
+Supported forms are:
+
+```bash
+cosheaf promotion readiness --artifact <artifact-id> --json
+cosheaf promotion readiness --issue <issue-id> --json
+```
+
+The JSON report includes `accepted_write_performed: false`, the gate report
+paths written under `.cosheaf/reports/`, artifact status, KB root readonly
+state, review state, source metadata state, target verifier results, and
+readiness reasons. Blocking reasons make the command exit nonzero.
+
+The report distinguishes at least these promotion-readiness conditions:
+
+- `missing_review`: `review.state` is not `human_reviewed` or `accepted`.
+  AI/provider output cannot satisfy this human-review requirement.
+- `failed_verifier`: a target verifier result is `fail` or `error`.
+- `skipped_verifier`: a target verifier result is `skipped`. Skipped verifier
+  evidence is not a pass; it blocks readiness when the artifact policy requires
+  that checker.
+- `missing_source_metadata`: a public KB artifact lacks source metadata needed
+  for accepted public knowledge under `accepted_requires_source = true`.
+- `dependency_risk`: a dependency is missing or not accepted.
+- `private_dependency`: a public artifact depends on a private artifact.
+- `draft_status`: the target is still raw/draft rather than review-grade
+  pre-accepted status.
+- `readonly_kb_root`: the target is loaded from a readonly KB root.
+- `repository_gate_blocker`: another blocking gatekeeper issue in the
+  repository would prevent accepted promotion even if the target artifact looks
+  locally ready.
+
+Readiness reports are intentionally conservative and advisory. Promotion still
+uses a fresh repository validation and gatekeeper run, still enforces review,
+dependency, readonly-root, target verifier, and source-metadata checks, and
+still performs the only accepted write.
+
 ### Evidence Path Gate
 
 Checks that referenced evidence paths exist, are repository-local, and are appropriate for the artifact status.
@@ -449,6 +493,13 @@ records loaded from readonly KB roots. `cosheaf artifact promote <artifact-id>`
 performs the accepted-artifact promotion workflow described above, refuses
 records loaded from readonly KB roots, and is the only implemented CLI path for
 moving eligible artifacts into the accepted area of their KB root.
+
+`cosheaf promotion readiness --artifact <artifact-id> --json` and
+`cosheaf promotion readiness --issue <issue-id> --json` run a read-only
+readiness report over the same repository, gatekeeper, review, dependency,
+source-metadata, readonly-root, and target verifier evidence surfaces. The
+command may write ordinary runtime gate reports under `.cosheaf/reports/`, but
+it does not write accepted artifacts or change artifact status.
 
 `cosheaf gate run` now runs:
 

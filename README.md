@@ -82,7 +82,8 @@ Implemented:
   readonly roots, public/private dependency policy, and legacy fallback.
 - `cosheaf validate`, `cosheaf artifact validate <path>`,
   `cosheaf artifact create`, `cosheaf artifact move-status`,
-  `cosheaf artifact promote`, and `cosheaf workspace info`.
+  `cosheaf artifact promote`, `cosheaf promotion readiness`, and
+  `cosheaf workspace info`.
 - Dependency graph inspection and deterministic SQLite/manifest index rebuilds.
 - Read-only SQLite query API over rebuilt index output through
   `ArtifactIndexQuery`, including artifact, status, type, domain, dependency,
@@ -236,6 +237,15 @@ cosheaf artifact promote claim.example.new
 Direct accepted creation and direct `move-status ... accepted` remain refused.
 Promotion requires repository validation, gatekeeper, target verifier,
 dependency, and review checks.
+
+Inspect promotion readiness without promoting:
+
+```bash
+cosheaf promotion readiness --artifact claim.example.new --json
+```
+
+Readiness reports are advisory. They do not write accepted artifacts, do not
+create human review, and do not convert skipped verifier output into a pass.
 
 Build an index and inspect the artifact dependency graph:
 

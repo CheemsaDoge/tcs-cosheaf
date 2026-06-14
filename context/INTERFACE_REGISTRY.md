@@ -72,6 +72,16 @@
 - `cosheaf artifact move-status <artifact-id> <new-status> --repo-root <path>`: moves the artifact status for an explicit repository root.
 - `cosheaf artifact promote <artifact-id>`: promotes an eligible lifecycle artifact into `kb/accepted/<type-dir>/<artifact-id>.yaml` after repository validation, gatekeeper, target verifier, dependency, review, readonly-root, and accepted-public source metadata checks.
 - `cosheaf artifact promote <artifact-id> --repo-root <path>`: promotes the artifact for an explicit repository root.
+- `cosheaf promotion readiness --artifact <artifact-id> --json`: emits a
+  read-only promotion-readiness report for a single artifact. The command
+  runs validation and gatekeeper reporting, distinguishes missing review,
+  failed verifier, skipped verifier, missing source metadata, dependency risk,
+  private dependency, draft status, readonly-root conditions, and repository
+  gatekeeper blockers, and does not write accepted knowledge.
+- `cosheaf promotion readiness --issue <issue-id> --json`: emits the same
+  read-only report for the issue record's direct `related_artifacts`.
+- `cosheaf promotion readiness ... --repo-root <path>`: evaluates readiness
+  for an explicit repository root.
 - `cosheaf index rebuild`: rebuilds `.cosheaf/index.sqlite` and `.cosheaf/artifact_manifest.json`.
 - `cosheaf index rebuild --repo-root <path>`: rebuilds index outputs for an explicit repository root.
 - `cosheaf ingest convert <path>`: converts a repository-local source file into staged Markdown plus provenance metadata under `.cosheaf/ingest/` when optional MarkItDown support is installed.
@@ -1731,6 +1741,28 @@ Worker bundle v2 is a reducer-oriented contract. It is used by bundle services,
 local dry-run workers, hosted-worker outputs, and task-run bundle validation,
 but it still does not authorize gates, verifier results, human review, accepted
 knowledge writes, accepted refutations, or promotion.
+
+#### Promotion Readiness
+
+- `cosheaf.gates.promotion_readiness.build_promotion_readiness_report(context, *, artifact_id=None, issue_id=None) -> PromotionReadinessReport`:
+  builds a read-only readiness report for exactly one artifact target or one
+  issue target. It runs repository validation and gatekeeper reporting but does
+  not promote artifacts or write accepted knowledge.
+- `cosheaf.gates.promotion_readiness.PromotionReadinessReport`: dataclass with
+  `schema_version`, target mode, target IDs, gate report paths, artifact
+  reports, top-level reasons, `ready`, `accepted_write_performed`, and
+  `to_dict()`.
+- `cosheaf.gates.promotion_readiness.ArtifactPromotionReadiness`: per-artifact
+  readiness dataclass with status, source path, KB root, readonly flag, review
+  state, checker-required flag, source metadata status, gate verdict, verifier
+  results, reasons, `ready`, and `to_dict()`.
+- `cosheaf.gates.promotion_readiness.PromotionReadinessReason`: reason
+  dataclass with `code`, `severity`, `message`, artifact/source/gate/verifier
+  metadata, `blocking`, and `to_dict()`.
+
+Promotion readiness objects are advisory reporting surfaces only. They do not
+change accepted-promotion semantics, do not satisfy human review, and do not
+convert skipped verifier results into passes.
 
 #### Verification
 
