@@ -42,7 +42,7 @@ informal/formal semantic alignment.
 - ADR 0022 records the `v0.2.3` Verification Evidence Hardening decision.
 - `docs/POST_V023_STATE_AUDIT.md` records the current artifact failure-memory
   gap after v0.2.3.
-- `docs/CODEX_DEVELOPMENT_PLAN_V6.md` is the active durable plan for the
+- `docs/CODEX_DEVELOPMENT_PLAN_V6.md` is the completed durable plan for the
   `v0.2.4` artifact failure-memory line.
 - ADR 0023 records the artifact failure-memory decision and authority
   boundaries.
@@ -143,9 +143,9 @@ evidence around optional verifier and failure workflows:
 
 ## Current Operating State
 
-The active task line is implementing V6 in focused issue/branch/PR increments.
-The plan and ADR have landed, optional artifact `failure_log` model/schema
-support is implemented, read-only failure-log CLI inspection is implemented,
+The V6 task line is complete after focused issue/branch/PR increments. The
+plan and ADR have landed, optional artifact `failure_log` model/schema support
+is implemented, read-only failure-log CLI inspection is implemented,
 controlled draft/pre-accepted failure-log append support is implemented, and
 WorkerBundle-to-failure-log planning/controlled append support is implemented.
 Failure-log memory indexing is implemented for artifact cards, memory search,
@@ -154,11 +154,12 @@ sections. Promotion-readiness failure-memory warning reporting is implemented.
 Workspace failure-log demonstration, public-KB failure-log policy surfaces,
 security regression coverage for failure-log misuse, and deterministic
 artifact failure-memory eval coverage are implemented. The v0.2.4 tag, GitHub
-release, release smoke, and downstream workspace/public KB pin updates are
-complete. New work should start from a post-v0.2.4 state audit or a separate
-maintainer-approved plan, while avoiding runtime authority expansion, default
-real provider calls, generated review-as-human-review, accepted writes,
-artifact promotion bypasses, and treating skipped verifier results as passes.
+release, release smoke, downstream workspace/public KB pin updates, and
+post-v0.2.4 V6 completion audit are complete. New work should start from a
+post-v0.2.4 state audit or a separate maintainer-approved plan, while avoiding
+runtime authority expansion, default real provider calls, generated
+review-as-human-review, accepted writes, artifact promotion bypasses, and
+treating skipped verifier results as passes.
 
 ## Recently Completed Tasks
 
@@ -220,12 +221,12 @@ create verifier results, mark human review, promote artifacts, expand
 provider/MCP authority, or turn failure memory into proof or promotion
 evidence.
 
-G.1 v0.2.4 release readiness audit adds
-`docs/releases/v0.2.4.md` as a conservative readiness-audit draft. The audit
-records that package metadata remains `0.2.3`, no `v0.2.4` tag exists, all
+G.1 v0.2.4 release readiness audit added
+`docs/releases/v0.2.4.md` as a conservative readiness-audit draft. At that
+audit point, package metadata remained `0.2.3`, no `v0.2.4` tag existed, all
 three repositories had no open issues or PRs before the audit issue was
-created, and the release-candidate task may proceed only after this audit PR
-and required checks pass. It does not change runtime behavior, version
+created, and the release-candidate task could proceed only after the audit PR
+and required checks passed. It did not change runtime behavior, version
 metadata, tags, downstream pins, provider/MCP authority, verifier semantics,
 accepted-promotion policy, or KB artifacts.
 
@@ -259,7 +260,7 @@ downstream workspace-template plus public KB active pins were updated to
 
 ## Next Focus
 
-After the v0.2.4 publication closeout lands, proceed only through a focused
+After the v0.2.4 publication closeout has landed, proceed only through a focused
 post-v0.2.4 state audit or a separate maintainer-approved plan. Retrieval,
 context-pack, readiness, workspace, policy, security, eval, and release work
 must keep failure memory labeled as failed or unresolved attempt memory,

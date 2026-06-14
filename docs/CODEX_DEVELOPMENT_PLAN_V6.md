@@ -8,13 +8,13 @@ Target:
 v0.2.4 Artifact Failure Memory + Attempt Traceability
 ```
 
-This plan follows the published `v0.2.3` Verification Evidence Hardening
+This completed plan followed the published `v0.2.3` Verification Evidence Hardening
 release, the post-v0.2.3 documentation closeout, and
 [`docs/POST_V023_STATE_AUDIT.md`](POST_V023_STATE_AUDIT.md). The audit
 confirmed that WorkerBundle v2, draft review requests, verifier evidence evals,
 failure/counterexample evals, and read-only promotion-readiness reports already
 preserve failure and counterexample context, but durable artifact records do
-not yet expose an artifact-level `failure_log`.
+not yet expose an artifact-level `failure_log` at the start of V6.
 
 The goal of `v0.2.4` is to make failed attempts, dead directions, blocked
 approaches, and lessons learned visible on long-lived artifact records and in
@@ -289,8 +289,8 @@ accepted write, and no MCP expansion.
 
 Implementation status as of 2026-06-15: complete through the Python-level
 `cosheaf.evals.artifact_failure_memory` harness and
-`evals/artifact_failure_memory/cases.yaml`. The next plan step is G.1, the
-v0.2.4 release-readiness audit.
+`evals/artifact_failure_memory/cases.yaml`. The later G.1 readiness audit,
+G.2 release-candidate task, and G.3 publication closeout are complete.
 
 ## Phase G: v0.2.4 Release Readiness
 
@@ -309,8 +309,8 @@ must answer:
 8. Are open issues/PRs empty or intentionally deferred?
 
 Implementation status as of 2026-06-15: the readiness-audit draft is recorded
-in `docs/releases/v0.2.4.md`. If the audit PR and required checks pass, the
-next plan step is G.2, the v0.2.4 release-candidate task.
+in `docs/releases/v0.2.4.md`. The audit PR and required checks passed, and the
+later G.2 release-candidate and G.3 publication closeout tasks are complete.
 
 ### G.2 v0.2.4 Release Candidate
 

@@ -3,6 +3,28 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Post-v0.2.4 V6 Completion Audit And Docs Closeout - 2026-06-15
+
+Issue 330 adds a V6 completion/code-surface audit after the published
+`v0.2.4` release closeout and cleans up stale current-state wording that still
+described V6 as an active implementation queue.
+
+The audit records that all V6 tasks from the source longplan are complete:
+post-v0.2.3 state audit, plan/ADR landing, failure-log schema design,
+model/schema implementation, read-only and controlled draft-write CLI
+surfaces, WorkerBundle bridge, memory/context surfacing, promotion-readiness
+warnings, workspace demo, public KB policy, security regression coverage,
+deterministic eval coverage, release readiness, release candidate, and
+publication closeout.
+
+This closeout is documentation/status only. It does not add runtime behavior,
+change schemas, alter verifier semantics, expand provider or MCP authority,
+write accepted knowledge, mark human review, promote artifacts, change KB
+content, or claim production readiness. Failure memory remains
+non-authoritative research memory, not proof, verifier success, checked
+counterexample evidence, human review, gate success, accepted status, or
+promotion evidence.
+
 ## v0.2.4 Artifact Failure Memory Published Release Closeout - 2026-06-15
 
 Issue 328 closes out `v0.2.4` after tag/release publication, release smoke, and
