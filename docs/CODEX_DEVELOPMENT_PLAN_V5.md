@@ -299,6 +299,12 @@ no-human-review-spoofing, and skipped-not-pass boundaries.
 
 ## Phase G: Three-Repository v0.2.3 Readiness
 
+Status: G.2 readiness matrix implemented. The matrix now covers framework
+verifier-evidence eval smoke, workspace-template verifier-evidence demo
+coverage, public KB verifier-policy self-test coverage, and optional verifier
+availability as a skipped-not-pass row when external SAT/SMT/Lean/lake tools
+are absent.
+
 Before a `v0.2.3` release candidate:
 
 - The framework command ladder must pass.

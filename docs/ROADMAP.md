@@ -82,7 +82,11 @@ candidate records are complete. Failure-preserving review-request generation
 is also implemented through `cosheaf review request-from-bundle`, which writes
 or previews draft informational review requests from WorkerBundle review-only
 fields without granting accepted-write authority, making review decisions, or
-treating candidate counterexamples as accepted refutations.
+treating candidate counterexamples as accepted refutations. The v0.2.3
+three-repository readiness matrix now includes verifier-evidence eval,
+workspace verifier-evidence demo, public KB verifier-policy self-test, and
+optional verifier availability coverage without adding provider or MCP
+authority.
 
 ## v0.2.1 Prerelease Baseline
 

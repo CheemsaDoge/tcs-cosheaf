@@ -437,6 +437,31 @@ These metrics are regression signals only. They are not proof evidence, human
 review, source review, accepted status, accepted refutation, or promotion
 authority.
 
+## Ecosystem Readiness Matrix
+
+The three-repository readiness matrix is exposed through:
+
+```bash
+python scripts/ecosystem_smoke.py --matrix --cosheaf "python -m cosheaf.cli" --framework-root . --workspace-template-root ../tcs-cosheaf-workspace-template --public-kb-root ../tcs-kb-public --json
+```
+
+The v0.2.3 matrix rows cover framework local smoke, framework
+verifier-evidence eval smoke, optional verifier availability, framework git-tag
+release smoke, workspace-template install demo, workspace-template CLI-agent
+demo, workspace-template fake-provider smoke, workspace-template
+verifier-evidence demo, public KB policy guard, and public KB verifier-policy
+self-test coverage.
+
+Network rows remain opt-in through `--include-network`. When optional external
+SAT/SMT/Lean/lake tools are unavailable, the optional verifier availability
+row exits with code `77` and is counted as `skipped`, not `pass`. Matrix
+failures identify the repository and command that failed.
+
+These matrix results are release-readiness signals only. They do not create
+human review, do not write accepted knowledge, do not promote artifacts, do
+not call real hosted providers, and do not prove mathematical truth or
+informal/formal semantic alignment.
+
 ## CLI
 
 Run the default retrieval eval suite:

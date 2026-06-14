@@ -3,6 +3,25 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.3 Three-Repository Readiness Matrix - 2026-06-14
+
+Issue 290 extends `scripts/ecosystem_smoke.py --matrix` for the v0.2.3
+verification-evidence readiness line. The structured matrix now includes the
+framework local ecosystem smoke, framework verifier-evidence eval smoke,
+optional verifier availability probe, framework git-tag release smoke,
+workspace-template install demo, workspace-template CLI-agent demo,
+workspace-template fake-provider smoke, workspace-template verifier-evidence
+demo, public KB policy guard, and public KB verifier-policy self-test.
+
+The matrix still reports pass, fail, and skipped rows separately. Network
+install rows remain opt-in through `--include-network`. The optional verifier
+availability row returns a skipped matrix result when SAT/SMT/Lean/lake tools
+are unavailable; that skipped row is counted as skipped, not pass. Failure
+messages still include the repository and command that failed. The public KB
+row does not modify public KB content, and no matrix row performs accepted
+writes, promotion, human review, hosted provider calls, provider authority
+expansion, or MCP authority expansion.
+
 ## v0.2.3 Verifier Evidence Eval Suite - 2026-06-14
 
 Issue 288 adds a deterministic Python-level verifier evidence eval harness

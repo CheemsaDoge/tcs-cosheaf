@@ -2212,10 +2212,14 @@ working directory.
   and accepted-to-draft dependency rejection.
 - `python scripts/ecosystem_smoke.py --matrix`: runs the structured
   three-repository compatibility matrix. Matrix rows cover framework local
-  checkout, framework git tag release smoke, workspace-template demo,
+  checkout, framework verifier-evidence eval smoke, optional verifier
+  availability, framework git tag release smoke, workspace-template demo,
   workspace-template CLI-agent demo, workspace-template fake-provider smoke,
-  and public KB policy guard. By default, network-install rows are reported as
-  `skipped`, not `pass`.
+  workspace-template verifier-evidence demo, public KB policy guard, and
+  public KB verifier-policy self-test. By default, network-install rows are
+  reported as `skipped`, not `pass`. Optional verifier availability returns a
+  skipped matrix row when SAT/SMT/Lean/lake tools are unavailable; that skipped
+  result is not counted as pass.
 - `python scripts/ecosystem_smoke.py --matrix --include-network`: also runs
   matrix rows that perform normal framework package install or git clone steps.
   This still does not run real hosted providers or require API keys.
@@ -2223,6 +2227,14 @@ working directory.
   JSON report with `pass_count`, `fail_count`, `skip_count`, and per-row
   `repo`, `command`, `status`, `returncode`, and `message` fields. Failure
   messages include the repository name and failing command.
+- `python scripts/ecosystem_smoke.py --verifier-evidence-eval`: runs the local
+  verifier-evidence eval smoke used by the matrix. It loads
+  `evals/verifier_evidence/cases.yaml`, runs deterministic fake evidence and
+  candidate fixtures, emits JSON, and exits nonzero if the eval report fails.
+- `python scripts/ecosystem_smoke.py --optional-verifier-availability`: probes
+  optional SAT/SMT/Lean/lake command availability for matrix accounting. Exit
+  code `77` means the row is skipped, not pass. The probe does not run those
+  tools and does not make any external verifier mandatory.
 
 ### Schemas
 
