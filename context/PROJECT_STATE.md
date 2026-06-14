@@ -3,6 +3,30 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Artifact Failure Log Model And Schema - 2026-06-14
+
+Issue 306 implements optional artifact-level `failure_log` support in the
+framework model and artifact JSON Schema. `BaseArtifact.failure_log` defaults
+to an empty list, preserving compatibility for existing artifacts. Each entry
+is represented by `cosheaf.core.artifact.FailureLogEntry` with strict origin,
+attempt-kind, status, timezone-aware timestamp, failure ID, required text, and
+repository-local non-accepted evidence-path validation.
+
+The artifact schema now accepts optional `failure_log` entries and records the
+same required fields, origin/attempt/status enums, and repository-local
+non-accepted evidence-path boundary. Tests cover default compatibility, valid
+entry parsing and normalization, external targets, timezone-naive timestamp
+rejection, empty required text rejection, invalid ID and target rejection,
+unsafe evidence-path rejection, authority-spoofing rejection, and JSON Schema
+structure.
+
+This implementation changes artifact model/schema acceptance only. It does not
+add read/write CLI commands, does not change validation/gate/promotion
+semantics, does not create verifier results, does not mark human review, does
+not write accepted knowledge, does not expand provider/MCP authority, and does
+not treat failure memory as proof, verifier success, checked counterexample
+evidence, gate success, accepted status, or promotion evidence.
+
 ## Artifact Failure Memory Plan Landing - 2026-06-14
 
 Issue 302 lands the active V6 plan for `v0.2.4` Artifact Failure Memory +

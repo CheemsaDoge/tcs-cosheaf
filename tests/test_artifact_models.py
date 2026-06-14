@@ -10,6 +10,7 @@ from cosheaf.core.artifact import (
     AlignmentReview,
     BaseArtifact,
     Evidence,
+    FailureLogEntry,
     FormalizationRef,
     ReviewRef,
     Risk,
@@ -137,6 +138,147 @@ def test_formal_link_defaults_are_backward_compatible() -> None:
     assert artifact.alignment.status == "none"
     assert artifact.verification_policy == VerificationPolicy()
     assert artifact.verification_policy.level == "source_reviewed"
+
+
+def _valid_failure_log_entry() -> dict[str, Any]:
+    return {
+        "failure_id": "failure.example.0001",
+        "attempted_at": "2026-06-14T00:00:00Z",
+        "recorded_by": " example-agent ",
+        "origin": "agent",
+        "attempt_kind": "proof_attempt",
+        "target": "claim.example.complete-graph-edge-count",
+        "direction": " Try induction on the number of edges. ",
+        "summary": " Tried deleting one edge and applying the statement. ",
+        "failed_because": " The invariant is not preserved. ",
+        "evidence_paths": [" .cosheaf/logs/failure-example.log "],
+        "related_verifier_results": [" verifier-evidence.example.0001 "],
+        "related_counterexample_candidates": [" candidate.example.0001 "],
+        "next_possible_directions": [" Try vertex induction instead. "],
+        "status": "open",
+        "limitations": " This failed attempt does not refute the claim. ",
+    }
+
+
+def test_failure_log_defaults_to_empty_list() -> None:
+    artifact = BaseArtifact.model_validate(_valid_artifact_data())
+
+    assert artifact.failure_log == []
+
+
+def test_artifact_with_failure_log_parses_and_normalizes() -> None:
+    data = _valid_artifact_data()
+    data["failure_log"] = [_valid_failure_log_entry()]
+
+    artifact = BaseArtifact.model_validate(data)
+
+    assert artifact.failure_log == [
+        FailureLogEntry(
+            failure_id="failure.example.0001",
+            attempted_at=datetime(2026, 6, 14, tzinfo=UTC),
+            recorded_by="example-agent",
+            origin="agent",
+            attempt_kind="proof_attempt",
+            target="claim.example.complete-graph-edge-count",
+            direction="Try induction on the number of edges.",
+            summary="Tried deleting one edge and applying the statement.",
+            failed_because="The invariant is not preserved.",
+            evidence_paths=[".cosheaf/logs/failure-example.log"],
+            related_verifier_results=["verifier-evidence.example.0001"],
+            related_counterexample_candidates=["candidate.example.0001"],
+            next_possible_directions=["Try vertex induction instead."],
+            status="open",
+            limitations="This failed attempt does not refute the claim.",
+        )
+    ]
+
+
+def test_failure_log_allows_external_target() -> None:
+    data = _valid_artifact_data()
+    entry = _valid_failure_log_entry()
+    entry["target"] = "external:diestel.graph-theory.section-1.1"
+    data["failure_log"] = [entry]
+
+    artifact = BaseArtifact.model_validate(data)
+
+    assert artifact.failure_log[0].target == "external:diestel.graph-theory.section-1.1"
+
+
+def test_failure_log_naive_attempted_at_fails() -> None:
+    data = _valid_artifact_data()
+    entry = _valid_failure_log_entry()
+    entry["attempted_at"] = "2026-06-14T00:00:00"
+    data["failure_log"] = [entry]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    "empty_field",
+    ["recorded_by", "direction", "summary", "failed_because", "limitations"],
+)
+def test_failure_log_required_text_fields_must_be_nonempty(
+    empty_field: str,
+) -> None:
+    data = _valid_artifact_data()
+    entry = _valid_failure_log_entry()
+    entry[empty_field] = " "
+    data["failure_log"] = [entry]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_failure_log_invalid_failure_id_fails() -> None:
+    data = _valid_artifact_data()
+    entry = _valid_failure_log_entry()
+    entry["failure_id"] = "Failure.bad"
+    data["failure_log"] = [entry]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_failure_log_invalid_target_fails() -> None:
+    data = _valid_artifact_data()
+    entry = _valid_failure_log_entry()
+    entry["target"] = "bad target"
+    data["failure_log"] = [entry]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    "unsafe_path",
+    [
+        "../outside.log",
+        "notes/../../outside.log",
+        "/tmp/failure.log",
+        "C:/tmp/failure.log",
+        "kb/accepted/claims/claim.example.yaml",
+        "kb/public/accepted/claims/claim.example.yaml",
+    ],
+)
+def test_failure_log_rejects_unsafe_evidence_paths(unsafe_path: str) -> None:
+    data = _valid_artifact_data()
+    entry = _valid_failure_log_entry()
+    entry["evidence_paths"] = [unsafe_path]
+    data["failure_log"] = [entry]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
+
+
+def test_failure_log_rejects_authority_spoofing_fields() -> None:
+    data = _valid_artifact_data()
+    entry = _valid_failure_log_entry()
+    entry["human_reviewed"] = True
+    data["failure_log"] = [entry]
+
+    with pytest.raises(ValidationError):
+        BaseArtifact.model_validate(data)
 
 
 def test_artifact_with_formalization_link_parses() -> None:
