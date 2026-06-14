@@ -103,6 +103,38 @@ class ContextPackCard:
     reasons: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class ContextFailureEntry:
+    """One visible failed-attempt memory entry for context packs."""
+
+    artifact_id: str
+    artifact_path: str
+    root_scope: str
+    failure_id: str
+    direction: str
+    failed_because: str
+    status: str
+    next_possible_directions: tuple[str, ...]
+    origin: str
+    attempt_kind: str
+    source_label: str
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "artifact_id": self.artifact_id,
+            "artifact_path": self.artifact_path,
+            "root_scope": self.root_scope,
+            "failure_id": self.failure_id,
+            "direction": self.direction,
+            "failed_because": self.failed_because,
+            "status": self.status,
+            "next_possible_directions": list(self.next_possible_directions),
+            "origin": self.origin,
+            "attempt_kind": self.attempt_kind,
+            "source_label": self.source_label,
+        }
+
+
 def build_context_pack(
     context: RepoContext,
     issue_id: str,
@@ -154,6 +186,7 @@ def build_context_pack(
             }
         )
     artifact_records = _artifact_records_by_id(records)
+    failure_entries = _context_failure_entries(cards, artifact_records)
     full_artifact_pulls = _pull_full_artifacts(
         context,
         _ordered_context_cards(cards),
@@ -168,14 +201,25 @@ def build_context_pack(
     task_dir.mkdir(parents=True, exist_ok=True)
 
     contents = {
-        "CONTEXT.md": _render_context(context, issue, cards, artifact_records),
+        "CONTEXT.md": _render_context(
+            context,
+            issue,
+            cards,
+            artifact_records,
+            failure_entries,
+        ),
         "ACCEPTANCE.md": _render_acceptance(issue),
         "RELEVANT_ARTIFACTS.md": _render_relevant_artifacts(cards, artifact_records),
-        "KNOWN_FAILURES.md": _render_known_failures(cards, artifact_records),
+        "KNOWN_FAILURES.md": _render_known_failures(
+            cards,
+            artifact_records,
+            failure_entries,
+        ),
         "FULL_ARTIFACTS.md": _render_full_artifacts(context, full_artifact_pulls),
         "RETRIEVAL_AUDIT.json": _render_retrieval_audit(
             issue=issue,
             retrieval=retrieval,
+            failure_entries=failure_entries,
             query=_context_query(issue, include_related_artifacts=not public_only),
             role=role_value,
             max_cards=max_cards,
@@ -431,6 +475,7 @@ def _render_context(
     issue: IssueRecord,
     cards: tuple[ContextPackCard, ...],
     artifact_records: dict[str, LoadedRecord],
+    failure_entries: tuple[ContextFailureEntry, ...],
 ) -> str:
     ordered_cards = _ordered_context_cards(cards)
     accepted = [
@@ -483,6 +528,9 @@ def _render_context(
     lines.extend(_artifact_lines(drafts, artifact_records))
     lines.extend(["", "## Relevant Known Failures", ""])
     lines.extend(_artifact_lines(known_failures, artifact_records))
+    if failure_entries:
+        lines.extend(["", "## Known Failed Directions", ""])
+        lines.extend(_failure_entry_lines(failure_entries))
     lines.extend(
         [
             "",
@@ -557,6 +605,7 @@ def _render_relevant_artifacts(
 def _render_known_failures(
     cards: tuple[ContextPackCard, ...],
     artifact_records: dict[str, LoadedRecord],
+    failure_entries: tuple[ContextFailureEntry, ...],
 ) -> str:
     known_failures = [
         record
@@ -569,7 +618,10 @@ def _render_known_failures(
             _artifact_reference_line(record, artifact_records)
             for record in known_failures
         )
-    else:
+    if failure_entries:
+        lines.extend(["", "## Known Failed Directions", ""])
+        lines.extend(_failure_entry_lines(failure_entries))
+    if not known_failures and not failure_entries:
         lines.append("- None")
     return "\n".join(lines) + "\n"
 
@@ -607,6 +659,7 @@ def _render_retrieval_audit(
     *,
     issue: IssueRecord,
     retrieval: RetrievalResult,
+    failure_entries: tuple[ContextFailureEntry, ...],
     query: str,
     role: RetrievalRole,
     max_cards: int,
@@ -648,8 +701,10 @@ def _render_retrieval_audit(
         "context_payload": {
             "card_count": len(retrieval.cards),
             "full_artifact_count": len(retrieval.full_artifact_pulls),
+            "failure_entry_count": len(failure_entries),
             "content_mode": _context_payload_mode(retrieval),
         },
+        "failure_memory": [entry.to_dict() for entry in failure_entries],
         "audit": retrieval.audit.to_dict(),
     }
     return json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n"
@@ -698,6 +753,74 @@ def _artifact_reference_lines(
     loaded = artifact_records.get(card.id)
     if loaded is not None and isinstance(loaded.record, BaseArtifact):
         lines.extend(_formal_metadata_lines(loaded.record))
+    return lines
+
+
+def _context_failure_entries(
+    cards: tuple[ContextPackCard, ...],
+    artifact_records: dict[str, LoadedRecord],
+) -> tuple[ContextFailureEntry, ...]:
+    entries: list[ContextFailureEntry] = []
+    for card_record in _ordered_context_cards(cards):
+        card = card_record.retrieved.card
+        loaded = artifact_records.get(card.id)
+        if loaded is None or not isinstance(loaded.record, BaseArtifact):
+            continue
+        artifact = loaded.record
+        failure_log = sorted(
+            artifact.failure_log,
+            key=lambda entry: (entry.attempted_at, entry.failure_id),
+            reverse=True,
+        )
+        for entry in failure_log:
+            root_scope = card.root_scope.value
+            origin = entry.origin
+            entries.append(
+                ContextFailureEntry(
+                    artifact_id=artifact.id,
+                    artifact_path=card.path,
+                    root_scope=root_scope,
+                    failure_id=entry.failure_id,
+                    direction=entry.direction,
+                    failed_because=entry.failed_because,
+                    status=entry.status,
+                    next_possible_directions=tuple(entry.next_possible_directions),
+                    origin=origin,
+                    attempt_kind=entry.attempt_kind,
+                    source_label=f"{root_scope}:{origin}",
+                )
+            )
+    return tuple(entries)
+
+
+def _failure_entry_lines(
+    failure_entries: tuple[ContextFailureEntry, ...],
+) -> list[str]:
+    lines = [
+        (
+            "Failure memory is failed/unresolved attempt context only; "
+            "not proof, refutation, verifier pass, or human review."
+        )
+    ]
+    for entry in failure_entries:
+        next_text = (
+            "; ".join(entry.next_possible_directions)
+            if entry.next_possible_directions
+            else "-"
+        )
+        lines.extend(
+            [
+                (
+                    f"- {entry.artifact_id} | source: {entry.source_label} | "
+                    f"kind: {entry.attempt_kind} | path: {entry.artifact_path}"
+                ),
+                f"  - direction: {entry.direction}",
+                f"  - failed_because: {entry.failed_because}",
+                f"  - status: {entry.status}",
+                f"  - next: {next_text}",
+                f"  - origin: {entry.origin}",
+            ]
+        )
     return lines
 
 

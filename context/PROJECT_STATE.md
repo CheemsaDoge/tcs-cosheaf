@@ -3,6 +3,24 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Context Pack Failure Sections - 2026-06-15
+
+Issue 316 adds explicit failure-memory sections to context packs. When visible
+artifact cards have artifact-level `failure_log` entries, `CONTEXT.md` and
+`KNOWN_FAILURES.md` render a `Known Failed Directions` section with artifact
+ID, direction, failed reason, status, next possible directions, origin, attempt
+kind, path, root scope, and source/origin label. Empty failure logs do not add
+that markdown section.
+
+`RETRIEVAL_AUDIT.json` now includes a structured `failure_memory` array and
+`context_payload.failure_entry_count` for the same visible entries. Public-only
+context continues to exclude private artifacts, private artifact IDs, and
+private failure-log text. The section is explicitly failed/unresolved attempt
+memory only and does not create proof, refutation, verifier pass, checked
+counterexample evidence, human review, gate success, accepted status, or
+promotion evidence. It does not change promotion semantics, provider/MCP
+authority, artifact schema, or accepted-write policy.
+
 ## Failure Log Memory Index - 2026-06-15
 
 Issue 314 surfaces artifact-level `failure_log` metadata in memory and context

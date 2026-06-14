@@ -243,11 +243,16 @@ Failure-log memory is also visible through the retrieval and context surfaces.
 `cosheaf memory cards --json` includes `failure_count` and
 `recent_failure_directions` on artifact cards. `cosheaf memory search` indexes
 recent failure directions so agents can avoid repeating known failed
-directions, and context packs include the same compact card-level failure
-summary for visible cards. These are routing and caution cues only. They do not
-change artifact trust, verifier state, review state, accepted status, gate
-results, or promotion readiness by themselves, and public-only context must not
-include private failure-log text.
+directions. Context packs include the same compact card-level failure summary
+for visible cards and render an explicit `Known Failed Directions` section when
+visible artifacts carry `failure_log` entries. `RETRIEVAL_AUDIT.json` exposes
+the structured entries in `failure_memory` and counts them in
+`context_payload.failure_entry_count`.
+
+These are routing and caution cues only. They do not change artifact trust,
+verifier state, review state, accepted status, gate results, or promotion
+readiness by themselves, and public-only context must not include private
+failure-log text.
 
 Public KB accepted artifacts may include failure memory only through ordinary
 review and promotion policy. Validation/gate success remains insufficient by

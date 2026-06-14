@@ -4,14 +4,15 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- Explicit context-pack failure sections and promotion-readiness
-  failure-memory surfacing are not implemented yet. The current runtime
-  supports read-only artifact failure-log inspection, controlled append-only
-  draft writes, WorkerBundle-to-failure-log planning and controlled append,
-  and failure-log visibility in artifact cards, memory search, and context
-  card summaries. Future context/readiness work must keep failure memory
-  labeled as non-authoritative and must not promote it into proof, review,
-  verifier, checked-counterexample, accepted-status, or promotion authority.
+- Promotion-readiness failure-memory surfacing is not implemented yet. The
+  current runtime supports read-only artifact failure-log inspection,
+  controlled append-only draft writes, WorkerBundle-to-failure-log planning
+  and controlled append, failure-log visibility in artifact cards and memory
+  search, compact context card summaries, and explicit context-pack
+  `Known Failed Directions` sections. Future readiness work must keep failure
+  memory labeled as non-authoritative and must not promote it into proof,
+  review, verifier, checked-counterexample, accepted-status, or promotion
+  authority.
 - Hosted worker CLI commands and hosted-provider MCP tools are not implemented
   yet. Role-specific hosted worker service bridging for fake and mocked
   provider calls is implemented under `cosheaf.agent.hosted_workers`, the
@@ -1566,10 +1567,22 @@ the caller explicitly passes a positive `max_full_artifacts` budget.
 `RETRIEVAL_AUDIT.json` records the request, role, card bound, public-only flag,
 score breakdowns, failure memory card metadata, filters, exclusions, warnings,
 `context_payload` (`card_count`, `full_artifact_count`, and `content_mode`),
-and full-artifact pull audit entries. Full-artifact pull reasons include the
-retrieval role, policy scope, and explicit maximum pull budget.
+`failure_memory` structured entries, and full-artifact pull audit entries.
+`context_payload` also includes `failure_entry_count`. Full-artifact pull
+reasons include the retrieval role, policy scope, and explicit maximum pull
+budget.
 `public_only=True` excludes private cards and private artifact IDs from both
 rendered context and audit output, including private failure-log text.
+
+When visible artifacts carry artifact-level `failure_log` entries, context
+packs render a `Known Failed Directions` section in `CONTEXT.md` and
+`KNOWN_FAILURES.md`. Each entry includes artifact ID, direction,
+`failed_because`, failure status, next possible directions, origin, attempt
+kind, path, root scope, and source/origin label. The section is explicitly
+failed/unresolved attempt memory only and is not proof, refutation, verifier
+pass, checked counterexample evidence, human review, gate success, accepted
+status, or promotion evidence. Empty failure logs do not add the markdown
+section.
 
 When a relevant artifact has formal-link metadata or policy-relevant formal
 settings, the artifact entry also includes compact formal-link metadata lines:

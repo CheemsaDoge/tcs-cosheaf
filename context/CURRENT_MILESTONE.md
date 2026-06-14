@@ -62,6 +62,11 @@ informal/formal semantic alignment.
   search` indexes recent failure directions with explicit non-authority
   warnings, and context packs include compact failure summaries for visible
   cards while preserving public/private filtering.
+- Context packs now render explicit `Known Failed Directions` sections in
+  `CONTEXT.md` and `KNOWN_FAILURES.md` when visible artifacts carry
+  `failure_log` entries. `RETRIEVAL_AUDIT.json` exposes the same structured
+  entries in `failure_memory` and counts them in
+  `context_payload.failure_entry_count`.
 - `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
   result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
@@ -126,8 +131,8 @@ support is implemented, read-only failure-log CLI inspection is implemented,
 controlled draft/pre-accepted failure-log append support is implemented, and
 WorkerBundle-to-failure-log planning/controlled append support is implemented.
 Failure-log memory indexing is implemented for artifact cards, memory search,
-and compact context-pack card summaries. New work should continue from
-explicit context-pack failure sections and promotion-readiness failure-memory
+compact context-pack card summaries, and explicit context-pack failure
+sections. New work should continue from promotion-readiness failure-memory
 surfacing, while avoiding runtime authority expansion, default real provider
 calls, generated review-as-human-review, accepted writes, artifact promotion
 bypasses, and treating skipped verifier results as passes.
@@ -197,12 +202,12 @@ downstream workspace-template plus public KB active pins were updated to
 
 ## Next Focus
 
-After failure-log memory indexing lands, proceed to explicit context-pack
-failure sections, then promotion-readiness failure-memory reporting. Retrieval
-and context-pack work must keep failure memory labeled as failed or unresolved
-attempt memory, preserve public/private scope, and avoid promoting failure
-memory into proof, verifier success, human review, checked counterexample
-evidence, accepted status, or promotion evidence by itself.
+After explicit context-pack failure sections land, proceed to
+promotion-readiness failure-memory reporting. Retrieval, context-pack, and
+readiness work must keep failure memory labeled as failed or unresolved attempt
+memory, preserve public/private scope, and avoid promoting failure memory into
+proof, verifier success, human review, checked counterexample evidence,
+accepted status, or promotion evidence by itself.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
