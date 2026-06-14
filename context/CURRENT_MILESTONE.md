@@ -38,7 +38,8 @@ informal/formal semantic alignment.
 - `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.2.3`.
 - `docs/CODEX_DEVELOPMENT_PLAN_V4.md` is historical/completed after the
   `v0.2.2` release closeout.
-- `docs/CODEX_DEVELOPMENT_PLAN_V5.md` is the current durable plan.
+- `docs/CODEX_DEVELOPMENT_PLAN_V5.md` is the completed durable record of the
+  v0.2.3 verification-evidence hardening plan.
 - ADR 0022 records the `v0.2.3` Verification Evidence Hardening decision.
 - `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
   result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
@@ -96,14 +97,15 @@ evidence around optional verifier and failure workflows:
 - A successful Lean `#check` remains symbol/import resolution, not
   informal/formal semantic alignment.
 
-## Current Task
+## Current Operating State
 
-The active task is v0.2.3 release closeout documentation. It records the
-published tag/release, release smoke, and downstream pin alignment. It is
-documentation/status only: it does not change runtime behavior, expand
-provider/MCP authority, run real provider calls by default, turn generated
-review requests into human review, write accepted knowledge, promote artifacts,
-or treat skipped verifier results as passes.
+No v0.2.3 implementation or release-closeout task remains active after the
+published tag/release, release smoke, downstream pin alignment, documentation
+closeout, and branch hygiene. The repository is at a stable post-v0.2.3
+baseline. New work should start from a focused issue, branch, and PR, and it
+must continue to avoid runtime authority expansion, default real provider
+calls, generated review-as-human-review, accepted writes, artifact promotion
+bypasses, and treating skipped verifier results as passes.
 
 ## Recently Completed Tasks
 

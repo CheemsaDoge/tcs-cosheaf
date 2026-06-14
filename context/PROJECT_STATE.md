@@ -3,6 +3,25 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Post-v0.2.3 Documentation Audit Closeout - 2026-06-14
+
+Issue 298 closes the remaining post-v0.2.3 documentation-audit drift after the
+published `v0.2.3` tag/release, release smoke, downstream workspace/public KB
+pin updates, and branch hygiene. The update marks
+`docs/CODEX_DEVELOPMENT_PLAN_V5.md` as the completed durable record of the
+v0.2.3 verification-evidence hardening plan rather than an active task queue,
+and it updates `context/CURRENT_MILESTONE.md` so the current operating state no
+longer describes release-closeout documentation as an active task.
+
+The change is documentation/status only. It does not change runtime behavior,
+schemas, verifier semantics, provider/MCP authority, accepted-promotion
+semantics, public/private KB policy, workspace-template behavior, or public KB
+content. The post-v0.2.3 baseline remains conservative: no production-readiness
+claim, no automatic theorem proving, no Lean semantic-alignment claim, no
+automatic autoformalization, no AI-as-human-review, no default real provider
+calls, no accepted-write bypass, and skipped verifier/provider/tool results are
+still not passes.
+
 ## v0.2.3 Verification Evidence Hardening Published Release Closeout - 2026-06-14
 
 Issue 296 closes out `v0.2.3` after tag/release publication, release smoke, and
