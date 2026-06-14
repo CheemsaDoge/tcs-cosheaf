@@ -120,6 +120,24 @@ class ReviewRequestFromBundleResult:
     write_result: ControlledWriteResult
 
 
+@dataclass(frozen=True)
+class FailureLogFromBundlePlanResult:
+    """Proposed artifact failure-log entries derived from a WorkerBundle."""
+
+    bundle: WorkerBundleV2
+    artifact_id: str
+    relative_path: Path
+    entries: tuple[FailureLogEntry, ...]
+
+
+@dataclass(frozen=True)
+class FailureLogFromBundleWriteResult:
+    """Controlled write result for WorkerBundle-derived failure-log entries."""
+
+    plan: FailureLogFromBundlePlanResult
+    write_result: ControlledWriteResult
+
+
 class ServiceError(ValueError):
     """Expected service-layer failure with a stable machine-readable code."""
 
@@ -807,6 +825,117 @@ class DraftWriteService:
                 remediation="Use a dot-separated lowercase artifact id.",
             ) from exc
 
+        try:
+            entry = FailureLogEntry.model_validate(request)
+        except ValidationError as exc:
+            raise DraftWriteServiceError(
+                _format_pydantic_errors(exc),
+                code="artifact_model_validation_failed",
+                remediation=(
+                    "Fix the failure-log entry fields. Failure memory cannot "
+                    "claim proof, review, verifier pass, or accepted status."
+                ),
+            ) from exc
+
+        return self._append_failure_log_entries(
+            artifact_id,
+            (entry,),
+            kind="artifact_failure_log_entry",
+            record_id=entry.failure_id,
+            dry_run=dry_run,
+        )
+
+    def plan_failure_log_entries_from_bundle(
+        self,
+        bundle_path: str | Path,
+        *,
+        target_artifact_id: str,
+    ) -> FailureLogFromBundlePlanResult:
+        """Plan failure-log entries from WorkerBundle failed attempts."""
+        bundle = _validate_worker_bundle_for_failure_log(self.context, bundle_path)
+        loaded = self._failure_log_target(target_artifact_id)
+        entries = _failure_log_entries_from_bundle(
+            bundle,
+            target_artifact_id=target_artifact_id,
+        )
+        return FailureLogFromBundlePlanResult(
+            bundle=bundle,
+            artifact_id=target_artifact_id,
+            relative_path=loaded.source_path,
+            entries=entries,
+        )
+
+    def append_failure_log_entries_from_bundle(
+        self,
+        bundle_path: str | Path,
+        *,
+        target_artifact_id: str,
+        dry_run: bool = False,
+    ) -> FailureLogFromBundleWriteResult:
+        """Append or preview WorkerBundle-derived failure-log entries."""
+        plan = self.plan_failure_log_entries_from_bundle(
+            bundle_path,
+            target_artifact_id=target_artifact_id,
+        )
+        result = self._append_failure_log_entries(
+            target_artifact_id,
+            plan.entries,
+            kind="artifact_failure_log_bundle_entries",
+            record_id=plan.bundle.bundle_id,
+            dry_run=dry_run,
+        )
+        return FailureLogFromBundleWriteResult(plan=plan, write_result=result)
+
+    def _append_failure_log_entries(
+        self,
+        artifact_id: str,
+        entries: Sequence[FailureLogEntry],
+        *,
+        kind: str,
+        record_id: str,
+        dry_run: bool,
+    ) -> ControlledWriteResult:
+        loaded = self._failure_log_target(artifact_id)
+        artifact = loaded.record
+        if not isinstance(artifact, BaseArtifact):
+            raise AssertionError("unreachable non-artifact failure-log target")
+
+        if dry_run or not entries:
+            return ControlledWriteResult(
+                kind=kind,
+                relative_path=loaded.source_path,
+                written_paths=(),
+                dry_run=dry_run,
+                record_id=record_id,
+            )
+
+        target_path = self.context.resolve(loaded.source_path)
+        original_text = target_path.read_text(encoding="utf-8")
+        updated = artifact.model_copy(
+            update={
+                "updated_at": datetime.now(UTC).replace(microsecond=0),
+                "failure_log": [*artifact.failure_log, *entries],
+            }
+        )
+        write_yaml_deterministic(target_path, updated)
+        report = validate_artifact_file(self.context, loaded.source_path)
+        if not report.ok:
+            target_path.write_text(original_text, encoding="utf-8", newline="\n")
+            raise DraftWriteServiceError(
+                _format_report_failures(report),
+                code="artifact_file_validation_failed",
+                remediation="Fix validation failures before writing failure memory.",
+            )
+
+        return ControlledWriteResult(
+            kind=kind,
+            relative_path=loaded.source_path,
+            written_paths=(loaded.source_path,),
+            dry_run=False,
+            record_id=record_id,
+        )
+
+    def _failure_log_target(self, artifact_id: str) -> LoadedRecord:
         loaded = _find_unique_artifact_for_failure_log(self.context, artifact_id)
         artifact = loaded.record
         if not isinstance(artifact, BaseArtifact):
@@ -828,55 +957,7 @@ class DraftWriteService:
                     "path": loaded.source_path.as_posix(),
                 },
             )
-
-        try:
-            entry = FailureLogEntry.model_validate(request)
-        except ValidationError as exc:
-            raise DraftWriteServiceError(
-                _format_pydantic_errors(exc),
-                code="artifact_model_validation_failed",
-                remediation=(
-                    "Fix the failure-log entry fields. Failure memory cannot "
-                    "claim proof, review, verifier pass, or accepted status."
-                ),
-            ) from exc
-
-        if dry_run:
-            return ControlledWriteResult(
-                kind="artifact_failure_log_entry",
-                relative_path=loaded.source_path,
-                written_paths=(),
-                dry_run=True,
-                record_id=entry.failure_id,
-            )
-
-        target_path = self.context.resolve(loaded.source_path)
-        original_text = target_path.read_text(encoding="utf-8")
-        updated = artifact.model_copy(
-            update={
-                "updated_at": datetime.now(UTC).replace(microsecond=0),
-                "failure_log": [*artifact.failure_log, entry],
-            }
-        )
-        write_yaml_deterministic(target_path, updated)
-        report = validate_artifact_file(self.context, loaded.source_path)
-        if not report.ok:
-            target_path.write_text(original_text, encoding="utf-8", newline="\n")
-            raise DraftWriteServiceError(
-                _format_report_failures(report),
-                code="artifact_file_validation_failed",
-                remediation=(
-                    "Fix validation failures before writing failure memory."
-                ),
-            )
-
-        return ControlledWriteResult(
-            kind="artifact_failure_log_entry",
-            relative_path=loaded.source_path,
-            written_paths=(loaded.source_path,),
-            dry_run=False,
-            record_id=entry.failure_id,
-        )
+        return loaded
 
     def _validate_artifact_request_without_write(
         self,
@@ -1332,6 +1413,92 @@ def _find_unique_artifact_for_failure_log(
     return loaded
 
 
+def _validate_worker_bundle_for_failure_log(
+    context: RepoContext,
+    bundle_path: str | Path,
+) -> WorkerBundleV2:
+    try:
+        return validate_worker_bundle_v2(context, bundle_path)
+    except WorkerBundleV2Error as exc:
+        message = str(exc)
+        code = "failure_log_from_bundle_failed"
+        if "accepted knowledge" in message or "human_reviewed" in message:
+            code = "accepted_write_forbidden"
+        raise DraftWriteServiceError(
+            message,
+            code=code,
+            remediation=(
+                "Fix the WorkerBundle before deriving artifact failure memory. "
+                "Bundles cannot claim accepted knowledge, human review, verifier "
+                "passes, or checked refutations through this path."
+            ),
+        ) from exc
+
+
+def _failure_log_entries_from_bundle(
+    bundle: WorkerBundleV2,
+    *,
+    target_artifact_id: str,
+) -> tuple[FailureLogEntry, ...]:
+    candidate_ids = [
+        candidate.candidate_id for candidate in bundle.counterexample_candidates
+    ]
+    next_directions = list(bundle.next_steps)
+    entries: list[FailureLogEntry] = []
+    for index, failed_attempt in enumerate(bundle.failed_attempts, start=1):
+        entries.append(
+            FailureLogEntry.model_validate(
+                {
+                    "failure_id": f"failure.{bundle.bundle_id}.{index:04d}",
+                    "attempted_at": bundle.created_at,
+                    "recorded_by": (
+                        f"worker_bundle:{bundle.bundle_id}:"
+                        f"{bundle.worker_role.value}"
+                    ),
+                    "origin": "imported_bundle",
+                    "attempt_kind": _attempt_kind_for_worker_role(
+                        bundle.worker_role
+                    ),
+                    "target": target_artifact_id,
+                    "direction": failed_attempt,
+                    "summary": (
+                        f"WorkerBundle {bundle.bundle_id} recorded failed "
+                        f"attempt: {failed_attempt}"
+                    ),
+                    "failed_because": failed_attempt,
+                    "evidence_paths": [],
+                    "related_verifier_results": [],
+                    "related_counterexample_candidates": candidate_ids,
+                    "next_possible_directions": next_directions,
+                    "status": "open",
+                    "limitations": (
+                        f"Imported from WorkerBundle {bundle.bundle_id}; this "
+                        "failure memory is not proof, verifier success, checked "
+                        "counterexample evidence, human review, gate success, "
+                        "accepted status, or promotion evidence."
+                    ),
+                }
+            )
+        )
+    return tuple(entries)
+
+
+def _attempt_kind_for_worker_role(worker_role: WorkerType) -> str:
+    if worker_role is WorkerType.REASONER:
+        return "proof_attempt"
+    if worker_role is WorkerType.VERIFIER:
+        return "verifier_attempt"
+    if worker_role is WorkerType.COUNTEREXAMPLER:
+        return "counterexample_search"
+    if worker_role is WorkerType.CONSTRUCTION_SEARCHER:
+        return "construction_attempt"
+    if worker_role is WorkerType.FORMALIZER:
+        return "formalization_attempt"
+    if worker_role is WorkerType.LITERATURE_SCOUT:
+        return "retrieval_attempt"
+    return "other"
+
+
 def _dedupe_preserving_order(values: Sequence[str]) -> list[str]:
     seen: set[str] = set()
     result: list[str] = []
@@ -1423,6 +1590,8 @@ __all__ = [
     "ControlledWriteResult",
     "DraftWriteService",
     "DraftWriteServiceError",
+    "FailureLogFromBundlePlanResult",
+    "FailureLogFromBundleWriteResult",
     "GateService",
     "KbRootInfo",
     "MemorySearchService",

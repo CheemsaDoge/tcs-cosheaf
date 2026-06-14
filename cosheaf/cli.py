@@ -96,6 +96,8 @@ from cosheaf.services import (
     ControlledWriteResult,
     DraftWriteService,
     DraftWriteServiceError,
+    FailureLogFromBundlePlanResult,
+    FailureLogFromBundleWriteResult,
     GateService,
     MemorySearchService,
     ServiceError,
@@ -515,6 +517,114 @@ def artifact_failure_add(
         )
 
     _emit_controlled_write(result, json_output=json_output, console=console)
+
+
+@artifact_failure_app.command("plan-from-bundle")
+def artifact_failure_plan_from_bundle(
+    bundle_path: Path = typer.Option(
+        ...,
+        "--bundle",
+        help="Repository-local WorkerBundle v2 YAML path.",
+    ),
+    target_artifact_id: str = typer.Option(
+        ...,
+        "--target-artifact",
+        help="Artifact ID that would receive the derived failure-log entries.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for planning.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Plan failure-log entries from a WorkerBundle without writing."""
+    console = Console(width=120, markup=False)
+    try:
+        result = DraftWriteService(
+            RepoContext(repo_root)
+        ).plan_failure_log_entries_from_bundle(
+            bundle_path,
+            target_artifact_id=target_artifact_id,
+        )
+    except DraftWriteServiceError as exc:
+        _exit_with_error(
+            exc.to_error_result(),
+            json_output=json_output,
+            console=console,
+        )
+
+    if json_output:
+        _emit_json(_failure_log_bundle_plan_payload(result))
+        return
+
+    console.print(f"Failure-log bundle plan: {result.artifact_id}")
+    console.print(f"- bundle: {result.bundle.bundle_id}")
+    console.print(f"- target: {result.relative_path.as_posix()}")
+    console.print(f"- entries: {len(result.entries)}")
+    console.print("- accepted knowledge merge: not performed")
+
+
+@artifact_failure_app.command("add-from-bundle")
+def artifact_failure_add_from_bundle(
+    bundle_path: Path = typer.Option(
+        ...,
+        "--bundle",
+        help="Repository-local WorkerBundle v2 YAML path.",
+    ),
+    target_artifact_id: str = typer.Option(
+        ...,
+        "--target-artifact",
+        help="Artifact ID that should receive the derived failure-log entries.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for the controlled write.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Validate and report target path without writing files.",
+    ),
+) -> None:
+    """Append or preview WorkerBundle-derived failure-log entries."""
+    console = Console(width=120, markup=False)
+    try:
+        result = DraftWriteService(
+            RepoContext(repo_root)
+        ).append_failure_log_entries_from_bundle(
+            bundle_path,
+            target_artifact_id=target_artifact_id,
+            dry_run=dry_run,
+        )
+    except DraftWriteServiceError as exc:
+        _exit_with_error(
+            exc.to_error_result(),
+            json_output=json_output,
+            console=console,
+        )
+
+    if json_output:
+        _emit_json(_failure_log_bundle_write_payload(result))
+        return
+
+    action = "would write" if result.write_result.dry_run else "wrote"
+    console.print(
+        f"{result.write_result.kind}: {action} "
+        f"{result.write_result.relative_path.as_posix()}"
+    )
+    console.print(f"- entries: {len(result.plan.entries)}")
+    console.print("- accepted knowledge merge: not performed")
 
 
 @artifact_app.command("create")
@@ -3112,6 +3222,44 @@ def _artifact_failure_log_payload(
         "root_readonly": loaded.kb_root_readonly,
         "failure_count": len(failure_log),
         "failure_log": failure_log,
+        "authority_notice": _FAILURE_LOG_AUTHORITY_NOTICE,
+    }
+
+
+def _failure_log_bundle_plan_payload(
+    result: FailureLogFromBundlePlanResult,
+) -> dict[str, Any]:
+    entries = [entry.model_dump(mode="json") for entry in result.entries]
+    return {
+        "schema_version": 1,
+        "kind": "artifact_failure_log_bundle_plan",
+        "artifact_id": result.artifact_id,
+        "artifact_path": result.relative_path.as_posix(),
+        "bundle_id": result.bundle.bundle_id,
+        "entry_count": len(entries),
+        "entries": entries,
+        "accepted_write_performed": False,
+        "authority_notice": _FAILURE_LOG_AUTHORITY_NOTICE,
+    }
+
+
+def _failure_log_bundle_write_payload(
+    result: FailureLogFromBundleWriteResult,
+) -> dict[str, Any]:
+    write = result.write_result
+    entries = [entry.model_dump(mode="json") for entry in result.plan.entries]
+    return {
+        "schema_version": 1,
+        "kind": write.kind,
+        "path": write.relative_path.as_posix(),
+        "written_paths": [path.as_posix() for path in write.written_paths],
+        "dry_run": write.dry_run,
+        "accepted_write_performed": write.accepted_write_performed,
+        "record_id": write.record_id,
+        "artifact_id": result.plan.artifact_id,
+        "bundle_id": result.plan.bundle.bundle_id,
+        "entry_count": len(entries),
+        "planned_entries": entries,
         "authority_notice": _FAILURE_LOG_AUTHORITY_NOTICE,
     }
 
