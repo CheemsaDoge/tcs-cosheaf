@@ -156,15 +156,17 @@ input:
 
 - `cosheaf draft write-artifact --input-json <path> --json`
 - `cosheaf draft write-source-note --input-json <path> --json`
+- `cosheaf artifact failure add --artifact <artifact-id> --input-json <path>
+  --json`
 - `cosheaf bundle submit --input-json <path> --json`
 - `cosheaf review request --input-json <path> --json`
 - `cosheaf review request-from-bundle --bundle <path> --json`
 
 Each command also supports `--dry-run`, which validates and reports target
 paths without writing files. These commands refuse accepted paths, readonly KB
-roots, accepted artifact status, and `human_reviewed` review spoofing. They do
-not run promotion, do not create human review, do not call hosted providers,
-and do not change gate or verifier results.
+roots, accepted artifact status, and review/verifier/accepted-status authority
+spoofing. They do not run promotion, do not create human review, do not call
+hosted providers, and do not change gate or verifier results.
 
 `review request-from-bundle` derives a draft informational review request from
 a WorkerBundle v2. It preserves assumptions, uncertainty, failed attempts,
@@ -175,20 +177,40 @@ path as `review request`; it does not approve or reject claims, mark
 `human_reviewed`, create verifier results, write accepted knowledge, or promote
 artifacts.
 
-### Planned Artifact Failure Memory Surface
+### Artifact Failure Memory Surface
 
 Artifact-level `failure_log` is implemented for `v0.2.4` as durable
 failed-attempt memory on artifacts. Read-only inspection is available through
-`cosheaf artifact failures <artifact-id> --json`. A CLI write surface is not
-implemented in the current release line.
+`cosheaf artifact failures <artifact-id> --json`.
+
+Controlled draft/pre-accepted append support is available through:
+
+```bash
+cosheaf artifact failure add \
+  --artifact <artifact-id> \
+  --input-json <failure-entry.json> \
+  --json
+cosheaf artifact failure add \
+  --artifact <artifact-id> \
+  --input-json <failure-entry.json> \
+  --dry-run \
+  --json
+```
+
+The command validates one `FailureLogEntry`, reports the target artifact path,
+and emits the same controlled-write JSON shape as other draft write commands.
+It rejects direct mutation of `kb/accepted/`, accepted artifact status, readonly
+KB roots, and input fields that claim human review, accepted status, verifier
+pass, or checked counterexample authority. Actual writes append the entry and
+refresh `updated_at`; dry-runs validate and report without changing the file.
 
 Agent-facing failure-log access follows the same CLI-first and service-layer
 discipline as other controlled-write features:
 
-- read-only inspection before write support, currently through
-  `cosheaf artifact failures`;
+- read-only inspection through `cosheaf artifact failures`;
+- controlled append-only draft writes through `cosheaf artifact failure add`;
 - deterministic JSON output for agent callers;
-- `--dry-run` for any future write command;
+- `--dry-run` for controlled write commands;
 - repository-local path validation;
 - readonly public-root refusal;
 - direct accepted-path write refusal;
@@ -280,6 +302,7 @@ The stable error-code list is exported as
 - `artifact_model_validation_failed`
 - `artifact_not_found`
 - `artifact_path_exists`
+- `authority_claim_forbidden`
 - `bundle_complete_forbidden`
 - `bundle_submit_failed`
 - `context_build_failed`

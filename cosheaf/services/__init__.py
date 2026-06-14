@@ -40,7 +40,7 @@ from cosheaf.agent.worker_bundle_v2 import (
     worker_bundle_review_warnings,
 )
 from cosheaf.config.workspace import KbRootConfig
-from cosheaf.core.artifact import BaseArtifact, SourceMetadata
+from cosheaf.core.artifact import BaseArtifact, FailureLogEntry, SourceMetadata
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.paths import lifecycle_artifact_path, normalize_repo_path
 from cosheaf.core.status import ArtifactStatus, ArtifactType
@@ -789,6 +789,95 @@ class DraftWriteService:
             write_result=result,
         )
 
+    def append_failure_log_entry(
+        self,
+        artifact_id: str,
+        request: Mapping[str, Any],
+        *,
+        dry_run: bool = False,
+    ) -> ControlledWriteResult:
+        """Append or preview one failure-log entry on a writable artifact."""
+        _reject_failure_log_authority_claims(request)
+        try:
+            validate_artifact_id(artifact_id)
+        except ValueError as exc:
+            raise DraftWriteServiceError(
+                str(exc),
+                code="invalid_artifact_id",
+                remediation="Use a dot-separated lowercase artifact id.",
+            ) from exc
+
+        loaded = _find_unique_artifact_for_failure_log(self.context, artifact_id)
+        artifact = loaded.record
+        if not isinstance(artifact, BaseArtifact):
+            raise AssertionError("unreachable non-artifact failure-log target")
+
+        _reject_accepted_path(loaded.source_path)
+        _ensure_target_writable(self.context, loaded.source_path)
+        if artifact.status is ArtifactStatus.ACCEPTED:
+            raise DraftWriteServiceError(
+                "failure-log writes cannot mutate accepted artifacts directly",
+                code="accepted_write_forbidden",
+                remediation=(
+                    "Record failure memory on draft/pre-accepted artifacts. "
+                    "Accepted artifacts require ordinary review and promotion "
+                    "discipline for any content change."
+                ),
+                details={
+                    "artifact_id": artifact.id,
+                    "path": loaded.source_path.as_posix(),
+                },
+            )
+
+        try:
+            entry = FailureLogEntry.model_validate(request)
+        except ValidationError as exc:
+            raise DraftWriteServiceError(
+                _format_pydantic_errors(exc),
+                code="artifact_model_validation_failed",
+                remediation=(
+                    "Fix the failure-log entry fields. Failure memory cannot "
+                    "claim proof, review, verifier pass, or accepted status."
+                ),
+            ) from exc
+
+        if dry_run:
+            return ControlledWriteResult(
+                kind="artifact_failure_log_entry",
+                relative_path=loaded.source_path,
+                written_paths=(),
+                dry_run=True,
+                record_id=entry.failure_id,
+            )
+
+        target_path = self.context.resolve(loaded.source_path)
+        original_text = target_path.read_text(encoding="utf-8")
+        updated = artifact.model_copy(
+            update={
+                "updated_at": datetime.now(UTC).replace(microsecond=0),
+                "failure_log": [*artifact.failure_log, entry],
+            }
+        )
+        write_yaml_deterministic(target_path, updated)
+        report = validate_artifact_file(self.context, loaded.source_path)
+        if not report.ok:
+            target_path.write_text(original_text, encoding="utf-8", newline="\n")
+            raise DraftWriteServiceError(
+                _format_report_failures(report),
+                code="artifact_file_validation_failed",
+                remediation=(
+                    "Fix validation failures before writing failure memory."
+                ),
+            )
+
+        return ControlledWriteResult(
+            kind="artifact_failure_log_entry",
+            relative_path=loaded.source_path,
+            written_paths=(loaded.source_path,),
+            dry_run=False,
+            record_id=entry.failure_id,
+        )
+
     def _validate_artifact_request_without_write(
         self,
         request: DraftArtifactWriteRequest,
@@ -1175,6 +1264,72 @@ def _review_findings_from_bundle(bundle: WorkerBundleV2) -> list[str]:
     findings.extend(f"risk: {item}" for item in bundle.risk_flags)
     findings.extend(f"next_step: {item}" for item in bundle.next_steps)
     return _dedupe_preserving_order(findings)
+
+
+def _reject_failure_log_authority_claims(request: Mapping[str, Any]) -> None:
+    forbidden_claims = {
+        "accepted",
+        "accepted_status",
+        "artifact_status",
+        "checked_counterexample",
+        "counterexample_checked",
+        "counterexample_status",
+        "human_review",
+        "human_reviewed",
+        "review",
+        "review_state",
+        "verifier_pass",
+        "verifier_result",
+        "verifier_status",
+    }
+    present = sorted(forbidden_claims.intersection(request.keys()))
+    if "status" in request and str(request["status"]).strip() == "accepted":
+        present.append("status")
+    if not present:
+        return
+    raise DraftWriteServiceError(
+        "failure-log input cannot claim review, accepted, verifier, or checked "
+        "counterexample authority",
+        code="authority_claim_forbidden",
+        remediation=(
+            "Keep failure-log entries to failed-attempt memory. Record human "
+            "review, verifier pass, checked counterexamples, and accepted status "
+            "through their dedicated evidence and promotion workflows."
+        ),
+        details={"forbidden_fields": ",".join(present)},
+    )
+
+
+def _find_unique_artifact_for_failure_log(
+    context: RepoContext,
+    artifact_id: str,
+) -> LoadedRecord:
+    records = _load_records_for_lifecycle(context)
+    matches = [record for record in records if record.id == artifact_id]
+    if not matches:
+        raise DraftWriteServiceError(
+            f"artifact not found: {artifact_id}",
+            code="artifact_not_found",
+            remediation="Check the artifact id and rerun the command.",
+            details={"artifact_id": artifact_id},
+        )
+    if len(matches) > 1:
+        paths = ", ".join(sorted(record.source_path.as_posix() for record in matches))
+        raise DraftWriteServiceError(
+            f"duplicate artifact id {artifact_id}: {paths}",
+            code="repository_load_failed",
+            remediation="Fix duplicate artifact ids before writing failure memory.",
+            details={"artifact_id": artifact_id},
+        )
+    loaded = matches[0]
+    if not isinstance(loaded.record, BaseArtifact):
+        raise DraftWriteServiceError(
+            f"record is not an artifact: {artifact_id}",
+            code="artifact_model_validation_failed",
+            remediation="Failure logs can only be attached to lifecycle artifacts.",
+            details={"artifact_id": artifact_id},
+        )
+    return loaded
 
 
 def _dedupe_preserving_order(values: Sequence[str]) -> list[str]:

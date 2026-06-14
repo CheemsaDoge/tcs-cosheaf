@@ -48,6 +48,10 @@ informal/formal semantic alignment.
 - `cosheaf artifact failures <artifact-id> --json` provides read-only
   failure-log inspection with artifact path, root scope metadata, failure
   entries, and an explicit non-authority notice.
+- `cosheaf artifact failure add --artifact <artifact-id> --input-json <path>
+  --json` provides controlled append-only draft/pre-accepted failure-log writes
+  with dry-run, accepted-path refusal, readonly-root refusal, and
+  authority-spoofing rejection.
 - `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
   result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
@@ -108,11 +112,12 @@ evidence around optional verifier and failure workflows:
 
 The active task line is implementing V6 in focused issue/branch/PR increments.
 The plan and ADR have landed, optional artifact `failure_log` model/schema
-support is implemented, and read-only failure-log CLI inspection is
-implemented. New work should continue from controlled draft writes, while
-avoiding runtime authority expansion, default real provider calls, generated
-review-as-human-review, accepted writes, artifact promotion bypasses, and
-treating skipped verifier results as passes.
+support is implemented, read-only failure-log CLI inspection is implemented,
+and controlled draft/pre-accepted failure-log append support is implemented
+through `cosheaf artifact failure add`. New work should continue from the
+WorkerBundle-to-failure-log bridge, while avoiding runtime authority expansion,
+default real provider calls, generated review-as-human-review, accepted writes,
+artifact promotion bypasses, and treating skipped verifier results as passes.
 
 ## Recently Completed Tasks
 
@@ -179,11 +184,13 @@ downstream workspace-template plus public KB active pins were updated to
 
 ## Next Focus
 
-After read-only failure-log CLI inspection lands, proceed to controlled draft
-write support with dry-run, accepted-path refusal, readonly-root refusal, and
-authority-spoofing rejection. Failure memory must remain research memory: not
-proof, not verifier success, not human review, not a checked counterexample,
-and not promotion evidence by itself.
+After controlled draft failure-log writes land, proceed to the
+WorkerBundle-to-failure-log bridge. That bridge must preserve WorkerBundle
+origin labels and candidate status limitations without creating verifier
+results, human review, checked counterexamples, accepted knowledge, or
+promotion evidence. Failure memory must remain research memory: not proof, not
+verifier success, not human review, not a checked counterexample, and not
+promotion evidence by itself.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

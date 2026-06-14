@@ -143,6 +143,7 @@ AGENT_ACCESS_STABLE_ERROR_CODES: tuple[str, ...] = (
     "artifact_model_validation_failed",
     "artifact_not_found",
     "artifact_path_exists",
+    "authority_claim_forbidden",
     "bundle_complete_forbidden",
     "bundle_submit_failed",
     "context_build_failed",

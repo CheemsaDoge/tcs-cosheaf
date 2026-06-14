@@ -3,6 +3,24 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Artifact Failure Log Draft Write CLI - 2026-06-15
+
+Issue 310 adds `cosheaf artifact failure add --artifact <artifact-id>
+--input-json <path>` with deterministic JSON output and dry-run support. The
+command validates one artifact `FailureLogEntry`, appends it to a writable
+non-accepted artifact, refreshes `updated_at` only on actual writes, reports
+the exact target path, and keeps `accepted_write_performed=false`.
+
+The write path refuses direct `kb/accepted/` mutation, accepted artifact status,
+readonly KB roots, missing artifacts, duplicate artifact IDs, invalid
+failure-log entries, and authority-spoofing fields that claim human review,
+accepted status, verifier pass, or checked counterexample status. It does not
+create verifier results, does not mark human review, does not run gates, does
+not promote artifacts, does not write accepted knowledge, and does not change
+promotion semantics. Failure-log entries remain research memory only: not
+proof, not verifier success, not checked counterexample evidence, not human
+review, not gate success, not accepted status, and not promotion evidence.
+
 ## Artifact Failure Log Read CLI - 2026-06-14
 
 Issue 308 adds the read-only `cosheaf artifact failures <artifact-id>` command.

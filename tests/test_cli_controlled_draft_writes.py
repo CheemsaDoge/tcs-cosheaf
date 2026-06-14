@@ -121,14 +121,16 @@ def _bundle_data() -> dict[str, Any]:
 
 def _draft_claim_artifact(
     *,
+    artifact_id: str = "claim.fixture.controlled-draft",
+    status: str = "draft",
     review_state: str = "requested",
 ) -> dict[str, Any]:
     return {
-        "id": "claim.fixture.controlled-draft",
+        "id": artifact_id,
         "type": "claim",
         "title": "Controlled draft claim",
         "domain": ["testing"],
-        "status": "draft",
+        "status": status,
         "created_at": "2026-06-09T00:00:00Z",
         "updated_at": "2026-06-09T00:00:00Z",
         "authors": ["tester"],
@@ -139,6 +141,26 @@ def _draft_claim_artifact(
         "evidence": [],
         "review": {"state": review_state, "notes": "Pending review."},
         "risk": {"level": "low", "notes": "Fixture risk."},
+    }
+
+
+def _failure_log_entry_request() -> dict[str, Any]:
+    return {
+        "failure_id": "failure.fixture.controlled.0001",
+        "attempted_at": "2026-06-10T00:00:00Z",
+        "recorded_by": "tester",
+        "origin": "agent",
+        "attempt_kind": "proof_attempt",
+        "target": "claim.fixture.controlled-draft",
+        "direction": "Try direct induction on the draft invariant.",
+        "summary": "The induction step was attempted with the current hypotheses.",
+        "failed_because": "The strengthened invariant was missing a boundary case.",
+        "evidence_paths": [".cosheaf/evidence/failure-0001.md"],
+        "related_verifier_results": [],
+        "related_counterexample_candidates": [],
+        "next_possible_directions": ["Strengthen the invariant before retrying."],
+        "status": "open",
+        "limitations": "This is failed-attempt memory, not proof or refutation.",
     }
 
 
@@ -268,6 +290,269 @@ def test_draft_write_artifact_rejects_readonly_public_root(tmp_path: Path) -> No
     assert "readonly" in payload["remediation"].lower() or "writable" in payload[
         "remediation"
     ].lower()
+
+
+def test_artifact_failure_add_dry_run_validates_without_writing(
+    tmp_path: Path,
+) -> None:
+    _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.controlled-draft.yaml",
+        _draft_claim_artifact(),
+    )
+    request = _write_json(
+        tmp_path,
+        "requests/failure-log-entry.json",
+        _failure_log_entry_request(),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "failure",
+            "add",
+            "--artifact",
+            "claim.fixture.controlled-draft",
+            "--input-json",
+            str(request),
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json(result.output)
+    assert payload["kind"] == "artifact_failure_log_entry"
+    assert payload["path"] == "kb/draft/claims/claim.fixture.controlled-draft.yaml"
+    assert payload["written_paths"] == []
+    assert payload["dry_run"] is True
+    assert payload["accepted_write_performed"] is False
+    written = yaml.safe_load(
+        (tmp_path / payload["path"]).read_text(encoding="utf-8")
+    )
+    assert "failure_log" not in written
+    assert written["updated_at"] == "2026-06-09T00:00:00Z"
+
+
+def test_artifact_failure_add_appends_to_draft_artifact(
+    tmp_path: Path,
+) -> None:
+    artifact_path = _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.controlled-draft.yaml",
+        _draft_claim_artifact(),
+    )
+    request = _write_json(
+        tmp_path,
+        "requests/failure-log-entry.json",
+        _failure_log_entry_request(),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "failure",
+            "add",
+            "--artifact",
+            "claim.fixture.controlled-draft",
+            "--input-json",
+            str(request),
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json(result.output)
+    assert payload["kind"] == "artifact_failure_log_entry"
+    assert payload["written_paths"] == [payload["path"]]
+    assert payload["dry_run"] is False
+    assert payload["accepted_write_performed"] is False
+    assert payload["record_id"] == "failure.fixture.controlled.0001"
+    written = yaml.safe_load(artifact_path.read_text(encoding="utf-8"))
+    assert written["status"] == "draft"
+    assert written["review"]["state"] == "requested"
+    assert written["updated_at"] != "2026-06-09 00:00:00+00:00"
+    assert written["failure_log"][0]["failure_id"] == (
+        "failure.fixture.controlled.0001"
+    )
+    assert written["failure_log"][0]["origin"] == "agent"
+    assert written["failure_log"][0]["status"] == "open"
+    assert "proof" in written["failure_log"][0]["limitations"]
+    assert not (tmp_path / "kb" / "accepted").exists()
+
+
+def test_artifact_failure_add_rejects_accepted_artifact(
+    tmp_path: Path,
+) -> None:
+    _write_yaml(
+        tmp_path,
+        "kb/accepted/claims/claim.fixture.accepted.yaml",
+        _draft_claim_artifact(
+            artifact_id="claim.fixture.accepted",
+            status="accepted",
+            review_state="human_reviewed",
+        ),
+    )
+    request = _write_json(
+        tmp_path,
+        "requests/failure-log-entry.json",
+        {
+            **_failure_log_entry_request(),
+            "target": "claim.fixture.accepted",
+        },
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "failure",
+            "add",
+            "--artifact",
+            "claim.fixture.accepted",
+            "--input-json",
+            str(request),
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = _assert_json(result.output)
+    assert payload["code"] == "accepted_write_forbidden"
+    written = yaml.safe_load(
+        (
+            tmp_path / "kb" / "accepted" / "claims" / "claim.fixture.accepted.yaml"
+        ).read_text(encoding="utf-8")
+    )
+    assert "failure_log" not in written
+
+
+def test_artifact_failure_add_rejects_readonly_public_root(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "cosheaf.toml").write_text(
+        "\n".join(
+            [
+                "[workspace]",
+                'name = "readonly-failure-log-workspace"',
+                "",
+                "[[kb]]",
+                'name = "public"',
+                'path = "kb/public"',
+                "readonly = true",
+                "priority = 10",
+                "",
+                "[[kb]]",
+                'name = "private"',
+                'path = "kb/private"',
+                "readonly = false",
+                "priority = 100",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/public/draft/claims/claim.fixture.public-draft.yaml",
+        _draft_claim_artifact(artifact_id="claim.fixture.public-draft"),
+    )
+    request = _write_json(
+        tmp_path,
+        "requests/failure-log-entry.json",
+        {
+            **_failure_log_entry_request(),
+            "target": "claim.fixture.public-draft",
+        },
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "failure",
+            "add",
+            "--artifact",
+            "claim.fixture.public-draft",
+            "--input-json",
+            str(request),
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = _assert_json(result.output)
+    assert payload["code"] == "readonly_kb_root"
+    written = yaml.safe_load(
+        (
+            tmp_path
+            / "kb"
+            / "public"
+            / "draft"
+            / "claims"
+            / "claim.fixture.public-draft.yaml"
+        ).read_text(encoding="utf-8")
+    )
+    assert "failure_log" not in written
+
+
+def test_artifact_failure_add_rejects_authority_spoofing_input(
+    tmp_path: Path,
+) -> None:
+    _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.controlled-draft.yaml",
+        _draft_claim_artifact(),
+    )
+    request = _write_json(
+        tmp_path,
+        "requests/failure-log-entry.json",
+        {
+            **_failure_log_entry_request(),
+            "verifier_status": "pass",
+            "review_state": "human_reviewed",
+        },
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "failure",
+            "add",
+            "--artifact",
+            "claim.fixture.controlled-draft",
+            "--input-json",
+            str(request),
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = _assert_json(result.output)
+    assert payload["code"] == "authority_claim_forbidden"
+    written = yaml.safe_load(
+        (
+            tmp_path
+            / "kb"
+            / "draft"
+            / "claims"
+            / "claim.fixture.controlled-draft.yaml"
+        ).read_text(encoding="utf-8")
+    )
+    assert "failure_log" not in written
 
 
 def test_write_source_note_json_writes_staging_note(tmp_path: Path) -> None:
