@@ -2,21 +2,21 @@
 
 ## Milestone
 
-`v0.2.3` Verification Evidence Hardening release candidate.
+`v0.2.3` Verification Evidence Hardening published release closeout.
 
 ## Goal
 
-Move from the published `v0.2.2` Provider Transport + Agent Workflow
-Hardening release into `v0.2.3` Verification Evidence Hardening. The verifier
+Close out the published `v0.2.3` Verification Evidence Hardening release after
+the `v0.2.2` Provider Transport + Agent Workflow Hardening release. The verifier
 evidence audit, verifier evidence record v1, read-only promotion-readiness
 report, optional SAT result-depth fixtures, optional SMT result-depth fixtures,
 Lean external reference ergonomics, typed counterexample candidate records, and
 failure-preserving review-request generation are complete. Workspace and public
 KB integration follow-up is complete through the verifier-evidence workspace
 demo, public KB source/backlog hygiene, and one draft-only foundation artifact
-tightening. The v0.2.3 ecosystem readiness matrix is complete. The current
-goal is the v0.2.3 release candidate without expanding provider or MCP
-authority, creating a tag, or updating downstream pins before release smoke.
+tightening. The v0.2.3 ecosystem readiness matrix is complete. The public
+`v0.2.3` tag and GitHub release are published, release smoke from `@v0.2.3`
+passed, and workspace-template plus public KB active pins now use `v0.2.3`.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -26,15 +26,16 @@ informal/formal semantic alignment.
 
 ## Current Baseline
 
-- Framework package metadata and `cosheaf.__version__` record `0.2.3` on the
-  release-candidate branch.
-- Remote tags `v0.1.1`, `v0.2.0`, `v0.2.1`, and `v0.2.2` exist. The
-  `v0.2.3` tag is intentionally pending until the maintainer release action.
+- Framework package metadata and `cosheaf.__version__` record `0.2.3`.
+- Remote tags `v0.1.1`, `v0.2.0`, `v0.2.1`, `v0.2.2`, and `v0.2.3` exist.
+- The GitHub release `v0.2.3 Verification Evidence Hardening` is published and
+  is not a production-readiness claim.
 - The GitHub release `v0.2.2 Provider Transport + Agent Workflow Hardening`
   is published and is not a production-readiness claim.
 - `tcs-cosheaf-workspace-template` pins active demo, Makefile, CLI-agent,
-  provider-preview, and fake-provider smoke paths to `@v0.2.2`.
-- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.2.2`.
+  provider-preview, fake-provider smoke, and verifier-evidence demo paths to
+  `@v0.2.3`.
+- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.2.3`.
 - `docs/CODEX_DEVELOPMENT_PLAN_V4.md` is historical/completed after the
   `v0.2.2` release closeout.
 - `docs/CODEX_DEVELOPMENT_PLAN_V5.md` is the current durable plan.
@@ -97,12 +98,12 @@ evidence around optional verifier and failure workflows:
 
 ## Current Task
 
-The current implementation line is v0.2.3 release hardening. The active task is
-the v0.2.3 release-candidate PR. It updates package metadata and release docs
-only: it does not create a tag or release, change runtime behavior, expand
+The active task is v0.2.3 release closeout documentation. It records the
+published tag/release, release smoke, and downstream pin alignment. It is
+documentation/status only: it does not change runtime behavior, expand
 provider/MCP authority, run real provider calls by default, turn generated
-review requests into human review, or treat skipped verifier results as
-passes.
+review requests into human review, write accepted knowledge, promote artifacts,
+or treat skipped verifier results as passes.
 
 ## Recently Completed Tasks
 
@@ -160,15 +161,21 @@ runtime behavior, and answered verifier evidence, optional-tool,
 skipped-not-pass, counterexample, promotion-readiness, workspace/public KB, and open
 issue/PR readiness questions.
 
+G.4 v0.2.3 release candidate updated package metadata and release notes to
+`0.2.3`, then the maintainer release action published the annotated `v0.2.3`
+tag and GitHub release after main was re-synced. Release smoke from
+`git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.3` passed, and
+downstream workspace-template plus public KB active pins were updated to
+`v0.2.3` through focused PRs.
+
 ## Next Focus
 
-After the release-candidate PR merges and the required verification ladder
-passes, perform the maintainer release action: re-sync main, verify no
-unexpected `v0.2.3` tag exists, create the tag, publish the GitHub release,
-run release smoke from `@v0.2.3`, and only then update downstream pins.
+After release closeout, keep the next work issue-scoped and conservative.
 Candidate counterexamples must remain candidates until explicitly checked and
 reviewed, generated review requests must remain draft review context, and
-readiness/eval work must keep skipped results separate from passes.
+readiness/eval work must keep skipped results separate from passes. Any next
+release or hosted-provider work needs its own issue, branch, PR, and explicit
+scope.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

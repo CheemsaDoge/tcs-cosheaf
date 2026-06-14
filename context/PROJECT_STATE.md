@@ -3,6 +3,38 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.3 Verification Evidence Hardening Published Release Closeout - 2026-06-14
+
+Issue 296 closes out `v0.2.3` after tag/release publication, release smoke, and
+downstream pin alignment. The annotated `v0.2.3` tag points to the reviewed
+`Prepare v0.2.3 release candidate` main commit, and the GitHub release
+`v0.2.3 Verification Evidence Hardening` is published. Release smoke installed
+`tcs-cosheaf==0.2.3` from
+`git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.3` and ran the clean
+workspace help, version, validate, gate, index rebuild, and context-pack
+checks.
+
+Downstream alignment is complete for the active repositories:
+`tcs-cosheaf-workspace-template` pins active demo, Makefile, CLI-agent,
+provider-preview, fake-provider smoke, and verifier-evidence demo paths to
+`v0.2.3`, and `tcs-kb-public` CI installs `tcs-cosheaf` from `v0.2.3`.
+
+Release closeout verification reran the full framework command ladder and the
+network-enabled ecosystem matrix. `make lint`, `make typecheck`, `make test`
+(535 passed), `make validate`, and `make gate` passed. The
+`--include-network` ecosystem matrix reported 10 rows with 9 pass, 0 fail, and
+1 skipped; the skipped row was optional verifier availability because
+SAT/SMT/Lean/lake tools were unavailable and was not counted as pass.
+
+This closeout is documentation/status only. It does not add runtime behavior,
+does not expand provider or MCP authority, does not run real provider calls in
+CI or default tests, does not write accepted knowledge, does not mark human
+review, does not promote artifacts, and does not change schema, gate,
+verifier, public/private policy, or accepted-promotion semantics. `v0.2.3` is
+not a production-readiness claim and does not provide automatic theorem
+proving, Lean/mathlib/CSLib semantic alignment, automatic autoformalization,
+or automatic accepted promotion.
+
 ## v0.2.3 Verification Evidence Hardening RC - 2026-06-14
 
 Issue 294 prepares `v0.2.3` as the Verification Evidence Hardening release

@@ -1,13 +1,51 @@
 # Roadmap
 
-TCS-Cosheaf has published the `v0.2.2` Provider Transport + Agent Workflow
-Hardening release after the published `v0.2.1` CLI Agent Access +
-Hosted Provider Gateway prerelease, the published `v0.2.0` local-MVP release,
-and the earlier `v0.1.1` Formal Link Layer support baseline. The project is
-still not production-ready. This roadmap records durable direction and named
-milestones; live issue state belongs in GitHub issues.
+TCS-Cosheaf has published the `v0.2.3` Verification Evidence Hardening release
+after the published `v0.2.2` Provider Transport + Agent Workflow Hardening
+release, the published `v0.2.1` CLI Agent Access + Hosted Provider Gateway
+prerelease, the published `v0.2.0` local-MVP release, and the earlier `v0.1.1`
+Formal Link Layer support baseline. The project is still not production-ready.
+This roadmap records durable direction and named milestones; live issue state
+belongs in GitHub issues.
 
-## Current Baseline: v0.2.2 Published Release
+## Current Baseline: v0.2.3 Published Release
+
+The `v0.2.3` release packages the post-`v0.2.2`
+verification/evidence-hardening line. It adds normalized verifier evidence
+records, read-only promotion-readiness reporting, optional SAT/SMT/Lean result
+depth fixtures, Lean external reference ergonomics, typed counterexample
+candidate records, failure-preserving review-request generation,
+verifier-evidence eval coverage, and an expanded three-repository readiness
+matrix without overclaiming production readiness, automatic theorem proving,
+Lean autoformalization, informal/formal semantic alignment, accepted-knowledge
+automation, or provider/MCP authority expansion.
+
+Completed `v0.2.3` work includes:
+
+- Package metadata and release notes for `v0.2.3`.
+- Verifier evidence status audit and ADR 0022.
+- `VerifierEvidenceRecord` v1 model and schema.
+- Read-only `cosheaf promotion readiness` reports.
+- SAT and SMT optional result-depth fake-backend fixtures.
+- Lean external reference diagnostics and fake-backend coverage.
+- Typed WorkerBundle v2 counterexample candidate records.
+- Failure-preserving draft review-request generation from WorkerBundle v2.
+- Verifier-evidence eval suite.
+- Three-repository `v0.2.3` readiness matrix.
+- Published `v0.2.3` tag and GitHub release.
+- Release smoke from
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.3`.
+- Workspace-template `@v0.2.3` active pin update and demo/provider/verifier
+  smoke regression.
+- Public KB `@v0.2.3` CI pin update, validation, gate, PR-checklist, and
+  repository-local policy guard regression.
+
+The 2026-06-14 release action verified that the annotated `v0.2.3` tag
+resolves to the reviewed release-candidate main commit and that release smoke
+installed `tcs-cosheaf==0.2.3` from the tag. Downstream workspace-template and
+public KB active pins now use `v0.2.3`.
+
+## Completed Release Focus: v0.2.2 Provider Transport + Agent Workflow Hardening
 
 The `v0.2.2` release packages the post-`v0.2.1` provider transport
 and agent workflow hardening work. It is a framework release for
@@ -61,12 +99,13 @@ The 2026-06-14 pre-tag audit verified that the package metadata and runtime
 version report `0.2.2`, release docs avoid production overclaims, provider
 transport remains default-off, CI/default tests avoid real provider calls, and
 the default ecosystem matrix counts network rows as skipped rather than pass.
-The public `v0.2.2` tag and release are published. Downstream
-workspace-template and public KB active pins now use `v0.2.2`.
+The public `v0.2.2` tag and release are published. Downstream repositories that
+need the `v0.2.2` provider-transport/workflow-hardening baseline may still pin
+to `v0.2.2`.
 
-## Current Release Candidate: v0.2.3 Verification Evidence Hardening
+## Completed Release Focus: v0.2.3 Verification Evidence Hardening
 
-The current durable plan is
+The durable `v0.2.3` plan is
 [`docs/CODEX_DEVELOPMENT_PLAN_V5.md`](CODEX_DEVELOPMENT_PLAN_V5.md), with ADR
 0022 recording the architecture decision. `v0.2.3` focuses on
 verification/evidence hardening: normalized verifier evidence, SAT/SMT/Lean
@@ -88,16 +127,13 @@ workspace verifier-evidence demo, public KB verifier-policy self-test, and
 optional verifier availability coverage without adding provider or MCP
 authority.
 
-The v0.2.3 release readiness audit is complete, and the release-candidate line
-updates package metadata to `0.2.3` with conservative release notes in
-`docs/releases/v0.2.3.md`. The release candidate answers the readiness
-questions for verifier evidence stability, optional SAT/SMT/Lean testing
-without mandatory tools, skipped-not-pass enforcement, counterexample
-candidate boundaries, read-only promotion readiness, workspace/public KB
-compatibility, and open issue/PR state. The public tag/release and downstream
-pin updates remain deferred until the release-candidate PR merges, main is
-re-synced, release smoke from `@v0.2.3` passes, and the maintainer release
-action publishes the tag.
+The v0.2.3 release readiness audit, release-candidate PR, maintainer release
+action, release smoke from `@v0.2.3`, and downstream workspace/public KB pin
+updates are complete. The release answers the readiness questions for verifier
+evidence stability, optional SAT/SMT/Lean testing without mandatory tools,
+skipped-not-pass enforcement, counterexample candidate boundaries, read-only
+promotion readiness, workspace/public KB compatibility, and open issue/PR
+state.
 
 ## v0.2.1 Prerelease Baseline
 
