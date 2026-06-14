@@ -75,10 +75,12 @@ promotion-readiness reporting, and three-repo eval/smoke coverage. It does not
 expand provider/MCP authority, make real provider calls default-on, weaken
 human review, or treat Lean `#check` as informal/formal semantic alignment.
 
-The first implementation task is a verifier evidence status audit. Runtime and
-schema changes should wait until that audit identifies the current verifier
-records, gate integration, promotion evidence boundary, logs, and skipped-not-
-pass coverage.
+The verifier evidence status audit is complete. Current work adds verifier
+evidence record v1 for serialized verifier outputs while preserving current
+gatekeeper, promotion, human-review, and skipped-not-pass behavior. Later
+`v0.2.3` work should build read-only promotion-readiness reporting and
+failure/counterexample evidence workflows on top of that record without
+granting accepted-write authority.
 
 ## v0.2.1 Prerelease Baseline
 

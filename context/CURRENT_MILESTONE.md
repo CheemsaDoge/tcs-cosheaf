@@ -2,14 +2,14 @@
 
 ## Milestone
 
-`v0.2.3` Verification Evidence Hardening plan and audit kickoff.
+`v0.2.3` Verification Evidence Hardening implementation.
 
 ## Goal
 
 Move from the published `v0.2.2` Provider Transport + Agent Workflow
 Hardening release into `v0.2.3` Verification Evidence Hardening. The immediate
-goal is to audit current verifier evidence before changing runtime behavior or
-schemas.
+audit is complete; the current goal is to add verifier evidence record v1
+without changing verifier, gatekeeper, or promotion semantics.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -30,6 +30,8 @@ informal/formal semantic alignment.
   `v0.2.2` release closeout.
 - `docs/CODEX_DEVELOPMENT_PLAN_V5.md` is the current durable plan.
 - ADR 0022 records the `v0.2.3` Verification Evidence Hardening decision.
+- `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
+  result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
   index/query, context packs, local task/orchestrator dry-runs, service-layer
   entry points, provider gateway, hosted-worker dispatch, evaluation,
@@ -86,15 +88,16 @@ evidence around optional verifier and failure workflows:
 
 ## Current Task
 
-The current implementation task is the verifier evidence status audit. It is
-recorded in `docs/VERIFIER_EVIDENCE_AUDIT.md` before schema/runtime changes.
+The current implementation task is C.2 verifier evidence record v1.
 
-The audit inspects current verifier adapters, gate integration, result records,
-formal-link surfaces, promotion checks, and tests. It confirms that current
-normalized verifier states are `pass`, `fail`, `error`, and `skipped`; SAT/SMT
-`unknown` is a backend outcome normalized to `error`; skipped verifier output
-is not pass; and Lean `#check` is import/symbol resolution only, not semantic
-alignment.
+This task adds a typed, serializable `VerifierEvidenceRecord` and
+`schemas/verifier_evidence.schema.json` for verifier output records. It keeps
+current normalized result states as `pass`, `fail`, `error`, and `skipped`;
+keeps skipped verifier output distinct from pass; and preserves the boundary
+that Lean `#check` is import/symbol resolution only, not semantic alignment.
+
+The record is not human review, does not auto-promote accepted knowledge, and
+does not change the fresh gatekeeper run used by promotion.
 
 ## Completion Criteria For This Planning Milestone
 
@@ -111,10 +114,10 @@ alignment.
 
 ## Next Focus
 
-After the verifier evidence status audit lands, proceed to C.2: add a typed,
-serializable verifier evidence record v1 with a stable evidence ID, explicit
-reason codes, and backward-compatible behavior. Runtime and schema changes must
-preserve current promotion semantics and skipped-not-pass behavior.
+After the verifier evidence record v1 lands, proceed to C.3: add a read-only
+promotion-readiness report that explains gate, review, dependency, source, and
+verifier evidence status without promoting artifacts or converting skipped
+results into passes.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

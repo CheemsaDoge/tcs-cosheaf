@@ -114,6 +114,8 @@ not implement runtime behavior or change schemas.
 
 ### C.1 Verifier Evidence Status Audit
 
+Status: complete in `docs/VERIFIER_EVIDENCE_AUDIT.md`.
+
 Audit current verifier adapters, gate integration, result records, formal-link
 surfaces, and tests before changing any schema or runtime behavior.
 
@@ -131,6 +133,8 @@ The audit must answer:
 
 ### C.2 Evidence Record Taxonomy
 
+Status: current implementation focus for verifier evidence record v1.
+
 Define a normalized evidence vocabulary before broadening verifier behavior.
 The design should cover:
 
@@ -145,9 +149,9 @@ The design should cover:
 - `unknown`;
 - not-applicable cases.
 
-Schema or DTO changes must be implemented only after the audit identifies the
-current compatibility surface. Backward compatibility with existing records is
-preferred unless a narrow migration is explicitly justified.
+Schema or DTO changes are implemented only after the audit identifies the
+current compatibility surface. Backward compatibility with existing verifier
+results is required unless a narrow migration is explicitly justified.
 
 ### C.3 Gate And Promotion Evidence Reporting
 

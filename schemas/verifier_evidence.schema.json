@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tcs-cosheaf.local/schemas/verifier_evidence.schema.json",
+  "title": "TCS-Cosheaf Verifier Evidence Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "evidence_id",
+    "verifier_kind",
+    "tool_name",
+    "result",
+    "reason_code",
+    "created_at",
+    "limitations"
+  ],
+  "properties": {
+    "evidence_id": {
+      "$ref": "#/$defs/artifact_id"
+    },
+    "artifact_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/artifact_id"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "claim_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/artifact_id"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "verifier_kind": {
+      "type": "string",
+      "enum": [
+        "python",
+        "sat",
+        "smt",
+        "lean",
+        "external_reference",
+        "manual_note"
+      ]
+    },
+    "tool_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tool_version": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "command_argv": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "cwd": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "error",
+        "skipped"
+      ]
+    },
+    "reason_code": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+    },
+    "stdout_path": {
+      "$ref": "#/$defs/optional_repo_path"
+    },
+    "stderr_path": {
+      "$ref": "#/$defs/optional_repo_path"
+    },
+    "log_path": {
+      "$ref": "#/$defs/optional_repo_path"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "checker_input_hash": {
+      "$ref": "#/$defs/optional_sha256"
+    },
+    "checker_output_hash": {
+      "$ref": "#/$defs/optional_sha256"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "artifact_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|[0-9]+))+$"
+    },
+    "optional_repo_path": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "not": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z]:"
+              },
+              {
+                "pattern": "^/"
+              },
+              {
+                "pattern": "(^|/)\\.\\.(/|$)"
+              }
+            ]
+          }
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "optional_sha256": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  }
+}

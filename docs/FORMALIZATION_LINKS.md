@@ -180,6 +180,12 @@ Lean resolved the generated import and `#check` command in the configured
 environment. It does not prove that the informal artifact statement is
 semantically aligned with the formal declaration.
 
+When converted to verifier evidence v1, an external Lean library reference
+check is recorded with `verifier_kind: external_reference` and an explicit
+limitation that `#check` resolves imports and symbols only. That evidence
+record is still not human review and does not promote or update the
+formalization status.
+
 The checker does not fetch CSLib, mathlib, or any other library. It does not
 update formalization status automatically and does not make existing public KB
 artifacts require Lean in CI. Under the current one-result verifier adapter

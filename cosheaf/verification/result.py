@@ -5,11 +5,14 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from enum import StrEnum
-from typing import Any, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from cosheaf.core.ids import validate_artifact_id
+
+if TYPE_CHECKING:
+    from cosheaf.verification.evidence import VerifierEvidenceRecord
 
 
 class VerificationStatus(StrEnum):
@@ -141,6 +144,12 @@ class VerificationResult(BaseModel):
     def to_json(self) -> str:
         """Return deterministic JSON for this result."""
         return json.dumps(self.to_dict(), ensure_ascii=True, indent=2) + "\n"
+
+    def to_evidence_record(self) -> VerifierEvidenceRecord:
+        """Return a serializable verifier evidence record for this result."""
+        from cosheaf.verification.evidence import VerifierEvidenceRecord
+
+        return VerifierEvidenceRecord.from_verification_result(self)
 
 
 def _normalize_path_tuple(value: Any, *, field_name: str) -> tuple[str, ...]:

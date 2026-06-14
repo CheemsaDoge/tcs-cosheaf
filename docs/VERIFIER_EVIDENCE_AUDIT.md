@@ -200,7 +200,7 @@ adapter messages with `alignment not checked`.
 | `.cosheaf/reports/*-gate-report.{json,md}` | Generated gatekeeper reports | Runtime sidecars; ignored by git |
 | `reviews/gatekeeper/*` from `--persist-review` | Optional durable review copy of a gatekeeper report | Durable review artifact, but not reused as promotion source of truth |
 | `schemas/verifier.schema.json` | Artifact schema for verifier artifact records | Not a schema for runtime `VerificationResult` |
-| Proposed `schemas/verifier_evidence.schema.json` | Not implemented yet | Future C.2 scope |
+| `schemas/verifier_evidence.schema.json` | v1 schema for serialized verifier evidence records | Added in C.2; not used as promotion source of truth |
 
 The current gap is that normalized verifier evidence has a runtime model and
 gate-report serialization, but not a dedicated durable evidence schema with a
@@ -232,9 +232,9 @@ Notable existing coverage details:
 - Formal-link gate tests assert `require_lean_check` needs a same-run matching
   passing Lean verifier result and does not accept skipped verifier output.
 
-## Gaps For C.2
+## C.2 Implementation Boundary
 
-C.2 should be narrowed by this evidence:
+C.2 is narrowed by this evidence:
 
 1. Add a typed, serializable verifier evidence record v1 with a stable
    `evidence_id`.
@@ -254,4 +254,9 @@ C.2 should be narrowed by this evidence:
 9. Consider recording checker implementation identity or command hash, but do
    not turn it into a trust claim without review policy.
 10. Keep provider/MCP surfaces out of the verifier evidence truth path.
+
+The C.2 record remains serialization support for verifier output. It does not
+make historical sidecars authoritative, does not replace the fresh gatekeeper
+run used by promotion, does not satisfy human review, and does not add a
+provider/MCP or accepted-write path.
 
