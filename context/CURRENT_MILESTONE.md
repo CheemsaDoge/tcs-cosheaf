@@ -9,9 +9,10 @@
 Move from the published `v0.2.2` Provider Transport + Agent Workflow
 Hardening release into `v0.2.3` Verification Evidence Hardening. The verifier
 evidence audit, verifier evidence record v1, read-only promotion-readiness
-report, and optional SAT result-depth fixtures are complete; the current goal
-is optional SMT adapter result-depth fixture coverage without adding a
-mandatory solver dependency.
+report, optional SAT result-depth fixtures, optional SMT result-depth fixtures,
+and Lean external reference ergonomics are complete; the next goal is the
+failure and counterexample evidence workflow without treating candidates as
+accepted refutations.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -90,35 +91,32 @@ evidence around optional verifier and failure workflows:
 
 ## Current Task
 
-The current implementation task is D.2 SMT adapter result-depth fixtures.
+The current implementation task is E.1 typed counterexample candidate record.
 
-This task expands fake-backend SMT adapter coverage for `sat`, `unsat`,
-`unknown`, malformed SMT-LIB, timeout, and unavailable-solver paths. It checks
-normalized `pass`, `fail`, `error`, and `skipped` behavior plus command, cwd,
-timeout, stdout/stderr log, tool metadata, and skipped-not-pass evidence.
+This task should make candidate counterexamples reviewable without treating
+them as accepted refutations. Candidate records may preserve construction
+summaries, evidence paths, verifier requests, status, and limitations, but
+they must not change accepted artifact status, create human review, or bypass
+validation, gates, verifier evidence, review, or promotion.
 
-The task does not add `z3` or any other SMT solver as a required dependency,
-does not claim theorem proving, does not write accepted knowledge, and does
-not change promotion semantics.
+## Recently Completed Task
 
-## Completion Criteria For This Task
+D.3 Lean external reference ergonomics improved optional external Lean
+`#check` debugging without adding a mandatory Lean or lake dependency. The
+task added fake-backend tests for missing import and missing symbol stderr log
+preservation, clearer manifest diagnostics for unknown `library_ref` values,
+and documentation that a successful external Lean `#check` means only import
+and symbol resolution.
 
-- SMT fake-backend fixtures cover `sat` and `unsat` expected results.
-- `unknown` backend output is normalized to an `error` result and remains not
-  pass.
-- Malformed SMT-LIB backend output is normalized to an `error` result with
-  stderr logs.
-- Timeout behavior is normalized to an `error` result with command, cwd,
-  timeout, and stderr metadata.
-- Solver-unavailable behavior remains `skipped`, not pass.
-- Documentation records the SMT depth as optional fixture coverage rather than
-  a full SMT theorem-proving integration.
+The task does not fetch CSLib, mathlib, or any Lean library, does not vendor
+Lean code, does not claim theorem proving, does not claim informal/formal
+semantic alignment, does not write accepted knowledge, and keeps missing
+Lean/lake as `skipped`, not `pass`.
 
 ## Next Focus
 
-After SMT result-depth fixtures land, proceed to D.3 Lean external reference
-ergonomics. Keep all external tools optional, fake-backend tested, and
-skipped-not-pass.
+Proceed to Phase E failure and counterexample evidence workflow. Candidate
+counterexamples must remain candidates until explicitly checked and reviewed.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

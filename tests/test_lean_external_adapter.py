@@ -210,6 +210,64 @@ def test_lean_library_ref_adapter_reports_nonzero_exit_as_fail(
     assert "returned nonzero exit code 1" in result.message
 
 
+def test_lean_library_ref_adapter_preserves_missing_import_stderr(
+    tmp_path: Path,
+) -> None:
+    artifact = _artifact(
+        formalizations=[
+            _formalization(import_path="Missing.Graph.Basic")
+        ]
+    )
+    adapter = LeanLibraryRefAdapter(
+        backend=FakeLeanLibraryRefBackend(
+            name="fake-lean",
+            available=True,
+            result=LeanLibraryRefBackendResult(
+                exit_code=1,
+                stdout="",
+                stderr="unknown module prefix 'Missing'\n",
+            ),
+        )
+    )
+
+    result = adapter.verify(artifact, RepoContext(tmp_path))
+
+    assert result.status is VerificationStatus.FAIL
+    assert result.stderr_path
+    stderr = (tmp_path / result.stderr_path).read_text(encoding="utf-8")
+    assert "unknown module prefix 'Missing'" in stderr
+    assert "alignment not checked" in result.message
+
+
+def test_lean_library_ref_adapter_preserves_missing_symbol_stderr(
+    tmp_path: Path,
+) -> None:
+    artifact = _artifact(
+        formalizations=[
+            _formalization(symbol="CSLib.Graph.Basic.missing_symbol")
+        ]
+    )
+    adapter = LeanLibraryRefAdapter(
+        backend=FakeLeanLibraryRefBackend(
+            name="fake-lean",
+            available=True,
+            result=LeanLibraryRefBackendResult(
+                exit_code=1,
+                stdout="",
+                stderr="unknown identifier 'CSLib.Graph.Basic.missing_symbol'\n",
+            ),
+        )
+    )
+
+    result = adapter.verify(artifact, RepoContext(tmp_path))
+
+    assert result.status is VerificationStatus.FAIL
+    assert result.stderr_path
+    stderr = (tmp_path / result.stderr_path).read_text(encoding="utf-8")
+    assert "unknown identifier 'CSLib.Graph.Basic.missing_symbol'" in stderr
+    assert result.evidence_paths == ("formalization:cslib.fixture.link",)
+
+
 def test_lean_library_ref_adapter_skips_when_backend_is_unavailable(
     tmp_path: Path,
 ) -> None:

@@ -108,7 +108,11 @@ class FormalLibraryManifest(BaseModel):
         validated = validate_library_ref(library_ref)
         library = self.get_library(validated)
         if library is None:
-            raise FormalLibraryManifestError(f"unknown library_ref: {validated}")
+            available = ", ".join(self.library_ids)
+            raise FormalLibraryManifestError(
+                f"unknown library_ref: {validated}; "
+                f"available library_ref ids: {available}"
+            )
         return library
 
 

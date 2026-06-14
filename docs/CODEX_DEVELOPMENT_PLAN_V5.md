@@ -195,14 +195,33 @@ and assert command, cwd, timeout, stdout/stderr log, tool metadata, exact
 status-line parsing, and skipped-not-pass evidence. They do not add a mandatory
 solver dependency and do not claim SMT theorem proving.
 
-Potential work:
+### D.3 Lean External Reference Ergonomics
+
+Status: implemented as fake-backend fixture coverage and clearer manifest
+diagnostics for external Lean library references.
+
+The external Lean library reference adapter still remains a narrow optional
+`import <module>` / `#check <symbol>` invocation path. The D.3 fixtures harden
+missing import and missing symbol diagnostics by asserting that fake Lean
+stderr is preserved in verifier logs. Formal library manifest diagnostics now
+list available manifest IDs when an artifact references an unknown
+`library_ref`, and G10 surfaces the same detail in blocking issues.
+
+D.3 does not add a mandatory Lean or lake dependency, does not fetch or vendor
+CSLib/mathlib, does not autoformalize natural language, does not update
+formalization status automatically, and does not claim informal/formal
+semantic alignment. Missing Lean or lake remains `skipped`, not `pass`; a
+successful external `#check` means only that the configured Lean environment
+resolved the generated import and symbol.
+
+Potential later work:
 
 - SAT: clearer DIMACS command metadata, model/counterexample capture, and
   unavailable-tool skips.
 - SMT: clearer solver command metadata, `sat`/`unsat`/`unknown` distinctions,
   timeout handling, and model capture where available.
-- Lean: clearer plain-file and external-library `#check` logs, lake/lean
-  version capture when available, and better skipped/error diagnostics.
+- Lean: richer multi-link reporting, clearer plain-file diagnostics, and
+  lake/lean version capture where available.
 
 All tests must use fake backends, mocked command runners, local fixtures, or
 tool-absence skips. CI must not require SAT, SMT, Lean, lake, CSLib, mathlib,

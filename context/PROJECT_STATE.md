@@ -3,6 +3,28 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.3 Lean External Reference Ergonomics - 2026-06-14
+
+Issue 282 improves optional external Lean library reference `#check`
+ergonomics without adding Lean, lake, CSLib, mathlib, or any external library
+as a required dependency. The Lean external reference adapter remains a narrow
+symbol/import resolution path: it generates a temporary Lean file with
+`import <import_path>` and `#check <symbol>` for linked or checked external
+formalization metadata, then records normalized verifier evidence when a fake
+or real optional backend runs.
+
+The task adds fake-backend coverage for missing import and missing symbol
+stderr preservation, keeps fake pass/fail/skipped/error paths covered, and
+improves formal library manifest diagnostics so unknown `library_ref` failures
+list available manifest IDs. G10 surfaces that diagnostic in blocking issues,
+but its policy semantics are unchanged.
+
+This task does not fetch CSLib/mathlib, does not vendor Lean code, does not
+autoformalize natural language, does not prove informal/formal semantic
+alignment, does not update formalization status automatically, does not write
+accepted knowledge, and does not change accepted-promotion semantics. Missing
+Lean or lake remains `skipped`, not `pass`.
+
 ## v0.2.3 SMT Adapter Result-Depth Fixtures - 2026-06-14
 
 Issue 280 expands SMT adapter result-depth coverage with fake-backend fixtures

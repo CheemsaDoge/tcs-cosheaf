@@ -1098,7 +1098,7 @@ def test_formal_link_gate_fails_unknown_library_ref(tmp_path: Path) -> None:
     assert g10["status"] == "fail"
     assert g10["blocking_issues"][0]["message"] == (
         "formalization cslib.fixture.link references unknown library_ref: "
-        "cslib-main"
+        "cslib-main; available library_ref ids: mathlib-main"
     )
 
 

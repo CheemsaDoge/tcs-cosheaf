@@ -79,6 +79,12 @@ using the core helper API. The optional external Lean library reference checker
 uses artifact formalization metadata; it still does not fetch, pin, or build
 external library checkouts automatically.
 
+When an artifact references a `library_ref` that is not present in the loaded
+manifest, the manifest helper and G10 gate diagnostics list the available
+manifest IDs. This helps operators correct metadata such as `cslib-main`
+versus `mathlib-main`, but it does not prove that any Lean import or symbol
+exists.
+
 ## Alignment Review
 
 Lean can check a formal declaration, but a Lean pass does not automatically
@@ -179,6 +185,12 @@ Missing Lean or lake returns `skipped`, not `pass`. A nonzero process exit is
 Lean resolved the generated import and `#check` command in the configured
 environment. It does not prove that the informal artifact statement is
 semantically aligned with the formal declaration.
+
+If the generated import path or symbol is missing, Lean normally exits nonzero
+and writes the import or identifier diagnostic to stderr. The adapter records
+that stderr under `.cosheaf/logs/` and returns a normalized `fail`; it does not
+rewrite that failure into an alignment judgment. Missing Lean or lake remains
+`skipped`, which is still not a pass.
 
 When converted to verifier evidence v1, an external Lean library reference
 check is recorded with `verifier_kind: external_reference` and an explicit

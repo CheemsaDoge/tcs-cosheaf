@@ -757,7 +757,10 @@ as artifact IDs. `library_ref` is a formal library manifest ID such as
 `FormalLibraryManifest.library_ids -> tuple[str, ...]` returns manifest IDs in
 manifest order. `FormalLibraryManifest.get_library(library_ref)` returns a
 library entry or `None`. `FormalLibraryManifest.require_library_ref(library_ref)`
-returns the entry or raises `FormalLibraryManifestError`.
+returns the entry or raises `FormalLibraryManifestError`. Unknown
+`library_ref` errors include the requested ID and the manifest's available
+library IDs, preserving the same validation semantics while making operator
+diagnostics clearer.
 
 `AlignmentReview` fields are:
 
