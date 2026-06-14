@@ -7,10 +7,11 @@
 ## Goal
 
 Move from the published `v0.2.2` Provider Transport + Agent Workflow
-Hardening release into `v0.2.3` Verification Evidence Hardening. The immediate
-audit and verifier evidence record v1 are complete; the current goal is to add
-read-only promotion-readiness reporting without changing accepted-promotion
-semantics.
+Hardening release into `v0.2.3` Verification Evidence Hardening. The verifier
+evidence audit, verifier evidence record v1, and read-only
+promotion-readiness report are complete; the current goal is optional SAT
+adapter result-depth fixture coverage without adding a mandatory solver
+dependency.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -89,38 +90,34 @@ evidence around optional verifier and failure workflows:
 
 ## Current Task
 
-The current implementation task is C.3 promotion-readiness reporting.
+The current implementation task is D.1 SAT adapter result-depth fixtures.
 
-This task adds `cosheaf promotion readiness --artifact <artifact-id> --json`
-and `cosheaf promotion readiness --issue <issue-id> --json`, backed by a
-read-only promotion-readiness report model. The report explains gate, review,
-dependency, source metadata, readonly-root, draft-status, and target verifier
-evidence conditions without promoting artifacts or changing accepted status.
+This task expands fake-backend SAT adapter coverage for satisfiable,
+unsatisfiable, malformed DIMACS, timeout, and unavailable-solver paths. It
+checks normalized `pass`, `fail`, `error`, and `skipped` behavior plus command,
+cwd, timeout, stdout/stderr log, tool metadata, and skipped-not-pass evidence.
 
-The report is not human review, does not auto-promote accepted knowledge, does
-not replace `cosheaf artifact promote`, and does not make skipped verifier
-output pass. AI/provider output still cannot satisfy human-review requirements.
+The task does not add `kissat` or any other SAT solver as a required
+dependency, does not claim theorem proving, does not write accepted knowledge,
+and does not change promotion semantics.
 
 ## Completion Criteria For This Task
 
-- `cosheaf promotion readiness --artifact <artifact-id> --json` works for a
-  target artifact and is read-only.
-- `cosheaf promotion readiness --issue <issue-id> --json` works for an issue's
-  direct `related_artifacts` and is read-only.
-- Reports distinguish missing review, failed verifier, skipped verifier,
-  missing source metadata, dependency risk, private dependency, draft status,
-  readonly KB roots, and repository gatekeeper blockers.
-- Skipped verifier output blocks checker-required readiness claims and remains
-  distinct from pass.
-- Documentation and interface registry describe the command without claiming
-  automatic theorem proving, Lean semantic alignment, production readiness,
-  AI-as-human-review, or automatic accepted promotion.
+- SAT fake-backend fixtures cover satisfiable and unsatisfiable expected
+  results.
+- Malformed DIMACS backend output is normalized to an `error` result with
+  stderr logs.
+- Timeout behavior is normalized to an `error` result with command, cwd,
+  timeout, and stderr metadata.
+- Solver-unavailable behavior remains `skipped`, not pass.
+- Documentation records the SAT depth as optional fixture coverage rather than
+  a full SAT theorem-proving integration.
 
 ## Next Focus
 
-After the promotion-readiness report lands, proceed to Phase D optional
-SAT/SMT/Lean backend depth. Keep all external tools optional, fake-backend
-tested, and skipped-not-pass.
+After SAT result-depth fixtures land, proceed to D.2 SMT adapter result-depth
+fixtures. Keep all external tools optional, fake-backend tested, and
+skipped-not-pass.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
