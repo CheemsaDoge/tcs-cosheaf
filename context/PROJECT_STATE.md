@@ -3,6 +3,25 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Artifact Failure Memory Plan Landing - 2026-06-14
+
+Issue 302 lands the active V6 plan for `v0.2.4` Artifact Failure Memory +
+Attempt Traceability and records ADR 0023. The plan follows the published
+`v0.2.3` release and the post-v0.2.3 state audit. It defines the next line of
+work: design and implement optional artifact-level `failure_log`, add read-only
+and controlled draft write surfaces, bridge WorkerBundle failures into
+artifact failure-log proposals, surface failure memory in retrieval/context and
+promotion-readiness reports, update workspace/public KB policy surfaces, and
+add security/eval regression coverage before v0.2.4 readiness.
+
+This plan-landing task is documentation only. It does not change artifact
+schema, Pydantic models, CLI behavior, retrieval, context-pack rendering,
+promotion-readiness logic, verifier behavior, accepted-promotion semantics,
+provider/MCP authority, workspace-template behavior, or public KB content.
+Failure memory remains non-authoritative: not proof, not verifier success, not
+human review, not a checked counterexample, and not promotion evidence by
+itself.
+
 ## Post-v0.2.3 Artifact Failure Memory State Audit - 2026-06-14
 
 Issue 300 audits the current three-repository state after the published
