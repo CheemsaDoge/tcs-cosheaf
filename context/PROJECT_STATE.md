@@ -3,6 +3,23 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.3 Verification Evidence Plan Landing - 2026-06-14
+
+Issue 265 lands the post-`v0.2.2` durable plan for `v0.2.3` Verification
+Evidence Hardening. `docs/CODEX_DEVELOPMENT_PLAN_V5.md` is now the current
+plan, ADR 0022 records the architecture decision, and
+`docs/CODEX_DEVELOPMENT_PLAN_V4.md` is historical/completed after the published
+`v0.2.2` release and downstream pin alignment.
+
+The next implementation task is a verifier evidence status audit before any
+runtime or schema changes. The audit should inspect existing verifier adapters,
+result states, log capture, gate integration, promotion evidence, skipped-not-
+pass tests, and Lean `#check` symbol-resolution boundaries.
+
+This planning task is documentation-only. It does not change schema, verifier
+behavior, gates, promotion semantics, provider/MCP authority, public/private
+policy, KB artifacts, accepted knowledge, human-review status, or runtime code.
+
 ## v0.2.2 Release Closeout - 2026-06-14
 
 Issue 263 closes out `v0.2.2` after tag/release publication and downstream pin

@@ -1,12 +1,17 @@
 # TCS-Cosheaf Development Plan v4
 
-Status: current post-`v0.2.1` durable plan
+Status: historical/completed after the published `v0.2.2` release
 
 This plan follows the `v0.2.1` CLI Agent Access + Hosted Provider Gateway
 prerelease. It uses the post-release audit in
 [`docs/POST_V021_STATE_AUDIT.md`](POST_V021_STATE_AUDIT.md) as its baseline.
 
-The next target is:
+This plan completed with the published `v0.2.2` Provider Transport + Agent
+Workflow Hardening release and downstream `v0.2.2` pin alignment. The current
+durable plan is now
+[`docs/CODEX_DEVELOPMENT_PLAN_V5.md`](CODEX_DEVELOPMENT_PLAN_V5.md).
+
+The target of this historical plan was:
 
 ```text
 v0.2.2 Provider Transport + Agent Workflow Hardening

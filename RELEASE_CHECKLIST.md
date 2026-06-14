@@ -56,6 +56,24 @@ no publication blockers.
 - [x] MCP remains optional read-only adapter work; controlled-write MCP and
   provider MCP tools remain out of scope.
 
+## v0.2.3 Planning Baseline
+
+`v0.2.3` is the next planned framework milestone after the `v0.2.2` release
+closeout. It is Verification Evidence Hardening, not provider/MCP expansion.
+
+- [x] `docs/CODEX_DEVELOPMENT_PLAN_V5.md` records the durable `v0.2.3` plan.
+- [x] ADR 0022 records the verification/evidence hardening decision.
+- [x] `docs/CODEX_DEVELOPMENT_PLAN_V4.md` is marked historical/completed after
+  the `v0.2.2` closeout.
+- [ ] The verifier evidence status audit identifies existing verifier
+  adapters, result records, log capture, gate integration, promotion evidence,
+  skipped-not-pass tests, and Lean `#check` boundaries before runtime/schema
+  changes.
+- [ ] Evidence taxonomy work distinguishes `verifier_request`,
+  `verifier_result`, `candidate_counterexample`, and `checked_counterexample`.
+- [ ] SAT/SMT/Lean deepening keeps all external tools optional and preserves
+  unavailable-tool results as skipped or unavailable, not pass.
+
 ## Framework Checklist
 
 ### v0.2.2 Pre-Tag Audit
