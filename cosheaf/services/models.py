@@ -149,6 +149,7 @@ AGENT_ACCESS_STABLE_ERROR_CODES: tuple[str, ...] = (
     "context_build_failed",
     "context_show_failed",
     "draft_write_failed",
+    "failure_log_from_bundle_failed",
     "gate_issue",
     "hosted_worker_policy_violation",
     "human_review_forbidden",

@@ -555,6 +555,199 @@ def test_artifact_failure_add_rejects_authority_spoofing_input(
     assert "failure_log" not in written
 
 
+def test_artifact_failure_plan_from_bundle_is_readonly(
+    tmp_path: Path,
+) -> None:
+    _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.controlled-draft.yaml",
+        _draft_claim_artifact(),
+    )
+    bundle = _write_yaml(tmp_path, "outputs/bundle.yaml", _bundle_data())
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "failure",
+            "plan-from-bundle",
+            "--bundle",
+            str(bundle),
+            "--target-artifact",
+            "claim.fixture.controlled-draft",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json(result.output)
+    assert payload["kind"] == "artifact_failure_log_bundle_plan"
+    assert payload["artifact_id"] == "claim.fixture.controlled-draft"
+    assert payload["bundle_id"] == "bundle.issue.fixture.controlled.reasoner.0001"
+    assert payload["entry_count"] == 1
+    assert payload["accepted_write_performed"] is False
+    entry = payload["entries"][0]
+    assert entry["failure_id"] == (
+        "failure.bundle.issue.fixture.controlled.reasoner.0001.0001"
+    )
+    assert entry["origin"] == "imported_bundle"
+    assert entry["attempt_kind"] == "proof_attempt"
+    assert entry["target"] == "claim.fixture.controlled-draft"
+    assert entry["related_counterexample_candidates"] == [
+        "candidate.fixture.controlled.counterexample.0001"
+    ]
+    assert "not proof" in entry["limitations"]
+    written = yaml.safe_load(
+        (
+            tmp_path
+            / "kb"
+            / "draft"
+            / "claims"
+            / "claim.fixture.controlled-draft.yaml"
+        ).read_text(encoding="utf-8")
+    )
+    assert "failure_log" not in written
+
+
+def test_artifact_failure_add_from_bundle_dry_run_writes_nothing(
+    tmp_path: Path,
+) -> None:
+    _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.controlled-draft.yaml",
+        _draft_claim_artifact(),
+    )
+    bundle = _write_yaml(tmp_path, "outputs/bundle.yaml", _bundle_data())
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "failure",
+            "add-from-bundle",
+            "--bundle",
+            str(bundle),
+            "--target-artifact",
+            "claim.fixture.controlled-draft",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+            "--dry-run",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json(result.output)
+    assert payload["kind"] == "artifact_failure_log_bundle_entries"
+    assert payload["dry_run"] is True
+    assert payload["written_paths"] == []
+    assert payload["accepted_write_performed"] is False
+    assert payload["planned_entries"][0]["origin"] == "imported_bundle"
+    written = yaml.safe_load(
+        (
+            tmp_path
+            / "kb"
+            / "draft"
+            / "claims"
+            / "claim.fixture.controlled-draft.yaml"
+        ).read_text(encoding="utf-8")
+    )
+    assert "failure_log" not in written
+    assert written["updated_at"] == "2026-06-09T00:00:00Z"
+
+
+def test_artifact_failure_add_from_bundle_appends_failed_attempt(
+    tmp_path: Path,
+) -> None:
+    artifact_path = _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.controlled-draft.yaml",
+        _draft_claim_artifact(),
+    )
+    bundle = _write_yaml(tmp_path, "outputs/bundle.yaml", _bundle_data())
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "failure",
+            "add-from-bundle",
+            "--bundle",
+            str(bundle),
+            "--target-artifact",
+            "claim.fixture.controlled-draft",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json(result.output)
+    assert payload["written_paths"] == [payload["path"]]
+    assert payload["record_id"] == "bundle.issue.fixture.controlled.reasoner.0001"
+    written = yaml.safe_load(artifact_path.read_text(encoding="utf-8"))
+    assert written["updated_at"] != "2026-06-09T00:00:00Z"
+    assert written["failure_log"][0]["failure_id"] == (
+        "failure.bundle.issue.fixture.controlled.reasoner.0001.0001"
+    )
+    assert written["failure_log"][0]["related_counterexample_candidates"] == [
+        "candidate.fixture.controlled.counterexample.0001"
+    ]
+    assert written["failure_log"][0]["status"] == "open"
+    assert not (tmp_path / "kb" / "accepted").exists()
+
+
+def test_artifact_failure_from_bundle_rejects_unsafe_authority(
+    tmp_path: Path,
+) -> None:
+    _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.controlled-draft.yaml",
+        _draft_claim_artifact(),
+    )
+    data = _bundle_data()
+    data["proposed_artifacts"] = [
+        {
+            "path": "kb/accepted/claims/claim.fixture.unsafe.yaml",
+            "summary": "Unsafe accepted proposal.",
+        }
+    ]
+    bundle = _write_yaml(tmp_path, "outputs/bundle.yaml", data)
+
+    result = runner.invoke(
+        app,
+        [
+            "artifact",
+            "failure",
+            "plan-from-bundle",
+            "--bundle",
+            str(bundle),
+            "--target-artifact",
+            "claim.fixture.controlled-draft",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = _assert_json(result.output)
+    assert payload["code"] == "accepted_write_forbidden"
+    written = yaml.safe_load(
+        (
+            tmp_path
+            / "kb"
+            / "draft"
+            / "claims"
+            / "claim.fixture.controlled-draft.yaml"
+        ).read_text(encoding="utf-8")
+    )
+    assert "failure_log" not in written
+
+
 def test_write_source_note_json_writes_staging_note(tmp_path: Path) -> None:
     request = _write_json(tmp_path, "requests/source.json", _source_note_request())
 

@@ -3,6 +3,24 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Failure Log From WorkerBundle - 2026-06-15
+
+Issue 312 adds WorkerBundle-to-artifact-failure-log bridge commands.
+`cosheaf artifact failure plan-from-bundle --bundle <path> --target-artifact
+<artifact-id> --json` validates a WorkerBundle v2 and returns proposed
+`FailureLogEntry` values derived from `failed_attempts` without writing files.
+`cosheaf artifact failure add-from-bundle` applies the same conversion through
+the controlled artifact failure-log write path, including dry-run support.
+
+The bridge preserves WorkerBundle provenance with `origin: imported_bundle`.
+Typed `counterexample_candidates` are linked only by candidate ID in
+`related_counterexample_candidates`; they are not duplicated as checked
+refutations or verifier results. Unsafe WorkerBundle authority claims, accepted
+paths/status, readonly KB roots, and accepted artifact mutation remain refused.
+The bridge does not create verifier results, does not mark human review, does
+not run gates, does not promote artifacts, does not write accepted knowledge,
+and does not change promotion semantics.
+
 ## Artifact Failure Log Draft Write CLI - 2026-06-15
 
 Issue 310 adds `cosheaf artifact failure add --artifact <artifact-id>

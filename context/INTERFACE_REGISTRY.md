@@ -4,13 +4,14 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- WorkerBundle-to-artifact-failure-log bridge commands are not implemented yet.
-  The current runtime supports read-only artifact failure-log inspection through
-  `cosheaf artifact failures <artifact-id> --json` and controlled append-only
-  draft writes through `cosheaf artifact failure add`. Future bundle bridge
-  commands must preserve WorkerBundle origin labels and must not grant proof,
-  review, verifier, checked-counterexample, accepted-status, or promotion
-  authority.
+- Failure-log memory search, context-pack failure sections, and
+  promotion-readiness failure-memory surfacing are not implemented yet. The
+  current runtime supports read-only artifact failure-log inspection,
+  controlled append-only draft writes, and WorkerBundle-to-failure-log planning
+  and controlled append. Future retrieval/context/readiness work must keep
+  failure memory labeled as non-authoritative and must not promote it into
+  proof, review, verifier, checked-counterexample, accepted-status, or
+  promotion authority.
 - Hosted worker CLI commands and hosted-provider MCP tools are not implemented
   yet. Role-specific hosted worker service bridging for fake and mocked
   provider calls is implemented under `cosheaf.agent.hosted_workers`, the
@@ -105,6 +106,20 @@
   changing the artifact file or `updated_at`.
 - `cosheaf artifact failure add ... --repo-root <path>`: performs the
   controlled append for an explicit repository root.
+- `cosheaf artifact failure plan-from-bundle --bundle <path> --target-artifact <artifact-id> --json`:
+  validates a WorkerBundle v2 and returns proposed `FailureLogEntry` values
+  derived from `failed_attempts` without writing files. Typed
+  `counterexample_candidates` are linked by candidate ID only.
+- `cosheaf artifact failure plan-from-bundle ... --repo-root <path>`: plans the
+  WorkerBundle-derived entries for an explicit repository root.
+- `cosheaf artifact failure add-from-bundle --bundle <path> --target-artifact <artifact-id> --json`:
+  appends WorkerBundle-derived failure-log entries to a writable non-accepted
+  artifact through the same controlled failure-log write boundary. It refuses
+  accepted paths/status, readonly KB roots, and unsafe WorkerBundle authority
+  claims.
+- `cosheaf artifact failure add-from-bundle ... --dry-run`: validates the
+  bundle conversion and target artifact without writing files or refreshing
+  `updated_at`.
 - `cosheaf promotion readiness --artifact <artifact-id> --json`: emits a
   read-only promotion-readiness report for a single artifact. The command
   runs validation and gatekeeper reporting, distinguishes missing review,
@@ -469,7 +484,8 @@
   `artifact_not_found`, `artifact_path_exists`, `authority_claim_forbidden`,
   `bundle_complete_forbidden`, `bundle_submit_failed`, `context_build_failed`,
   `context_show_failed`,
-  `draft_write_failed`, `gate_issue`, `hosted_worker_policy_violation`,
+  `draft_write_failed`, `failure_log_from_bundle_failed`, `gate_issue`,
+  `hosted_worker_policy_violation`,
   `human_review_forbidden`,
   `invalid_artifact_id`, `invalid_artifact_target_path`,
   `invalid_input_json`, `invalid_staging_path`, `invalid_timestamp`,
@@ -606,6 +622,17 @@
   validates and appends one `FailureLogEntry` to a writable non-accepted
   artifact, or previews the append in dry-run mode. It refuses accepted paths,
   accepted artifact status, readonly KB roots, and authority-spoofing fields.
+- `cosheaf.services.DraftWriteService.plan_failure_log_entries_from_bundle(bundle_path, *, target_artifact_id) -> FailureLogFromBundlePlanResult`:
+  validates a WorkerBundle v2 and plans proposed artifact failure-log entries
+  from `failed_attempts` without writing files.
+- `cosheaf.services.DraftWriteService.append_failure_log_entries_from_bundle(bundle_path, *, target_artifact_id, dry_run=False) -> FailureLogFromBundleWriteResult`:
+  appends or previews WorkerBundle-derived failure-log entries through the same
+  controlled write boundary as `append_failure_log_entry`.
+- `cosheaf.services.FailureLogFromBundlePlanResult`: frozen dataclass with the
+  validated bundle, target artifact ID/path, and proposed
+  `FailureLogEntry` values.
+- `cosheaf.services.FailureLogFromBundleWriteResult`: frozen dataclass with the
+  WorkerBundle-derived plan and the `ControlledWriteResult`.
 - `cosheaf.services.ReviewRequestFromBundleResult`: frozen dataclass with the
   validated `bundle`, generated request mapping, and `ControlledWriteResult`.
   It is review context only and has no accepted-write, verifier-result,

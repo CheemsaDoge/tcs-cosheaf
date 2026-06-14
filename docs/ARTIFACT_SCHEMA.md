@@ -136,6 +136,21 @@ pass, or checked counterexample authority. Dry-runs validate and report without
 writing. Actual writes refresh `updated_at` and report
 `accepted_write_performed=false`.
 
+WorkerBundle-derived conversion is available through:
+
+```bash
+cosheaf artifact failure plan-from-bundle --bundle <path> --target-artifact <artifact-id> --json
+cosheaf artifact failure add-from-bundle --bundle <path> --target-artifact <artifact-id> --dry-run --json
+```
+
+`plan-from-bundle` is read-only. It maps WorkerBundle v2 `failed_attempts` into
+proposed `FailureLogEntry` values with `origin: imported_bundle`.
+`add-from-bundle` applies the same conversion through the controlled write path.
+Typed WorkerBundle `counterexample_candidates` are linked by candidate ID in
+`related_counterexample_candidates` only; they are not copied into
+`failed_because` as checked refutations and do not become verifier results,
+human review, accepted knowledge, or promotion evidence.
+
 ## Source Metadata
 
 Artifacts may carry structured source metadata in `sources`. The field is

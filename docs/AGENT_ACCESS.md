@@ -127,6 +127,8 @@ Agent-safe read/check commands include:
 - `cosheaf validate --json`
 - `cosheaf gate run --json`
 - `cosheaf artifact failures <artifact-id> --json`
+- `cosheaf artifact failure plan-from-bundle --bundle <path>
+  --target-artifact <artifact-id> --json`
 - `cosheaf memory cards --json`
 - `cosheaf memory search "<query>" --issue <issue-id> --json`
 - `cosheaf context build <issue-id> --json`
@@ -158,6 +160,8 @@ input:
 - `cosheaf draft write-source-note --input-json <path> --json`
 - `cosheaf artifact failure add --artifact <artifact-id> --input-json <path>
   --json`
+- `cosheaf artifact failure add-from-bundle --bundle <path>
+  --target-artifact <artifact-id> --json`
 - `cosheaf bundle submit --input-json <path> --json`
 - `cosheaf review request --input-json <path> --json`
 - `cosheaf review request-from-bundle --bundle <path> --json`
@@ -176,6 +180,14 @@ review findings. It reuses the same `reviews/requests/*.yaml` controlled-write
 path as `review request`; it does not approve or reject claims, mark
 `human_reviewed`, create verifier results, write accepted knowledge, or promote
 artifacts.
+
+`artifact failure plan-from-bundle` derives proposed `FailureLogEntry` values
+from WorkerBundle v2 `failed_attempts` without writing files.
+`artifact failure add-from-bundle` uses the same conversion and then follows the
+controlled artifact failure-log write boundary. Typed
+`counterexample_candidates` are linked by candidate ID in
+`related_counterexample_candidates`; they are not duplicated as checked
+refutations, verifier results, accepted knowledge, or human review.
 
 ### Artifact Failure Memory Surface
 
@@ -220,11 +232,12 @@ discipline as other controlled-write features:
 - explicit limitations so failed-attempt memory is not overread as proof,
   refutation, human review, or verifier success.
 
-WorkerBundle v2 `failed_attempts` may later be converted into proposed
-artifact `failure_log` entries, but the conversion must preserve their
-agent/provider origin and remain draft or controlled artifact metadata. It
-must not make those attempts accepted knowledge, checked counterexamples,
-verifier evidence, or human review.
+WorkerBundle v2 `failed_attempts` can be converted into proposed artifact
+`failure_log` entries through `artifact failure plan-from-bundle` and
+`artifact failure add-from-bundle`. The conversion preserves imported-bundle
+origin and remains draft or controlled artifact metadata. It must not make those
+attempts accepted knowledge, checked counterexamples, verifier evidence, or
+human review.
 
 Public KB accepted artifacts may include failure memory only through ordinary
 review and promotion policy. Validation/gate success remains insufficient by
@@ -308,6 +321,7 @@ The stable error-code list is exported as
 - `context_build_failed`
 - `context_show_failed`
 - `draft_write_failed`
+- `failure_log_from_bundle_failed`
 - `gate_issue`
 - `hosted_worker_policy_violation`
 - `human_review_forbidden`
