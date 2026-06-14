@@ -982,12 +982,50 @@ promotion semantics beyond ordinary gatekeeper blocking behavior.
   `FailureCounterexampleEvalReport`.
 - `cosheaf.evals.failure_counterexample.run_failure_counterexample_eval_case(context, case)`:
   runs and scores one failure/counterexample eval case.
+- `cosheaf.evals.verifier_evidence.VerifierEvidenceEvalKind`: enum for
+  `pass_evidence_policy_allowed`, `failed_evidence_blocks_readiness`,
+  `skipped_checker_required`, `counterexample_remains_candidate`, and
+  `lean_check_symbol_only` cases.
+- `cosheaf.evals.verifier_evidence.VerifierEvidenceEvalCase`: Pydantic v2
+  model for one deterministic verifier evidence eval case with readiness,
+  expected verifier result, reason-code, skipped-not-pass,
+  candidate-counterexample, Lean symbol-only, and semantic-alignment
+  expectations.
+- `cosheaf.evals.verifier_evidence.VerifierEvidenceEvalSuite`: Pydantic v2
+  model for a YAML suite of verifier evidence eval cases.
+- `cosheaf.evals.verifier_evidence.VerifierEvidenceEvalMetrics`: frozen
+  dataclass with `readiness_boundary_accuracy`,
+  `failed_evidence_block_count`, `skipped_not_pass_count`,
+  `candidate_counterexample_review_only_count`,
+  `lean_alignment_claim_count`, and `accepted_write_violation_count` output.
+- `cosheaf.evals.verifier_evidence.VerifierEvidenceEvalCaseResult`: frozen
+  dataclass for one executed verifier evidence eval case, including readiness,
+  evidence result, verifier kind, reason codes, skipped/pass boundary,
+  candidate-counterexample flags, Lean symbol-only flag, semantic-alignment
+  claim flag, accepted-write flag, and failures.
+- `cosheaf.evals.verifier_evidence.VerifierEvidenceEvalReport`: frozen
+  dataclass for aggregate suite output with deterministic `to_dict()` and
+  `to_json()` helpers.
+- `cosheaf.evals.verifier_evidence.VerifierEvidenceEvalError`: expected error
+  for verifier evidence eval loading or execution failures.
+- `cosheaf.evals.verifier_evidence.DEFAULT_VERIFIER_EVIDENCE_EVAL_CASES`:
+  default case path `evals/verifier_evidence/cases.yaml`.
+- `cosheaf.evals.verifier_evidence.load_verifier_evidence_eval_suite(path)`:
+  loads a verifier evidence eval YAML suite.
+- `cosheaf.evals.verifier_evidence.resolve_verifier_evidence_eval_case_path(context, cases_path)`:
+  resolves and constrains an eval case path to the repository root.
+- `cosheaf.evals.verifier_evidence.run_verifier_evidence_eval_suite(context, suite)`:
+  runs deterministic fake verifier evidence, typed counterexample candidate,
+  and Lean `#check` boundary fixtures and returns a
+  `VerifierEvidenceEvalReport`.
+- `cosheaf.evals.verifier_evidence.run_verifier_evidence_eval_case(context, case)`:
+  runs and scores one verifier evidence eval case.
 
-The agent workflow, provider workflow, and failure/counterexample eval
-harnesses are intentionally direct submodule APIs in this phase. They are not
+The agent workflow, provider workflow, failure/counterexample, and verifier
+evidence eval harnesses are intentionally direct submodule APIs in this phase. They are not
 exported from `cosheaf.evals.__init__`, and no `cosheaf eval agent-workflow`,
-`cosheaf eval provider-workflow`, or `cosheaf eval failure-counterexample` CLI
-command is added.
+`cosheaf eval provider-workflow`, `cosheaf eval failure-counterexample`, or
+`cosheaf eval verifier-evidence` CLI command is added.
 
 All memory models are strict (`extra="forbid"`), frozen, preserve enum values as
 enum instances in Python, and expose:
