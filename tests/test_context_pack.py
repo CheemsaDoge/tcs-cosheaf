@@ -82,6 +82,7 @@ def _failure_log_entry(
     failure_id: str = "failure.fixture.0001",
     direction: str = "Try a separator induction on the bad component",
     failed_because: str = "The separator premise is unavailable for the draft.",
+    next_possible_directions: list[str] | None = None,
 ) -> dict[str, Any]:
     return {
         "failure_id": failure_id,
@@ -96,7 +97,7 @@ def _failure_log_entry(
         "evidence_paths": [],
         "related_verifier_results": [],
         "related_counterexample_candidates": [],
-        "next_possible_directions": [],
+        "next_possible_directions": next_possible_directions or [],
         "status": "open",
         "limitations": "Failure memory only; not proof or refutation.",
     }
@@ -317,6 +318,7 @@ def test_context_pack_v2_uses_cards_and_audit_by_default(tmp_path: Path) -> None
     assert audit["context_payload"] == {
         "card_count": 1,
         "full_artifact_count": 0,
+        "failure_entry_count": 0,
         "content_mode": "cards_only",
     }
     assert audit["full_artifact_pulls"] == []
@@ -380,6 +382,7 @@ def test_context_pack_worker_role_can_pull_bounded_full_artifacts(
     assert audit["context_payload"] == {
         "card_count": 2,
         "full_artifact_count": 1,
+        "failure_entry_count": 0,
         "content_mode": "cards_with_full_artifacts",
     }
     assert "role=verifier" in audit["full_artifact_pulls"][0]["reason"]
@@ -494,6 +497,97 @@ def test_context_pack_includes_failure_memory_card_summary(
     ]
 
 
+def test_context_pack_writes_known_failed_directions_section(
+    tmp_path: Path,
+) -> None:
+    _write_context_docs(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "issues/open/failure-section.yaml",
+        _issue_data(
+            related_artifacts=["claim.fixture.failure-section"],
+            description="Need graph failure section context.",
+            tags=["graph"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/draft/claims/failure-section.yaml",
+        _artifact_data(
+            "claim.fixture.failure-section",
+            status="draft",
+            title="Draft claim with failed directions",
+            domain=["graph-theory"],
+            tags=["graph"],
+            failure_log=[
+                _failure_log_entry(
+                    direction="Try a separator induction on the bad component",
+                    failed_because="The separator premise is unavailable.",
+                    next_possible_directions=[
+                        "Try a bounded-width decomposition first."
+                    ],
+                )
+            ],
+        ),
+    )
+
+    result = build_context_pack(RepoContext(tmp_path), "issue.fixture.context")
+
+    context_md = (result.task_dir / "CONTEXT.md").read_text(encoding="utf-8")
+    known_failures = (result.task_dir / "KNOWN_FAILURES.md").read_text(
+        encoding="utf-8"
+    )
+    audit = json.loads((result.task_dir / "RETRIEVAL_AUDIT.json").read_text())
+
+    for rendered in (context_md, known_failures):
+        assert "## Known Failed Directions" in rendered
+        assert "claim.fixture.failure-section" in rendered
+        assert "Try a separator induction on the bad component" in rendered
+        assert "failed_because: The separator premise is unavailable." in rendered
+        assert "status: open" in rendered
+        assert "next: Try a bounded-width decomposition first." in rendered
+        assert "origin: human" in rendered
+        assert "not proof, refutation, verifier pass, or human review" in rendered
+
+    assert audit["context_payload"]["failure_entry_count"] == 1
+    assert audit["failure_memory"] == [
+        {
+            "artifact_id": "claim.fixture.failure-section",
+            "artifact_path": "kb/draft/claims/failure-section.yaml",
+            "root_scope": "workspace",
+            "failure_id": "failure.fixture.0001",
+            "direction": "Try a separator induction on the bad component",
+            "failed_because": "The separator premise is unavailable.",
+            "status": "open",
+            "next_possible_directions": [
+                "Try a bounded-width decomposition first."
+            ],
+            "origin": "human",
+            "attempt_kind": "proof_attempt",
+            "source_label": "workspace:human",
+        }
+    ]
+
+
+def test_context_pack_omits_failed_directions_section_when_empty(
+    tmp_path: Path,
+) -> None:
+    _write_repo(tmp_path)
+
+    result = build_context_pack(RepoContext(tmp_path), "issue.fixture.context")
+
+    context_md = (result.task_dir / "CONTEXT.md").read_text(encoding="utf-8")
+    known_failures = (result.task_dir / "KNOWN_FAILURES.md").read_text(
+        encoding="utf-8"
+    )
+    audit = json.loads((result.task_dir / "RETRIEVAL_AUDIT.json").read_text())
+
+    assert "## Known Failed Directions" not in context_md
+    assert "## Known Failed Directions" not in known_failures
+    assert audit["context_payload"]["failure_entry_count"] == 0
+    assert audit["failure_memory"] == []
+
+
 def test_context_pack_public_only_excludes_private_failure_log_text(
     tmp_path: Path,
 ) -> None:
@@ -560,6 +654,8 @@ def test_context_pack_public_only_excludes_private_failure_log_text(
     assert "PRIVATE SECRET" not in context_md
     assert "PRIVATE SECRET" not in known_failures
     assert "PRIVATE SECRET" not in audit_text
+    assert "Known Failed Directions" not in context_md
+    assert "Known Failed Directions" not in known_failures
     assert "private scope exclusions" in audit_text
 
 

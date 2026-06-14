@@ -273,11 +273,20 @@ metadata is audit context only; it does not make the pulled content accepted,
 reviewed, verified, or safe to send to a provider.
 
 Context-pack artifact-card lines and `RETRIEVAL_AUDIT.json` include
-`failure_count` and `recent_failure_directions` for visible cards. This is a
-compact failed-attempt memory cue, not the structured failure section planned
-for later work. Public-only context packs must still exclude private artifacts,
-private artifact IDs, and private failure-log text from rendered files and
-retrieval audit details.
+`failure_count` and `recent_failure_directions` for visible cards. Context
+packs also render an explicit `Known Failed Directions` section when visible
+artifacts carry `failure_log` entries, and `RETRIEVAL_AUDIT.json` exposes the
+same structured entries through `failure_memory` with
+`context_payload.failure_entry_count`. Empty failure logs do not add the
+markdown section. Public-only context packs must still exclude private
+artifacts, private artifact IDs, and private failure-log text from rendered
+files and retrieval audit details.
+
+The explicit failure section includes artifact ID, direction, failed reason,
+failure status, next possible directions, origin, attempt kind, path, root
+scope, and source/origin label. It is failed/unresolved attempt memory only;
+it is not proof, refutation, verifier pass, checked counterexample evidence,
+human review, accepted status, gate success, or promotion evidence.
 
 ## Ranking Formula
 
