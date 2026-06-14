@@ -3,6 +3,39 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.3 Verifier Evidence Record v1 - 2026-06-14
+
+Issue 272 adds a typed, serializable verifier evidence record v1 after the
+C.1 audit. The new `VerifierEvidenceRecord` model and
+`schemas/verifier_evidence.schema.json` record verifier outputs with stable
+evidence IDs, verifier kind, tool metadata, command/cwd metadata, normalized
+`pass`/`fail`/`error`/`skipped` result state, reason code, log paths, optional
+checker hashes, and explicit limitations.
+
+The record is serialization support for verifier output. It does not change
+verifier execution, gatekeeper behavior, accepted promotion semantics,
+provider/MCP authority, KB artifacts, human-review policy, or the
+skipped-not-pass invariant. Promotion continues to use a fresh validation and
+gatekeeper run.
+
+## v0.2.3 Verification Evidence Plan Landing - 2026-06-14
+
+Issue 265 lands the post-`v0.2.2` durable plan for `v0.2.3` Verification
+Evidence Hardening. `docs/CODEX_DEVELOPMENT_PLAN_V5.md` is now the current
+plan, ADR 0022 records the architecture decision, and
+`docs/CODEX_DEVELOPMENT_PLAN_V4.md` is historical/completed after the published
+`v0.2.2` release and downstream pin alignment.
+
+The first implementation task after plan landing was the verifier evidence
+status audit in `docs/VERIFIER_EVIDENCE_AUDIT.md`. That audit inspected
+existing verifier adapters, result states, log capture, gate integration,
+promotion evidence, skipped-not-pass tests, and Lean `#check`
+symbol-resolution boundaries before C.2 schema work started.
+
+This planning task is documentation-only. It does not change schema, verifier
+behavior, gates, promotion semantics, provider/MCP authority, public/private
+policy, KB artifacts, accepted knowledge, human-review status, or runtime code.
+
 ## v0.2.2 Release Closeout - 2026-06-14
 
 Issue 263 closes out `v0.2.2` after tag/release publication and downstream pin

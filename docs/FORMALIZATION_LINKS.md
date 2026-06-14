@@ -138,6 +138,10 @@ checking through a locally available `lean` command. It does not add Lean,
 CSLib, mathlib, or lake as dependencies. It does not fetch libraries and does
 not require network access.
 
+For the current verifier evidence status audit, including the boundary between
+plain Lean checks, external Lean library references, G6 verifier evidence, and
+G10 metadata checks, see `docs/VERIFIER_EVIDENCE_AUDIT.md`.
+
 When optional Lean tooling is unavailable, Lean verification remains
 `skipped`, not `pass`. Skipped verifier output must not be used to claim a
 successful formal check.
@@ -175,6 +179,12 @@ Missing Lean or lake returns `skipped`, not `pass`. A nonzero process exit is
 Lean resolved the generated import and `#check` command in the configured
 environment. It does not prove that the informal artifact statement is
 semantically aligned with the formal declaration.
+
+When converted to verifier evidence v1, an external Lean library reference
+check is recorded with `verifier_kind: external_reference` and an explicit
+limitation that `#check` resolves imports and symbols only. That evidence
+record is still not human review and does not promote or update the
+formalization status.
 
 The checker does not fetch CSLib, mathlib, or any other library. It does not
 update formalization status automatically and does not make existing public KB

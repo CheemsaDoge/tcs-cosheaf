@@ -88,6 +88,9 @@ are treated as external references and are not required to resolve locally.
 
 Runs configured verifier adapters and normalizes results. Missing optional
 external tools should produce skipped verifier results, not core system crashes.
+See `docs/VERIFIER_EVIDENCE_AUDIT.md` for the current adapter, result-state,
+log-capture, gate-integration, promotion-blocking, and test-coverage audit that
+precedes the `v0.2.3` verifier evidence record work.
 
 #### Verification Capability Matrix
 
@@ -124,6 +127,24 @@ are:
 
 `skipped` is not `pass`, and `error` is not `fail`. External command-backed
 verifiers must record the command and working directory they used.
+
+#### Verifier Evidence Record v1
+
+`VerifierEvidenceRecord` is a typed serialization boundary for verifier
+outputs. It is derived from a `VerificationResult` through
+`VerificationResult.to_evidence_record()` or
+`VerifierEvidenceRecord.from_verification_result(...)`.
+
+The v1 record is documented by `schemas/verifier_evidence.schema.json` and
+includes a stable `evidence_id`, optional artifact/claim IDs, verifier kind,
+tool metadata, command argv, cwd, normalized `result`, explicit `reason_code`,
+stdout/stderr/log paths, creation timestamp, optional checker input/output
+hashes, and limitations.
+
+The record does not change gatekeeper or promotion semantics. Promotion still
+uses a fresh validation and gatekeeper run. A verifier evidence record is not
+human review, does not auto-promote accepted knowledge, and does not make
+skipped output pass.
 
 The current concrete verifier is the Python checker adapter. It runs artifact
 evidence entries with `kind: python_checker` from the repository root, writes
