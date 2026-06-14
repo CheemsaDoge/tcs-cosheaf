@@ -2,16 +2,15 @@
 
 ## Milestone
 
-`v0.2.2` Provider Transport + Agent Workflow Hardening release candidate.
+`v0.2.2` Provider Transport + Agent Workflow Hardening release closeout.
 
 ## Goal
 
-Prepare `tcs-cosheaf` as a conservative `v0.2.2` release candidate after the
-published `v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease. The
-release-candidate scope is provider transport and agent workflow hardening:
-explicit default-off real-provider transport, context-send privacy policy,
-provider log scanning, failure/counterexample preservation, deterministic
-provider/failure evals, and three-repository smoke coverage.
+Close out `tcs-cosheaf` after publishing the conservative `v0.2.2` release and
+aligning downstream pins. The release scope is provider transport and agent
+workflow hardening: explicit default-off real-provider transport, context-send
+privacy policy, provider log scanning, failure/counterexample preservation,
+deterministic provider/failure evals, and three-repository smoke coverage.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving, automatic
@@ -20,23 +19,22 @@ automatic informal/formal semantic alignment.
 
 ## Current Baseline
 
-- Framework package metadata and `cosheaf.__version__` record `0.2.2` on this
-  release-candidate branch.
+- Framework package metadata and `cosheaf.__version__` record `0.2.2`.
 - Remote tag `v0.1.1` exists and remains the downstream Formal Link Layer
   metadata baseline.
 - Remote tag `v0.2.0` exists as the bounded local-MVP framework release. It is
   a baseline, not a production-ready claim.
 - Remote tag `v0.2.1` exists and is published as a conservative GitHub
   prerelease, not a production-readiness claim.
-- Remote tag `v0.2.2` is absent as of the 2026-06-14 pre-tag audit and should
-  be created only after the audit PR merges, main is re-synced, and the
-  maintainer release action re-verifies tag absence.
-- `tcs-cosheaf-workspace-template` currently pins CLI-agent/provider demo
-  workflows to `@v0.2.1`; it should move to `@v0.2.2` only after the tag is
-  published and downstream verification runs.
-- `tcs-kb-public` CI currently installs `tcs-cosheaf` from `@v0.2.1`; it should
-  move to `@v0.2.2` only after the tag is published and repository-local
-  validation, gate, PR-checklist, and policy guard checks pass.
+- Remote tag `v0.2.2` exists and points to the reviewed post-audit main commit.
+- The GitHub release `v0.2.2 Provider Transport + Agent Workflow Hardening`
+  is published and is not a production-readiness claim.
+- `python scripts/release_smoke.py --source
+  git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.2` installs and
+  verifies the published tag.
+- `tcs-cosheaf-workspace-template` pins active demo, Makefile, and provider
+  smoke defaults to `@v0.2.2`.
+- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.2.2`.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
   index/query, context packs, local task/orchestrator dry-runs, service-layer
   entry points, provider gateway, hosted-worker dispatch, evaluation, and
@@ -112,11 +110,10 @@ automatic informal/formal semantic alignment.
 ## Completion Criteria
 
 - Package metadata and `cosheaf.__version__` are set to `0.2.2`.
-- `docs/releases/v0.2.2.md` exists and states conservative release-candidate
-  boundaries.
+- `docs/releases/v0.2.2.md` exists and states conservative release boundaries.
 - README, roadmap, release checklist, release notes, and current milestone
-  agree on `v0.2.2` as Provider Transport + Agent Workflow Hardening release
-  candidate scope.
+  agree on `v0.2.2` as a published Provider Transport + Agent Workflow
+  Hardening release scope.
 - Docs do not describe the current system as permanently local-only.
 - Docs do not claim production hosted multi-agent readiness, automatic theorem
   proving, automatic accepted promotion, AI-as-human-review, or
@@ -126,21 +123,16 @@ automatic informal/formal semantic alignment.
 - Ecosystem smoke runs against local framework, workspace-template, and public
   KB checkouts. Network rows remain skipped unless explicitly enabled and must
   not be counted as passes.
-- The pre-tag audit records whether publication may proceed and keeps
-  downstream repositories on `@v0.2.1` until `v0.2.2` is published and release
-  smoke can install it.
+- The pre-tag audit, tag publication, release smoke, workspace-template pin,
+  and public KB CI pin are all complete.
 
 ## Next Focus
 
-After the `v0.2.2` pre-tag audit PR passes and merges:
-
-1. Publish the `v0.2.2` tag/release only if the maintainer release process
-   approves it.
-2. Update `tcs-cosheaf-workspace-template` to pin/demo `@v0.2.2` and rerun its
-   demo/showcase/provider-preview checks.
-3. Update `tcs-kb-public` to validate/gate/policy-guard against `@v0.2.2`.
-4. Continue post-`v0.2.2` work through small issue/branch/PR increments without
-   weakening review, gate, promotion, or public/private policy boundaries.
+Move to `v0.2.3` Verification Evidence Hardening through small issue/branch/PR
+increments. The next phase should deepen verifier evidence, SAT/SMT/Lean
+optional backend ergonomics, counterexample/failure evidence workflows, and
+promotion-readiness reporting without weakening review, gate, promotion, or
+public/private policy boundaries.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that

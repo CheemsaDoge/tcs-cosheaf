@@ -1,7 +1,7 @@
 # Three-Repository Release Checklist
 
 This checklist records the `v0.2.2` Provider Transport + Agent Workflow
-Hardening release-candidate state after the `v0.2.1` CLI Agent Access +
+Hardening release state after the `v0.2.1` CLI Agent Access +
 Hosted Provider Gateway prerelease, the `v0.2.0` local-MVP release, and the
 `v0.1.1` Formal Link Layer support baseline. It is an operator checklist for
 the framework package, public KB, and workspace template together. It is not a
@@ -22,7 +22,7 @@ surfaces.
 - Framework repository: `tcs-cosheaf`.
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
-- Current framework package metadata version on this release-candidate branch:
+- Current framework package metadata version:
   `0.2.2`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
@@ -31,15 +31,14 @@ surfaces.
 - Intended downstream dependency for CLI-agent/provider-gateway workflows after
   publication:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.1`.
-- Intended downstream dependency for provider-transport/workflow-hardening
-  workflows after publication:
+- Downstream dependency for provider-transport/workflow-hardening workflows:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.2`.
 
-## v0.2.2 Release-Candidate Delta
+## v0.2.2 Release Delta
 
-Before publishing a `v0.2.2` tag, confirm `docs/releases/v0.2.2.md` exists as
-release-candidate notes, the readiness audit has no blockers, and the
-release-candidate PR reruns the full command ladder plus ecosystem smoke.
+The `v0.2.2` tag and release were published after `docs/releases/v0.2.2.md`,
+the readiness audit, the pre-tag audit, and the release-candidate PR recorded
+no publication blockers.
 
 - [x] Optional OpenAI-compatible HTTP transport exists and remains default-off.
 - [x] Explicit `provider real-run` fails closed without context preview,
@@ -66,7 +65,7 @@ release-candidate PR reruns the full command ladder plus ecosystem smoke.
 - [x] `python -m cosheaf.cli version --json` reports `0.2.2`.
 - [x] No open PRs or issues existed before issue 261 was opened for this
   audit.
-- [x] `v0.2.2` was absent locally and on `origin` at audit time.
+- [x] `v0.2.2` was absent locally and on `origin` at pre-tag audit time.
 - [x] README, release notes, roadmap, and current milestone avoid production
   overclaims.
 - [x] Release notes keep provider transport default-off and state that
@@ -76,8 +75,8 @@ release-candidate PR reruns the full command ladder plus ecosystem smoke.
 - [x] The plan/document naming difference is recorded:
   `docs/FORMAL_LINKS.md` is referenced by the v5 runbook, while the current
   repository document is `docs/FORMALIZATION_LINKS.md`.
-- [x] Tag publication may proceed after the audit PR is merged and the
-  maintainer release action re-verifies main and tag absence.
+- [x] Tag publication proceeded after the audit PR was merged and the
+  maintainer release action re-verified main and tag absence.
 
 ### Version And Tag
 
@@ -86,11 +85,11 @@ release-candidate PR reruns the full command ladder plus ecosystem smoke.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
-- [ ] Remote tag `v0.2.2` is created only after the release-candidate PR and
-  required checks pass.
+- [x] Remote tag `v0.2.2` exists and points to the reviewed post-audit main
+  commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
-- [ ] Workspace-template verification installs or pins `@v0.2.2` before
+- [x] Workspace-template verification installs or pins `@v0.2.2` before
   relying on provider-transport/workflow-hardening surfaces.
 
 ### License
@@ -110,7 +109,8 @@ PRs:
 - [x] `make validate`
 - [x] `make gate`
 - [x] `git diff --check`
-- [ ] GitHub Actions checks pass for the `v0.2.2` release-candidate PR.
+- [x] GitHub Actions checks passed for the `v0.2.2` release-candidate and
+  pre-tag audit PRs.
 
 Skipped verifier output is not a pass. Optional-tool skips must stay visible in
 gate output and release notes.
@@ -127,10 +127,9 @@ gate output and release notes.
 
 ### Smoke And Evaluation Status
 
-- [ ] `python scripts/release_smoke.py --source
+- [x] `python scripts/release_smoke.py --source
   git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.2` runs against a
-  clean environment when the `v0.2.2` tag exists and network access is
-  available.
+  clean environment after the `v0.2.2` tag exists.
 - [x] `python scripts/ecosystem_smoke.py --cosheaf cosheaf` runs without
   cloning remote repositories.
 - [x] `python scripts/ecosystem_smoke.py --matrix --framework-tag v0.2.2 --cosheaf "python -m cosheaf.cli" --framework-root . --workspace-template-root ..\tcs-cosheaf-workspace-template --public-kb-root ..\tcs-kb-public --json`
@@ -153,7 +152,7 @@ gate output and release notes.
 
 ## Agent Access And Provider Status
 
-Implemented framework surfaces included in the `v0.2.2` release candidate:
+Implemented framework surfaces included in the `v0.2.2` release:
 
 - CLI-first operator workflow with stable JSON output for core read/check
   commands.
@@ -271,7 +270,7 @@ Boundaries:
 
 ## Known Limitations
 
-- Release candidate framework, not production software.
+- Conservative framework release, not production software.
 - No web UI.
 - No automatic theorem-proving agent.
 - No full Lean autoformalization.
@@ -286,7 +285,7 @@ Boundaries:
 - MarkItDown, Headroom, CodeGraph, and Understand-Anything are optional or
   manual developer surfaces and are not source-of-truth dependencies.
 
-## Non-Goals For This Release Candidate
+## Non-Goals For This Release
 
 - Do not add a web UI.
 - Do not make hosted provider calls part of default workflows.
