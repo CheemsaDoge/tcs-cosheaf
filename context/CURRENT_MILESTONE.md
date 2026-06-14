@@ -86,20 +86,15 @@ evidence around optional verifier and failure workflows:
 
 ## Current Task
 
-The next implementation task is the verifier evidence status audit.
+The current implementation task is the verifier evidence status audit. It is
+recorded in `docs/VERIFIER_EVIDENCE_AUDIT.md` before schema/runtime changes.
 
-That audit should inspect current verifier adapters, gate integration, result
-records, formal-link surfaces, and tests before schema/runtime changes. It
-should answer:
-
-- Which verifier adapters actually invoke tools?
-- Which result states exist and where are they serialized?
-- Which logs and command metadata are captured?
-- Which evidence can block promotion?
-- Where is skipped-not-pass tested?
-- Where is Lean `#check` documented and tested as symbol/import resolution
-  only?
-- Which result records are source-of-truth versus generated sidecars?
+The audit inspects current verifier adapters, gate integration, result records,
+formal-link surfaces, promotion checks, and tests. It confirms that current
+normalized verifier states are `pass`, `fail`, `error`, and `skipped`; SAT/SMT
+`unknown` is a backend outcome normalized to `error`; skipped verifier output
+is not pass; and Lean `#check` is import/symbol resolution only, not semantic
+alignment.
 
 ## Completion Criteria For This Planning Milestone
 
@@ -116,9 +111,10 @@ should answer:
 
 ## Next Focus
 
-Start the verifier evidence status audit through a separate issue, branch, and
-PR. Runtime and schema changes should wait until that audit records the current
-evidence surface and identifies the narrow compatibility plan.
+After the verifier evidence status audit lands, proceed to C.2: add a typed,
+serializable verifier evidence record v1 with a stable evidence ID, explicit
+reason codes, and backward-compatible behavior. Runtime and schema changes must
+preserve current promotion semantics and skipped-not-pass behavior.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
