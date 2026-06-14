@@ -3,6 +3,22 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Artifact Failure Log Read CLI - 2026-06-14
+
+Issue 308 adds the read-only `cosheaf artifact failures <artifact-id>` command.
+The command can emit deterministic JSON with artifact ID/path, KB root
+name/scope/readonly metadata, `failure_count`, `failure_log` entries, and an
+explicit authority notice. Missing artifacts return the stable
+`artifact_not_found` `ErrorResult` code.
+
+This task is read-only. It does not add a failure-log write command, does not
+write files, does not create verifier results, does not mark human review,
+does not run gates, does not promote artifacts, does not change accepted
+promotion semantics, and does not expand provider/MCP authority. Failure-log
+entries remain research memory only: not proof, not verifier success, not
+checked counterexample evidence, not human review, not gate success, not
+accepted status, and not promotion evidence.
+
 ## Artifact Failure Log Model And Schema - 2026-06-14
 
 Issue 306 implements optional artifact-level `failure_log` support in the

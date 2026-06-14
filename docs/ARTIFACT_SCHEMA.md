@@ -109,6 +109,17 @@ and explicit promotion. Validation and gate success do not replace human
 review, and unreviewed agent/provider failure logs must not enter accepted
 public knowledge.
 
+Read-only CLI inspection is available through:
+
+```bash
+cosheaf artifact failures <artifact-id> --json
+```
+
+The command returns artifact path, root scope metadata, failure count, the
+stored `failure_log` entries, and an explicit non-authority notice. It does not
+write files, create verifier results, mark human review, run gates, or promote
+artifacts.
+
 ## Source Metadata
 
 Artifacts may carry structured source metadata in `sources`. The field is
