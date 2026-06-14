@@ -78,6 +78,9 @@ informal/formal semantic alignment.
   recall, repeated failed-direction detection, public-only scope leakage,
   authority-boundary preservation, and candidate-counterexample mislabel
   prevention through local temporary workspace fixtures.
+- `docs/releases/v0.2.4.md` is the readiness-audit draft for deciding whether
+  the line can enter release-candidate work. It is not a tag, GitHub release,
+  downstream pin update, or production-readiness claim.
 - `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
   result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
@@ -146,11 +149,12 @@ compact context-pack card summaries, and explicit context-pack failure
 sections. Promotion-readiness failure-memory warning reporting is implemented.
 Workspace failure-log demonstration, public-KB failure-log policy surfaces,
 security regression coverage for failure-log misuse, and deterministic
-artifact failure-memory eval coverage are implemented. New work should
-continue from the v0.2.4 readiness audit, while avoiding runtime authority
-expansion, default real provider calls, generated review-as-human-review,
-accepted writes, artifact promotion bypasses, and treating skipped verifier
-results as passes.
+artifact failure-memory eval coverage are implemented. The v0.2.4 readiness
+audit draft is being used to decide release-candidate entry. New work after a
+passing audit should continue from the release-candidate task, while avoiding
+runtime authority expansion, default real provider calls, generated
+review-as-human-review, accepted writes, artifact promotion bypasses, and
+treating skipped verifier results as passes.
 
 ## Recently Completed Tasks
 
@@ -212,6 +216,15 @@ create verifier results, mark human review, promote artifacts, expand
 provider/MCP authority, or turn failure memory into proof or promotion
 evidence.
 
+G.1 v0.2.4 release readiness audit adds
+`docs/releases/v0.2.4.md` as a conservative readiness-audit draft. The audit
+records that package metadata remains `0.2.3`, no `v0.2.4` tag exists, all
+three repositories had no open issues or PRs before the audit issue was
+created, and the release-candidate task may proceed only after this audit PR
+and required checks pass. It does not change runtime behavior, version
+metadata, tags, downstream pins, provider/MCP authority, verifier semantics,
+accepted-promotion policy, or KB artifacts.
+
 G.3 v0.2.3 release readiness audit added `docs/releases/v0.2.3.md` as a
 readiness-audit draft and recorded that main could enter the release-candidate
 task. The audit kept package metadata at `0.2.2`, created no tag, changed no
@@ -228,11 +241,11 @@ downstream workspace-template plus public KB active pins were updated to
 
 ## Next Focus
 
-After deterministic artifact failure-memory eval coverage lands, proceed to the
-v0.2.4 release-readiness audit. Retrieval, context-pack, readiness, workspace,
-policy, security, and eval work must keep failure memory labeled as failed or
-unresolved attempt memory, preserve public/private scope, and avoid promoting
-failure memory into proof, verifier success, human review, checked
+After the v0.2.4 release-readiness audit lands and CI passes, proceed to the
+v0.2.4 release-candidate task. Retrieval, context-pack, readiness, workspace,
+policy, security, eval, and release work must keep failure memory labeled as
+failed or unresolved attempt memory, preserve public/private scope, and avoid
+promoting failure memory into proof, verifier success, human review, checked
 counterexample evidence, accepted status, or promotion evidence by itself.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue

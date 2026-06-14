@@ -3,6 +3,26 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.4 Release Readiness Audit - 2026-06-15
+
+Issue 324 adds `docs/releases/v0.2.4.md` as a conservative readiness-audit
+draft for Artifact Failure Memory + Attempt Traceability. The audit records
+that package metadata and `cosheaf.__version__` remain `0.2.3`, no local or
+remote `v0.2.4` tag exists, and all three repositories had no open issues or
+pull requests before the audit issue was created.
+
+The audit finds no release blocker for entering a release-candidate PR after
+the audit PR and CI pass. Deferred non-blockers remain explicit: checked
+counterexample review artifacts beyond WorkerBundle candidate records are
+future evidence-taxonomy work, downstream pins stay on `@v0.2.3` until a
+reviewed `v0.2.4` tag and release smoke exist, and optional external tools or
+network rows must remain skipped rather than pass when unavailable.
+
+This is documentation/status only. It does not change runtime behavior,
+version metadata, tags, downstream pins, schemas, verifier semantics, provider
+or MCP authority, accepted-promotion policy, public/private policy, KB
+artifacts, accepted knowledge, human-review status, or artifact promotion.
+
 ## Artifact Failure-Memory Eval Suite - 2026-06-15
 
 Issue 322 adds deterministic artifact failure-memory retrieval/governance eval

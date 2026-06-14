@@ -19,6 +19,10 @@ surfaces.
 `v0.2.3` packages verification-evidence hardening after the readiness audit.
 Package metadata records `0.2.3`; the public tag, GitHub release, release
 smoke, and downstream workspace/public KB pin updates are complete.
+`v0.2.4` is in readiness-audit state for Artifact Failure Memory + Attempt
+Traceability. Until a separate release-candidate PR updates metadata and a
+tag/release is published, package metadata and downstream pins remain on
+`0.2.3` / `@v0.2.3`.
 
 ## Scope
 
@@ -38,6 +42,40 @@ smoke, and downstream workspace/public KB pin updates are complete.
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.2`.
 - Downstream dependency for verification-evidence-hardening workflows:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.3`.
+- Candidate downstream dependency for artifact-failure-memory workflows after
+  publication:
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.4`.
+
+## v0.2.4 Readiness Audit Baseline
+
+`docs/releases/v0.2.4.md` is the readiness-audit draft for Artifact Failure
+Memory + Attempt Traceability. This audit does not create the `v0.2.4` tag,
+does not publish a GitHub release, does not update downstream pins, and does
+not change runtime behavior.
+
+- [x] Artifact-level `failure_log` is optional and backward compatible.
+- [x] `cosheaf artifact failures` is read-only and reports an explicit
+  non-authority notice.
+- [x] Controlled failure-log writes are limited to writable
+  draft/pre-accepted artifacts and reject accepted-path/status, readonly-root,
+  and authority-spoofing inputs.
+- [x] WorkerBundle failed attempts can be planned or appended into
+  failure-log entries without granting proof, review, verifier, checked
+  counterexample, accepted-status, or promotion authority.
+- [x] Artifact cards, memory search, context packs, and promotion-readiness
+  reports surface failure memory as review context only.
+- [x] Public-only context excludes private failure-log text and private
+  artifact IDs.
+- [x] Workspace-template failure-memory demo and public KB failure-log policy
+  surfaces are in place.
+- [x] Security and deterministic eval regression coverage exists for
+  authority spoofing, public/private scope, retrieval, repeated failed
+  directions, and candidate-counterexample mislabel boundaries.
+- [x] At audit start, all three repositories had no open issues and no open
+  pull requests before the audit issue was created.
+- [ ] `v0.2.4` release-candidate metadata update, tag publication, GitHub
+  release, release smoke, and downstream pin updates are still pending
+  follow-up tasks.
 
 ## v0.2.2 Release Delta
 
@@ -253,8 +291,9 @@ gate output and release notes.
 - [x] Expected policy failures in smoke helpers are verified as failures, not
   described as passes.
 - [x] Retrieval, context-pack, security, agent-workflow, provider-workflow,
-  failure/counterexample, verifier-evidence, and ecosystem readiness evals
-  remain deterministic and do not require network access or API keys.
+  failure/counterexample, verifier-evidence, artifact failure-memory, and
+  ecosystem readiness evals remain deterministic and do not require network
+  access or API keys.
 
 ## Agent Access And Provider Status
 
