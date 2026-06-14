@@ -59,6 +59,26 @@ release-candidate PR reruns the full command ladder plus ecosystem smoke.
 
 ## Framework Checklist
 
+### v0.2.2 Pre-Tag Audit
+
+- [x] Issue 261 created to track the pre-tag release audit.
+- [x] `pyproject.toml` and `cosheaf.__version__` both record `0.2.2`.
+- [x] `python -m cosheaf.cli version --json` reports `0.2.2`.
+- [x] No open PRs or issues existed before issue 261 was opened for this
+  audit.
+- [x] `v0.2.2` was absent locally and on `origin` at audit time.
+- [x] README, release notes, roadmap, and current milestone avoid production
+  overclaims.
+- [x] Release notes keep provider transport default-off and state that
+  CI/default tests do not call real providers.
+- [x] Default ecosystem matrix reports network-install rows as `skipped`, not
+  `pass` (4 pass, 0 fail, 2 skipped in the pre-tag audit run).
+- [x] The plan/document naming difference is recorded:
+  `docs/FORMAL_LINKS.md` is referenced by the v5 runbook, while the current
+  repository document is `docs/FORMALIZATION_LINKS.md`.
+- [x] Tag publication may proceed after the audit PR is merged and the
+  maintainer release action re-verifies main and tag absence.
+
 ### Version And Tag
 
 - [x] `pyproject.toml` records package version `0.2.2`.

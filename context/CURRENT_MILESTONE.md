@@ -28,8 +28,9 @@ automatic informal/formal semantic alignment.
   a baseline, not a production-ready claim.
 - Remote tag `v0.2.1` exists and is published as a conservative GitHub
   prerelease, not a production-readiness claim.
-- Remote tag `v0.2.2` should be created only after the release-candidate PR
-  and required checks pass.
+- Remote tag `v0.2.2` is absent as of the 2026-06-14 pre-tag audit and should
+  be created only after the audit PR merges, main is re-synced, and the
+  maintainer release action re-verifies tag absence.
 - `tcs-cosheaf-workspace-template` currently pins CLI-agent/provider demo
   workflows to `@v0.2.1`; it should move to `@v0.2.2` only after the tag is
   published and downstream verification runs.
@@ -125,10 +126,13 @@ automatic informal/formal semantic alignment.
 - Ecosystem smoke runs against local framework, workspace-template, and public
   KB checkouts. Network rows remain skipped unless explicitly enabled and must
   not be counted as passes.
+- The pre-tag audit records whether publication may proceed and keeps
+  downstream repositories on `@v0.2.1` until `v0.2.2` is published and release
+  smoke can install it.
 
 ## Next Focus
 
-After the `v0.2.2` release-candidate PR passes and merges:
+After the `v0.2.2` pre-tag audit PR passes and merges:
 
 1. Publish the `v0.2.2` tag/release only if the maintainer release process
    approves it.
