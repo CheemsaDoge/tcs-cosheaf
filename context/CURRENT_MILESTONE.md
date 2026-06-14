@@ -14,8 +14,9 @@ Lean external reference ergonomics, typed counterexample candidate records, and
 failure-preserving review-request generation are complete. Workspace and public
 KB integration follow-up is complete through the verifier-evidence workspace
 demo, public KB source/backlog hygiene, and one draft-only foundation artifact
-tightening. The next goal is v0.2.3 ecosystem readiness matrix work without
-expanding provider or MCP authority.
+tightening. The v0.2.3 ecosystem readiness matrix is complete. The current
+goal is the v0.2.3 release readiness audit without expanding provider or MCP
+authority.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -94,11 +95,12 @@ evidence around optional verifier and failure workflows:
 
 ## Current Task
 
-The current implementation line is v0.2.3 evaluation and release hardening.
-After the verifier evidence eval suite, the next concrete task is the
-three-repository v0.2.3 readiness matrix. It must not expand provider/MCP
-authority, run real provider calls by default, turn generated review requests
-into human review, or treat skipped verifier results as passes.
+The current implementation line is v0.2.3 release hardening. The active task is
+the v0.2.3 release readiness audit. It is documentation/status only: it does
+not bump the package version, create a tag or release, change runtime behavior,
+expand provider/MCP authority, run real provider calls by default, turn
+generated review requests into human review, or treat skipped verifier results
+as passes.
 
 ## Recently Completed Tasks
 
@@ -151,8 +153,12 @@ continues to identify the failing repository and command for failures.
 
 ## Next Focus
 
-Proceed with the next active v5 task after G.2: the v0.2.3 release readiness
-audit. Candidate counterexamples must remain candidates until explicitly
+Proceed with the v0.2.3 release-candidate task only after the readiness audit
+PR merges and the required verification ladder passes. The release-candidate
+task should update package metadata to `0.2.3`, convert
+`docs/releases/v0.2.3.md` from audit draft to final release notes, rerun the
+ecosystem readiness matrix, and prepare the tag/release and downstream pin
+updates. Candidate counterexamples must remain candidates until explicitly
 checked and reviewed, generated review requests must remain draft review
 context, and readiness/eval work must keep skipped results separate from
 passes.

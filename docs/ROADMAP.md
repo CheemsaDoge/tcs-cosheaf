@@ -88,6 +88,18 @@ workspace verifier-evidence demo, public KB verifier-policy self-test, and
 optional verifier availability coverage without adding provider or MCP
 authority.
 
+The v0.2.3 release readiness audit is now the active closeout step before a
+release-candidate branch. The audit is documentation/status only and records
+that the package metadata remains `0.2.2` until the release-candidate task. It
+answers the release-readiness questions for verifier evidence stability,
+optional SAT/SMT/Lean testing without mandatory tools, skipped-not-pass
+enforcement, counterexample candidate boundaries, read-only promotion
+readiness, workspace/public KB compatibility, and open issue/PR state. The
+next release-candidate task should update package metadata to `0.2.3`, convert
+`docs/releases/v0.2.3.md` from readiness-audit draft to final release notes,
+rerun the required verification ladder, and only then create the tag/release
+and downstream pin updates.
+
 ## v0.2.1 Prerelease Baseline
 
 The `v0.2.1` prerelease packages the CLI-first agent-access and hosted

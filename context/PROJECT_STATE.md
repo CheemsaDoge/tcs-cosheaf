@@ -3,6 +3,30 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.3 Release Readiness Audit - 2026-06-14
+
+Issue 292 audits whether the current framework main line can enter the
+`v0.2.3` release-candidate task. The audit is documentation/status only. It
+adds `docs/releases/v0.2.3.md` as a readiness-audit draft and updates the
+roadmap, release checklist, and current milestone to record the release
+readiness boundary.
+
+The audit records that package metadata and `cosheaf.__version__` still report
+`0.2.2`; the `v0.2.3` version bump, tag, GitHub release, and downstream pin
+updates belong to a later release-candidate task. It answers the required
+readiness questions: verifier evidence records are stable for the current
+scope, SAT/SMT/Lean optional paths are tested without mandatory tools,
+skipped-not-pass remains enforced, counterexample candidates remain
+review-only until checked and reviewed, promotion-readiness reports remain
+read-only, local three-repository compatibility paths are clean, and the only
+open issue at audit start was the audit issue itself.
+
+This task does not change runtime behavior, schema, verifier adapters, gates,
+provider or MCP authority, promotion semantics, public/private policy, KB
+artifacts, accepted knowledge, human-review status, or package version. It
+does not claim production readiness, automatic theorem proving, automatic
+accepted promotion, or informal/formal semantic alignment.
+
 ## v0.2.3 Three-Repository Readiness Matrix - 2026-06-14
 
 Issue 290 extends `scripts/ecosystem_smoke.py --matrix` for the v0.2.3
