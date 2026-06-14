@@ -54,9 +54,14 @@ Completed release-candidate work includes:
 - A post-`v0.2.0` rollback audit that identified no code or KB revert scope,
   but did identify MCP-first roadmap language that needed rewrite.
 
-The public `v0.2.2` tag is created only after the release-candidate PR and
-required checks pass. Until then, downstream repositories should keep using
-the latest published tag that matches their required surface.
+The 2026-06-14 pre-tag audit verified that the package metadata and runtime
+version report `0.2.2`, release docs avoid production overclaims, provider
+transport remains default-off, CI/default tests avoid real provider calls, and
+the default ecosystem matrix counts network rows as skipped rather than pass.
+The public `v0.2.2` tag is created only after the pre-tag audit PR merges and
+the maintainer release action re-verifies main and tag absence. Until then,
+downstream repositories should keep using the latest published tag that matches
+their required surface.
 
 ## v0.2.1 Prerelease Baseline
 

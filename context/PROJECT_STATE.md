@@ -3,6 +3,34 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.2 Pre-Tag Release Audit - 2026-06-14
+
+Issue 261 audits whether framework main is ready for `v0.2.2` tag and release
+publication. The audit is documentation-only: it does not create a tag, update
+downstream repositories, add provider/MCP/runtime behavior, change schema or
+gate semantics, write accepted knowledge, mark human review, or promote
+artifacts.
+
+The audit verified that `pyproject.toml`, `cosheaf.__version__`, and
+`python -m cosheaf.cli version --json` all report `0.2.2`; README, release
+notes, roadmap, and current milestone keep `v0.2.2` framed as a conservative
+release candidate; provider transport remains default-off; and CI/default
+tests remain fake, mocked, or local non-live-network fixtures rather than real
+provider calls.
+
+Before issue 261 was created, the repository had no open PRs or open issues.
+Local tags included `v0.2.0` and `v0.2.1`; `v0.2.2` was absent locally and on
+`origin`. The default ecosystem matrix reported 4 pass, 0 fail, and 2 skipped
+rows. The skipped rows were the framework git-tag release smoke and
+workspace-template install demo because default matrix runs do not perform
+network installs; they were not counted as passes.
+
+The v5 runbook references `docs/FORMAL_LINKS.md`, but the current repository
+document is `docs/FORMALIZATION_LINKS.md`. This naming difference is recorded
+as informational audit evidence and is not a release blocker. Tag publication
+may proceed after this audit PR merges, main is re-synced, and the maintainer
+release action re-verifies that no unexpected `v0.2.2` tag exists.
+
 ## v0.2.2 Provider Transport And Workflow Hardening RC - 2026-06-14
 
 Issue 259 prepares `v0.2.2` as the Provider Transport + Agent Workflow
