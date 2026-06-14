@@ -98,13 +98,34 @@ When creating issues or pull requests from PowerShell, prefer `--body-file`
 over inline `--body` whenever the markdown contains backticks, quotes, issue
 numbers, or multi-line punctuation. PowerShell can treat backticks inside an
 inline body as escape characters and split the intended body into unexpected
-`gh` arguments. A safe pattern is:
+`gh` arguments.
+
+For parser-sensitive markdown such as PR bodies checked by G8, write UTF-8
+without BOM. In this Windows environment, `Set-Content -Encoding UTF8` can add
+a BOM. A BOM at the start of the file can make the PR checklist gate miss the
+first heading, for example reporting `missing PR checklist section: summary`
+even when the file visibly starts with `## Summary`.
+
+A safe no-BOM pattern is:
 
 ```powershell
 $tmp = New-TemporaryFile
-Set-Content -LiteralPath $tmp -Value $body -Encoding UTF8
-gh issue create --repo CheemsaDoge/tcs-cosheaf --title "<title>" --body-file $tmp
-Remove-Item -LiteralPath $tmp
+$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+[System.IO.File]::WriteAllText($tmp, $body, $utf8NoBom)
+gh issue create --repo CheemsaDoge/tcs-cosheaf `
+  --title "<title>" `
+  --body-file $tmp
+Remove-Item -LiteralPath $tmp -Force
+```
+
+When debugging a suspected BOM issue, check the first bytes. A no-BOM markdown
+file that starts with a heading should begin with `23 23 20` (`## `), not
+`EF BB BF`:
+
+```powershell
+$bytes = [System.IO.File]::ReadAllBytes($path)[0..2] |
+  ForEach-Object { $_.ToString('X2') }
+"first-bytes=$($bytes -join ' ')"
 ```
 
 ## GitHub Actions Stuck Check Runs
