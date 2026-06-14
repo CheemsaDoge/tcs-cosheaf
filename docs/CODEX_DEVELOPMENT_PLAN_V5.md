@@ -184,6 +184,17 @@ and assert command, cwd, timeout, stdout/stderr log, tool metadata, and
 skipped-not-pass evidence. They do not add a mandatory solver dependency and
 do not claim SAT theorem proving.
 
+### D.2 SMT Result-Depth Fixtures
+
+Status: implemented as fake-backend fixture coverage for `sat`, `unsat`,
+`unknown`, malformed SMT-LIB, timeout, and unavailable-solver paths.
+
+The SMT adapter still remains a minimal optional SMT-LIB invocation path. The
+D.2 fixtures harden normalized `pass`, `fail`, `error`, and `skipped` behavior
+and assert command, cwd, timeout, stdout/stderr log, tool metadata, exact
+status-line parsing, and skipped-not-pass evidence. They do not add a mandatory
+solver dependency and do not claim SMT theorem proving.
+
 Potential work:
 
 - SAT: clearer DIMACS command metadata, model/counterexample capture, and

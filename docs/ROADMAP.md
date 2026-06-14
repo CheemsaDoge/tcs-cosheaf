@@ -75,13 +75,13 @@ promotion-readiness reporting, and three-repo eval/smoke coverage. It does not
 expand provider/MCP authority, make real provider calls default-on, weaken
 human review, or treat Lean `#check` as informal/formal semantic alignment.
 
-The verifier evidence status audit, verifier evidence record v1, and
-read-only promotion-readiness reporting are complete. Current work expands SAT
-adapter result-depth fixtures for satisfiable, unsatisfiable, malformed
-DIMACS, timeout, and unavailable-solver paths while keeping the solver
-optional. Later `v0.2.3` work should continue SMT/Lean optional backend depth
-and failure/counterexample evidence workflows without granting accepted-write
-authority.
+The verifier evidence status audit, verifier evidence record v1, read-only
+promotion-readiness reporting, and SAT result-depth fixtures are complete.
+Current work expands SMT adapter result-depth fixtures for `sat`, `unsat`,
+`unknown`, malformed SMT-LIB, timeout, and unavailable-solver paths while
+keeping the solver optional. Later `v0.2.3` work should continue Lean optional
+backend depth and failure/counterexample evidence workflows without granting
+accepted-write authority.
 
 ## v0.2.1 Prerelease Baseline
 
