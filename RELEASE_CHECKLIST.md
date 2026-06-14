@@ -1,10 +1,11 @@
 # Three-Repository Release Checklist
 
 This checklist records the `v0.2.2` Provider Transport + Agent Workflow
-Hardening release state after the `v0.2.1` CLI Agent Access +
-Hosted Provider Gateway prerelease, the `v0.2.0` local-MVP release, and the
-`v0.1.1` Formal Link Layer support baseline. It is an operator checklist for
-the framework package, public KB, and workspace template together. It is not a
+Hardening release state and the current `v0.2.3` Verification Evidence
+Hardening readiness-audit state after the `v0.2.1` CLI Agent Access + Hosted
+Provider Gateway prerelease, the `v0.2.0` local-MVP release, and the `v0.1.1`
+Formal Link Layer support baseline. It is an operator checklist for the
+framework package, public KB, and workspace template together. It is not a
 production-readiness claim.
 
 `v0.1.1` remains the downstream tag baseline for early formal-link metadata.
@@ -16,6 +17,9 @@ policy matrix, provider log leak scanner, failure/counterexample workflow
 hardening, provider workflow evals, and ecosystem smoke matrix. Do not assume a
 downstream pin to `@v0.2.0` includes `v0.2.1` or `v0.2.2` agent/provider
 surfaces.
+`v0.2.3` is not published yet. Its readiness audit is tracked in
+`docs/releases/v0.2.3.md`, while package metadata remains `0.2.2` until the
+release-candidate task updates it.
 
 ## Scope
 
@@ -33,6 +37,9 @@ surfaces.
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.1`.
 - Downstream dependency for provider-transport/workflow-hardening workflows:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.2`.
+- Intended downstream dependency for verification-evidence-hardening workflows
+  after publication:
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.3`.
 
 ## v0.2.2 Release Delta
 
@@ -103,6 +110,36 @@ closeout. It is Verification Evidence Hardening, not provider/MCP expansion.
   public KB verifier-policy self-test, and an optional verifier availability
   row that counts unavailable SAT/SMT/Lean/lake tools as skipped rather than
   pass.
+
+## v0.2.3 Release Readiness Audit
+
+`docs/releases/v0.2.3.md` is a readiness-audit draft, not a published release
+note. It must remain conservative until the release-candidate PR updates
+package metadata, reruns verification, and records the final release result.
+
+- [x] The audit records that package metadata and `cosheaf.__version__` still
+  report `0.2.2`.
+- [x] The audit does not create a tag, GitHub release, downstream pin update,
+  or runtime behavior.
+- [x] Verifier evidence records are stable enough for the release-candidate
+  task through `VerifierEvidenceRecord` v1 serialization.
+- [x] SAT, SMT, plain Lean, and external Lean reference paths have
+  fake-backend, mocked, local-fixture, or tool-absence coverage without making
+  optional tools mandatory.
+- [x] Skipped verifier, provider, optional-tool, and network rows remain
+  separate from pass results.
+- [x] Candidate counterexamples remain review-only candidates until explicitly
+  checked and reviewed through later workflow.
+- [x] Promotion-readiness reports remain read-only and record
+  `accepted_write_performed: false`.
+- [x] The three-repository readiness matrix covers local framework,
+  workspace-template, and public KB compatibility without default remote
+  clones or network installs.
+- [x] At audit start, the only open issue was the audit issue itself and there
+  were no open PRs.
+- [ ] The release-candidate PR must update package metadata to `0.2.3`.
+- [ ] The release-candidate PR must rerun the full command ladder and ecosystem
+  matrix before any tag or release is created.
 
 ## Framework Checklist
 
