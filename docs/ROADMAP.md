@@ -105,7 +105,7 @@ to `v0.2.2`.
 
 ## Completed Release Focus: v0.2.3 Verification Evidence Hardening
 
-The durable `v0.2.3` plan is
+The completed durable `v0.2.3` plan is
 [`docs/CODEX_DEVELOPMENT_PLAN_V5.md`](CODEX_DEVELOPMENT_PLAN_V5.md), with ADR
 0022 recording the architecture decision. `v0.2.3` focuses on
 verification/evidence hardening: normalized verifier evidence, SAT/SMT/Lean
@@ -134,6 +134,11 @@ evidence stability, optional SAT/SMT/Lean testing without mandatory tools,
 skipped-not-pass enforcement, counterexample candidate boundaries, read-only
 promotion readiness, workspace/public KB compatibility, and open issue/PR
 state.
+
+This completed plan is not an active queue for further v0.2.3 work. Future
+runtime expansion, provider work, release work, or KB growth should start from
+a new issue-scoped plan and preserve the same review, gate, public/private,
+and skipped-not-pass boundaries.
 
 ## v0.2.1 Prerelease Baseline
 

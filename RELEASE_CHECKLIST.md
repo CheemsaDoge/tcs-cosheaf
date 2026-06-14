@@ -66,7 +66,8 @@ no publication blockers.
 `v0.2.3` was the framework milestone after the `v0.2.2` release closeout. It
 is Verification Evidence Hardening, not provider/MCP expansion.
 
-- [x] `docs/CODEX_DEVELOPMENT_PLAN_V5.md` records the durable `v0.2.3` plan.
+- [x] `docs/CODEX_DEVELOPMENT_PLAN_V5.md` records the completed durable
+  `v0.2.3` plan.
 - [x] ADR 0022 records the verification/evidence hardening decision.
 - [x] `docs/CODEX_DEVELOPMENT_PLAN_V4.md` is marked historical/completed after
   the `v0.2.2` closeout.

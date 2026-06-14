@@ -1,23 +1,29 @@
 # TCS-Cosheaf Development Plan v5
 
-Status: current post-`v0.2.2` durable plan
+Status: completed after the published `v0.2.3` release and downstream pin
+alignment
 
-This plan follows the published `v0.2.2` Provider Transport + Agent Workflow
-Hardening release. It starts from the release closeout recorded in
+This plan followed the published `v0.2.2` Provider Transport + Agent Workflow
+Hardening release. It started from the release closeout recorded in
 [`docs/releases/v0.2.2.md`](releases/v0.2.2.md),
 [`context/CURRENT_MILESTONE.md`](../context/CURRENT_MILESTONE.md), and
 [`context/PROJECT_STATE.md`](../context/PROJECT_STATE.md).
 
-The next target is:
+The completed target was:
 
 ```text
 v0.2.3 Verification Evidence Hardening
 ```
 
-The goal is to make verifier requests, verifier results, failure evidence,
+The goal was to make verifier requests, verifier results, failure evidence,
 counterexample evidence, optional SAT/SMT/Lean runs, and promotion-readiness
 reporting more explicit, reviewable, and auditable without turning Cosheaf into
 an automatic theorem prover or a production hosted multi-agent system.
+
+Completion state: the `v0.2.3` tag and GitHub release are published, release
+smoke from `@v0.2.3` passed, workspace-template active pins use `v0.2.3`, and
+public KB CI validates against `v0.2.3`. This document remains the durable
+record of the completed V5 work, not an active task queue.
 
 ## Baseline
 
@@ -103,12 +109,13 @@ installs `v0.2.2`. The closeout does not add runtime behavior.
 
 ### B.1 Land v0.2.3 Verification Evidence Roadmap
 
-Status: this document and ADR 0022.
+Status: complete in this document and ADR 0022.
 
-This task makes V5 the current durable plan, marks V4 historical after the
+This task made V5 the active durable plan for the v0.2.3 work, marked V4
+historical after the
 `v0.2.2` release closeout, adds the architecture decision for the `v0.2.3`
-verification/evidence line, and points the current milestone to C.1. It does
-not implement runtime behavior or change schemas.
+verification/evidence line, and pointed the then-current milestone to C.1. It
+did not implement runtime behavior or change schemas.
 
 ## Phase C: Verifier Evidence Model And Normalized Result Taxonomy
 
@@ -299,13 +306,13 @@ no-human-review-spoofing, and skipped-not-pass boundaries.
 
 ## Phase G: Three-Repository v0.2.3 Readiness
 
-Status: G.2 readiness matrix implemented. The matrix now covers framework
+Status: complete. The G.2 readiness matrix covers framework
 verifier-evidence eval smoke, workspace-template verifier-evidence demo
 coverage, public KB verifier-policy self-test coverage, and optional verifier
 availability as a skipped-not-pass row when external SAT/SMT/Lean/lake tools
 are absent.
 
-Before a `v0.2.3` release candidate:
+Before the `v0.2.3` release candidate, the plan required:
 
 - The framework command ladder must pass.
 - The ecosystem smoke matrix must cover framework, workspace-template, and
@@ -318,6 +325,10 @@ Before a `v0.2.3` release candidate:
 - Release notes must remain conservative and must not claim production
   readiness, automatic theorem proving, automatic accepted promotion, or
   informal/formal semantic alignment.
+
+The release-candidate PR, maintainer tag/release action, release smoke, and
+downstream workspace/public KB pin updates are complete. Any future release or
+runtime expansion should start from a new issue-scoped plan.
 
 ## Per-PR Requirements
 
