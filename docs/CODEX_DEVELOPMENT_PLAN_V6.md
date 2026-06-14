@@ -309,6 +309,10 @@ must answer:
 7. Are workspace and public KB policy surfaces updated?
 8. Are open issues/PRs empty or intentionally deferred?
 
+Implementation status as of 2026-06-15: the readiness-audit draft is recorded
+in `docs/releases/v0.2.4.md`. If the audit PR and required checks pass, the
+next plan step is G.2, the v0.2.4 release-candidate task.
+
 ### G.2 v0.2.4 Release Candidate
 
 Prepare `v0.2.4` as the Artifact Failure Memory + Attempt Traceability release

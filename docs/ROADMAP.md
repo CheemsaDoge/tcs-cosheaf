@@ -166,7 +166,10 @@ issue-scoped PRs:
 - security regression and deterministic eval coverage for retrieval,
   public/private scope, authority, and candidate-counterexample boundaries.
 
-The next step is a v0.2.4 readiness audit before any release-candidate task.
+The v0.2.4 readiness audit is tracked in
+[`docs/releases/v0.2.4.md`](releases/v0.2.4.md). If the audit PR and required
+checks pass, the next step is a release-candidate PR that updates version and
+release metadata only.
 
 This focus must not make failure memory authoritative by itself. It must not
 change accepted-promotion semantics, add default real provider calls, make MCP
