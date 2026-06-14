@@ -1,5 +1,7 @@
 # TCS-Cosheaf
 
+中文文档：[中文简介](README.zh-CN.md) | [中文文档导航](docs/README.zh-CN.md)
+
 TCS-Cosheaf is a Git-backed typed research knowledge base and agent harness for
 AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
