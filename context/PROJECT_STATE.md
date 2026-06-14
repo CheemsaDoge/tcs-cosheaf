@@ -3,6 +3,31 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Post-v0.2.3 Artifact Failure Memory State Audit - 2026-06-14
+
+Issue 300 audits the current three-repository state after the published
+`v0.2.3` Verification Evidence Hardening release and confirms the next
+implementation gap for artifact-level failure memory. `tcs-cosheaf` still
+reports package version `0.2.3`; `tcs-cosheaf-workspace-template` active
+workflow pins/defaults use `tcs-cosheaf@v0.2.3`; and `tcs-kb-public` CI
+installs `tcs-cosheaf@v0.2.3`. Before issue 300 was opened, all three
+repositories had no open pull requests or issues.
+
+The audit confirms that `cosheaf/core/artifact.py` `BaseArtifact` and
+`schemas/artifact.schema.json` do not yet define `failure_log`. Existing
+failure/counterexample memory is preserved in WorkerBundle v2
+`failed_attempts`, legacy and typed counterexample fields, draft review
+requests from `cosheaf review request-from-bundle`, deterministic
+failure/counterexample evals, verifier evidence evals, and read-only
+promotion-readiness reporting, but not on durable artifact records.
+
+This audit is documentation/status only. It does not implement `failure_log`,
+change schemas, change runtime behavior, alter verifier or promotion
+semantics, expand provider/MCP authority, modify workspace-template behavior,
+or touch public KB content. Failure memory remains non-authoritative: not
+proof, not verifier success, not human review, not checked refutation, and not
+promotion evidence by itself.
+
 ## Post-v0.2.3 Documentation Audit Closeout - 2026-06-14
 
 Issue 298 closes the remaining post-v0.2.3 documentation-audit drift after the

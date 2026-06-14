@@ -2,27 +2,22 @@
 
 ## Milestone
 
-`v0.2.3` Verification Evidence Hardening published release closeout.
+Post-`v0.2.3` artifact failure-memory state audit.
 
 ## Goal
 
-Close out the published `v0.2.3` Verification Evidence Hardening release after
-the `v0.2.2` Provider Transport + Agent Workflow Hardening release. The verifier
-evidence audit, verifier evidence record v1, read-only promotion-readiness
-report, optional SAT result-depth fixtures, optional SMT result-depth fixtures,
-Lean external reference ergonomics, typed counterexample candidate records, and
-failure-preserving review-request generation are complete. Workspace and public
-KB integration follow-up is complete through the verifier-evidence workspace
-demo, public KB source/backlog hygiene, and one draft-only foundation artifact
-tightening. The v0.2.3 ecosystem readiness matrix is complete. The public
-`v0.2.3` tag and GitHub release are published, release smoke from `@v0.2.3`
-passed, and workspace-template plus public KB active pins now use `v0.2.3`.
+Audit the current three-repository state after the published `v0.2.3`
+Verification Evidence Hardening release and confirm the implementation gap for
+artifact-level failure memory. The next target line is proposed as `v0.2.4`
+Artifact Failure Memory + Attempt Traceability, but schema/runtime work should
+not begin until the V6 plan and ADR land in a separate issue-scoped PR.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
 automatic Lean autoformalization, automatic accepted promotion,
-AI-as-human-review, provider/MCP authority expansion, or automatic
-informal/formal semantic alignment.
+AI-as-human-review, provider/MCP authority expansion, automatic
+informal/formal semantic alignment, or artifact-level `failure_log`
+implementation.
 
 ## Current Baseline
 
@@ -41,6 +36,8 @@ informal/formal semantic alignment.
 - `docs/CODEX_DEVELOPMENT_PLAN_V5.md` is the completed durable record of the
   v0.2.3 verification-evidence hardening plan.
 - ADR 0022 records the `v0.2.3` Verification Evidence Hardening decision.
+- `docs/POST_V023_STATE_AUDIT.md` records the current artifact failure-memory
+  gap after v0.2.3.
 - `docs/VERIFIER_EVIDENCE_AUDIT.md` records the current verifier adapter,
   result-state, logging, gate, promotion, Lean `#check`, and sidecar boundary.
 - `tcs-cosheaf` is the framework package for CLI, schema, validation, gates,
@@ -99,13 +96,17 @@ evidence around optional verifier and failure workflows:
 
 ## Current Operating State
 
-No v0.2.3 implementation or release-closeout task remains active after the
-published tag/release, release smoke, downstream pin alignment, documentation
-closeout, and branch hygiene. The repository is at a stable post-v0.2.3
-baseline. New work should start from a focused issue, branch, and PR, and it
-must continue to avoid runtime authority expansion, default real provider
-calls, generated review-as-human-review, accepted writes, artifact promotion
-bypasses, and treating skipped verifier results as passes.
+The active task is issue 300, a documentation/status audit for artifact-level
+failure memory after v0.2.3. The audit confirms that `BaseArtifact` and
+`schemas/artifact.schema.json` do not yet expose `failure_log`, while
+WorkerBundle v2, draft review requests, failure/counterexample evals, verifier
+evidence evals, and promotion-readiness reports already preserve related
+failure/counterexample context outside durable artifact records.
+
+The audit is not schema/runtime implementation. New work should continue from a
+focused issue, branch, and PR, and it must avoid runtime authority expansion,
+default real provider calls, generated review-as-human-review, accepted writes,
+artifact promotion bypasses, and treating skipped verifier results as passes.
 
 ## Recently Completed Tasks
 
@@ -172,12 +173,11 @@ downstream workspace-template plus public KB active pins were updated to
 
 ## Next Focus
 
-After release closeout, keep the next work issue-scoped and conservative.
-Candidate counterexamples must remain candidates until explicitly checked and
-reviewed, generated review requests must remain draft review context, and
-readiness/eval work must keep skipped results separate from passes. Any next
-release or hosted-provider work needs its own issue, branch, PR, and explicit
-scope.
+After the post-v0.2.3 state audit, land the V6 plan and ADR for artifact
+failure memory. The first implementation must keep `failure_log` optional and
+backward compatible. Failure memory must remain research memory: not proof, not
+verifier success, not human review, not a checked counterexample, and not
+promotion evidence by itself.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show that
