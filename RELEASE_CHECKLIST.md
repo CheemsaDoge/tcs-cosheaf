@@ -65,12 +65,14 @@ closeout. It is Verification Evidence Hardening, not provider/MCP expansion.
 - [x] ADR 0022 records the verification/evidence hardening decision.
 - [x] `docs/CODEX_DEVELOPMENT_PLAN_V4.md` is marked historical/completed after
   the `v0.2.2` closeout.
-- [ ] The verifier evidence status audit identifies existing verifier
+- [x] The verifier evidence status audit identifies existing verifier
   adapters, result records, log capture, gate integration, promotion evidence,
   skipped-not-pass tests, and Lean `#check` boundaries before runtime/schema
   changes.
 - [ ] Evidence taxonomy work distinguishes `verifier_request`,
   `verifier_result`, `candidate_counterexample`, and `checked_counterexample`.
+  The `verifier_result` record v1 schema/model is underway; request and
+  counterexample records remain follow-up work.
 - [ ] SAT/SMT/Lean deepening keeps all external tools optional and preserves
   unavailable-tool results as skipped or unavailable, not pass.
 

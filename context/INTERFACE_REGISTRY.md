@@ -1735,6 +1735,11 @@ knowledge writes, accepted refutations, or promotion.
 #### Verification
 
 - `cosheaf.verification.base.VerifierAdapter`: protocol for verifier adapters.
+- `cosheaf.verification.evidence.VerifierEvidenceKind`: verifier evidence
+  backend-family enum with `python`, `sat`, `smt`, `lean`,
+  `external_reference`, and `manual_note`.
+- `cosheaf.verification.evidence.VerifierEvidenceRecord`: Pydantic v2 model
+  for serialized verifier evidence records.
 - `cosheaf.verification.result.VerificationStatus`: normalized result status enum with `pass`, `fail`, `error`, and `skipped`.
 - `cosheaf.verification.result.VerificationResult`: Pydantic v2 model for normalized verifier output.
 - `cosheaf.verification.registry.VerifierRegistry`: instance-local verifier adapter registry.
@@ -1797,6 +1802,9 @@ knowledge writes, accepted refutations, or promotion.
 machine-readable mapping in model field order. `VerificationResult.to_json() ->
 str` returns deterministic JSON for the result. Timestamps are the only expected
 run-to-run variation when callers construct results with live clock values.
+`VerificationResult.to_evidence_record() -> VerifierEvidenceRecord` returns a
+typed v1 evidence record derived from the runtime result without changing
+gatekeeper or promotion semantics.
 
 `VerificationResult` exposes status helpers:
 
@@ -1804,6 +1812,36 @@ run-to-run variation when callers construct results with live clock values.
 - `is_fail`
 - `is_error`
 - `is_skipped`
+
+`VerifierEvidenceRecord` fields are:
+
+- `evidence_id`
+- `artifact_id` (optional)
+- `claim_id` (optional)
+- `verifier_kind`
+- `tool_name`
+- `tool_version` (optional)
+- `command_argv` (optional)
+- `cwd` (optional)
+- `result`
+- `reason_code`
+- `stdout_path` (optional)
+- `stderr_path` (optional)
+- `log_path` (optional)
+- `created_at`
+- `checker_input_hash` (optional)
+- `checker_output_hash` (optional)
+- `limitations`
+
+`VerifierEvidenceRecord.from_verification_result(...)` derives a stable
+evidence ID, verifier kind, default reason code, and explicit limitations from
+an existing `VerificationResult`. The evidence record is serialization support
+only: it is not human review, does not auto-promote accepted knowledge, and
+does not make skipped verifier output pass.
+
+`VerifierEvidenceRecord.to_dict() -> dict[str, Any]` and
+`VerifierEvidenceRecord.to_json() -> str` return deterministic serialized
+forms.
 
 `VerifierRegistry` exposes:
 
@@ -2105,6 +2143,12 @@ working directory.
 - `schemas/issue.schema.json`: issue YAML schema.
 - `schemas/review.schema.json`: review YAML schema.
 - `schemas/verifier.schema.json`: verifier result schema.
+- `schemas/verifier_evidence.schema.json`: verifier evidence record v1 schema.
+  It serializes verifier output records with stable evidence IDs, optional
+  artifact/claim IDs, verifier kind, tool metadata, command/cwd metadata,
+  normalized `pass`/`fail`/`error`/`skipped` result, reason code, optional log
+  paths, optional checker hashes, creation timestamp, and limitations. It does
+  not authorize human review, accepted writes, or promotion.
 - `schemas/task.schema.json`: agent task YAML schema.
 - `schemas/orchestrator_run.schema.json`: orchestrator run state schema.
 - `schemas/worker_bundle_v2.schema.json`: strict reducer-oriented worker
