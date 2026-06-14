@@ -323,6 +323,12 @@ must not add runtime behavior beyond release metadata, and it must not claim
 production readiness, automatic theorem proving, accepted-promotion
 automation, or AI-as-human-review.
 
+Implementation status as of 2026-06-15: the release-candidate branch updates
+package metadata and `cosheaf.__version__` to `0.2.4` and converts
+`docs/releases/v0.2.4.md` into release-candidate notes. Tag publication,
+GitHub release creation, release smoke, and downstream pin updates remain
+follow-up release tasks after this PR passes and merges.
+
 ## Per-PR Requirements
 
 Each PR summary must include:

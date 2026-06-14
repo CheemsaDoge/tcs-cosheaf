@@ -19,10 +19,10 @@ surfaces.
 `v0.2.3` packages verification-evidence hardening after the readiness audit.
 Package metadata records `0.2.3`; the public tag, GitHub release, release
 smoke, and downstream workspace/public KB pin updates are complete.
-`v0.2.4` is in readiness-audit state for Artifact Failure Memory + Attempt
-Traceability. Until a separate release-candidate PR updates metadata and a
-tag/release is published, package metadata and downstream pins remain on
-`0.2.3` / `@v0.2.3`.
+`v0.2.4` is in release-candidate state for Artifact Failure Memory + Attempt
+Traceability. Package metadata records `0.2.4`, but the public tag, GitHub
+release, release smoke, and downstream pin updates are still pending follow-up
+release tasks. Until then, downstream pins remain on `@v0.2.3`.
 
 ## Scope
 
@@ -30,7 +30,7 @@ tag/release is published, package metadata and downstream pins remain on
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
 - Current framework package metadata version:
-  `0.2.3`.
+  `0.2.4`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
@@ -48,10 +48,10 @@ tag/release is published, package metadata and downstream pins remain on
 
 ## v0.2.4 Readiness Audit Baseline
 
-`docs/releases/v0.2.4.md` is the readiness-audit draft for Artifact Failure
-Memory + Attempt Traceability. This audit does not create the `v0.2.4` tag,
-does not publish a GitHub release, does not update downstream pins, and does
-not change runtime behavior.
+`docs/releases/v0.2.4.md` is the release-candidate note for Artifact Failure
+Memory + Attempt Traceability. The earlier readiness audit did not create the
+`v0.2.4` tag, publish a GitHub release, update downstream pins, or change
+runtime behavior.
 
 - [x] Artifact-level `failure_log` is optional and backward compatible.
 - [x] `cosheaf artifact failures` is read-only and reports an explicit
@@ -73,9 +73,11 @@ not change runtime behavior.
   directions, and candidate-counterexample mislabel boundaries.
 - [x] At audit start, all three repositories had no open issues and no open
   pull requests before the audit issue was created.
-- [ ] `v0.2.4` release-candidate metadata update, tag publication, GitHub
-  release, release smoke, and downstream pin updates are still pending
-  follow-up tasks.
+- [x] `v0.2.4` release-candidate metadata update is prepared in the release
+  candidate branch.
+- [ ] `v0.2.4` tag publication, GitHub release, release smoke, and downstream
+  pin updates are still pending follow-up tasks after the release-candidate PR
+  merges.
 
 ## v0.2.2 Release Delta
 
@@ -216,8 +218,9 @@ smoke, and downstream pin updates.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.2.3` on `main`.
-- [x] `cosheaf.__version__` records `0.2.3` on `main`.
+- [x] `pyproject.toml` records package version `0.2.4` on the
+  release-candidate branch.
+- [x] `cosheaf.__version__` records `0.2.4` on the release-candidate branch.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
@@ -225,12 +228,16 @@ smoke, and downstream pin updates.
   commit.
 - [x] Remote tag `v0.2.3` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
+- [ ] Remote tag `v0.2.4` is not published yet; it must be created only after
+  the release-candidate PR merges cleanly and main is re-synced.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
 - [x] Workspace-template verification installs or pins `@v0.2.3` for
   verification-evidence-hardening surfaces.
 - [x] Workspace-template and public KB active pins moved to `@v0.2.3` only
   after tag publication and release smoke succeeded.
+- [ ] Workspace-template and public KB active pins must move to `@v0.2.4` only
+  after tag publication and release smoke succeeds.
 
 ### License
 

@@ -3,6 +3,30 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.2.4 Artifact Failure Memory Release Candidate - 2026-06-15
+
+Issue 326 prepares `v0.2.4` as the Artifact Failure Memory + Attempt
+Traceability release candidate after the readiness audit. The release-candidate
+branch updates package metadata and `cosheaf.__version__` to `0.2.4` and
+converts `docs/releases/v0.2.4.md` from readiness-audit draft into conservative
+release-candidate notes.
+
+The candidate packages already-merged artifact failure-memory work:
+optional artifact-level `failure_log` model/schema support, read-only
+inspection, controlled draft/pre-accepted failure-log writes,
+WorkerBundle-to-failure-log bridges, memory/search/context/promotion-readiness
+surfacing, workspace-template demonstration, public KB policy, security
+regression coverage, and deterministic eval coverage.
+
+This release-candidate task does not create the public `v0.2.4` tag, publish a
+GitHub release, run release smoke, update downstream pins, add runtime
+behavior, expand provider or MCP authority, run real provider calls in CI,
+write accepted knowledge, mark human review, promote artifacts, or change
+schema, gate, verifier, public/private policy, or accepted-promotion
+semantics. The public `v0.2.4` tag is expected only after the
+release-candidate PR and required checks pass, main is re-synced, and the
+maintainer release action verifies the tag target and release smoke.
+
 ## v0.2.4 Release Readiness Audit - 2026-06-15
 
 Issue 324 adds `docs/releases/v0.2.4.md` as a conservative readiness-audit
