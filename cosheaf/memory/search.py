@@ -216,6 +216,11 @@ def search_artifact_cards(
     warnings = [
         "formal links are metadata only; search results are not proof",
     ]
+    if any(hit.card.failure_count for hit in result_cards):
+        warnings.append(
+            "failure memory is not proof, verifier success, human review, "
+            "checked counterexample evidence, or accepted-status evidence"
+        )
     if fts_warning is not None:
         warnings.append(fts_warning)
     warnings.extend(graph_signals.warnings)
@@ -387,6 +392,7 @@ def _lexical_score(
         "domain": _token_set(" ".join(card.domain)),
         "tags": _token_set(" ".join(card.tags)),
         "summary": _token_set(card.summary),
+        "failure_memory": _token_set(" ".join(card.recent_failure_directions)),
         "dependencies": _token_set(" ".join(card.depends_on)),
         "sources": _token_set(" ".join(card.sources)),
     }
@@ -396,6 +402,7 @@ def _lexical_score(
         "domain": 2.0,
         "tags": 2.0,
         "summary": 1.0,
+        "failure_memory": 1.0,
         "dependencies": 0.75,
         "sources": 0.5,
     }
@@ -412,7 +419,14 @@ def _lexical_score(
         return 0.0, ()
     max_raw = sum(weights.values()) * len(tokens)
     score = min(raw / max_raw, 1.0)
-    return round(score, 6), tuple(f"lexical match {field}" for field in matched_fields)
+    reasons = []
+    for field in matched_fields:
+        if field.startswith("failure_memory:"):
+            matched_tokens_label = field.removeprefix("failure_memory:")
+            reasons.append(f"failure memory match {matched_tokens_label}")
+        else:
+            reasons.append(f"lexical match {field}")
+    return round(score, 6), tuple(reasons)
 
 
 def _fts_rank_scores(
@@ -889,6 +903,7 @@ def _search_text(card: ArtifactCard) -> str:
             " ".join(card.domain),
             " ".join(card.tags),
             card.summary,
+            " ".join(card.recent_failure_directions),
             " ".join(card.depends_on),
             " ".join(card.sources),
         ]

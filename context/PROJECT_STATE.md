@@ -3,6 +3,24 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Failure Log Memory Index - 2026-06-15
+
+Issue 314 surfaces artifact-level `failure_log` metadata in memory and context
+handoff surfaces. `ArtifactCard` now includes `failure_count` and
+`recent_failure_directions`, and cards with failure-log entries receive
+`failure-log:<status>` risk flags. `cosheaf memory search` indexes recent
+failure directions so failed approaches can be found by keyword, with explicit
+failure-memory relevance reasons and audit warnings that failure memory is not
+proof, verifier success, human review, checked counterexample evidence, or
+accepted-status evidence.
+
+Context-pack card lines and `RETRIEVAL_AUDIT.json` include compact failure
+summary metadata for visible cards. Public-only context still excludes private
+artifacts, private artifact IDs, and private failure-log text. The change does
+not alter artifact trust scores, review state, verifier state, gates,
+promotion readiness, accepted status, provider/MCP authority, or accepted
+promotion semantics.
+
 ## Failure Log From WorkerBundle - 2026-06-15
 
 Issue 312 adds WorkerBundle-to-artifact-failure-log bridge commands.

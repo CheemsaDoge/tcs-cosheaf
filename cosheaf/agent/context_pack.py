@@ -16,6 +16,7 @@ from cosheaf.core.status import (
     is_preaccepted_status,
 )
 from cosheaf.memory import (
+    ArtifactCard,
     FullArtifactPull,
     MemoryRootScope,
     RetrievalResult,
@@ -634,6 +635,8 @@ def _render_retrieval_audit(
                     "root_scope": hit.card.root_scope.value,
                     "status": hit.card.status.value,
                     "score_breakdown": hit.score_breakdown.to_dict(),
+                    "failure_count": hit.card.failure_count,
+                    "recent_failure_directions": hit.card.recent_failure_directions,
                     "why_relevant": hit.why_relevant,
                 }
                 for hit in retrieval.cards
@@ -689,6 +692,7 @@ def _artifact_reference_lines(
         f"{card.status.value} | {card.path} | "
         f"score: {record.retrieved.score_breakdown.total:.6f} | "
         f"root_scope={card.root_scope.value} | "
+        f"{_failure_card_summary(card)}"
         f"reasons: {_format_reasons(reasons)}"
     ]
     loaded = artifact_records.get(card.id)
@@ -701,6 +705,19 @@ def _combined_reasons(record: ContextPackCard) -> tuple[str, ...]:
     reasons = list(record.reasons)
     reasons.extend(record.retrieved.why_relevant)
     return tuple(dict.fromkeys(reason for reason in reasons if reason))
+
+
+def _failure_card_summary(card: ArtifactCard) -> str:
+    failure_count = card.failure_count
+    if not failure_count:
+        return ""
+    directions = card.recent_failure_directions
+    if directions:
+        return (
+            f"failures: {failure_count}; recent failed directions: "
+            f"{'; '.join(directions)} | "
+        )
+    return f"failures: {failure_count} | "
 
 
 def _ordered_context_cards(

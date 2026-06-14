@@ -133,6 +133,8 @@ class ArtifactCard(MemoryModel):
     review_state: str = "none"
     verifier_state: str = "none"
     formalization_state: str = "none"
+    failure_count: int = 0
+    recent_failure_directions: list[str] = Field(default_factory=list)
     trust_score: float = 0.0
     retrieval_score: float = 0.0
     why_relevant: str = ""
@@ -169,10 +171,22 @@ class ArtifactCard(MemoryModel):
     def _normalize_text_list(cls, values: list[str]) -> list[str]:
         return _normalize_text_list(values)
 
+    @field_validator("recent_failure_directions")
+    @classmethod
+    def _normalize_failure_directions(cls, values: list[str]) -> list[str]:
+        return _normalize_text_list(values)
+
     @field_validator("depends_on")
     @classmethod
     def _validate_dependencies(cls, values: list[str]) -> list[str]:
         return [validate_dependency_ref(value) for value in values]
+
+    @field_validator("failure_count")
+    @classmethod
+    def _validate_failure_count(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("failure_count must be non-negative")
+        return value
 
     @field_validator("trust_score", "retrieval_score")
     @classmethod

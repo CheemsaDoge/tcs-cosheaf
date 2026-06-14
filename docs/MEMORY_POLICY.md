@@ -100,6 +100,8 @@ sources: [string]
 review_state: string
 verifier_state: string
 formalization_state: string
+failure_count: integer
+recent_failure_directions: [string]
 trust_score: number
 retrieval_score: number
 why_relevant: string
@@ -120,6 +122,14 @@ sidecars. The command accepts `--json`, `--status <status>`, and optional
 by `cosheaf memory search` and the context-pack v2 integration rather than the
 card-listing command.
 
+Artifact cards also expose concise artifact-level failure memory metadata when
+an artifact has `failure_log` entries. `failure_count` is the number of stored
+failure-log entries, and `recent_failure_directions` contains a bounded,
+deterministically ordered list of recent attempted directions. These fields are
+retrieval/context hints only. They are not proof, verifier success, human
+review, checked counterexample evidence, accepted status, gate success, or
+promotion evidence.
+
 `cosheaf memory search "query"` searches the same compact cards with
 deterministic local scoring. It uses an in-memory SQLite FTS5/BM25 table when
 available and falls back to deterministic lexical scoring when FTS5 is not
@@ -135,6 +145,11 @@ and does not print full artifact YAML or statements; `--explain` prints score
 components and relevance reasons. The command does not write
 `.cosheaf/memory/` sidecars, does not create accepted knowledge, and does not
 perform embeddings, full-artifact pulls, hosted LLM calls, or formal checking.
+Failure-log directions are included in the searchable card text with explicit
+failure-memory relevance reasons and a warning that failure memory is not
+authority. Matching failure memory does not change `trust_score`,
+`QualityPrior`, review state, verifier state, artifact status, gate results, or
+promotion eligibility.
 
 ## Retrieval Request Schema
 
@@ -257,6 +272,13 @@ role, policy scope (`public_only` or `workspace`), and maximum pull count. This
 metadata is audit context only; it does not make the pulled content accepted,
 reviewed, verified, or safe to send to a provider.
 
+Context-pack artifact-card lines and `RETRIEVAL_AUDIT.json` include
+`failure_count` and `recent_failure_directions` for visible cards. This is a
+compact failed-attempt memory cue, not the structured failure section planned
+for later work. Public-only context packs must still exclude private artifacts,
+private artifact IDs, and private failure-log text from rendered files and
+retrieval audit details.
+
 ## Ranking Formula
 
 The default ranking formula is:
@@ -303,6 +325,9 @@ formula:
 - `Freshness` from recent successful task-run context for the current issue.
 - `Penalty` from policy caution signals such as private, draft, refuted,
   obsolete, superseded, and verifier-failure flags.
+- Failure-memory keyword matches contribute only to `RetrievalHybrid` with
+  explicit caution labels. They do not increase `QualityPrior` or
+  `trust_score`.
 
 The formula weights are configurable through the Python
 `RetrievalScoreWeights` interface. The CLI uses the documented defaults.

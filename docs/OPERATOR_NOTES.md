@@ -501,6 +501,22 @@ If runtime files appear outside ignored locations, move the runtime target under
 `.cosheaf/` or document the issue before opening a PR. Do not commit generated
 reports just because a verification command produced them.
 
+On this Windows environment, repository-local pytest temp roots under
+`.cosheaf/pytest-tmp/` can occasionally leave a directory such as
+`.cosheaf/pytest-tmp/pytest-of-ywjhn` with ACLs that make PowerShell
+`Remove-Item -Recurse -Force` report `Access to the path ... is denied`.
+First verify that `.cosheaf/` is ignored and not part of the working diff:
+
+```powershell
+git status --short
+git check-ignore -v .cosheaf
+```
+
+Do not spend time debugging product code or Git state for that warning. It is a
+local runtime cleanup problem. If cleanup is needed, keep it scoped to the
+resolved repository-local `.cosheaf` path and do not use cross-shell recursive
+delete pipelines.
+
 ## Patch Tool Base Directory
 
 In this Codex environment, `apply_patch` uses the session current working

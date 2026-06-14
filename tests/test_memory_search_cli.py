@@ -27,8 +27,9 @@ def _artifact_data(
     tags: list[str] | None = None,
     depends_on: list[str] | None = None,
     statement: str = "Fixture statement.",
+    failure_log: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    return {
+    data: dict[str, Any] = {
         "id": artifact_id,
         "type": artifact_type,
         "title": title,
@@ -45,6 +46,9 @@ def _artifact_data(
         "review": {"state": "requested", "notes": "Fixture review."},
         "risk": {"level": "low", "notes": "Fixture risk."},
     }
+    if failure_log is not None:
+        data["failure_log"] = failure_log
+    return data
 
 
 def _write_artifact(
@@ -59,6 +63,7 @@ def _write_artifact(
     tags: list[str] | None = None,
     depends_on: list[str] | None = None,
     statement: str = "Fixture statement.",
+    failure_log: list[dict[str, Any]] | None = None,
 ) -> None:
     path = repo_root / relative_path
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -73,11 +78,37 @@ def _write_artifact(
                 tags=tags,
                 depends_on=depends_on,
                 statement=statement,
+                failure_log=failure_log,
             ),
             sort_keys=False,
         ),
         encoding="utf-8",
     )
+
+
+def _failure_log_entry(
+    *,
+    failure_id: str = "failure.fixture.0001",
+    direction: str = "Try a separator induction on the bad component",
+    failed_because: str = "The separator premise is unavailable for the draft.",
+) -> dict[str, Any]:
+    return {
+        "failure_id": failure_id,
+        "attempted_at": "2026-06-02T00:00:00Z",
+        "recorded_by": "tester",
+        "origin": "human",
+        "attempt_kind": "proof_attempt",
+        "target": "",
+        "direction": direction,
+        "summary": "Fixture failed attempt memory.",
+        "failed_because": failed_because,
+        "evidence_paths": [],
+        "related_verifier_results": [],
+        "related_counterexample_candidates": [],
+        "next_possible_directions": [],
+        "status": "open",
+        "limitations": "Failure memory only; not proof or refutation.",
+    }
 
 
 def _write_issue(
@@ -699,6 +730,104 @@ def test_memory_search_issue_ranking_keeps_accepted_priority(
     assert payload["cards"][0]["score_breakdown"]["quality_prior"] > (
         payload["cards"][1]["score_breakdown"]["quality_prior"]
     )
+
+
+def test_memory_search_finds_failure_log_directions_by_keyword(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "kb/draft/claims/failure-memory.yaml",
+        artifact_id="claim.fixture.failure-memory-search",
+        title="Failure memory draft",
+        status="draft",
+        domain=["graph-theory"],
+        tags=["failure-memory"],
+        failure_log=[
+            _failure_log_entry(
+                direction="Search for a triangle-free gadget counterexample",
+                failed_because="The candidate gadget still contains a triangle.",
+            )
+        ],
+    )
+    _write_issue(
+        tmp_path,
+        issue_id="issue.fixture.failure-memory-search",
+        related_artifacts=["claim.fixture.failure-memory-search"],
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "memory",
+            "search",
+            "triangle-free gadget",
+            "--repo-root",
+            str(tmp_path),
+            "--issue",
+            "issue.fixture.failure-memory-search",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert [hit["card"]["id"] for hit in payload["cards"]] == [
+        "claim.fixture.failure-memory-search"
+    ]
+    hit = payload["cards"][0]
+    assert hit["card"]["failure_count"] == 1
+    assert hit["card"]["recent_failure_directions"] == [
+        "Search for a triangle-free gadget counterexample"
+    ]
+    assert hit["card"]["trust_score"] == 0.1
+    assert hit["score_breakdown"]["quality_prior"] == 0.1
+    assert any("failure memory match" in reason for reason in hit["why_relevant"])
+    assert any(
+        "failure memory is not proof" in warning
+        for warning in payload["audit"]["warnings"]
+    )
+
+
+def test_memory_search_failure_log_does_not_change_accepted_quality_prior(
+    tmp_path: Path,
+) -> None:
+    _write_artifact(
+        tmp_path,
+        "kb/accepted/claims/failure-memory.yaml",
+        artifact_id="claim.fixture.accepted-failure-memory",
+        title="Accepted claim with failed attempts",
+        status="accepted",
+        domain=["graph-theory"],
+        tags=["accepted"],
+        failure_log=[
+            _failure_log_entry(
+                direction="Try a separator induction on the bad component",
+                failed_because="The induction hypothesis was too weak.",
+            )
+        ],
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "memory",
+            "search",
+            "separator induction",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    hit = payload["cards"][0]
+    assert hit["card"]["id"] == "claim.fixture.accepted-failure-memory"
+    assert hit["card"]["failure_count"] == 1
+    assert hit["card"]["trust_score"] == 1.0
+    assert hit["score_breakdown"]["quality_prior"] == 1.0
+    assert any("failure memory match" in reason for reason in hit["why_relevant"])
 
 
 def test_memory_search_refuted_artifacts_require_explicit_inclusion(
