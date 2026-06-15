@@ -210,15 +210,25 @@ Follow this sequence for nontrivial issue work:
 6. Read `context/TASKS/<issue-id>/CONTEXT.md`,
    `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, `COMMANDS.md`, and
    `ACCEPTANCE.md` when present.
-7. Make only issue-scoped changes. If the task permits generated research
+7. Start a research run with `cosheaf run start --issue <issue-id>
+   --operator external --json` when the issue asks for auditable operator
+   provenance.
+8. Make only issue-scoped changes. If the task permits generated research
    outputs, write only draft/proposal/source-note/bundle/review-staging
    records through the controlled commands above.
-8. Re-run task-required checks, including `make lint`, `make typecheck`,
-   `make test`, `make validate`, `make gate`, and `git diff --check` unless
-   the issue narrows the required command set.
-9. Open one PR with a summary that records changed files, exact commands,
-   results, runtime outputs, limitations, interface/docs/schema changes, and
-   gate verdict.
+9. Record relevant commands, artifacts, and controlled outputs with
+   `cosheaf run append-command`, `cosheaf run append-artifact`, and
+   `cosheaf run append-output`. Do not store secrets, hidden reasoning, full
+   environment dumps, or accepted-write claims.
+10. Re-run task-required checks, including `make lint`, `make typecheck`,
+    `make test`, `make validate`, `make gate`, and `git diff --check` unless
+    the issue narrows the required command set.
+11. Finalize and export the run with `cosheaf run finalize` and
+    `cosheaf run export-review --dry-run` first, then `export-review` only when
+    a review record is intended.
+12. Open one PR with a summary that records changed files, exact commands,
+    results, runtime outputs, limitations, interface/docs/schema changes, and
+    gate verdict.
 
 Allowed agent-facing command families are:
 
@@ -226,8 +236,11 @@ Allowed agent-facing command families are:
   `memory cards`, `memory search`, `context build`, `context show`, and
   `orchestrator plan`, preferably with `--json` for machine consumers;
 - controlled write: `draft write-artifact`, `draft write-source-note`,
-  `bundle submit`, and `review request`, preferably with `--dry-run --json`
-  before real writes;
+  `bundle submit`, `review request`, and `run export-review`, preferably with
+  `--dry-run --json` before real writes;
+- provenance: `run start`, `run append-command`, `run append-artifact`,
+  `run append-output`, `run finalize`, `run show`, `run evidence-report`, and
+  `run replay-plan`;
 - ordinary repository verification: `make lint`, `make typecheck`,
   `make test`, `make validate`, `make gate`, and `git diff --check`.
 

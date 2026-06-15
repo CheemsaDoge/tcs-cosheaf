@@ -1,0 +1,11 @@
+cases:
+  - id: case.research-run.complete-command-coverage
+    kind: complete_command_coverage
+  - id: case.research-run.skipped-not-pass
+    kind: skipped_not_pass
+  - id: case.research-run.evidence-separation
+    kind: evidence_separation
+  - id: case.research-run.private-leakage-prevention
+    kind: private_leakage_prevention
+  - id: case.research-run.no-authority-escalation
+    kind: no_authority_escalation

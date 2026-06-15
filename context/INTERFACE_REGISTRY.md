@@ -233,6 +233,35 @@
   repository-local YAML case file.
 - `cosheaf eval checked-evidence-run-loop --json`: emits deterministic JSON
   report output.
+- `cosheaf eval research-run-loop`: runs the default deterministic
+  research-run boundary suite from `evals/research_run_loop/cases.yaml`.
+- `cosheaf eval research-run-loop --repo-root <path>`: runs research-run evals
+  against an explicit repository root.
+- `cosheaf eval research-run-loop --cases <path>`: uses an explicit
+  repository-local YAML case file.
+- `cosheaf eval research-run-loop --json`: emits deterministic JSON report
+  output.
+- `cosheaf run start --issue <issue-id> --operator external --json`: creates
+  `.cosheaf/runs/<run-id>/run.json` and emits deterministic JSON with
+  `accepted_write_performed=false`.
+- `cosheaf run append-command --run <run-id> --input-json <path> --json`:
+  appends a sanitized command record to an in-progress research run.
+- `cosheaf run append-artifact --run <run-id> --artifact <artifact-id>
+  --mode read|touched --json`: records artifact read/touched provenance.
+- `cosheaf run append-output --run <run-id> --input-json <path> --json`:
+  appends a repository-local output/reference record.
+- `cosheaf run finalize --run <run-id> --status <status> --stop-reason <text>
+  --json`: finalizes an in-progress run with a terminal status.
+- `cosheaf run show <run-id> --json`: shows one runtime research run record.
+- `cosheaf run evidence-report --run <run-id> --json`: emits read-only counts
+  over commands, artifacts, evidence, failure logs, validation, and gate
+  reports.
+- `cosheaf run export-review --run <run-id> --dry-run --json`: reports the
+  `reviews/runs/<run-id>.yaml` target without writing.
+- `cosheaf run export-review --run <run-id> --json`: writes a review export
+  under `reviews/runs/`.
+- `cosheaf run replay-plan --run <run-id> --json`: emits a read-only command
+  replay plan and performs no execution.
 - `cosheaf graph show`: prints the directed artifact dependency graph.
 - `cosheaf graph show --repo-root <path>`: prints the graph for an explicit repository root.
 - `cosheaf gate`: runs the gatekeeper with default options and writes reports under `.cosheaf/reports/`.
@@ -513,6 +542,22 @@
   with provider/model, policy scope, consent, private-context-sent flag,
   status, timestamps, request fingerprint, and optional repository-local log
   path.
+- `cosheaf.research.run.ResearchRunRecord`: strict Pydantic v2 DTO for one
+  repository-local research run. It records issue ID, operator kind/label,
+  timestamps, status, command records, artifact references, controlled outputs,
+  evidence references, validation/gate report references, limitations, and the
+  non-authority notice.
+- `cosheaf.research.run.ResearchRunCommandRecord`: sanitized command metadata
+  with explicit argv, cwd, timestamps, exit code, status, optional stdout/stderr
+  sidecar paths or hashes, skipped/unavailable reasons, and redaction metadata.
+- `cosheaf.research.run.ResearchRunOutputRef`: repository-local output or
+  reference metadata for workspace summaries, context packs, controlled writes,
+  worker bundles, verifier evidence, checked counterexample evidence, failure
+  logs, validation reports, gate reports, PR/issue refs, or other notes.
+- `cosheaf.evals.research_run_loop`: deterministic research-run loop eval
+  harness. Default cases live in `evals/research_run_loop/cases.yaml` and do
+  not require hosted providers, API keys, MCP, network, SAT, SMT, Lean, or
+  lake.
 - `cosheaf.services.models.ErrorResult`: public standard error DTO with code,
   message, remediation, blocking flag, optional repository-local
   `related_path`, optional `related_artifact`, and string-to-string details.

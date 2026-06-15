@@ -225,6 +225,33 @@ artifact automatically, does not mark human review, does not write accepted
 knowledge, and does not bypass validation, gates, verifier policy, or
 promotion.
 
+### Research Run Provenance Surface
+
+Research run records are implemented for the `v0.3.0` line as external-operator
+provenance. They are stored under `.cosheaf/runs/<run-id>/run.json` and can be
+exported for review under `reviews/runs/<run-id>.yaml`.
+
+Lifecycle commands:
+
+```bash
+cosheaf run start --issue <issue-id> --operator external --json
+cosheaf run append-command --run <run-id> --input-json <command.json> --json
+cosheaf run append-artifact --run <run-id> --artifact <artifact-id> --json
+cosheaf run append-artifact --run <run-id> --artifact <artifact-id> --mode touched --json
+cosheaf run append-output --run <run-id> --input-json <output.json> --json
+cosheaf run finalize --run <run-id> --status completed --stop-reason <text> --json
+cosheaf run show <run-id> --json
+cosheaf run evidence-report --run <run-id> --json
+cosheaf run export-review --run <run-id> --dry-run --json
+cosheaf run export-review --run <run-id> --json
+cosheaf run replay-plan --run <run-id> --json
+```
+
+Research run records are provenance only. They do not execute commands, call
+providers, require MCP, create human review, write accepted knowledge, mark gate
+or verifier pass, or authorize promotion. `replay-plan` is read-only and does
+not prove replay execution.
+
 ### Artifact Failure Memory Surface
 
 Artifact-level `failure_log` is implemented for `v0.2.4` as durable
@@ -419,6 +446,9 @@ The stable error-code list is exported as
 - `provider_unsupported`
 - `readonly_kb_root`
 - `repository_load_failed`
+- `research_run_not_found`
+- `research_run_path_exists`
+- `research_run_validation_failed`
 - `review_request_failed`
 - `source_note_write_failed`
 - `timestamp_missing_timezone`

@@ -39,6 +39,7 @@ SCHEMA_FILES = [
     "schemas/counterexample_evidence.schema.json",
     "schemas/issue.schema.json",
     "schemas/review.schema.json",
+    "schemas/research_run.schema.json",
     "schemas/verifier.schema.json",
     "schemas/verifier_evidence.schema.json",
     "schemas/task.schema.json",
