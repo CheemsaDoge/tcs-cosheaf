@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TCS-Cosheaf Research Strategy Plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "plan_id",
+    "issue_id",
+    "created_at",
+    "problem",
+    "graph",
+    "authority_notice",
+    "accepted_write_performed"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "plan_id": {
+      "type": "string"
+    },
+    "issue_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "problem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issue_id",
+        "title"
+      ],
+      "properties": {
+        "issue_id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "domains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "target_artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "known_constraints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "public_private_scope_labels": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "public",
+              "private",
+              "workspace",
+              "framework",
+              "unknown"
+            ]
+          }
+        }
+      }
+    },
+    "graph": {
+      "$ref": "research_task_graph.schema.json"
+    },
+    "next_steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rank",
+          "node_id",
+          "score",
+          "reasons"
+        ],
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "node_id": {
+            "type": "string"
+          },
+          "score": {
+            "type": "number"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "command": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "authority_notice": {
+      "const": "Strategy plans are guidance for review only; they are not proof, evidence, verifier pass, gate pass, human review, accepted status, or promotion authority."
+    },
+    "accepted_write_performed": {
+      "const": false
+    }
+  }
+}

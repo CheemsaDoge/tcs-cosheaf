@@ -210,6 +210,10 @@ Follow this sequence for nontrivial issue work:
    `cosheaf memory search "<query>" --issue <issue-id> --json`.
 6. Build bounded context:
    `cosheaf context build <issue-id> --json`.
+   For `v0.4.0` planning work, also generate or inspect a strategy plan with
+   `cosheaf strategy plan --issue <issue-id> --json`,
+   `cosheaf strategy show <plan-id> --json`, and
+   `cosheaf strategy next <plan-id> --json`.
 7. Read `context/TASKS/<issue-id>/CONTEXT.md`,
    `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, `COMMANDS.md`, and
    `ACCEPTANCE.md` when present.
@@ -235,7 +239,8 @@ Allowed agent-facing command families are:
 
 - read/check: `version`, `workspace info`, `validate`, `gate run`,
   `memory cards`, `memory search`, `context build`, `context show`, and
-  `orchestrator plan`, preferably with `--json` for machine consumers;
+  `strategy plan/show/graph/next`, and `orchestrator plan`, preferably with
+  `--json` for machine consumers;
 - controlled write: `draft write-artifact`, `draft write-source-note`,
   `bundle submit`, `review request`, and `run export-review`, preferably with
   `--dry-run --json` before real writes;
@@ -252,7 +257,9 @@ Forbidden agent actions are:
   promotion workflow and all review/gate requirements are satisfied;
 - marking AI output or agent review as `human_reviewed`;
 - treating validation, gate, verifier, Lean, SAT, SMT, provider, MCP, memory,
-  or context output as human review;
+  context, or strategy output as human review;
+- treating strategy plans as proof, evidence, verifier pass, gate pass,
+  accepted status, accepted refutation, or promotion authority;
 - treating skipped verifier/provider/tool results as passes;
 - writing into readonly public KB roots;
 - copying private artifacts into public KB or readonly roots;
@@ -341,6 +348,10 @@ commands when the result will be parsed by a program:
 - `cosheaf memory search "<query>" --json`
 - `cosheaf context build <issue-id> --json`
 - `cosheaf context show <issue-id> --json`
+- `cosheaf strategy plan --issue <issue-id> --json`
+- `cosheaf strategy show <plan-id> --json`
+- `cosheaf strategy graph <plan-id> --json`
+- `cosheaf strategy next <plan-id> --json`
 - `cosheaf orchestrator plan --issue <issue-id> --json`
 - `cosheaf draft write-artifact --input-json <path> --json --dry-run`
 - `cosheaf draft write-source-note --input-json <path> --json --dry-run`
@@ -365,6 +376,11 @@ verifier/provider results into passes.
 Research-run JSON output is provenance only. It does not execute replay plans,
 does not create human review, does not mark verifier or gate pass, does not
 write accepted knowledge, and does not authorize promotion.
+
+Strategy-plan JSON output is planning guidance only. It does not execute the
+ranked tasks, create evidence, mark verifier or gate pass, create human review,
+write accepted knowledge, or authorize promotion. The current Phase 1 strategy
+surface writes only `.cosheaf/strategy/<plan-id>/strategy.json` runtime files.
 
 ## Handoff
 

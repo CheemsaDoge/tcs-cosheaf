@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TCS-Cosheaf Research Task Graph",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "nodes",
+    "edges"
+  ],
+  "properties": {
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "node_id",
+          "kind",
+          "title",
+          "status",
+          "scope"
+        ],
+        "properties": {
+          "node_id": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "understand",
+              "retrieval_context",
+              "proof_attempt",
+              "construction_search",
+              "counterexample_search",
+              "verification",
+              "formalization_attempt",
+              "literature_source_lookup",
+              "review_decision",
+              "blocked_deferred",
+              "validation",
+              "gate",
+              "run_review"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "blocked",
+              "deferred",
+              "completed",
+              "failed",
+              "skipped"
+            ]
+          },
+          "scope": {
+            "enum": [
+              "public",
+              "private",
+              "workspace",
+              "framework",
+              "unknown"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blocked_by": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expected_evidence_kinds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "related_artifacts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "related_failure_log_entries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "related_candidate_counterexamples": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "related_checked_counterexample_evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "related_research_run_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "command": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "input_paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "write_paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "from_node",
+          "to_node",
+          "kind",
+          "reason"
+        ],
+        "properties": {
+          "from_node": {
+            "type": "string"
+          },
+          "to_node": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "prerequisite",
+              "evidence_dependency",
+              "blocked_by"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

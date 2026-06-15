@@ -155,6 +155,10 @@ Agent-safe read/check commands include:
 - `cosheaf memory search "<query>" --issue <issue-id> --json`
 - `cosheaf context build <issue-id> --json`
 - `cosheaf context show <issue-id> --json`
+- `cosheaf strategy plan --issue <issue-id> --json`
+- `cosheaf strategy show <plan-id> --json`
+- `cosheaf strategy graph <plan-id> --json`
+- `cosheaf strategy next <plan-id> --json`
 - `cosheaf orchestrator plan --issue <issue-id> --json`
 - `cosheaf orchestrator run --issue <issue-id> --provider fake --json`
 - `cosheaf orchestrator run --issue <issue-id> --provider openai-compatible
@@ -272,6 +276,32 @@ providers, require MCP, create human review, write accepted knowledge, mark gate
 or verifier pass, or authorize promotion. `replay-plan` is read-only and does
 not prove replay execution.
 
+### Strategy Planner Surface
+
+The `v0.4.0` strategy planner core is a CLI-first planning surface for
+external operators. It writes generated runtime plans under
+`.cosheaf/strategy/<plan-id>/strategy.json` and exposes deterministic JSON
+through:
+
+```bash
+cosheaf strategy plan --issue <issue-id> --json
+cosheaf strategy show <plan-id> --json
+cosheaf strategy graph <plan-id> --json
+cosheaf strategy next <plan-id> --json
+```
+
+The Phase 1 planner reads issue metadata, direct related artifacts, one-hop
+dependencies, artifact failure memory, candidate counterexample references,
+staged checked counterexample evidence, and research-run records. It ranks
+bounded next actions and recommends validation, gate, and context commands as
+first-class tasks.
+
+Strategy plans are guidance only. They do not execute tasks, call hosted
+providers, require MCP, create verifier results, create human review, write
+accepted knowledge, mark accepted status, or authorize promotion. Candidate
+counterexamples remain candidate-only labels. Checked counterexample evidence
+remains review evidence only. Research-run records remain provenance only.
+
 ### Artifact Failure Memory Surface
 
 Artifact-level `failure_log` is implemented for `v0.2.4` as durable
@@ -365,6 +395,9 @@ External coding agents must not:
 - use `failure_log` text or references to claim proof, refutation, verifier
   pass, checked counterexample status, human review, accepted status, or
   promotion readiness;
+- use strategy plans or task-graph rankings to claim proof, evidence,
+  verifier pass, gate pass, human review, accepted status, accepted refutation,
+  or promotion readiness;
 - send private KB context to hosted providers without explicit policy,
   preview, configuration, and operator consent;
 - require MCP for ordinary CLI-first work.

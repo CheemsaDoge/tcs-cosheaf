@@ -148,6 +148,9 @@ Implemented:
   or accepted knowledge.
 - GitHub Actions CI with separate `lint`, `typecheck`, `test`, `validate`, and
   `gate` checks.
+- Active `v0.4.0` strategy-planner core surfaces with
+  `cosheaf strategy plan/show/graph/next`, deterministic runtime plans under
+  `.cosheaf/strategy/`, and public schemas for strategy plans and task graphs.
 
 Planned or incomplete:
 
@@ -337,6 +340,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md)
 - [Gatekeeper and validation gates](docs/GATES.md)
 - [Agent access](docs/AGENT_ACCESS.md)
+- [Strategy planner](docs/STRATEGY_PLANNER.md)
 - [Agent providers](docs/AGENT_PROVIDERS.md)
 - [Evaluation](docs/EVALUATION.md)
 - [Artifact lifecycle](docs/ARTIFACT_LIFECYCLE.md)
