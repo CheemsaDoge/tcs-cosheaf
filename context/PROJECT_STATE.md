@@ -3,6 +3,39 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.4.0 Strategy Task Graph Core - 2026-06-15
+
+Issue 350 implements the first functional `v0.4.0` strategy-planner surface.
+The new `cosheaf.strategy` package defines strict Pydantic DTOs for
+`StrategyPlan`, `StrategyProblem`, `StrategyTaskGraph`, `StrategyTaskNode`,
+and ranked `StrategyNextStep` records. Runtime plans are written as
+deterministic JSON under `.cosheaf/strategy/<plan-id>/strategy.json`.
+
+The Phase 1 CLI exposes:
+
+- `cosheaf strategy plan --issue <issue-id> --json`
+- `cosheaf strategy show <plan-id> --json`
+- `cosheaf strategy graph <plan-id> --json`
+- `cosheaf strategy next <plan-id> --json`
+
+The deterministic planner reads issue metadata, direct related artifacts,
+one-hop dependencies, artifact failure memory, candidate counterexample
+references, staged checked counterexample evidence, and research-run records.
+It ranks bounded next actions and treats `cosheaf context build`,
+`cosheaf validate`, and `cosheaf gate run` as first-class recommended tasks.
+
+The new public schema files are `schemas/research_strategy.schema.json` and
+`schemas/research_task_graph.schema.json`. The docs surface is
+`docs/STRATEGY_PLANNER.md`, with matching agent-access, Codex-workflow, and
+interface-registry updates.
+
+Strategy plans remain guidance only. They do not execute tasks, call hosted
+providers, require MCP, create verifier results, create human review, write
+accepted knowledge, mark accepted status, mark accepted refutation, or
+authorize promotion. Candidate counterexamples remain candidate-only labels,
+checked counterexample evidence remains review evidence only, research-run
+records remain provenance only, and skipped results remain non-pass.
+
 ## Post-v0.3.0 to v0.4.0 Kickoff - 2026-06-15
 
 Issue 348 starts the `v0.4.0` Strategy Planner + Research Task Graph line after

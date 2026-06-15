@@ -262,6 +262,16 @@
   under `reviews/runs/`.
 - `cosheaf run replay-plan --run <run-id> --json`: emits a read-only command
   replay plan and performs no execution.
+- `cosheaf strategy plan --issue <issue-id> --json`: builds a deterministic
+  strategy plan for one issue, writes
+  `.cosheaf/strategy/<plan-id>/strategy.json`, and emits deterministic JSON
+  with `accepted_write_performed=false` and the strategy authority notice.
+- `cosheaf strategy show <plan-id> --json`: loads one runtime strategy plan
+  from `.cosheaf/strategy/<plan-id>/strategy.json`.
+- `cosheaf strategy graph <plan-id> --json`: emits the task graph from one
+  runtime strategy plan without executing tasks.
+- `cosheaf strategy next <plan-id> --json`: emits ranked next-step guidance
+  from one runtime strategy plan without executing tasks.
 - `cosheaf graph show`: prints the directed artifact dependency graph.
 - `cosheaf graph show --repo-root <path>`: prints the graph for an explicit repository root.
 - `cosheaf gate`: runs the gatekeeper with default options and writes reports under `.cosheaf/reports/`.
@@ -554,6 +564,30 @@
   reference metadata for workspace summaries, context packs, controlled writes,
   worker bundles, verifier evidence, checked counterexample evidence, failure
   logs, validation reports, gate reports, PR/issue refs, or other notes.
+- `cosheaf.strategy.models.StrategyPlan`: strict Pydantic v2 DTO for one
+  generated strategy plan. It records `plan_id`, `issue_id`, timezone-aware
+  `created_at`, a `StrategyProblem`, a `StrategyTaskGraph`, ranked
+  `StrategyNextStep` entries, the strategy authority notice, and
+  `accepted_write_performed=false`.
+- `cosheaf.strategy.models.StrategyTaskGraph`: strict Pydantic v2 DTO for a
+  directed task graph with unique `StrategyTaskNode.node_id` values and
+  validated task edges, dependencies, and blocked-by references.
+- `cosheaf.strategy.models.StrategyTaskNode`: strict Pydantic v2 DTO for one
+  bounded research task. It records kind, status, public/private/workspace
+  scope, expected evidence kinds, related artifacts, failure-log entries,
+  candidate counterexamples, checked counterexample evidence, research-run
+  IDs, optional command argv, repository-local input paths, and controlled
+  non-accepted write paths.
+- `cosheaf.strategy.planner.build_strategy_plan(context, issue_id)`: builds a
+  deterministic Phase 1 plan from issue metadata, direct related artifacts,
+  one-hop dependencies, artifact failure memory, candidate counterexample
+  references, staged checked counterexample evidence, and research-run records.
+  It performs no task execution, provider call, review creation, accepted
+  write, or promotion.
+- `cosheaf.strategy.storage.write_strategy_plan(context, plan)`: writes a
+  generated plan under `.cosheaf/strategy/<plan-id>/strategy.json`.
+- `cosheaf.strategy.storage.load_strategy_plan(context, plan_id)`: loads and
+  validates one runtime strategy plan by ID.
 - `cosheaf.evals.research_run_loop`: deterministic research-run loop eval
   harness. Default cases live in `evals/research_run_loop/cases.yaml` and do
   not require hosted providers, API keys, MCP, network, SAT, SMT, Lean, or
@@ -1967,6 +2001,14 @@ Local worker run records are written under:
 - `.cosheaf/tasks/<task-id>/runs/<run-id>/stdout.txt`
 - `.cosheaf/tasks/<task-id>/runs/<run-id>/stderr.txt`
 
+Strategy planner runtime records are written under:
+
+- `.cosheaf/strategy/<plan-id>/strategy.json`
+
+Strategy runtime records are generated guidance. They are not review records,
+accepted knowledge, verifier evidence, gate reports, human review, or
+promotion authority.
+
 Local worker run record YAML fields are:
 
 - `schema_version`
@@ -2549,6 +2591,18 @@ working directory.
   checked result, support references, checker label, timestamp, and
   limitations. It does not authorize human review, accepted writes, accepted
   refutation, or promotion.
+- `schemas/research_strategy.schema.json`: strategy plan v1 schema. It
+  serializes a generated plan with issue/problem metadata, task graph,
+  ranked next steps, the strategy authority notice, and
+  `accepted_write_performed=false`. It does not authorize proof, evidence,
+  verifier pass, gate pass, human review, accepted status, accepted
+  refutation, accepted writes, or promotion.
+- `schemas/research_task_graph.schema.json`: strategy task-graph v1 schema.
+  It serializes task nodes, task edges, task status, public/private/workspace
+  scope labels, expected evidence kinds, related artifacts, failure-log
+  entries, candidate counterexamples, checked evidence references,
+  research-run IDs, commands, input paths, write paths, and notes. It does not
+  execute tasks or grant write authority to accepted KB paths.
 - `schemas/task.schema.json`: agent task YAML schema.
 - `schemas/orchestrator_run.schema.json`: orchestrator run state schema.
 - `schemas/worker_bundle_v2.schema.json`: strict reducer-oriented worker

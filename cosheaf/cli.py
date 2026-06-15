@@ -152,6 +152,9 @@ from cosheaf.storage.index import rebuild_index
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
 from cosheaf.storage.repo import RepoContext
 from cosheaf.storage.writer import write_yaml_deterministic
+from cosheaf.strategy.models import STRATEGY_AUTHORITY_NOTICE, StrategyError
+from cosheaf.strategy.planner import build_strategy_plan
+from cosheaf.strategy.storage import load_strategy_plan, write_strategy_plan
 from cosheaf.verification.counterexample_evidence import (
     CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
     CheckedCounterexampleEvidenceError,
@@ -234,6 +237,11 @@ orchestrator_app = typer.Typer(
     help="Deterministic local orchestrator commands.",
     no_args_is_help=True,
 )
+strategy_app = typer.Typer(
+    add_completion=False,
+    help="Strategy planner and research task graph commands.",
+    no_args_is_help=True,
+)
 workspace_app = typer.Typer(
     add_completion=False,
     help="Workspace configuration commands.",
@@ -288,6 +296,7 @@ app.add_typer(bundle_app, name="bundle")
 app.add_typer(review_app, name="review")
 app.add_typer(run_app, name="run")
 app.add_typer(orchestrator_app, name="orchestrator")
+app.add_typer(strategy_app, name="strategy")
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(ingest_app, name="ingest")
 app.add_typer(eval_app, name="eval")
@@ -1173,6 +1182,158 @@ def research_run_replay_plan(
         return
     console.print(f"Research run replay plan: {result.record.run_id}")
     console.print("- read-only: true")
+
+
+@strategy_app.command("plan")
+def strategy_plan(
+    issue_id: str = typer.Option(
+        ...,
+        "--issue",
+        help="Issue ID to plan for.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for strategy storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Build and persist a deterministic strategy plan for one issue."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        built = build_strategy_plan(context, issue_id)
+        result = write_strategy_plan(context, built.plan)
+    except (StrategyError, ValidationError, ValueError, LoadError) as exc:
+        _exit_with_error(
+            _strategy_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Strategy plan: {result.plan.plan_id}")
+    console.print(f"- path: {result.relative_path.as_posix()}")
+    console.print("- accepted write: not performed")
+    console.print(f"- authority: {STRATEGY_AUTHORITY_NOTICE}")
+
+
+@strategy_app.command("show")
+def strategy_show(
+    plan_id: str = typer.Argument(..., help="Strategy plan ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for strategy storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Show one runtime strategy plan."""
+    console = Console(width=120, markup=False)
+    try:
+        result = load_strategy_plan(RepoContext(repo_root), plan_id)
+    except (StrategyError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _strategy_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Strategy plan: {result.plan.plan_id}")
+    console.print(f"- issue: {result.plan.issue_id}")
+    console.print(f"- authority: {STRATEGY_AUTHORITY_NOTICE}")
+
+
+@strategy_app.command("graph")
+def strategy_graph(
+    plan_id: str = typer.Argument(..., help="Strategy plan ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for strategy storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Show the task graph for one runtime strategy plan."""
+    console = Console(width=120, markup=False)
+    try:
+        result = load_strategy_plan(RepoContext(repo_root), plan_id)
+    except (StrategyError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _strategy_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    payload = {
+        "schema_version": 1,
+        "kind": "strategy_task_graph",
+        "plan_id": result.plan.plan_id,
+        "accepted_write_performed": False,
+        "authority_notice": STRATEGY_AUTHORITY_NOTICE,
+        "graph": result.plan.graph.to_dict(),
+    }
+    if json_output:
+        _emit_json(payload)
+        return
+    console.print(f"Strategy graph: {result.plan.plan_id}")
+    console.print(f"- nodes: {len(result.plan.graph.nodes)}")
+    console.print(f"- edges: {len(result.plan.graph.edges)}")
+
+
+@strategy_app.command("next")
+def strategy_next(
+    plan_id: str = typer.Argument(..., help="Strategy plan ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for strategy storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Show ranked next steps for one runtime strategy plan."""
+    console = Console(width=120, markup=False)
+    try:
+        result = load_strategy_plan(RepoContext(repo_root), plan_id)
+    except (StrategyError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _strategy_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    payload = {
+        "schema_version": 1,
+        "kind": "strategy_next_steps",
+        "plan_id": result.plan.plan_id,
+        "accepted_write_performed": False,
+        "authority_notice": STRATEGY_AUTHORITY_NOTICE,
+        "next_steps": [step.to_dict() for step in result.plan.next_steps],
+    }
+    if json_output:
+        _emit_json(payload)
+        return
+    console.print(f"Strategy next steps: {result.plan.plan_id}")
+    for step in result.plan.next_steps:
+        command = " ".join(step.command) if step.command else "-"
+        console.print(f"- {step.rank}. {step.node_id} | score={step.score} | {command}")
 
 
 @artifact_app.command("create")
@@ -3521,6 +3682,33 @@ def _research_run_error_result(exc: Exception) -> ErrorResult:
             "Fix the research-run payload and retry. "
             "Research runs are provenance only."
         ),
+        blocking=True,
+    )
+
+
+def _strategy_error_result(exc: Exception) -> ErrorResult:
+    if isinstance(exc, StrategyError):
+        return ErrorResult(
+            code=exc.code,
+            message=str(exc),
+            remediation=exc.remediation,
+            blocking=True,
+            details=exc.details,
+        )
+    if isinstance(exc, ValidationError):
+        return ErrorResult(
+            code="strategy_validation_failed",
+            message=_format_pydantic_errors(exc),
+            remediation=(
+                "Regenerate or repair the strategy plan. Strategy plans are "
+                "guidance only."
+            ),
+            blocking=True,
+        )
+    return ErrorResult(
+        code="strategy_failed",
+        message=str(exc),
+        remediation="Inspect the issue, plan ID, or runtime strategy record.",
         blocking=True,
     )
 

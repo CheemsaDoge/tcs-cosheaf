@@ -64,21 +64,24 @@ Compressed milestones:
 Current task:
 
 ```text
-post-v030-v040-kickoff
+strategy-task-graph-core
 ```
 
-This task lands the accelerated `v0.4.0` plan, ADR, roadmap, current milestone,
-and project-state updates only. It must not add runtime behavior, schemas,
-provider/MCP behavior, accepted KB writes, version bumps, or release tags.
+This task implements the Phase 1 durable strategy/task-graph model, schemas,
+deterministic issue planner, runtime `.cosheaf/strategy/` storage, CLI,
+documentation, and tests. It must not add provider calls, MCP requirements,
+task execution, accepted KB writes, human review creation, promotion behavior,
+version bumps, or release tags.
 
 After this task merges, proceed directly to:
 
 ```text
-strategy-task-graph-core
+strategy-run-loop-integration
 ```
 
-That follow-up should implement the durable strategy/task-graph model, schemas,
-deterministic planner, CLI, docs, and tests in one bounded PR.
+That follow-up should connect strategy plans to context packs, research-run
+updates, review exports, promotion-readiness advisory warnings, evals, and
+security coverage.
 
 ## Explicit Boundaries
 
@@ -127,12 +130,12 @@ remains separate from human review, accepted refutation, accepted status, and
 promotion authority. Research-run records are provenance, not proof or review
 authority.
 
-The next work should add a deterministic planning layer on top of those
-surfaces without changing their authority. Continue to avoid treating failure
-memory, counterexample candidates, verifier requests, verifier evidence,
-checked evidence, research-run records, strategy plans, provider output,
-evals, validation, gates, or context retrieval as human review, proof,
-accepted status, verifier pass, gate pass, or promotion authority.
+The current work adds the deterministic planning layer on top of those surfaces
+without changing their authority. Continue to avoid treating failure memory,
+counterexample candidates, verifier requests, verifier evidence, checked
+evidence, research-run records, strategy plans, provider output, evals,
+validation, gates, or context retrieval as human review, proof, accepted
+status, verifier pass, gate pass, or promotion authority.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show
