@@ -27,6 +27,11 @@ from cosheaf.memory import (
 from cosheaf.memory.models import ArtifactCardStatus
 from cosheaf.storage.loader import IssueRecord, LoadedRecord, load_artifacts
 from cosheaf.storage.repo import RepoContext
+from cosheaf.verification.counterexample_evidence import (
+    CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
+    CheckedCounterexampleEvidenceLoadResult,
+    load_checked_counterexample_evidence,
+)
 
 PACK_FILENAMES = (
     "CONTEXT.md",
@@ -135,6 +140,41 @@ class ContextFailureEntry:
         }
 
 
+@dataclass(frozen=True)
+class ContextCheckedCounterexampleEvidenceEntry:
+    """One visible checked counterexample evidence record for context packs."""
+
+    evidence_id: str
+    target_artifact_id: str
+    candidate_id: str
+    candidate_source: str
+    check_method: str
+    checked_result: str
+    checker: str
+    source_path: str
+    verifier_evidence_ids: tuple[str, ...]
+    review_record_paths: tuple[str, ...]
+    evidence_paths: tuple[str, ...]
+    limitations: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "evidence_id": self.evidence_id,
+            "target_artifact_id": self.target_artifact_id,
+            "candidate_id": self.candidate_id,
+            "candidate_source": self.candidate_source,
+            "check_method": self.check_method,
+            "checked_result": self.checked_result,
+            "checker": self.checker,
+            "source_path": self.source_path,
+            "verifier_evidence_ids": list(self.verifier_evidence_ids),
+            "review_record_paths": list(self.review_record_paths),
+            "evidence_paths": list(self.evidence_paths),
+            "limitations": list(self.limitations),
+            "authority_notice": CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
+        }
+
+
 def build_context_pack(
     context: RepoContext,
     issue_id: str,
@@ -187,6 +227,13 @@ def build_context_pack(
         )
     artifact_records = _artifact_records_by_id(records)
     failure_entries = _context_failure_entries(cards, artifact_records)
+    checked_counterexample_evidence = _context_checked_counterexample_evidence(
+        context,
+        records=records,
+        issue=issue,
+        cards=cards,
+        public_only=public_only,
+    )
     full_artifact_pulls = _pull_full_artifacts(
         context,
         _ordered_context_cards(cards),
@@ -207,6 +254,7 @@ def build_context_pack(
             cards,
             artifact_records,
             failure_entries,
+            checked_counterexample_evidence,
         ),
         "ACCEPTANCE.md": _render_acceptance(issue),
         "RELEVANT_ARTIFACTS.md": _render_relevant_artifacts(cards, artifact_records),
@@ -214,12 +262,14 @@ def build_context_pack(
             cards,
             artifact_records,
             failure_entries,
+            checked_counterexample_evidence,
         ),
         "FULL_ARTIFACTS.md": _render_full_artifacts(context, full_artifact_pulls),
         "RETRIEVAL_AUDIT.json": _render_retrieval_audit(
             issue=issue,
             retrieval=retrieval,
             failure_entries=failure_entries,
+            checked_counterexample_evidence=checked_counterexample_evidence,
             query=_context_query(issue, include_related_artifacts=not public_only),
             role=role_value,
             max_cards=max_cards,
@@ -476,6 +526,9 @@ def _render_context(
     cards: tuple[ContextPackCard, ...],
     artifact_records: dict[str, LoadedRecord],
     failure_entries: tuple[ContextFailureEntry, ...],
+    checked_counterexample_evidence: tuple[
+        ContextCheckedCounterexampleEvidenceEntry, ...
+    ],
 ) -> str:
     ordered_cards = _ordered_context_cards(cards)
     accepted = [
@@ -531,6 +584,9 @@ def _render_context(
     if failure_entries:
         lines.extend(["", "## Known Failed Directions", ""])
         lines.extend(_failure_entry_lines(failure_entries))
+    if checked_counterexample_evidence:
+        lines.extend(["", "## Checked Counterexample Evidence", ""])
+        lines.extend(_checked_counterexample_evidence_lines(checked_counterexample_evidence))
     lines.extend(
         [
             "",
@@ -606,6 +662,9 @@ def _render_known_failures(
     cards: tuple[ContextPackCard, ...],
     artifact_records: dict[str, LoadedRecord],
     failure_entries: tuple[ContextFailureEntry, ...],
+    checked_counterexample_evidence: tuple[
+        ContextCheckedCounterexampleEvidenceEntry, ...
+    ],
 ) -> str:
     known_failures = [
         record
@@ -621,7 +680,16 @@ def _render_known_failures(
     if failure_entries:
         lines.extend(["", "## Known Failed Directions", ""])
         lines.extend(_failure_entry_lines(failure_entries))
-    if not known_failures and not failure_entries:
+    if checked_counterexample_evidence:
+        lines.extend(["", "## Checked Counterexample Evidence", ""])
+        lines.extend(
+            _checked_counterexample_evidence_lines(checked_counterexample_evidence)
+        )
+    if (
+        not known_failures
+        and not failure_entries
+        and not checked_counterexample_evidence
+    ):
         lines.append("- None")
     return "\n".join(lines) + "\n"
 
@@ -660,6 +728,9 @@ def _render_retrieval_audit(
     issue: IssueRecord,
     retrieval: RetrievalResult,
     failure_entries: tuple[ContextFailureEntry, ...],
+    checked_counterexample_evidence: tuple[
+        ContextCheckedCounterexampleEvidenceEntry, ...
+    ],
     query: str,
     role: RetrievalRole,
     max_cards: int,
@@ -702,9 +773,15 @@ def _render_retrieval_audit(
             "card_count": len(retrieval.cards),
             "full_artifact_count": len(retrieval.full_artifact_pulls),
             "failure_entry_count": len(failure_entries),
+            "checked_counterexample_evidence_count": len(
+                checked_counterexample_evidence
+            ),
             "content_mode": _context_payload_mode(retrieval),
         },
         "failure_memory": [entry.to_dict() for entry in failure_entries],
+        "checked_counterexample_evidence": [
+            entry.to_dict() for entry in checked_counterexample_evidence
+        ],
         "audit": retrieval.audit.to_dict(),
     }
     return json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n"
@@ -793,6 +870,128 @@ def _context_failure_entries(
     return tuple(entries)
 
 
+def _context_checked_counterexample_evidence(
+    context: RepoContext,
+    *,
+    records: tuple[LoadedRecord, ...],
+    issue: IssueRecord,
+    cards: tuple[ContextPackCard, ...],
+    public_only: bool,
+) -> tuple[ContextCheckedCounterexampleEvidenceEntry, ...]:
+    visible_target_ids = {record.retrieved.card.id for record in cards}
+    visible_target_ids.update(
+        _directly_visible_issue_targets(
+            records,
+            issue=issue,
+            public_only=public_only,
+        )
+    )
+    entries = [
+        _checked_counterexample_evidence_entry(result)
+        for result in load_checked_counterexample_evidence(context)
+        if result.record.target_artifact_id in visible_target_ids
+    ]
+    return tuple(
+        sorted(
+            entries,
+            key=lambda entry: (
+                entry.target_artifact_id,
+                entry.evidence_id,
+                entry.source_path,
+            ),
+        )
+    )
+
+
+def _directly_visible_issue_targets(
+    records: tuple[LoadedRecord, ...],
+    *,
+    issue: IssueRecord,
+    public_only: bool,
+) -> set[str]:
+    if not issue.related_artifacts:
+        return set()
+    records_by_id = {
+        record.id: record
+        for record in records
+        if isinstance(record.record, BaseArtifact)
+    }
+    targets: set[str] = set()
+    for artifact_id in issue.related_artifacts:
+        loaded = records_by_id.get(artifact_id)
+        if loaded is None:
+            continue
+        scope = _root_scope_for_loaded_record(loaded)
+        if public_only and scope not in PUBLIC_CONTEXT_SCOPES:
+            continue
+        targets.add(artifact_id)
+    return targets
+
+
+def _checked_counterexample_evidence_entry(
+    result: CheckedCounterexampleEvidenceLoadResult,
+) -> ContextCheckedCounterexampleEvidenceEntry:
+    record = result.record
+    return ContextCheckedCounterexampleEvidenceEntry(
+        evidence_id=record.evidence_id,
+        target_artifact_id=record.target_artifact_id,
+        candidate_id=record.candidate_id,
+        candidate_source=record.candidate_source.value,
+        check_method=record.check_method.value,
+        checked_result=record.checked_result.value,
+        checker=record.checker,
+        source_path=result.relative_path.as_posix(),
+        verifier_evidence_ids=record.verifier_evidence_ids,
+        review_record_paths=record.review_record_paths,
+        evidence_paths=record.evidence_paths,
+        limitations=record.limitations,
+    )
+
+
+def _checked_counterexample_evidence_lines(
+    entries: tuple[ContextCheckedCounterexampleEvidenceEntry, ...],
+) -> list[str]:
+    lines = [
+        (
+            "Checked counterexample evidence is evidence for review only; it "
+            "does not create human review, accepted refutation, accepted "
+            "status, or promotion authority."
+        )
+    ]
+    for entry in entries:
+        support = _checked_counterexample_support_text(entry)
+        limitations = "; ".join(entry.limitations) if entry.limitations else "-"
+        lines.extend(
+            [
+                (
+                    f"- {entry.evidence_id} | target: {entry.target_artifact_id} "
+                    f"| result: {entry.checked_result} | path: {entry.source_path}"
+                ),
+                f"  - candidate: {entry.candidate_id} ({entry.candidate_source})",
+                f"  - method: {entry.check_method}; checker: {entry.checker}",
+                f"  - support: {support}",
+                f"  - limitations: {limitations}",
+            ]
+        )
+    return lines
+
+
+def _checked_counterexample_support_text(
+    entry: ContextCheckedCounterexampleEvidenceEntry,
+) -> str:
+    parts = []
+    if entry.verifier_evidence_ids:
+        parts.append(
+            "verifier_evidence="
+            + ",".join(sorted(entry.verifier_evidence_ids))
+        )
+    if entry.review_record_paths:
+        parts.append("review_records=" + ",".join(sorted(entry.review_record_paths)))
+    if entry.evidence_paths:
+        parts.append("evidence_paths=" + ",".join(sorted(entry.evidence_paths)))
+    return "; ".join(parts) if parts else "-"
+
+
 def _failure_entry_lines(
     failure_entries: tuple[ContextFailureEntry, ...],
 ) -> list[str]:
@@ -822,6 +1021,17 @@ def _failure_entry_lines(
             ]
         )
     return lines
+
+
+def _root_scope_for_loaded_record(loaded: LoadedRecord) -> MemoryRootScope:
+    kb_root_name = (loaded.kb_root_name or "").lower()
+    if kb_root_name == "public":
+        return MemoryRootScope.PUBLIC
+    if kb_root_name == "private":
+        return MemoryRootScope.PRIVATE
+    if kb_root_name == "framework":
+        return MemoryRootScope.FRAMEWORK
+    return MemoryRootScope.WORKSPACE
 
 
 def _combined_reasons(record: ContextPackCard) -> tuple[str, ...]:

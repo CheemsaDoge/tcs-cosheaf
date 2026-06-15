@@ -12,6 +12,9 @@ import cosheaf.gates.gatekeeper as gatekeeper_module
 from cosheaf.cli import app
 from cosheaf.core.artifact import BaseArtifact
 from cosheaf.storage.repo import RepoContext
+from cosheaf.verification.counterexample_evidence import (
+    CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
+)
 from cosheaf.verification.registry import VerifierRegistry
 from cosheaf.verification.result import VerificationResult, VerificationStatus
 
@@ -145,6 +148,34 @@ def _failure_log_entry(
         "next_possible_directions": ["Try a decomposition lemma first."],
         "status": status,
         "limitations": "Failure memory only; not proof or refutation.",
+    }
+
+
+def _checked_counterexample_evidence_record(
+    target_artifact_id: str,
+    *,
+    checked_result: str = "checked_refutes",
+) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "evidence_id": (
+            "checked-counterexample."
+            f"{target_artifact_id}.candidate.fixture.readiness.habc123"
+        ),
+        "target_artifact_id": target_artifact_id,
+        "candidate_id": "candidate.fixture.readiness",
+        "candidate_source": "manual_note",
+        "check_method": "executable_check",
+        "checked_result": checked_result,
+        "verifier_evidence_ids": [],
+        "review_record_paths": [],
+        "evidence_paths": [".cosheaf/evidence/readiness-check.json"],
+        "created_at": "2026-06-15T00:00:00Z",
+        "checker": "readiness-fixture-checker",
+        "limitations": [
+            CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
+            "Promotion readiness fixture evidence.",
+        ],
     }
 
 
@@ -293,6 +324,56 @@ def test_promotion_readiness_reports_unresolved_failure_memory_as_warning(
     assert "not verifier evidence" in warning["message"]
     assert "not a promotion blocker by itself" in warning["message"]
     assert "failed_verifier" not in {reason["code"] for reason in reasons}
+
+
+def test_promotion_readiness_reports_checked_evidence_as_warning_only(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "kb/private/draft/claims/claim.fixture.checked-evidence.yaml",
+        _artifact_data("claim.fixture.checked-evidence"),
+    )
+    _write_yaml(
+        tmp_path,
+        (
+            "reviews/evidence/checked-counterexamples/"
+            "checked-counterexample.claim.fixture.checked-evidence."
+            "candidate.fixture.readiness.habc123.yaml"
+        ),
+        _checked_counterexample_evidence_record("claim.fixture.checked-evidence"),
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "promotion",
+            "readiness",
+            "--artifact",
+            "claim.fixture.checked-evidence",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json_output(result.output)
+    assert payload["ready"] is True
+    artifact_report = payload["artifacts"][0]
+    assert artifact_report["ready"] is True
+    reasons = artifact_report["reasons"]
+    assert [reason["code"] for reason in reasons] == [
+        "checked_counterexample_evidence"
+    ]
+    warning = reasons[0]
+    assert warning["severity"] == "warning"
+    assert warning["status"] == "checked_refutes"
+    assert "evidence for review only" in warning["message"]
+    assert "not human review" in warning["message"]
+    assert "not a promotion blocker by itself" in warning["message"]
+    assert payload["accepted_write_performed"] is False
 
 
 def test_promotion_readiness_ignores_resolved_failure_memory(

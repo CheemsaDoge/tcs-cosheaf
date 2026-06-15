@@ -198,6 +198,15 @@ directions, but those warnings are not verifier failures, verifier passes,
 checked counterexamples, proof, refutation, human review, or automatic
 promotion blockers by themselves.
 
+Checked counterexample evidence is also separate from verifier evidence.
+`schemas/counterexample_evidence.schema.json` and
+`CheckedCounterexampleEvidenceRecord` record how a specific candidate
+counterexample was checked. Such records may reference `verifier_evidence_ids`,
+review-record paths, or evidence paths, but they do not create verifier pass,
+human review, accepted refutation, accepted status, or promotion authority.
+`checked_refutes` requires supporting evidence, and `skipped` checked evidence
+must explicitly say skipped is not pass evidence.
+
 ## Source Of Truth Versus Sidecars
 
 | Record or file | Current role | Source-of-truth status |
@@ -208,6 +217,7 @@ promotion blockers by themselves.
 | `reviews/gatekeeper/*` from `--persist-review` | Optional durable review copy of a gatekeeper report | Durable review artifact, but not reused as promotion source of truth |
 | `schemas/verifier.schema.json` | Artifact schema for verifier artifact records | Not a schema for runtime `VerificationResult` |
 | `schemas/verifier_evidence.schema.json` | v1 schema for serialized verifier evidence records | Added in C.2; not used as promotion source of truth |
+| `reviews/evidence/checked-counterexamples/*.yaml` | Durable checked counterexample evidence records | Review evidence only; not human review, accepted refutation, accepted status, or promotion authority |
 
 The current gap is that normalized verifier evidence has a runtime model and
 gate-report serialization, but not a dedicated durable evidence schema with a

@@ -54,14 +54,19 @@ from cosheaf.core.status import (
     is_preaccepted_status,
 )
 from cosheaf.evals import (
+    DEFAULT_CHECKED_EVIDENCE_RUN_LOOP_EVAL_CASES,
     DEFAULT_CONTEXT_EVAL_CASES,
     DEFAULT_RETRIEVAL_EVAL_CASES,
+    CheckedEvidenceRunLoopEvalError,
     ContextEvalError,
     RetrievalEvalError,
+    load_checked_evidence_run_loop_eval_suite,
     load_context_eval_suite,
     load_retrieval_eval_suite,
+    resolve_checked_evidence_run_loop_eval_case_path,
     resolve_context_eval_case_path,
     resolve_retrieval_eval_case_path,
+    run_checked_evidence_run_loop_eval_suite,
     run_context_eval_suite,
     run_retrieval_eval_suite,
 )
@@ -129,6 +134,13 @@ from cosheaf.storage.index import rebuild_index
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
 from cosheaf.storage.repo import RepoContext
 from cosheaf.storage.writer import write_yaml_deterministic
+from cosheaf.verification.counterexample_evidence import (
+    CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
+    CheckedCounterexampleEvidenceError,
+    show_checked_counterexample_evidence,
+    stage_checked_counterexample_evidence,
+    validate_checked_counterexample_evidence_payload,
+)
 
 app = typer.Typer(
     add_completion=False,
@@ -143,6 +155,16 @@ artifact_app = typer.Typer(
 artifact_failure_app = typer.Typer(
     add_completion=False,
     help="Artifact failure-log write commands.",
+    no_args_is_help=True,
+)
+counterexample_app = typer.Typer(
+    add_completion=False,
+    help="Counterexample commands.",
+    no_args_is_help=True,
+)
+counterexample_evidence_app = typer.Typer(
+    add_completion=False,
+    help="Checked counterexample evidence commands.",
     no_args_is_help=True,
 )
 index_app = typer.Typer(
@@ -231,6 +253,8 @@ promotion_app = typer.Typer(
 )
 app.add_typer(artifact_app, name="artifact")
 artifact_app.add_typer(artifact_failure_app, name="failure")
+app.add_typer(counterexample_app, name="counterexample")
+counterexample_app.add_typer(counterexample_evidence_app, name="evidence")
 app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
 app.add_typer(gate_app, name="gate")
@@ -625,6 +649,141 @@ def artifact_failure_add_from_bundle(
     )
     console.print(f"- entries: {len(result.plan.entries)}")
     console.print("- accepted knowledge merge: not performed")
+
+
+@counterexample_evidence_app.command("validate")
+def counterexample_evidence_validate(
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="JSON checked counterexample evidence record to validate.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for path policy context.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Validate a checked counterexample evidence record without writing."""
+    console = Console(width=120, markup=False)
+    raw = _read_input_json_or_exit(input_json, json_output=json_output)
+    try:
+        RepoContext(repo_root)
+        record = validate_checked_counterexample_evidence_payload(raw)
+    except (CheckedCounterexampleEvidenceError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _checked_evidence_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+
+    payload = {
+        "schema_version": 1,
+        "valid": True,
+        "accepted_write_performed": False,
+        "authority_notice": CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
+        "evidence": record.to_dict(),
+    }
+    if json_output:
+        _emit_json(payload)
+        return
+    console.print(f"Checked counterexample evidence valid: {record.evidence_id}")
+    console.print("- accepted write: not performed")
+    console.print(f"- authority: {CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE}")
+
+
+@counterexample_evidence_app.command("stage")
+def counterexample_evidence_stage(
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="JSON checked counterexample evidence record to stage.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for controlled checked evidence staging.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Validate and report target path without writing files.",
+    ),
+) -> None:
+    """Write or preview a checked counterexample evidence record."""
+    console = Console(width=120, markup=False)
+    raw = _read_input_json_or_exit(input_json, json_output=json_output)
+    try:
+        result = stage_checked_counterexample_evidence(
+            RepoContext(repo_root),
+            raw,
+            dry_run=dry_run,
+        )
+    except (CheckedCounterexampleEvidenceError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _checked_evidence_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    action = "would write" if result.dry_run else "wrote"
+    console.print(
+        f"{result.to_dict()['kind']}: {action} "
+        f"{result.relative_path.as_posix()}"
+    )
+    console.print("- accepted knowledge merge: not performed")
+    console.print(f"- authority: {CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE}")
+
+
+@counterexample_evidence_app.command("show")
+def counterexample_evidence_show(
+    evidence: str = typer.Option(
+        ...,
+        "--evidence",
+        help="Checked evidence ID or repository-local YAML path.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Show staged checked counterexample evidence by ID or path."""
+    console = Console(width=120, markup=False)
+    try:
+        result = show_checked_counterexample_evidence(RepoContext(repo_root), evidence)
+    except (CheckedCounterexampleEvidenceError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _checked_evidence_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Checked counterexample evidence: {result.record.evidence_id}")
+    console.print(f"- path: {result.relative_path.as_posix()}")
+    console.print(f"- result: {result.record.checked_result.value}")
+    console.print(f"- authority: {CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE}")
 
 
 @artifact_app.command("create")
@@ -1694,6 +1853,71 @@ def eval_context(
             f"private_leakage={case.metrics.private_leakage_count} "
             f"required_hit={case.metrics.required_artifact_hit:.6f} "
             f"failures={failures}"
+        )
+
+    if not report.passed:
+        raise typer.Exit(code=1)
+
+
+@eval_app.command("checked-evidence-run-loop")
+def eval_checked_evidence_run_loop(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    cases: Path = typer.Option(
+        DEFAULT_CHECKED_EVIDENCE_RUN_LOOP_EVAL_CASES,
+        "--cases",
+        help="Repository-local YAML checked-evidence eval case file.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text summary.",
+    ),
+) -> None:
+    """Run deterministic checked-evidence run-loop regression cases."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        case_path = resolve_checked_evidence_run_loop_eval_case_path(
+            context,
+            cases,
+        )
+        suite = load_checked_evidence_run_loop_eval_suite(case_path)
+        report = run_checked_evidence_run_loop_eval_suite(context, suite)
+    except CheckedEvidenceRunLoopEvalError as exc:
+        console.print(f"Checked-evidence run-loop eval failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(report.to_json(), nl=False)
+        return
+
+    verdict = "pass" if report.passed else "fail"
+    console.print(f"Checked-evidence run-loop eval verdict: {verdict}")
+    console.print(f"- cases: {report.case_count}")
+    console.print(
+        "- candidate_checked_separation_accuracy: "
+        f"{report.metrics.candidate_checked_separation_accuracy:.6f}"
+    )
+    console.print(
+        "- checked_refutes_support_count: "
+        f"{report.metrics.checked_refutes_support_count}"
+    )
+    console.print(f"- skipped_not_pass_count: {report.metrics.skipped_not_pass_count}")
+    console.print(
+        "- accepted_write_violation_count: "
+        f"{report.metrics.accepted_write_violation_count}"
+    )
+    for case in report.cases:
+        failures = ",".join(case.failures) if case.failures else "-"
+        console.print(
+            f"- {case.id}: result={case.checked_result or '-'} "
+            f"candidate_only={str(case.candidate_review_only).lower()} "
+            f"checked_refutation={str(case.checked_refutation).lower()} "
+            f"support={str(case.support_present).lower()} failures={failures}"
         )
 
     if not report.passed:
@@ -2795,6 +3019,36 @@ def _exception_to_error_result(
         code=default_code,
         message=str(exc),
         remediation="Fix the request and retry.",
+        blocking=True,
+    )
+
+
+def _checked_evidence_error_result(exc: Exception) -> ErrorResult:
+    if isinstance(exc, CheckedCounterexampleEvidenceError):
+        return ErrorResult(
+            code=exc.code,
+            message=str(exc),
+            remediation=exc.remediation,
+            blocking=True,
+            details=exc.details,
+        )
+    if isinstance(exc, ValidationError):
+        return ErrorResult(
+            code="checked_evidence_validation_failed",
+            message=_format_pydantic_errors(exc),
+            remediation=(
+                "Fix the checked counterexample evidence fields and retry. "
+                "Checked evidence is review evidence only."
+            ),
+            blocking=True,
+        )
+    return ErrorResult(
+        code="checked_evidence_validation_failed",
+        message=str(exc),
+        remediation=(
+            "Fix the checked counterexample evidence fields and retry. "
+            "Checked evidence is review evidence only."
+        ),
         blocking=True,
     )
 

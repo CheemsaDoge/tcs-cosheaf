@@ -2,7 +2,7 @@
 
 ## Milestone
 
-`v0.3.0` Checked Evidence + Research Run Loop kickoff.
+`v0.3.0` Checked Evidence + Research Run Loop implementation.
 
 ## Goal
 
@@ -37,6 +37,10 @@ informal/formal semantic alignment.
   plan.
 - ADR 0024 records the checked-evidence and research-run-loop direction.
 - `docs/POST_V024_V030_KICKOFF_AUDIT.md` records the kickoff state audit.
+- The checked counterexample evidence core is now implemented on the active
+  development branch: model, schema, CLI, controlled staging, context
+  surfacing, promotion-readiness warnings, security tests, eval fixtures, and
+  docs. It remains non-authoritative review evidence.
 
 ## Active Scope
 
@@ -55,17 +59,27 @@ Compressed milestones:
 5. Integration, eval, and three-repository smoke.
 6. v0.3.0 release candidate and publication closeout.
 
-## Next Functional Task
+## Current And Next Functional Tasks
 
-After the kickoff audit PR merges, proceed to:
+Current functional task:
 
 ```text
 checked-counterexample-evidence-core
 ```
 
-This task should implement the checked counterexample evidence model, schema,
-CLI, context/readiness surfacing, security tests, eval fixtures, and docs in
-one reviewable PR.
+This task implements the checked counterexample evidence model, schema, CLI,
+context/readiness surfacing, security tests, eval fixtures, and docs in one
+reviewable PR.
+
+After this PR lands, proceed to:
+
+```text
+research-run-record-cli-core
+```
+
+That next task should implement external-operator research-run provenance with
+start, append, finalize, show, evidence-report, export-review, and replay-plan
+CLI surfaces without provider/MCP expansion or accepted-write authority.
 
 ## Explicit Boundaries
 
@@ -103,11 +117,14 @@ one reviewable PR.
 
 ## Current Operating State
 
-The V6 artifact failure-memory line is complete. New work should follow the
-accelerated V7 plan for `v0.3.0` and avoid treating failure memory,
-counterexample candidates, verifier requests, verifier evidence, provider
-output, run records, evals, validation, gates, or context retrieval as human
-review, proof, accepted status, or promotion authority.
+The V6 artifact failure-memory line is complete. New work follows the
+accelerated V7 plan for `v0.3.0`. Checked counterexample evidence is now a
+durable review-evidence surface, but it remains separate from human review,
+accepted refutation, accepted status, and promotion authority. Continue to
+avoid treating failure memory, counterexample candidates, verifier requests,
+verifier evidence, checked evidence, provider output, run records, evals,
+validation, gates, or context retrieval as human review, proof, accepted
+status, or promotion authority.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show

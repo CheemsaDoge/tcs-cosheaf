@@ -2,6 +2,20 @@
 
 from __future__ import annotations
 
+from cosheaf.evals.checked_evidence_run_loop import (
+    DEFAULT_CHECKED_EVIDENCE_RUN_LOOP_EVAL_CASES,
+    CheckedEvidenceRunLoopEvalCase,
+    CheckedEvidenceRunLoopEvalCaseResult,
+    CheckedEvidenceRunLoopEvalError,
+    CheckedEvidenceRunLoopEvalKind,
+    CheckedEvidenceRunLoopEvalMetrics,
+    CheckedEvidenceRunLoopEvalReport,
+    CheckedEvidenceRunLoopEvalSuite,
+    load_checked_evidence_run_loop_eval_suite,
+    resolve_checked_evidence_run_loop_eval_case_path,
+    run_checked_evidence_run_loop_eval_case,
+    run_checked_evidence_run_loop_eval_suite,
+)
 from cosheaf.evals.context import (
     DEFAULT_CONTEXT_EVAL_CASES,
     ContextEvalCase,
@@ -30,8 +44,16 @@ from cosheaf.evals.retrieval import (
 )
 
 __all__ = [
+    "DEFAULT_CHECKED_EVIDENCE_RUN_LOOP_EVAL_CASES",
     "DEFAULT_CONTEXT_EVAL_CASES",
     "DEFAULT_RETRIEVAL_EVAL_CASES",
+    "CheckedEvidenceRunLoopEvalCase",
+    "CheckedEvidenceRunLoopEvalCaseResult",
+    "CheckedEvidenceRunLoopEvalError",
+    "CheckedEvidenceRunLoopEvalKind",
+    "CheckedEvidenceRunLoopEvalMetrics",
+    "CheckedEvidenceRunLoopEvalReport",
+    "CheckedEvidenceRunLoopEvalSuite",
     "ContextEvalCase",
     "ContextEvalCaseResult",
     "ContextEvalError",
@@ -44,10 +66,14 @@ __all__ = [
     "RetrievalEvalMetrics",
     "RetrievalEvalReport",
     "RetrievalEvalSuite",
+    "load_checked_evidence_run_loop_eval_suite",
     "load_context_eval_suite",
     "load_retrieval_eval_suite",
+    "resolve_checked_evidence_run_loop_eval_case_path",
     "resolve_context_eval_case_path",
     "resolve_retrieval_eval_case_path",
+    "run_checked_evidence_run_loop_eval_case",
+    "run_checked_evidence_run_loop_eval_suite",
     "run_context_eval_case",
     "run_context_eval_suite",
     "run_retrieval_eval_suite",

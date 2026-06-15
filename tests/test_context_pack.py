@@ -319,6 +319,7 @@ def test_context_pack_v2_uses_cards_and_audit_by_default(tmp_path: Path) -> None
         "card_count": 1,
         "full_artifact_count": 0,
         "failure_entry_count": 0,
+        "checked_counterexample_evidence_count": 0,
         "content_mode": "cards_only",
     }
     assert audit["full_artifact_pulls"] == []
@@ -383,6 +384,7 @@ def test_context_pack_worker_role_can_pull_bounded_full_artifacts(
         "card_count": 2,
         "full_artifact_count": 1,
         "failure_entry_count": 0,
+        "checked_counterexample_evidence_count": 0,
         "content_mode": "cards_with_full_artifacts",
     }
     assert "role=verifier" in audit["full_artifact_pulls"][0]["reason"]

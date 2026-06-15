@@ -36,6 +36,7 @@ REQUIRED_DIRECTORIES = [
 
 SCHEMA_FILES = [
     "schemas/artifact.schema.json",
+    "schemas/counterexample_evidence.schema.json",
     "schemas/issue.schema.json",
     "schemas/review.schema.json",
     "schemas/verifier.schema.json",

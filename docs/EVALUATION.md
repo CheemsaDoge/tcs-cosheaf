@@ -22,7 +22,10 @@ and verification requests as review context. The verifier evidence eval harness
 checks verifier-result, promotion-readiness, candidate-counterexample, and Lean
 `#check` boundaries with deterministic fake evidence records. The artifact
 failure-memory eval harness checks artifact-level failure-log retrieval and
-governance boundaries. These harnesses reuse existing runtime surfaces; they
+governance boundaries. The checked-evidence run-loop eval harness checks the
+candidate-vs-checked counterexample boundary, supporting evidence requirements,
+skipped-not-pass behavior, and non-authority constraints for durable checked
+counterexample evidence. These harnesses reuse existing runtime surfaces; they
 do not introduce new retrieval, context-pack, provider, MCP, verifier, or
 orchestration algorithms.
 
@@ -440,6 +443,62 @@ proof evidence, verifier success, checked counterexample evidence, human
 review, source review, gate success, accepted status, accepted refutation, or
 promotion authority.
 
+## Checked-Evidence Run-Loop Eval Cases
+
+Checked-evidence run-loop eval cases are YAML records under
+`evals/checked_evidence_run_loop/`. The default case file is:
+
+```text
+evals/checked_evidence_run_loop/cases.yaml
+```
+
+The harness is available both as a Python API in
+`cosheaf.evals.checked_evidence_run_loop` and as a CLI command:
+
+```bash
+cosheaf eval checked-evidence-run-loop --json
+```
+
+Case file format:
+
+```yaml
+schema_version: 1
+cases:
+  - id: case.checked-evidence.checked-refutes-with-support
+    kind: checked_refutes_with_support
+    expect_checked_result: checked_refutes
+    expect_checked_refutation: true
+    expect_support_required: true
+```
+
+Required case kinds for the default suite are:
+
+- `candidate_remains_candidate`: a candidate remains review-only and is not
+  treated as checked evidence.
+- `checked_refutes_with_support`: `checked_refutes` has supporting evidence.
+- `skipped_not_pass`: skipped checked evidence is not treated as pass.
+- `inconclusive_not_refutes`: inconclusive results are not refutations.
+- `error_not_pass`: error results are not passes or refutations.
+
+## Checked-Evidence Run-Loop Metrics
+
+The checked-evidence run-loop eval report records:
+
+- `candidate_checked_separation_accuracy`: fraction of cases that preserve the
+  expected candidate-vs-checked boundary.
+- `checked_refutes_support_count`: count of checked-refutation cases with
+  supporting verifier evidence IDs, review paths, or evidence paths.
+- `skipped_not_pass_count`: count of skipped cases that remain skipped and are
+  not treated as pass.
+- `non_refuting_result_count`: count of `inconclusive` and `error` cases that
+  do not become refutations.
+- `accepted_write_violation_count`: count of cases that opened or reported an
+  accepted write.
+
+These metrics are regression signals only. Checked counterexample evidence is
+not proof evidence, human review, accepted status, accepted refutation, or
+promotion authority.
+
 ## Verifier Evidence Eval Cases
 
 Verifier evidence eval cases are YAML records under `evals/verifier_evidence/`.
@@ -449,8 +508,7 @@ The default case file is:
 evals/verifier_evidence/cases.yaml
 ```
 
-The harness is a Python API in `cosheaf.evals.verifier_evidence`; there is no
-dedicated `cosheaf eval verifier-evidence` CLI command in this phase. Tests load
+The harness is a Python API in `cosheaf.evals.verifier_evidence`. Tests load
 the suite and exercise deterministic fake verifier evidence records plus typed
 counterexample candidate fixtures. It does not run SAT, SMT, Lean, lake, or any
 external checker.
@@ -563,10 +621,17 @@ context-pack writer.
 
 The agent workflow, provider workflow, failure/counterexample, artifact
 failure-memory, and verifier evidence evals currently have no CLI commands.
+The checked-evidence run-loop eval has a CLI command:
+
+```bash
+cosheaf eval checked-evidence-run-loop --json
+```
+
 Running them from Python may refresh `context/TASKS/<issue-id>/` context
 packs, redacted provider logs under `.cosheaf/providers/`, and eval fixtures
-under `.cosheaf/evals/`. Verifier evidence evals use in-memory fake evidence
-records and typed candidate fixtures. Runtime outputs should not be committed.
+under `.cosheaf/evals/`. Verifier and checked-evidence evals use in-memory fake
+evidence records and typed candidate fixtures. Runtime outputs should not be
+committed.
 
 ## Limitations
 
