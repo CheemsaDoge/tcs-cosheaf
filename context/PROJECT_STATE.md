@@ -3,6 +3,43 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Research Run Record CLI Core - 2026-06-15
+
+Issue 336 implements the second functional `v0.3.0` research-run surface. The
+new `ResearchRunRecord` model and `schemas/research_run.schema.json` define a
+repository-local provenance ledger for external operator work. Runtime records
+are written under `.cosheaf/runs/<run-id>/run.json`; explicit review exports
+are written under `reviews/runs/<run-id>.yaml`.
+
+The CLI now exposes:
+
+- `cosheaf run start --issue <issue-id> --operator external --json`
+- `cosheaf run append-command --run <run-id> --input-json <path> --json`
+- `cosheaf run append-artifact --run <run-id> --artifact <artifact-id> --json`
+- `cosheaf run append-output --run <run-id> --input-json <path> --json`
+- `cosheaf run finalize --run <run-id> --status <status> --stop-reason <text> --json`
+- `cosheaf run show <run-id> --json`
+- `cosheaf run evidence-report --run <run-id> --json`
+- `cosheaf run export-review --run <run-id> --dry-run --json`
+- `cosheaf run export-review --run <run-id> --json`
+- `cosheaf run replay-plan --run <run-id> --json`
+
+Command records are sanitized before persistence, and output references must be
+repository-local and outside accepted KB paths. Research-run payloads reject
+authority-spoofing fields, hidden-reasoning fields, and secret-looking text in
+free-form summaries. `replay-plan` is read-only and performs no execution.
+
+The new deterministic eval harness `cosheaf.evals.research_run_loop` and CLI
+command `cosheaf eval research-run-loop --json` cover command coverage,
+skipped-not-pass, evidence separation, private-leak prevention, and authority
+escalation. The harness uses local fixtures and does not call hosted providers,
+MCP, SAT, SMT, Lean, lake, network, or API-key-backed services.
+
+This task does not bump package version, run providers, require MCP, write
+accepted knowledge, create human review, mark verifier or gate pass, change
+promotion semantics, or claim proof/semantic alignment. Research-run records
+are provenance for review only.
+
 ## Checked Counterexample Evidence Core - 2026-06-15
 
 Issue 334 implements the first functional `v0.3.0` checked-evidence surface.

@@ -37,10 +37,14 @@ informal/formal semantic alignment.
   plan.
 - ADR 0024 records the checked-evidence and research-run-loop direction.
 - `docs/POST_V024_V030_KICKOFF_AUDIT.md` records the kickoff state audit.
-- The checked counterexample evidence core is now implemented on the active
-  development branch: model, schema, CLI, controlled staging, context
-  surfacing, promotion-readiness warnings, security tests, eval fixtures, and
-  docs. It remains non-authoritative review evidence.
+- The checked counterexample evidence core is implemented and merged through
+  PR #335: model, schema, CLI, controlled staging, context surfacing,
+  promotion-readiness warnings, security tests, eval fixtures, and docs. It
+  remains non-authoritative review evidence.
+- The research-run record CLI core is now implemented on the active
+  development branch: model, schema, lifecycle CLI, command/artifact/output
+  append paths, evidence report, review export, replay plan, security tests,
+  eval fixtures, and docs. It remains non-authoritative provenance.
 
 ## Active Scope
 
@@ -64,22 +68,21 @@ Compressed milestones:
 Current functional task:
 
 ```text
-checked-counterexample-evidence-core
+research-run-record-cli-core
 ```
 
-This task implements the checked counterexample evidence model, schema, CLI,
-context/readiness surfacing, security tests, eval fixtures, and docs in one
-reviewable PR.
+This task implements external-operator research-run provenance with start,
+append, finalize, show, evidence-report, export-review, and replay-plan CLI
+surfaces without provider/MCP expansion or accepted-write authority.
 
 After this PR lands, proceed to:
 
 ```text
-research-run-record-cli-core
+external-operator-workflow-docs
 ```
 
-That next task should implement external-operator research-run provenance with
-start, append, finalize, show, evidence-report, export-review, and replay-plan
-CLI surfaces without provider/MCP expansion or accepted-write authority.
+That next task should update operator-facing docs and templates so Codex-style
+agents run the checked-evidence and research-run loop through CLI/Git.
 
 ## Explicit Boundaries
 
@@ -122,9 +125,9 @@ accelerated V7 plan for `v0.3.0`. Checked counterexample evidence is now a
 durable review-evidence surface, but it remains separate from human review,
 accepted refutation, accepted status, and promotion authority. Continue to
 avoid treating failure memory, counterexample candidates, verifier requests,
-verifier evidence, checked evidence, provider output, run records, evals,
-validation, gates, or context retrieval as human review, proof, accepted
-status, or promotion authority.
+verifier evidence, checked evidence, research-run records, provider output,
+evals, validation, gates, or context retrieval as human review, proof, accepted
+status, verifier pass, gate pass, or promotion authority.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show

@@ -56,18 +56,23 @@ from cosheaf.core.status import (
 from cosheaf.evals import (
     DEFAULT_CHECKED_EVIDENCE_RUN_LOOP_EVAL_CASES,
     DEFAULT_CONTEXT_EVAL_CASES,
+    DEFAULT_RESEARCH_RUN_LOOP_EVAL_CASES,
     DEFAULT_RETRIEVAL_EVAL_CASES,
     CheckedEvidenceRunLoopEvalError,
     ContextEvalError,
+    ResearchRunLoopEvalError,
     RetrievalEvalError,
     load_checked_evidence_run_loop_eval_suite,
     load_context_eval_suite,
+    load_research_run_loop_eval_suite,
     load_retrieval_eval_suite,
     resolve_checked_evidence_run_loop_eval_case_path,
     resolve_context_eval_case_path,
+    resolve_research_run_loop_eval_case_path,
     resolve_retrieval_eval_case_path,
     run_checked_evidence_run_loop_eval_suite,
     run_context_eval_suite,
+    run_research_run_loop_eval_suite,
     run_retrieval_eval_suite,
 )
 from cosheaf.gates.gatekeeper import (
@@ -93,6 +98,19 @@ from cosheaf.memory import (
     build_memory_graph,
     compute_global_pagerank,
     load_memory_graph_snapshot,
+)
+from cosheaf.research.run import (
+    RESEARCH_RUN_AUTHORITY_NOTICE,
+    ResearchRunError,
+    append_artifact_to_research_run,
+    append_command_to_research_run,
+    append_output_to_research_run,
+    build_replay_plan,
+    build_research_run_evidence_report,
+    export_research_run_review,
+    finalize_research_run,
+    load_research_run,
+    start_research_run,
 )
 from cosheaf.services import (
     BundleValidationService,
@@ -206,6 +224,11 @@ review_app = typer.Typer(
     help="Controlled review request commands.",
     no_args_is_help=True,
 )
+run_app = typer.Typer(
+    add_completion=False,
+    help="Research-run provenance commands.",
+    no_args_is_help=True,
+)
 orchestrator_app = typer.Typer(
     add_completion=False,
     help="Deterministic local orchestrator commands.",
@@ -263,6 +286,7 @@ app.add_typer(task_app, name="task")
 app.add_typer(draft_app, name="draft")
 app.add_typer(bundle_app, name="bundle")
 app.add_typer(review_app, name="review")
+app.add_typer(run_app, name="run")
 app.add_typer(orchestrator_app, name="orchestrator")
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(ingest_app, name="ingest")
@@ -784,6 +808,371 @@ def counterexample_evidence_show(
     console.print(f"- path: {result.relative_path.as_posix()}")
     console.print(f"- result: {result.record.checked_result.value}")
     console.print(f"- authority: {CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE}")
+
+
+@run_app.command("start")
+def research_run_start(
+    issue_id: str = typer.Option(
+        ...,
+        "--issue",
+        help="Issue ID this research run addresses.",
+    ),
+    operator: str = typer.Option(
+        ...,
+        "--operator",
+        help="Operator kind, usually external.",
+    ),
+    operator_label: str = typer.Option(
+        "external operator",
+        "--operator-label",
+        help="Human-readable operator label.",
+    ),
+    run_id: str | None = typer.Option(
+        None,
+        "--run-id",
+        help="Optional deterministic run ID.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for run storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Start a repository-local research run record."""
+    console = Console(width=120, markup=False)
+    try:
+        result = start_research_run(
+            RepoContext(repo_root),
+            issue_id=issue_id,
+            operator_kind=operator,
+            operator_label=operator_label,
+            run_id=run_id,
+        )
+    except (ResearchRunError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_run_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Research run started: {result.record.run_id}")
+    console.print(f"- path: {result.relative_path.as_posix()}")
+    console.print(f"- authority: {RESEARCH_RUN_AUTHORITY_NOTICE}")
+
+
+@run_app.command("append-command")
+def research_run_append_command(
+    run_id: str = typer.Option(..., "--run", help="Research run ID."),
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="JSON command record to append.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for run storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Append a command record to an in-progress research run."""
+    console = Console(width=120, markup=False)
+    raw = _read_input_json_or_exit(input_json, json_output=json_output)
+    try:
+        result = append_command_to_research_run(
+            RepoContext(repo_root),
+            run_id=run_id,
+            payload=raw,
+        )
+    except (ResearchRunError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_run_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Research run command appended: {result.record.run_id}")
+    console.print(f"- commands: {len(result.record.commands)}")
+
+
+@run_app.command("append-artifact")
+def research_run_append_artifact(
+    run_id: str = typer.Option(..., "--run", help="Research run ID."),
+    artifact_id: str = typer.Option(
+        ...,
+        "--artifact",
+        help="Artifact ID read or touched during the run.",
+    ),
+    mode: str = typer.Option(
+        "read",
+        "--mode",
+        help="Artifact relation: read or touched.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for run storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Append an artifact read/touched marker to a research run."""
+    console = Console(width=120, markup=False)
+    try:
+        result = append_artifact_to_research_run(
+            RepoContext(repo_root),
+            run_id=run_id,
+            artifact_id=artifact_id,
+            mode=mode,
+        )
+    except (ResearchRunError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_run_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Research run artifact appended: {result.record.run_id}")
+
+
+@run_app.command("append-output")
+def research_run_append_output(
+    run_id: str = typer.Option(..., "--run", help="Research run ID."),
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="JSON output/reference record to append.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for run storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Append an output/reference record to an in-progress research run."""
+    console = Console(width=120, markup=False)
+    raw = _read_input_json_or_exit(input_json, json_output=json_output)
+    try:
+        result = append_output_to_research_run(
+            RepoContext(repo_root),
+            run_id=run_id,
+            payload=raw,
+        )
+    except (ResearchRunError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_run_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Research run output appended: {result.record.run_id}")
+
+
+@run_app.command("finalize")
+def research_run_finalize(
+    run_id: str = typer.Option(..., "--run", help="Research run ID."),
+    status: str = typer.Option(..., "--status", help="Terminal run status."),
+    stop_reason: str = typer.Option(
+        ...,
+        "--stop-reason",
+        help="Why the run stopped.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for run storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Finalize a research run with a terminal status."""
+    console = Console(width=120, markup=False)
+    try:
+        result = finalize_research_run(
+            RepoContext(repo_root),
+            run_id=run_id,
+            status=status,
+            stop_reason=stop_reason,
+        )
+    except (ResearchRunError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_run_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Research run finalized: {result.record.run_id}")
+    console.print(f"- status: {result.record.status.value}")
+
+
+@run_app.command("show")
+def research_run_show(
+    run_id: str = typer.Argument(..., help="Research run ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for run storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Show one runtime research run record."""
+    console = Console(width=120, markup=False)
+    try:
+        result = load_research_run(RepoContext(repo_root), run_id)
+    except (ResearchRunError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_run_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Research run: {result.record.run_id}")
+    console.print(f"- status: {result.record.status.value}")
+    console.print(f"- authority: {RESEARCH_RUN_AUTHORITY_NOTICE}")
+
+
+@run_app.command("evidence-report")
+def research_run_evidence_report(
+    run_id: str = typer.Option(..., "--run", help="Research run ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for run storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Show read-only evidence counts for a research run."""
+    console = Console(width=120, markup=False)
+    try:
+        result = load_research_run(RepoContext(repo_root), run_id)
+    except (ResearchRunError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_run_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    payload = build_research_run_evidence_report(result.record)
+    if json_output:
+        _emit_json(payload)
+        return
+    console.print(f"Research run evidence report: {result.record.run_id}")
+    console.print(f"- commands: {payload['command_count']}")
+    console.print(f"- authority: {RESEARCH_RUN_AUTHORITY_NOTICE}")
+
+
+@run_app.command("export-review")
+def research_run_export_review(
+    run_id: str = typer.Option(..., "--run", help="Research run ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for run storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Preview review export path without writing.",
+    ),
+) -> None:
+    """Export a runtime research run into review-controlled YAML."""
+    console = Console(width=120, markup=False)
+    try:
+        result = export_research_run_review(
+            RepoContext(repo_root),
+            run_id=run_id,
+            dry_run=dry_run,
+        )
+    except (ResearchRunError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_run_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    action = "would write" if result.dry_run else "wrote"
+    console.print(
+        f"Research run review export: {action} "
+        f"{result.relative_path.as_posix()}"
+    )
+
+
+@run_app.command("replay-plan")
+def research_run_replay_plan(
+    run_id: str = typer.Option(..., "--run", help="Research run ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for run storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Show a read-only replay plan for recorded commands."""
+    console = Console(width=120, markup=False)
+    try:
+        result = load_research_run(RepoContext(repo_root), run_id)
+    except (ResearchRunError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_run_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    payload = build_replay_plan(result.record)
+    if json_output:
+        _emit_json(payload)
+        return
+    console.print(f"Research run replay plan: {result.record.run_id}")
+    console.print("- read-only: true")
 
 
 @artifact_app.command("create")
@@ -1924,6 +2313,59 @@ def eval_checked_evidence_run_loop(
         raise typer.Exit(code=1)
 
 
+@eval_app.command("research-run-loop")
+def eval_research_run_loop(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    cases: Path = typer.Option(
+        DEFAULT_RESEARCH_RUN_LOOP_EVAL_CASES,
+        "--cases",
+        help="Repository-local YAML research-run eval case file.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text summary.",
+    ),
+) -> None:
+    """Run deterministic research-run loop regression cases."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        case_path = resolve_research_run_loop_eval_case_path(context, cases)
+        suite = load_research_run_loop_eval_suite(case_path)
+        report = run_research_run_loop_eval_suite(context, suite)
+    except ResearchRunLoopEvalError as exc:
+        console.print(f"Research-run loop eval failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(report.to_json(), nl=False)
+        return
+
+    verdict = "pass" if report.passed else "fail"
+    console.print(f"Research-run loop eval verdict: {verdict}")
+    console.print(f"- cases: {report.case_count}")
+    console.print(
+        "- command_coverage_accuracy: "
+        f"{report.metrics.command_coverage_accuracy:.6f}"
+    )
+    console.print(f"- skipped_not_pass_count: {report.metrics.skipped_not_pass_count}")
+    console.print(
+        "- authority_escalation_count: "
+        f"{report.metrics.authority_escalation_count}"
+    )
+    for case in report.cases:
+        failures = ",".join(case.failures) if case.failures else "-"
+        console.print(f"- {case.id}: passed={str(case.passed).lower()} {failures}")
+
+    if not report.passed:
+        raise typer.Exit(code=1)
+
+
 @memory_graph_app.command("build")
 def memory_graph_build(
     repo_root: Path = typer.Option(
@@ -3048,6 +3490,36 @@ def _checked_evidence_error_result(exc: Exception) -> ErrorResult:
         remediation=(
             "Fix the checked counterexample evidence fields and retry. "
             "Checked evidence is review evidence only."
+        ),
+        blocking=True,
+    )
+
+
+def _research_run_error_result(exc: Exception) -> ErrorResult:
+    if isinstance(exc, ResearchRunError):
+        return ErrorResult(
+            code=exc.code,
+            message=str(exc),
+            remediation=exc.remediation,
+            blocking=True,
+            details=exc.details,
+        )
+    if isinstance(exc, ValidationError):
+        return ErrorResult(
+            code="research_run_validation_failed",
+            message=_format_pydantic_errors(exc),
+            remediation=(
+                "Fix the research-run payload and retry. "
+                "Research runs are provenance only."
+            ),
+            blocking=True,
+        )
+    return ErrorResult(
+        code="research_run_validation_failed",
+        message=str(exc),
+        remediation=(
+            "Fix the research-run payload and retry. "
+            "Research runs are provenance only."
         ),
         blocking=True,
     )

@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TCS-Cosheaf Research Run Record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "issue_id",
+    "operator_kind",
+    "operator_label",
+    "status",
+    "started_at",
+    "limitations",
+    "authority_notice",
+    "accepted_write_performed"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "issue_id": {
+      "type": "string"
+    },
+    "operator_kind": {
+      "type": "string",
+      "enum": ["external", "human", "local"]
+    },
+    "operator_label": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["in_progress", "completed", "failed", "blocked", "cancelled"]
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ended_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "stop_reason": {
+      "type": ["string", "null"]
+    },
+    "base_commit": {
+      "type": ["string", "null"]
+    },
+    "head_commit": {
+      "type": ["string", "null"]
+    },
+    "dirty_state_note": {
+      "type": ["string", "null"]
+    },
+    "workspace_info_summary": {
+      "type": ["object", "null"]
+    },
+    "context_packs": {
+      "type": "array"
+    },
+    "commands": {
+      "type": "array"
+    },
+    "artifacts_read": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "artifacts_touched": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "controlled_write_outputs": {
+      "type": "array"
+    },
+    "worker_bundle_paths": {
+      "type": "array"
+    },
+    "verifier_evidence_paths": {
+      "type": "array"
+    },
+    "checked_counterexample_evidence_paths": {
+      "type": "array"
+    },
+    "failure_log_entries_added": {
+      "type": "array"
+    },
+    "validation_reports": {
+      "type": "array"
+    },
+    "gate_reports": {
+      "type": "array"
+    },
+    "pr_references": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "issue_references": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "contains": {
+        "const": "Research run records are provenance for review only; they are not proof, verifier pass, gate pass, human review, accepted status, or promotion authority."
+      },
+      "minItems": 1
+    },
+    "operator_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "authority_notice": {
+      "const": "Research run records are provenance for review only; they are not proof, verifier pass, gate pass, human review, accepted status, or promotion authority."
+    },
+    "accepted_write_performed": {
+      "const": false
+    }
+  }
+}

@@ -499,6 +499,38 @@ These metrics are regression signals only. Checked counterexample evidence is
 not proof evidence, human review, accepted status, accepted refutation, or
 promotion authority.
 
+## Research-Run Loop Eval Cases
+
+Research-run loop eval cases are YAML records under `evals/research_run_loop/`.
+The default case file is:
+
+```text
+evals/research_run_loop/cases.yaml
+```
+
+The harness is available both as a Python API in
+`cosheaf.evals.research_run_loop` and as a CLI command:
+
+```bash
+cosheaf eval research-run-loop --json
+```
+
+Required case kinds for the default suite are:
+
+- `complete_command_coverage`: a run records at least one command.
+- `skipped_not_pass`: skipped run steps remain non-pass evidence.
+- `evidence_separation`: checked evidence remains review evidence and does not
+  become accepted authority.
+- `private_leakage_prevention`: private markers do not leak into run records.
+- `no_authority_escalation`: run records do not claim human review,
+  accepted-write, verifier-pass, gate-pass, or promotion authority.
+
+The report records command coverage, skipped-not-pass count,
+evidence-separation count, private leak count, authority-escalation count, and
+accepted-write violation count. These metrics are regression signals only.
+Research runs are provenance, not proof, human review, verifier pass, gate
+pass, accepted status, or promotion authority.
+
 ## Verifier Evidence Eval Cases
 
 Verifier evidence eval cases are YAML records under `evals/verifier_evidence/`.
@@ -621,10 +653,11 @@ context-pack writer.
 
 The agent workflow, provider workflow, failure/counterexample, artifact
 failure-memory, and verifier evidence evals currently have no CLI commands.
-The checked-evidence run-loop eval has a CLI command:
+The checked-evidence and research-run loop evals have CLI commands:
 
 ```bash
 cosheaf eval checked-evidence-run-loop --json
+cosheaf eval research-run-loop --json
 ```
 
 Running them from Python may refresh `context/TASKS/<issue-id>/` context
