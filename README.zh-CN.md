@@ -4,7 +4,7 @@ TCS-Cosheaf 是一个以 Git 为持久记忆层的、带类型约束的理论计
 
 > 当前状态：**v0.4.0 Strategy Planner + Research Task Graph published release**。
 > 包版本为 `0.4.0`；公开 `v0.4.0` tag、GitHub release 和 `@v0.4.0`
-> release smoke 均已完成；downstream pin alignment 是下一步 closeout 任务。上一已发布 baseline 是 `v0.3.0`。仓库已经具备
+> release smoke 均已完成；downstream pin alignment 已完成。上一已发布 baseline 是 `v0.3.0`。仓库已经具备
 > Python 包脚手架、Typer CLI、Pydantic v2 模型、工作区加载、验证、门禁、上下文包、
 > 任务/编排干运行、受控草稿写入、提供商网关、托管 worker 服务、可选验证器适配器、
 > failure memory、checked counterexample evidence、research-run provenance、

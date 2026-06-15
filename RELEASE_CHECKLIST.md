@@ -32,7 +32,7 @@ integration/eval smoke coverage. Package metadata records `0.3.0`; the public
 tag, GitHub release, release smoke, and downstream pin updates are complete.
 `v0.4.0` packages Strategy Planner + Research Task Graph surfaces. Package
 metadata records `0.4.0`; the public tag, GitHub release, and post-tag release
-smoke are complete. Downstream pin updates are not complete yet.
+smoke are complete. Downstream pin updates are complete.
 
 ## Scope
 
@@ -66,8 +66,8 @@ smoke are complete. Downstream pin updates are not complete yet.
 `docs/releases/v0.4.0.md` is the published release note for Strategy Planner +
 Research Task Graph. The release-candidate task prepared package metadata and
 status docs; the publication closeout created the public tag, published the
-GitHub release, and ran post-tag release smoke. Downstream pins remain a
-follow-up task.
+GitHub release, ran post-tag release smoke, and downstream pin follow-up
+updated workspace-template and public KB to `@v0.4.0`.
 
 - [x] Strategy/task-graph model, schema, deterministic planner, storage, CLI,
   docs, interface registry updates, and tests are merged.
@@ -90,9 +90,9 @@ follow-up task.
   published.
 - [x] Release smoke from
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.4.0` passed.
-- [ ] Workspace-template active pins moved to `@v0.4.0` after tag publication
+- [x] Workspace-template active pins moved to `@v0.4.0` after tag publication
   and release smoke.
-- [ ] Public KB CI moved to `@v0.4.0` after tag publication and release smoke.
+- [x] Public KB CI moved to `@v0.4.0` after tag publication and release smoke.
 
 ## v0.3.0 Published Release Baseline
 
@@ -335,7 +335,7 @@ smoke, and downstream pin updates.
   after v0.2.4 tag publication and release smoke succeeded.
 - [x] Workspace-template and public KB active pins moved to `@v0.3.0` only
   after v0.3.0 tag publication and release smoke succeeded.
-- [ ] Workspace-template and public KB active pins moved to `@v0.4.0` only
+- [x] Workspace-template and public KB active pins moved to `@v0.4.0` only
   after v0.4.0 tag publication and release smoke succeeded.
 
 ### License

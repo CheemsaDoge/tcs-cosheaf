@@ -8,9 +8,9 @@ published `v0.2.2` Provider Transport + Agent Workflow Hardening release, the
 published `v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease, the
 published `v0.2.0` local-MVP release, and the earlier `v0.1.1` Formal Link
 Layer support baseline. Downstream workspace/public-KB pin alignment for
-`v0.4.0` remains the next closeout task, and the project is still not
-production-ready. This roadmap records durable direction and named milestones;
-live issue state belongs in GitHub issues.
+`v0.4.0` is complete, and the project is still not production-ready. This
+roadmap records durable direction and named milestones; live issue state
+belongs in GitHub issues.
 
 ## Active Focus: v0.4.0 Strategy Planner + Research Task Graph
 
@@ -96,8 +96,7 @@ tests. MCP remains optional and non-blocking.
 Package metadata and `cosheaf.__version__` record `0.4.0`.
 `docs/releases/v0.4.0.md` records the conservative release scope. The public
 `v0.4.0` tag and GitHub release are published, and release smoke from
-`@v0.4.0` passed. Downstream workspace/public-KB pin updates are not complete
-yet.
+`@v0.4.0` passed. Downstream workspace/public-KB pin updates are complete.
 
 The `v0.4.0` line now has strategy/task-graph model and schema support,
 deterministic strategy CLI surfaces, run-loop integration, context/retrieval

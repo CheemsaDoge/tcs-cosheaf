@@ -20,11 +20,13 @@ The planned release-smoke command in the external longplan used
 `--framework-ref`, but the current `scripts/release_smoke.py` interface accepts
 `--source`; the successful smoke used the equivalent explicit git source.
 
-Downstream workspace-template and public KB active pins still need a separate
-pin-alignment task before the whole v0.4.0 line is complete. This closeout does
-not add runtime behavior, does not call hosted providers by default, does not
-require MCP, does not write accepted knowledge, does not create human review,
-does not promote artifacts, and does not change accepted-promotion semantics.
+Downstream workspace-template and public KB active pins were aligned to
+`@v0.4.0` after release smoke: workspace-template PR #69 updated active demo
+and script pins, and tcs-kb-public PR #80 updated CI and README baseline text.
+This closeout does not add runtime behavior, does not call hosted providers by
+default, does not require MCP, does not write accepted knowledge, does not
+create human review, does not promote artifacts, and does not change
+accepted-promotion semantics.
 
 ## v0.4.0 Release Candidate - 2026-06-15
 
