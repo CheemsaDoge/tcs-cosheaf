@@ -40,7 +40,19 @@ body:
     id: expected_evidence
     attributes:
       label: Expected Evidence
-      description: Describe the evidence needed, such as proof sketches, verifier output, experiments, or counterexamples.
+      description: Describe the evidence needed, such as proof sketches, verifier output, experiments, candidate counterexamples, or checked counterexample evidence. Distinguish proposed candidates from checked evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: research_run_plan
+    attributes:
+      label: Research Run Plan
+      description: Describe whether this issue should be handled through the external-operator run loop and what should be recorded.
+      value: |
+        - Start research run: yes/no
+        - Baseline validate/gate required: yes/no
+        - Context pack required: yes/no
+        - Candidate-vs-checked evidence distinction required: yes/no
     validations:
       required: true
   - type: textarea
