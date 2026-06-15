@@ -71,6 +71,26 @@ Workflow, command, artifact schema, status, gatekeeper, verifier, or review
 behavior changes must update the relevant documentation in the same pull
 request.
 
+## External Operator Review Records
+
+When an issue uses the v0.3.0 external-operator run loop, the pull request
+should include the research run ID and runtime path, or state why no run record
+was used. If a review export was created, the PR should name the
+`reviews/runs/<run-id>.yaml` path.
+
+Reviewers should treat research-run records as provenance only. A run record
+does not prove correctness, does not count as human review, does not mark
+verifier or gate pass, and does not authorize accepted promotion.
+
+When counterexamples are relevant, PRs and reviews must distinguish:
+
+- `candidate_counterexample`: proposed evidence that still needs checking;
+- `checked_counterexample_evidence`: durable review evidence that a specified
+  method checked a candidate.
+
+Checked evidence remains review evidence only. It does not automatically refute
+accepted knowledge, create human review, or promote artifacts.
+
 ## Human Review Required Areas
 
 The following areas require human maintainer review before merge:
@@ -102,3 +122,7 @@ A pull request must not be merged when any of the following are true:
 - architecture changes are missing ADR updates;
 - schema, status, gatekeeper, or index changes have not received human review;
 - the branch is stale and branch protection requires it to be up to date.
+- a PR claims research-run records, candidate counterexamples, checked
+  evidence, validation, gates, verifier output, provider output, or MCP output
+  as human review, proof, accepted status, verifier pass, gate pass, or
+  promotion authority.

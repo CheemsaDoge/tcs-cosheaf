@@ -193,26 +193,26 @@ for human review or promotion.
 
 For Codex-style execution, use the CLI as the first machine interface and the
 human/CI oracle. MCP is optional and is not required for ordinary repository
-work.
+work. The detailed v0.3.0 runbook is
+[`docs/EXTERNAL_OPERATOR_RUN_LOOP.md`](EXTERNAL_OPERATOR_RUN_LOOP.md).
 
 Follow this sequence for nontrivial issue work:
 
 1. Read `AGENTS.md`, `context/CURRENT_MILESTONE.md`, this workflow document,
    and the GitHub issue.
-2. Inspect workspace state:
+2. Start a research run with `cosheaf run start --issue <issue-id>
+   --operator external --json` when auditable operator provenance is expected.
+3. Inspect workspace state:
    `cosheaf workspace info --json`.
-3. Establish the pre-change baseline:
+4. Establish the pre-change baseline:
    `cosheaf validate --json` and `cosheaf gate run --json`.
-4. Search issue-scoped memory:
+5. Search issue-scoped memory:
    `cosheaf memory search "<query>" --issue <issue-id> --json`.
-5. Build bounded context:
+6. Build bounded context:
    `cosheaf context build <issue-id> --json`.
-6. Read `context/TASKS/<issue-id>/CONTEXT.md`,
+7. Read `context/TASKS/<issue-id>/CONTEXT.md`,
    `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, `COMMANDS.md`, and
    `ACCEPTANCE.md` when present.
-7. Start a research run with `cosheaf run start --issue <issue-id>
-   --operator external --json` when the issue asks for auditable operator
-   provenance.
 8. Make only issue-scoped changes. If the task permits generated research
    outputs, write only draft/proposal/source-note/bundle/review-staging
    records through the controlled commands above.
@@ -228,7 +228,8 @@ Follow this sequence for nontrivial issue work:
     a review record is intended.
 12. Open one PR with a summary that records changed files, exact commands,
     results, runtime outputs, limitations, interface/docs/schema changes, and
-    gate verdict.
+    gate verdict. When counterexamples or checked evidence are relevant,
+    distinguish candidate counterexamples from checked evidence.
 
 Allowed agent-facing command families are:
 
@@ -346,12 +347,24 @@ commands when the result will be parsed by a program:
 - `cosheaf bundle submit --input-json <path> --json --dry-run`
 - `cosheaf review request --input-json <path> --json --dry-run`
 - `cosheaf review request-from-bundle --bundle <path> --json --dry-run`
+- `cosheaf run start --issue <issue-id> --operator external --json`
+- `cosheaf run append-command --run <run-id> --input-json <path> --json`
+- `cosheaf run append-artifact --run <run-id> --artifact <artifact-id> --json`
+- `cosheaf run append-output --run <run-id> --input-json <path> --json`
+- `cosheaf run finalize --run <run-id> --status completed --stop-reason <text> --json`
+- `cosheaf run evidence-report --run <run-id> --json`
+- `cosheaf run export-review --run <run-id> --dry-run --json`
+- `cosheaf run replay-plan --run <run-id> --json`
 
 JSON mode keeps human text rendering out of stdout and uses structured
 `ErrorResult` payloads for expected command failures. Human output remains the
 default. JSON output does not grant accepted-write authority, does not run
 hosted providers, does not write accepted knowledge, and does not make skipped
 verifier/provider results into passes.
+
+Research-run JSON output is provenance only. It does not execute replay plans,
+does not create human review, does not mark verifier or gate pass, does not
+write accepted knowledge, and does not authorize promotion.
 
 ## Handoff
 

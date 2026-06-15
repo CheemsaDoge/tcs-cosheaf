@@ -73,17 +73,26 @@ are not passes.
 External coding agents should use CLI first:
 
 1. Read `AGENTS.md`, `context/CURRENT_MILESTONE.md`, and the relevant issue.
-2. Run `cosheaf workspace info --json` when machine-readable workspace state
+2. Start `cosheaf run start --issue <issue-id> --operator external --json`
+   when auditable operator provenance is expected.
+3. Run `cosheaf workspace info --json` when machine-readable workspace state
    is needed, or `cosheaf workspace info` for human inspection.
-3. Run `cosheaf validate --json` and `cosheaf gate run --json` when an agent
+4. Run `cosheaf validate --json` and `cosheaf gate run --json` when an agent
    needs structured pass/fail data, and keep the human commands available for
    operator review.
-4. Use `cosheaf memory ...` and `cosheaf context build <issue-id>` to assemble
+5. Use `cosheaf memory ...` and `cosheaf context build <issue-id>` to assemble
    bounded context.
-5. Write only draft/proposal/bundle/source-note staging outputs when a task
+6. Write only draft/proposal/bundle/source-note staging outputs when a task
    explicitly permits writes.
-6. Re-run the required validation/test/gate commands.
-7. Produce a PR summary with exact commands and limitations.
+7. Record relevant commands and controlled outputs through
+   `cosheaf run append-command`, `cosheaf run append-artifact`, and
+   `cosheaf run append-output` when a run was started.
+8. Re-run the required validation/test/gate commands.
+9. Finalize the run, inspect `evidence-report`, preview `export-review`, and
+   export only when a review record is intended.
+10. Produce a PR summary with exact commands, skipped rows, run paths,
+    candidate-vs-checked evidence status, authority boundaries, and
+    limitations.
 
 The normative operator contract is recorded in
 [`docs/ADR/0018-cli-agent-operator-contract.md`](ADR/0018-cli-agent-operator-contract.md).
@@ -91,21 +100,32 @@ For a Codex-style repository task, the concrete sequence is:
 
 1. Read policy and scope: `AGENTS.md`, `context/CURRENT_MILESTONE.md`, the
    issue, and any generated context pack referenced by the issue.
-2. Inspect the workspace:
+2. Start a research run when auditable operator provenance is expected:
+   `cosheaf run start --issue <issue-id> --operator external --json`.
+3. Inspect the workspace:
    `cosheaf workspace info --json`.
-3. Establish a baseline:
+4. Establish a baseline:
    `cosheaf validate --json` and `cosheaf gate run --json`.
-4. Search bounded memory:
+5. Search bounded memory:
    `cosheaf memory search "<query>" --issue <issue-id> --json`.
-5. Build and read context:
+6. Build and read context:
    `cosheaf context build <issue-id> --json`, then read
    `context/TASKS/<issue-id>/CONTEXT.md` and related pack files when present.
-6. Make only issue-scoped edits. Use controlled write commands for
+7. Make only issue-scoped edits. Use controlled write commands for
    draft/proposal/source-note/bundle/review-staging outputs when the issue
    permits those writes.
-7. Re-run the task-required tests, validation, and gates.
-8. Summarize changed files, commands, pass/fail/skipped results, runtime
-   outputs, limitations, public/private scope handling, and non-goals.
+8. Record commands, artifacts, and controlled outputs through the `cosheaf run`
+   append commands when a run was started.
+9. Re-run the task-required tests, validation, and gates.
+10. Finalize and inspect the run, preview `export-review`, and export only
+    when a review record is intended.
+11. Summarize changed files, commands, pass/fail/skipped results, runtime
+    outputs, run ID/path, candidate-vs-checked evidence status, limitations,
+    public/private scope handling, and non-goals.
+
+The full external-operator run loop is documented in
+[`docs/EXTERNAL_OPERATOR_RUN_LOOP.md`](EXTERNAL_OPERATOR_RUN_LOOP.md). It keeps
+CLI-first operation separate from optional MCP and hosted-provider surfaces.
 
 Core read-only agent-facing CLI commands provide deterministic `--json` output
 for version, workspace info, validation, gate runs, memory cards/search,
@@ -630,6 +650,9 @@ CLI, validation, gate, index, retrieval, context-pack, task, orchestrator
 dry-run, fake provider, hosted-worker dispatch, and optional verifier surfaces
 keep their current behavior. The `v0.3.0` line now also includes checked
 counterexample evidence validation, controlled staging, context/readiness
-surfacing, and deterministic checked-evidence run-loop evals. This surface is
-review evidence only and does not create human review, accepted refutation,
-accepted status, or promotion authority.
+surfacing, deterministic checked-evidence run-loop evals, research-run
+provenance records, research-run lifecycle CLI commands, review export,
+read-only replay plans, and deterministic research-run loop evals. These
+surfaces are review evidence or provenance only and do not create human review,
+accepted refutation, verifier pass, gate pass, accepted status, or promotion
+authority.

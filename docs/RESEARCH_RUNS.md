@@ -100,7 +100,8 @@ or other operator notes.
 
 Output paths must be repository-local and cannot point at `kb/accepted/`.
 Authority fields such as `human_reviewed`, `review_state`, `accepted`,
-`artifact_status`, `verifier_pass`, `gate_pass`, and `promote` are rejected.
+`accepted_write_performed`, `artifact_status`, `verifier_pass`, `gate_pass`,
+and `promote` are rejected.
 
 ## Boundaries
 

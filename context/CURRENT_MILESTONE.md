@@ -42,9 +42,12 @@ informal/formal semantic alignment.
   promotion-readiness warnings, security tests, eval fixtures, and docs. It
   remains non-authoritative review evidence.
 - The research-run record CLI core is now implemented on the active
-  development branch: model, schema, lifecycle CLI, command/artifact/output
-  append paths, evidence report, review export, replay plan, security tests,
-  eval fixtures, and docs. It remains non-authoritative provenance.
+  main branch through PR #337: model, schema, lifecycle CLI,
+  command/artifact/output append paths, evidence report, review export, replay
+  plan, security tests, eval fixtures, and docs. It remains non-authoritative
+  provenance.
+- The external operator workflow docs are now the active documentation
+  closeout task for the v0.3.0 run loop.
 
 ## Active Scope
 
@@ -68,21 +71,21 @@ Compressed milestones:
 Current functional task:
 
 ```text
-research-run-record-cli-core
+external-operator-workflow-docs
 ```
 
-This task implements external-operator research-run provenance with start,
-append, finalize, show, evidence-report, export-review, and replay-plan CLI
-surfaces without provider/MCP expansion or accepted-write authority.
+This task updates operator-facing docs and templates so Codex-style agents run
+the checked-evidence and research-run loop through CLI/Git without provider/MCP
+expansion or accepted-write authority.
 
 After this PR lands, proceed to:
 
 ```text
-external-operator-workflow-docs
+workspace-run-loop-demo
 ```
 
-That next task should update operator-facing docs and templates so Codex-style
-agents run the checked-evidence and research-run loop through CLI/Git.
+That next downstream task should add a workspace-template demo for the
+external-operator research-run loop.
 
 ## Explicit Boundaries
 

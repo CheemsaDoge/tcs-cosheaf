@@ -55,3 +55,15 @@ body:
       placeholder: "context/TASKS/<issue-id>/"
     validations:
       required: true
+  - type: textarea
+    id: operator_run_expectations
+    attributes:
+      label: External Operator Run Expectations
+      description: State whether this task should start a research-run record and whether any candidate or checked evidence is expected.
+      value: |
+        - Research run record expected: yes/no
+        - Candidate counterexamples involved: yes/no
+        - Checked counterexample evidence involved: yes/no
+        - Review export expected: yes/no
+    validations:
+      required: true

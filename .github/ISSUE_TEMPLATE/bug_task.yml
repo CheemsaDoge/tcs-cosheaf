@@ -46,3 +46,14 @@ body:
       placeholder: "cosheaf/gates/..."
     validations:
       required: true
+  - type: textarea
+    id: operator_run_context
+    attributes:
+      label: External Operator Run Context
+      description: Link any research-run record, command log, replay plan, or evidence report that helps reproduce the bug.
+      placeholder: |
+        - .cosheaf/runs/<run-id>/run.json
+        - reviews/runs/<run-id>.yaml
+        - Not available because ...
+    validations:
+      required: false

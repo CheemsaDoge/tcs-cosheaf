@@ -3,6 +3,28 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## External Operator Workflow Docs - 2026-06-15
+
+Issue 338 updates the operator-facing v0.3.0 run-loop documentation after the
+research-run record CLI core landed. The new
+`docs/EXTERNAL_OPERATOR_RUN_LOOP.md` runbook records the expected CLI/Git
+sequence for Codex-style external operators: read policy and issue context,
+start a research run, inspect workspace state, establish validation/gate
+baseline, search memory, build context, read known failures and evidence,
+make issue-scoped edits, record commands/outputs, stage only controlled
+review or draft records, re-run checks, finalize/export the run, and open a PR
+with run and authority-boundary details.
+
+The PR and issue templates now ask for research-run context and
+candidate-vs-checked evidence distinctions where applicable. Review policy now
+states that research-run records are provenance only and must not be treated as
+proof, human review, verifier pass, gate pass, accepted status, or promotion
+authority.
+
+This task is documentation/template-only. It does not add provider or MCP
+behavior, change runtime semantics, write accepted knowledge, create human
+review, alter promotion policy, or bump the package version.
+
 ## Research Run Record CLI Core - 2026-06-15
 
 Issue 336 implements the second functional `v0.3.0` research-run surface. The
