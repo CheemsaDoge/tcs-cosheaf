@@ -18,6 +18,9 @@ from cosheaf.gates.gatekeeper import (
 from cosheaf.gates.source_metadata_gate import missing_required_source_metadata
 from cosheaf.storage.loader import IssueRecord, LoadedRecord
 from cosheaf.storage.repo import RepoContext
+from cosheaf.verification.counterexample_evidence import (
+    load_checked_counterexample_evidence,
+)
 
 PROMOTION_REVIEW_STATES = frozenset({"human_reviewed", "accepted"})
 BLOCKING_VERIFIER_STATUSES = frozenset({"fail", "error"})
@@ -295,6 +298,7 @@ def _artifact_report(
             checker_required=checker_required,
         )
         + _failure_memory_reasons(artifact)
+        + _checked_counterexample_evidence_reasons(context, artifact)
         + _repository_gate_reasons(gatekeeper, artifact.id)
         + _target_gate_reasons(gatekeeper, artifact.id)
     )
@@ -545,6 +549,49 @@ def _failure_memory_reasons(
                     f"{entry.direction}; failed_because={entry.failed_because}; "
                     f"origin={entry.origin}; kind={entry.attempt_kind}; "
                     f"next={next_text}"
+                ),
+            )
+        )
+    return tuple(reasons)
+
+
+def _checked_counterexample_evidence_reasons(
+    context: RepoContext,
+    artifact: BaseArtifact,
+) -> tuple[PromotionReadinessReason, ...]:
+    reasons: list[PromotionReadinessReason] = []
+    for loaded in load_checked_counterexample_evidence(context):
+        evidence = loaded.record
+        if evidence.target_artifact_id != artifact.id:
+            continue
+        support = []
+        if evidence.verifier_evidence_ids:
+            support.append(
+                "verifier_evidence="
+                + ",".join(sorted(evidence.verifier_evidence_ids))
+            )
+        if evidence.review_record_paths:
+            support.append(
+                "review_records=" + ",".join(sorted(evidence.review_record_paths))
+            )
+        if evidence.evidence_paths:
+            support.append(
+                "evidence_paths=" + ",".join(sorted(evidence.evidence_paths))
+            )
+        reasons.append(
+            PromotionReadinessReason(
+                code="checked_counterexample_evidence",
+                severity="warning",
+                artifact_id=artifact.id,
+                source_path=loaded.relative_path.as_posix(),
+                status=evidence.checked_result.value,
+                message=(
+                    "checked counterexample evidence for review only; not human "
+                    "review, accepted refutation, accepted status, or promotion "
+                    "authority, and not a promotion blocker by itself: "
+                    f"{evidence.evidence_id}; result={evidence.checked_result.value}; "
+                    f"candidate={evidence.candidate_id}; support="
+                    f"{'; '.join(support) if support else '-'}"
                 ),
             )
         )

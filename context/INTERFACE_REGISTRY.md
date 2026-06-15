@@ -121,14 +121,30 @@
 - `cosheaf artifact failure add-from-bundle ... --dry-run`: validates the
   bundle conversion and target artifact without writing files or refreshing
   `updated_at`.
+- `cosheaf counterexample evidence validate --input-json <path> --json`:
+  validates one checked counterexample evidence JSON record without writing
+  files. Expected failures emit `ErrorResult` with checked-evidence error
+  codes.
+- `cosheaf counterexample evidence stage --input-json <path> --json`: stages a
+  checked counterexample evidence record under
+  `reviews/evidence/checked-counterexamples/<evidence-id>.yaml`. It refuses
+  accepted KB paths, path traversal, absolute paths, duplicate staged records,
+  and authority-spoofing fields such as `human_reviewed`, `review_state`,
+  `accepted`, `artifact_status`, and `promote`.
+- `cosheaf counterexample evidence stage --input-json <path> --dry-run --json`:
+  validates and reports the target checked-evidence path without writing files.
+- `cosheaf counterexample evidence show --evidence <path-or-id> --json`: reads
+  staged checked counterexample evidence by repository-local path or evidence
+  ID and returns deterministic JSON with an authority notice.
 - `cosheaf promotion readiness --artifact <artifact-id> --json`: emits a
   read-only promotion-readiness report for a single artifact. The command
   runs validation and gatekeeper reporting, distinguishes missing review,
   failed verifier, skipped verifier, missing source metadata, dependency risk,
   private dependency, draft status, readonly-root conditions, and repository
   gatekeeper blockers. It also reports unresolved artifact failure memory as
-  `unresolved_failure_memory` warning reasons distinct from verifier failures.
-  It does not write accepted knowledge.
+  `unresolved_failure_memory` warning reasons and checked counterexample
+  evidence as `checked_counterexample_evidence` warning reasons distinct from
+  verifier failures. It does not write accepted knowledge.
 - `cosheaf promotion readiness --issue <issue-id> --json`: emits the same
   read-only report for the issue record's direct `related_artifacts`.
 - `cosheaf promotion readiness ... --repo-root <path>`: evaluates readiness
@@ -208,6 +224,15 @@
 - `cosheaf eval context --cases <path>`: uses an explicit repository-local
   YAML case file.
 - `cosheaf eval context --json`: emits deterministic JSON report output.
+- `cosheaf eval checked-evidence-run-loop`: runs the default deterministic
+  checked-evidence boundary suite from
+  `evals/checked_evidence_run_loop/cases.yaml`.
+- `cosheaf eval checked-evidence-run-loop --repo-root <path>`: runs
+  checked-evidence evals against an explicit repository root.
+- `cosheaf eval checked-evidence-run-loop --cases <path>`: uses an explicit
+  repository-local YAML case file.
+- `cosheaf eval checked-evidence-run-loop --json`: emits deterministic JSON
+  report output.
 - `cosheaf graph show`: prints the directed artifact dependency graph.
 - `cosheaf graph show --repo-root <path>`: prints the graph for an explicit repository root.
 - `cosheaf gate`: runs the gatekeeper with default options and writes reports under `.cosheaf/reports/`.
@@ -239,6 +264,10 @@
   `ContextBuildResult` JSON payload with repository-local written file paths,
   public-only status, whether private context was included, card count,
   full-artifact count, and content mode.
+  `RETRIEVAL_AUDIT.json` includes visible
+  `checked_counterexample_evidence` entries and
+  `context_payload.checked_counterexample_evidence_count`; public-only context
+  excludes private checked evidence text and private target artifact IDs.
 - `cosheaf context show <issue-id>`: builds the context pack and prints
   `CONTEXT.md`.
 - `cosheaf context show <issue-id> --repo-root <path>`: shows context for an
@@ -2111,6 +2140,34 @@ does not make skipped verifier output pass.
 `VerifierEvidenceRecord.to_json() -> str` return deterministic serialized
 forms.
 
+`CheckedCounterexampleEvidenceRecord` fields are:
+
+- `schema_version`
+- `evidence_id`
+- `target_artifact_id`
+- `candidate_id`
+- `candidate_source`
+- `check_method`
+- `checked_result`
+- `verifier_evidence_ids`
+- `review_record_paths`
+- `evidence_paths`
+- `created_at`
+- `checker`
+- `limitations`
+
+`checked_result` accepts `checked_refutes`, `checked_does_not_refute`,
+`inconclusive`, `error`, and `skipped`. `checked_refutes` requires at least one
+supporting verifier evidence ID, review-record path, or evidence path.
+`skipped` requires an explicit skipped-not-pass limitation. Repository paths
+must be repository-local and must not target accepted KB paths.
+
+`CheckedCounterexampleEvidenceRecord.to_dict() -> dict[str, Any]` and
+`CheckedCounterexampleEvidenceRecord.to_json() -> str` return deterministic
+serialized forms. `stage_checked_counterexample_evidence(...)` writes only to
+`reviews/evidence/checked-counterexamples/`; `show_checked_counterexample_evidence(...)`
+loads staged records by ID or path.
+
 `VerifierRegistry` exposes:
 
 - `register(adapter: VerifierAdapter) -> None`
@@ -2434,6 +2491,12 @@ working directory.
   normalized `pass`/`fail`/`error`/`skipped` result, reason code, optional log
   paths, optional checker hashes, creation timestamp, and limitations. It does
   not authorize human review, accepted writes, or promotion.
+- `schemas/counterexample_evidence.schema.json`: checked counterexample
+  evidence record v1 schema. It serializes durable review evidence for a
+  checked counterexample candidate with candidate source, check method,
+  checked result, support references, checker label, timestamp, and
+  limitations. It does not authorize human review, accepted writes, accepted
+  refutation, or promotion.
 - `schemas/task.schema.json`: agent task YAML schema.
 - `schemas/orchestrator_run.schema.json`: orchestrator run state schema.
 - `schemas/worker_bundle_v2.schema.json`: strict reducer-oriented worker

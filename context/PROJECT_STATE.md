@@ -3,6 +3,49 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Checked Counterexample Evidence Core - 2026-06-15
+
+Issue 334 implements the first functional `v0.3.0` checked-evidence surface.
+The new `CheckedCounterexampleEvidenceRecord` model and
+`schemas/counterexample_evidence.schema.json` define durable checked
+counterexample evidence separately from WorkerBundle counterexample candidates,
+failure memory, verifier requests, verifier evidence, human review, accepted
+refutation, accepted status, and promotion authority.
+
+The CLI now exposes:
+
+- `cosheaf counterexample evidence validate --input-json <path> --json`
+- `cosheaf counterexample evidence stage --input-json <path> --json`
+- `cosheaf counterexample evidence stage --input-json <path> --dry-run --json`
+- `cosheaf counterexample evidence show --evidence <path-or-id> --json`
+
+Staging writes only under
+`reviews/evidence/checked-counterexamples/<evidence-id>.yaml`. The write path
+refuses accepted KB paths, absolute paths, path traversal, duplicate staged
+records, and authority-spoofing fields such as `human_reviewed`,
+`review_state`, `accepted`, `artifact_status`, and `promote`.
+
+Context packs now render visible checked counterexample evidence in
+`CONTEXT.md`, `KNOWN_FAILURES.md`, and `RETRIEVAL_AUDIT.json`. Public-only
+context excludes private checked evidence text and private target artifact IDs.
+Promotion readiness reports checked evidence as advisory
+`checked_counterexample_evidence` warning reasons only; those warnings do not
+block promotion by themselves and do not replace validation, gates, verifier
+policy, human review, or explicit promotion.
+
+The new deterministic eval harness
+`cosheaf.evals.checked_evidence_run_loop` and CLI command
+`cosheaf eval checked-evidence-run-loop --json` cover candidate-vs-checked
+separation, `checked_refutes` support evidence, skipped-not-pass behavior,
+non-refuting `inconclusive`/`error` results, and accepted-write non-authority.
+The harness uses local in-memory fixtures and does not call hosted providers,
+MCP, SAT, SMT, Lean, lake, network, or API-key-backed services.
+
+This task does not bump package version, change accepted promotion semantics,
+mark human review, write accepted knowledge, refute artifacts automatically,
+expand provider/MCP authority, run automatic theorem proving, or claim Lean or
+informal/formal semantic alignment.
+
 ## Post-v0.2.4 to v0.3.0 Kickoff Audit And Plan - 2026-06-15
 
 Issue 332 starts the `v0.3.0` Checked Evidence + Research Run Loop line after

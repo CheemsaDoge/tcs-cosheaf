@@ -129,6 +129,8 @@ Agent-safe read/check commands include:
 - `cosheaf artifact failures <artifact-id> --json`
 - `cosheaf artifact failure plan-from-bundle --bundle <path>
   --target-artifact <artifact-id> --json`
+- `cosheaf counterexample evidence validate --input-json <path> --json`
+- `cosheaf counterexample evidence show --evidence <path-or-id> --json`
 - `cosheaf memory cards --json`
 - `cosheaf memory search "<query>" --issue <issue-id> --json`
 - `cosheaf context build <issue-id> --json`
@@ -163,6 +165,7 @@ input:
 - `cosheaf artifact failure add-from-bundle --bundle <path>
   --target-artifact <artifact-id> --json`
 - `cosheaf bundle submit --input-json <path> --json`
+- `cosheaf counterexample evidence stage --input-json <path> --json`
 - `cosheaf review request --input-json <path> --json`
 - `cosheaf review request-from-bundle --bundle <path> --json`
 
@@ -188,6 +191,39 @@ controlled artifact failure-log write boundary. Typed
 `counterexample_candidates` are linked by candidate ID in
 `related_counterexample_candidates`; they are not duplicated as checked
 refutations, verifier results, accepted knowledge, or human review.
+
+### Checked Counterexample Evidence Surface
+
+Checked counterexample evidence is implemented for the `v0.3.0` line as a
+durable review-evidence surface. It is separate from WorkerBundle
+`counterexample_candidates`, failure-log references, verifier requests, verifier
+results, human review, and accepted artifact status.
+
+Read-only validation and inspection are available through:
+
+```bash
+cosheaf counterexample evidence validate --input-json <evidence.json> --json
+cosheaf counterexample evidence show --evidence <path-or-id> --json
+```
+
+Controlled staging is available through:
+
+```bash
+cosheaf counterexample evidence stage --input-json <evidence.json> --json
+cosheaf counterexample evidence stage --input-json <evidence.json> --dry-run --json
+```
+
+Staged records are written only under
+`reviews/evidence/checked-counterexamples/`. They refuse accepted KB paths,
+absolute paths, path traversal, and authority fields such as `human_reviewed`,
+`review_state`, `accepted`, `artifact_status`, and `promote`.
+
+Context packs surface visible checked evidence as review context and exclude
+private checked evidence from `--public-only` output. Promotion readiness
+reports checked evidence as a warning only. Checked evidence does not refute an
+artifact automatically, does not mark human review, does not write accepted
+knowledge, and does not bypass validation, gates, verifier policy, or
+promotion.
 
 ### Artifact Failure Memory Surface
 
@@ -339,6 +375,9 @@ The stable error-code list is exported as
 - `authority_claim_forbidden`
 - `bundle_complete_forbidden`
 - `bundle_submit_failed`
+- `checked_evidence_not_found`
+- `checked_evidence_path_exists`
+- `checked_evidence_validation_failed`
 - `context_build_failed`
 - `context_show_failed`
 - `draft_write_failed`
@@ -559,4 +598,8 @@ has not added hosted worker CLI commands or controlled-write MCP tools.
 Controlled-write MCP is not planned unless separately approved. Existing local
 CLI, validation, gate, index, retrieval, context-pack, task, orchestrator
 dry-run, fake provider, hosted-worker dispatch, and optional verifier surfaces
-keep their current behavior.
+keep their current behavior. The `v0.3.0` line now also includes checked
+counterexample evidence validation, controlled staging, context/readiness
+surfacing, and deterministic checked-evidence run-loop evals. This surface is
+review evidence only and does not create human review, accepted refutation,
+accepted status, or promotion authority.

@@ -1,0 +1,26 @@
+schema_version: 1
+cases:
+  - id: case.checked-evidence.candidate-remains-candidate
+    kind: candidate_remains_candidate
+    expect_candidate_review_only: true
+
+  - id: case.checked-evidence.checked-refutes-with-support
+    kind: checked_refutes_with_support
+    expect_checked_result: checked_refutes
+    expect_checked_refutation: true
+    expect_support_required: true
+
+  - id: case.checked-evidence.skipped-not-pass
+    kind: skipped_not_pass
+    expect_checked_result: skipped
+    expect_skipped_not_pass: true
+
+  - id: case.checked-evidence.inconclusive-not-refutes
+    kind: inconclusive_not_refutes
+    expect_checked_result: inconclusive
+    expect_checked_refutation: false
+
+  - id: case.checked-evidence.error-not-pass
+    kind: error_not_pass
+    expect_checked_result: error
+    expect_checked_refutation: false

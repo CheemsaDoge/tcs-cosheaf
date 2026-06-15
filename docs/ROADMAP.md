@@ -27,10 +27,11 @@ ADR 0024 in
 
 This line will:
 
-- separate `candidate_counterexample` metadata from durable
+- keep `candidate_counterexample` metadata separated from durable
   `checked_counterexample_evidence`;
-- add a reviewable, repository-local checked-evidence model, schema, CLI,
-  context/readiness surfacing, security tests, and eval fixtures;
+- build on the reviewable, repository-local checked-evidence model, schema,
+  CLI, context/readiness surfacing, security tests, and eval fixtures added in
+  the first `v0.3.0` functional increment;
 - add research-run records with start, append, finalize, show, evidence-report,
   export-review, and replay-plan CLI surfaces;
 - keep Codex-style agents as external CLI/Git operators rather than embedding

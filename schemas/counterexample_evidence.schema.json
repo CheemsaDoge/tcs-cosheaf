@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TCS-Cosheaf Checked Counterexample Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "target_artifact_id",
+    "candidate_id",
+    "candidate_source",
+    "check_method",
+    "checked_result",
+    "created_at",
+    "checker",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "evidence_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|[0-9]+))+$"
+    },
+    "target_artifact_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|[0-9]+))+$"
+    },
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|[0-9]+))+$"
+    },
+    "candidate_source": {
+      "type": "string",
+      "enum": [
+        "worker_bundle",
+        "failure_log",
+        "artifact",
+        "manual_note",
+        "verifier"
+      ]
+    },
+    "check_method": {
+      "type": "string",
+      "enum": [
+        "verifier_result",
+        "manual_review_reference",
+        "executable_check",
+        "proof_sketch_review",
+        "other"
+      ]
+    },
+    "checked_result": {
+      "type": "string",
+      "enum": [
+        "checked_refutes",
+        "checked_does_not_refute",
+        "inconclusive",
+        "error",
+        "skipped"
+      ]
+    },
+    "verifier_evidence_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "review_record_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "evidence_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "checker": {
+      "type": "string",
+      "minLength": 1
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    }
+  },
+  "allOf": [
+    {
+      "properties": {
+        "limitations": {
+          "contains": {
+            "const": "Checked counterexample evidence is evidence for review only; it is not human review, accepted refutation, accepted status, or promotion authority."
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "checked_result": {
+            "const": "checked_refutes"
+          }
+        }
+      },
+      "then": {
+        "anyOf": [
+          {
+            "properties": {
+              "verifier_evidence_ids": {
+                "minItems": 1
+              }
+            }
+          },
+          {
+            "properties": {
+              "review_record_paths": {
+                "minItems": 1
+              }
+            }
+          },
+          {
+            "properties": {
+              "evidence_paths": {
+                "minItems": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "checked_result": {
+            "const": "skipped"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "limitations": {
+            "contains": {
+              "const": "Skipped checked counterexample evidence is not pass evidence."
+            }
+          }
+        }
+      }
+    }
+  ]
+}
