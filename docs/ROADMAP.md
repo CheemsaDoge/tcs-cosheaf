@@ -10,6 +10,43 @@ Formal Link Layer support baseline. The project is still not production-ready.
 This roadmap records durable direction and named milestones; live issue state
 belongs in GitHub issues.
 
+## Active Focus: v0.3.0 Checked Evidence + Research Run Loop
+
+The active post-`v0.2.4` line is `v0.3.0` Checked Evidence + Research Run Loop.
+The `v0.2.x` series is treated as the completed CLI-agent, provider,
+verification-evidence, and artifact failure-memory foundation. `v0.3.0` starts
+the next stage: durable checked evidence and reproducible external-operator
+research runs.
+
+The active plan is
+[`docs/CODEX_DEVELOPMENT_PLAN_V7.md`](CODEX_DEVELOPMENT_PLAN_V7.md), with the
+kickoff audit in
+[`docs/POST_V024_V030_KICKOFF_AUDIT.md`](POST_V024_V030_KICKOFF_AUDIT.md) and
+ADR 0024 in
+[`docs/ADR/0024-checked-evidence-research-run-loop.md`](ADR/0024-checked-evidence-research-run-loop.md).
+
+This line will:
+
+- separate `candidate_counterexample` metadata from durable
+  `checked_counterexample_evidence`;
+- add a reviewable, repository-local checked-evidence model, schema, CLI,
+  context/readiness surfacing, security tests, and eval fixtures;
+- add research-run records with start, append, finalize, show, evidence-report,
+  export-review, and replay-plan CLI surfaces;
+- keep Codex-style agents as external CLI/Git operators rather than embedding
+  GPT, Claude, or any hosted model as the default runtime;
+- update workspace-template demos and public KB policy only after framework
+  surfaces exist; and
+- prepare a conservative `v0.3.0` release only after implementation,
+  downstream alignment, evals, and smoke coverage pass.
+
+This line will not make checked evidence human review, proof, accepted
+refutation, accepted status, or promotion authority by itself. Research-run
+records will be provenance, not proof, verifier pass, gate pass, human review,
+accepted status, or promotion authorization. Provider calls remain explicit,
+default-off, policy-scoped, previewed, consented, and excluded from CI/default
+tests. MCP remains optional and non-blocking.
+
 ## Current Baseline: v0.2.4 Artifact Failure Memory
 
 Package metadata and `cosheaf.__version__` record `0.2.4`. The public

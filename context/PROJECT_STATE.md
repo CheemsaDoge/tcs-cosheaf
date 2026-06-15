@@ -3,6 +3,37 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Post-v0.2.4 to v0.3.0 Kickoff Audit And Plan - 2026-06-15
+
+Issue 332 starts the `v0.3.0` Checked Evidence + Research Run Loop line after
+the published `v0.2.4` Artifact Failure Memory + Attempt Traceability release.
+The kickoff adds a minimum state audit, the active accelerated V7 development
+plan, and ADR 0024.
+
+The audit records that candidate counterexamples currently live in
+WorkerBundle v2, reducer warnings, failure/counterexample evals, review
+requests, and artifact failure-memory links as review-only metadata. These
+surfaces do not create checked counterexample evidence, verifier evidence,
+human review, accepted refutation, accepted status, or promotion authority.
+
+The audit also records that run logging exists across task runs, orchestrator
+runs, provider logs, and structured run logs, but that this is not yet a
+complete external-operator research-run provenance ledger with start, append,
+finalize, show, evidence-report, export-review, and replay-plan lifecycle
+commands.
+
+The active target is now `v0.3.0`. The `v0.2.x` series is treated as the
+completed CLI-agent, provider, evidence, and failure-memory foundation. The
+next functional task is `checked-counterexample-evidence-core`, followed by
+`research-run-record-cli-core`.
+
+This kickoff is documentation/status only. It does not add runtime behavior,
+change schemas, alter verifier semantics, expand provider or MCP authority,
+write accepted knowledge, mark human review, promote artifacts, change KB
+content, or bump the package version. Skipped verifier, provider, SAT, SMT,
+Lean, lake, optional-tool, network, or operator results remain skipped, not
+pass.
+
 ## Post-v0.2.4 V6 Completion Audit And Docs Closeout - 2026-06-15
 
 Issue 330 adds a V6 completion/code-surface audit after the published
