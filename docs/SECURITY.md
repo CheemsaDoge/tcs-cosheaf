@@ -28,6 +28,8 @@ checks:
 | Real provider returns malformed or policy-violating output | Output must schema-validate and policy-validate before becoming WorkerBundle, draft, proposal, or review context | `test_http_transport_maps_network_invalid_json_and_malformed_output` plus existing hosted-worker validation tests |
 | Real provider or transport fails operationally | Timeout, cancellation, rate limit, HTTP error, invalid JSON, schema rejection, and related failures must become typed provider errors or rejected outputs | `test_http_transport_maps_timeout_rate_limit_and_http_errors`, `test_gateway_maps_cancelled_transport_to_provider_error`, and no live provider tests in CI |
 | Unsupported provider parameters are ignored silently | Capability negotiation must record unsupported parameters or return a blocking provider error | `test_openai_compatible_provider_reports_unsupported_parameters` |
+| Checked counterexample evidence is used as authority or leaks private context | Controlled checked-evidence staging rejects authority claims, accepted paths, and path traversal; public-only context excludes private checked-evidence text | `test_checked_evidence_stage_rejects_authority_claim_fields`, `test_checked_evidence_stage_rejects_accepted_evidence_path`, `test_checked_evidence_stage_rejects_path_traversal`, and `test_public_only_context_excludes_private_checked_evidence_text` |
+| Research-run records spoof review/promotion authority or store unsafe data | Research-run append paths reject authority claims, unsafe paths, and secret-looking summaries; run records remain provenance only | `test_research_run_append_output_rejects_authority_claims` and `test_research_run_rejects_unsafe_paths_and_secret_summaries` |
 
 ## Hard Boundaries
 
@@ -58,6 +60,13 @@ checks:
   verifier pass, checked counterexample evidence, human review, gate success,
   accepted status, or promotion evidence, and public-only context must not
   expose private failure-log text.
+- Checked counterexample evidence is review evidence only. It must not claim
+  human review, accepted refutation, accepted status, verifier pass, gate pass,
+  or promotion authority, and public-only context must not expose private
+  checked-evidence text.
+- Research-run records are provenance only. They must not store secrets,
+  hidden reasoning, unsafe paths, authority-spoofing fields, accepted-write
+  claims, or unapproved private KB text.
 
 ## Context-Send Matrix
 
@@ -87,6 +96,10 @@ audited, and policy-reviewed before it can be used for provider sending.
 Security regressions must run with the normal test suite and require no network
 or real provider credential. Tests may use the deterministic fake provider or
 injected mocked transport only.
+
+Checked-evidence and research-run security regressions must remain local and
+must not require hosted providers, API keys, MCP, network, SAT, SMT, Lean, or
+lake. Skipped or unavailable optional-tool rows remain skipped, not pass.
 
 The optional OpenAI-compatible HTTP transport is tested with injected local
 fixtures. CI must still use fake, injected mocked, or local non-live-network

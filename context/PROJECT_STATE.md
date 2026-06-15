@@ -3,6 +3,30 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.3.0 Integration Eval And Ecosystem Smoke - 2026-06-15
+
+Issue 340 extends the framework ecosystem smoke matrix for the active
+`v0.3.0` Checked Evidence + Research Run Loop line. The matrix now includes
+direct framework rows for:
+
+- `cosheaf eval checked-evidence-run-loop --json`
+- `cosheaf eval research-run-loop --json`
+
+It also includes the downstream workspace-template `make research-run-demo`
+row and a public KB checked-evidence policy documentation smoke row. The
+existing network rows remain opt-in and skipped by default; optional external
+SAT/SMT/Lean/lake availability remains a skipped row when unavailable, not a
+pass. The default release-smoke tag in `scripts/ecosystem_smoke.py` is aligned
+with the current published baseline `v0.2.4`; package metadata and
+`cosheaf.__version__` remain `0.2.4` until the later `v0.3.0` release
+candidate PR.
+
+This task does not add provider or MCP behavior, call hosted providers, require
+network in default tests, write accepted knowledge, create human review, alter
+promotion policy, claim automatic theorem proving, or claim informal/formal
+semantic alignment. Checked evidence remains review evidence only, and
+research-run records remain provenance only.
+
 ## External Operator Workflow Docs - 2026-06-15
 
 Issue 338 updates the operator-facing v0.3.0 run-loop documentation after the

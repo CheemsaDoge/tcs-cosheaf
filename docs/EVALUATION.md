@@ -25,9 +25,11 @@ failure-memory eval harness checks artifact-level failure-log retrieval and
 governance boundaries. The checked-evidence run-loop eval harness checks the
 candidate-vs-checked counterexample boundary, supporting evidence requirements,
 skipped-not-pass behavior, and non-authority constraints for durable checked
-counterexample evidence. These harnesses reuse existing runtime surfaces; they
-do not introduce new retrieval, context-pack, provider, MCP, verifier, or
-orchestration algorithms.
+counterexample evidence. The research-run loop eval harness checks command
+coverage, skipped-not-pass behavior, evidence separation, private-leak
+prevention, and authority escalation for external-operator run records. These
+harnesses reuse existing runtime surfaces; they do not introduce new
+retrieval, context-pack, provider, MCP, verifier, or orchestration algorithms.
 
 ## Retrieval Eval Cases
 
@@ -602,12 +604,16 @@ The three-repository readiness matrix is exposed through:
 python scripts/ecosystem_smoke.py --matrix --cosheaf "python -m cosheaf.cli" --framework-root . --workspace-template-root ../tcs-cosheaf-workspace-template --public-kb-root ../tcs-kb-public --json
 ```
 
-The v0.2.3 matrix rows cover framework local smoke, framework
-verifier-evidence eval smoke, optional verifier availability, framework git-tag
-release smoke, workspace-template install demo, workspace-template CLI-agent
-demo, workspace-template fake-provider smoke, workspace-template
-verifier-evidence demo, public KB policy guard, and public KB verifier-policy
-self-test coverage.
+The v0.3.0 integration matrix rows cover framework local smoke, framework
+verifier-evidence eval smoke, framework checked-evidence run-loop eval,
+framework research-run loop eval, optional verifier availability, framework
+git-tag release smoke, workspace-template install demo, workspace-template
+CLI-agent demo, workspace-template research-run demo, workspace-template
+fake-provider smoke, workspace-template verifier-evidence demo, public KB
+policy guard, public KB checked-evidence policy docs, and public KB
+verifier-policy self-test coverage. The default git-tag release-smoke row
+uses the current published baseline `v0.2.4` until a later `v0.3.0` release
+candidate and tag exist.
 
 Network rows remain opt-in through `--include-network`. When optional external
 SAT/SMT/Lean/lake tools are unavailable, the optional verifier availability
@@ -660,11 +666,11 @@ cosheaf eval checked-evidence-run-loop --json
 cosheaf eval research-run-loop --json
 ```
 
-Running them from Python may refresh `context/TASKS/<issue-id>/` context
-packs, redacted provider logs under `.cosheaf/providers/`, and eval fixtures
-under `.cosheaf/evals/`. Verifier and checked-evidence evals use in-memory fake
-evidence records and typed candidate fixtures. Runtime outputs should not be
-committed.
+The checked-evidence and research-run loop evals use deterministic local
+fixtures and do not require hosted providers, API keys, MCP, network, SAT, SMT,
+Lean, or lake. Other Python-level evals may refresh `context/TASKS/<issue-id>/`
+context packs, redacted provider logs under `.cosheaf/providers/`, or eval
+fixtures under `.cosheaf/evals/`. Runtime outputs should not be committed.
 
 ## Limitations
 

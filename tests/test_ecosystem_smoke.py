@@ -190,21 +190,36 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
     assert set(cases) == {
         "framework.local-checkout",
         "framework.verifier-evidence-eval",
+        "framework.checked-evidence-run-loop-eval",
+        "framework.research-run-loop-eval",
         "framework.optional-verifier-availability",
         "framework.git-tag",
         "workspace-template.demo",
         "workspace-template.cli-agent-demo",
+        "workspace-template.research-run-demo",
         "workspace-template.provider-fake-smoke",
         "workspace-template.verifier-evidence-demo",
         "public-kb.policy-guard",
+        "public-kb.checked-evidence-policy-docs",
         "public-kb.verifier-policy-self-test",
     }
     assert cases["framework.local-checkout"].repo == "tcs-cosheaf"
     assert cases["framework.verifier-evidence-eval"].repo == "tcs-cosheaf"
+    assert cases["framework.checked-evidence-run-loop-eval"].argv[-2:] == (
+        "checked-evidence-run-loop",
+        "--json",
+    )
+    assert cases["framework.research-run-loop-eval"].argv[-2:] == (
+        "research-run-loop",
+        "--json",
+    )
     assert cases["framework.optional-verifier-availability"].repo == "tcs-cosheaf"
     assert cases["framework.git-tag"].requires_network is True
     assert cases["framework.git-tag"].skip_reason == (
         "requires --include-network because it installs a framework git tag"
+    )
+    assert cases["workspace-template.research-run-demo"].argv[-1] == (
+        "research-run-demo"
     )
     assert cases["workspace-template.provider-fake-smoke"].argv[-1] == (
         "provider-fake-smoke"
@@ -213,6 +228,7 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
         "verifier-evidence-demo"
     )
     assert cases["public-kb.policy-guard"].repo == "tcs-kb-public"
+    assert cases["public-kb.checked-evidence-policy-docs"].repo == "tcs-kb-public"
     assert cases["public-kb.verifier-policy-self-test"].repo == "tcs-kb-public"
 
 
@@ -225,7 +241,7 @@ def test_ecosystem_smoke_matrix_defaults_to_current_release_tag(
         public_kb_root=tmp_path / "tcs-kb-public",
     )
 
-    assert matrix.framework_tag == "v0.2.2"
+    assert matrix.framework_tag == "v0.2.4"
 
 
 def test_ecosystem_smoke_matrix_report_is_structured_and_identifies_failures(
@@ -244,15 +260,19 @@ def test_ecosystem_smoke_matrix_report_is_structured_and_identifies_failures(
         command = " ".join(argv)
         if "--optional-verifier-availability" in command:
             return 77
-        if cwd.name == "tcs-kb-public" and "--self-test" not in argv:
+        if (
+            cwd.name == "tcs-kb-public"
+            and any(part.endswith("check_public_kb_policy.py") for part in argv)
+            and "--self-test" not in argv
+        ):
             return 2
         return 0
 
     report = run_ecosystem_smoke_matrix(matrix, command_runner=fake_runner)
 
     assert report.passed is False
-    assert report.case_count == 10
-    assert report.pass_count == 6
+    assert report.case_count == 14
+    assert report.pass_count == 10
     assert report.fail_count == 1
     assert report.skip_count == 3
     skipped = [result for result in report.results if result.status == "skipped"]

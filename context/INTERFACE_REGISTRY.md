@@ -2475,14 +2475,21 @@ working directory.
   and accepted-to-draft dependency rejection.
 - `python scripts/ecosystem_smoke.py --matrix`: runs the structured
   three-repository compatibility matrix. Matrix rows cover framework local
-  checkout, framework verifier-evidence eval smoke, optional verifier
-  availability, framework git tag release smoke, workspace-template demo,
-  workspace-template CLI-agent demo, workspace-template fake-provider smoke,
-  workspace-template verifier-evidence demo, public KB policy guard, and
-  public KB verifier-policy self-test. By default, network-install rows are
+  checkout, framework verifier-evidence eval smoke, framework
+  checked-evidence run-loop eval, framework research-run loop eval, optional
+  verifier availability, framework git tag release smoke, workspace-template
+  demo, workspace-template CLI-agent demo, workspace-template research-run
+  demo, workspace-template fake-provider smoke, workspace-template
+  verifier-evidence demo, public KB policy guard, public KB checked-evidence
+  policy docs smoke, and public KB verifier-policy self-test. By default,
+  network-install rows are
   reported as `skipped`, not `pass`. Optional verifier availability returns a
   skipped matrix row when SAT/SMT/Lean/lake tools are unavailable; that skipped
   result is not counted as pass.
+- `python scripts/ecosystem_smoke.py --matrix --framework-tag <tag>`: selects
+  the framework tag used by the opt-in network release-smoke row. The default
+  is the current published baseline `v0.2.4`; this does not imply a future
+  `v0.3.0` tag exists before the release-candidate/publication tasks.
 - `python scripts/ecosystem_smoke.py --matrix --include-network`: also runs
   matrix rows that perform normal framework package install or git clone steps.
   This still does not run real hosted providers or require API keys.
