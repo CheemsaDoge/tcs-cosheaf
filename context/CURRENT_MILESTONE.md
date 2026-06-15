@@ -38,13 +38,13 @@ informal/formal semantic alignment.
 - ADR 0024 records the checked-evidence and research-run-loop direction.
 - `docs/releases/v0.3.0.md` records release-candidate verification,
   publication closeout, release smoke, and downstream pin alignment.
-- `docs/CODEX_DEVELOPMENT_PLAN_V8.md` is the active accelerated `v0.4.0`
+- `docs/CODEX_DEVELOPMENT_PLAN_V8.md` is the completed accelerated `v0.4.0`
   plan.
 - ADR 0025 records the Strategy Planner + Research Task Graph direction.
 
-## Active Scope
+## Completed Scope
 
-The active line is:
+The completed line is:
 
 ```text
 v0.4.0 Strategy Planner + Research Task Graph
@@ -63,7 +63,11 @@ Compressed milestones:
 
 ## Current And Next Functional Tasks
 
-Current task:
+No in-repository v0.4.0 implementation tasks remain open after downstream pin
+alignment. Future work should begin from a new issue and plan rather than
+continuing to treat the V8 release line as active.
+
+Most recent completed task:
 
 ```text
 downstream-v040-pins

@@ -134,7 +134,7 @@ evidence, human review, or explicit promotion.
 
 ## Downstream Integration
 
-The downstream v0.4.0 integration path now includes:
+The published v0.4.0 integration path includes:
 
 - `tcs-cosheaf-workspace-template` strategy-planner demo coverage through
   `make strategy-demo`;
@@ -143,6 +143,7 @@ The downstream v0.4.0 integration path now includes:
 - framework ecosystem-smoke matrix rows for strategy-planner eval,
   workspace-template strategy demo, and public KB strategy-plan policy docs.
 
-The remaining v0.4.0 work is release-candidate and publication closeout:
-version metadata, release notes, release smoke, and downstream pin alignment
-after the public tag exists.
+The v0.4.0 release candidate, public tag, GitHub release, release smoke, and
+downstream workspace/public-KB pin alignment are complete. Future strategy
+planner work should start from a new issue and must preserve the authority
+boundary above.

@@ -614,7 +614,7 @@ workspace-template fake-provider smoke, workspace-template verifier-evidence
 demo, public KB policy guard, public KB checked-evidence policy docs, public KB
 strategy-plan policy docs, and public KB verifier-policy self-test coverage.
 The default git-tag release-smoke row uses the active release target
-`v0.4.0`; before that tag is published, it remains skipped unless
+`v0.4.0`. It remains an opt-in network row and is skipped unless
 `--include-network` is explicitly supplied.
 
 Network rows remain opt-in through `--include-network`. When optional external

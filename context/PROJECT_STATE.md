@@ -3,6 +3,23 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.4.0 Documentation And Code Audit Closeout - 2026-06-16
+
+Issue 362 closes out stale active-line wording after the published `v0.4.0`
+release and records a focused strategy-planner code audit in
+`docs/CODE_AUDIT_V040.md`.
+
+The audit confirms that strategy plans remain guidance only: runtime plans stay
+under `.cosheaf/strategy/`, explicit review exports stay under
+`reviews/strategy/`, skipped research-run results remain skipped, direct
+`kb/accepted/` strategy write targets are rejected, and strategy outputs do not
+claim proof, verifier pass, gate pass, human review, accepted status, accepted
+refutation, or promotion authority.
+
+This closeout does not change runtime behavior, schemas, provider behavior,
+MCP behavior, accepted writes, human-review state, artifact status, promotion
+semantics, workspace-template content, or public KB content.
+
 ## v0.4.0 Publication Closeout - 2026-06-15
 
 Issue 358 closes out the `v0.4.0` Strategy Planner + Research Task Graph
