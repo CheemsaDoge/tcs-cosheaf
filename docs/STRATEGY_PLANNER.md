@@ -14,6 +14,7 @@ Generate and persist a runtime plan:
 
 ```bash
 cosheaf strategy plan --issue <issue-id> --json
+cosheaf strategy plan --issue <issue-id> --from-context context/TASKS/<issue-id> --json
 ```
 
 The plan is written under:
@@ -28,11 +29,14 @@ Inspect a generated plan:
 cosheaf strategy show <plan-id> --json
 cosheaf strategy graph <plan-id> --json
 cosheaf strategy next <plan-id> --json
+cosheaf strategy update-from-run --plan <plan-id> --run <run-id> --json
+cosheaf strategy export-review --plan <plan-id> --dry-run --json
+cosheaf strategy export-review --plan <plan-id> --json
 ```
 
-The `plan`, `show`, `graph`, and `next` commands do not call hosted providers,
-do not execute tasks, do not write accepted knowledge, do not create human
-review, and do not run promotion.
+The strategy commands do not call hosted providers, do not execute tasks, do
+not write accepted knowledge, do not create human review, and do not run
+promotion.
 
 ## Inputs
 
@@ -68,6 +72,52 @@ layout exposes them. Candidate counterexamples remain candidate-only labels.
 Checked counterexample evidence remains checked evidence for review only.
 Research-run records remain provenance only.
 
+## Run-Loop Integration
+
+`update-from-run` reads an existing `.cosheaf/runs/<run-id>/run.json` record and
+attaches non-authoritative references to matching strategy task nodes. Completed
+commands remain completed, failed commands remain failed, and skipped commands
+remain skipped. Skipped results are not passes.
+
+The updater can attach references for context packs, validation reports, gate
+reports, checked counterexample evidence, artifacts read or touched, and
+research-run provenance. These references are planning context only.
+
+`export-review` stages a copy of the strategy plan under:
+
+```text
+reviews/strategy/<plan-id>.yaml
+```
+
+That file is review context only. It does not satisfy human review, verifier
+evidence, gate success, source metadata, accepted status, or promotion
+authority.
+
+## Context And Readiness
+
+`context build` surfaces compact strategy-plan summaries when a runtime plan is
+associated with the requested issue. `RETRIEVAL_AUDIT.json` records
+`strategy_plan_count` and `strategy_plans` entries when such plans exist.
+
+Public-only context excludes private-scope strategy nodes and records that
+private strategy content was excluded. Private task text must not leak into
+public-only context packs.
+
+Promotion readiness can mention open strategy blockers as advisory warnings
+only. Strategy blockers do not become automatic promotion blockers.
+
+## Eval
+
+The local deterministic eval surface is:
+
+```bash
+cosheaf eval strategy-planner --json
+```
+
+It checks planning boundaries such as problem decomposition, failed-direction
+handling, candidate-vs-checked evidence labels, skipped-not-pass handling,
+private leakage prevention, and authority escalation prevention.
+
 ## Schemas
 
 Public schema files:
@@ -84,14 +134,8 @@ evidence, human review, or explicit promotion.
 
 ## Current Limits
 
-Phase 1 does not implement:
+The current `v0.4.0` implementation still does not implement:
 
-- `--from-context`;
-- `update-from-run`;
-- `export-review`;
-- strategy context-pack surfacing;
-- promotion-readiness strategy warnings;
-- strategy planner evals or security tests;
 - downstream workspace-template strategy demos;
 - public KB strategy policy docs.
 

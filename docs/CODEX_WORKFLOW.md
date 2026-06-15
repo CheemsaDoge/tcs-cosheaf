@@ -213,7 +213,9 @@ Follow this sequence for nontrivial issue work:
    For `v0.4.0` planning work, also generate or inspect a strategy plan with
    `cosheaf strategy plan --issue <issue-id> --json`,
    `cosheaf strategy show <plan-id> --json`, and
-   `cosheaf strategy next <plan-id> --json`.
+   `cosheaf strategy next <plan-id> --json`. If a context pack already exists,
+   use `cosheaf strategy plan --issue <issue-id> --from-context
+   context/TASKS/<issue-id> --json`.
 7. Read `context/TASKS/<issue-id>/CONTEXT.md`,
    `RELEVANT_ARTIFACTS.md`, `KNOWN_FAILURES.md`, `COMMANDS.md`, and
    `ACCEPTANCE.md` when present.
@@ -229,7 +231,10 @@ Follow this sequence for nontrivial issue work:
     the issue narrows the required command set.
 11. Finalize and export the run with `cosheaf run finalize` and
     `cosheaf run export-review --dry-run` first, then `export-review` only when
-    a review record is intended.
+    a review record is intended. For strategy-planner work, update and stage
+    strategy review context with `cosheaf strategy update-from-run --plan
+    <plan-id> --run <run-id> --json` and `cosheaf strategy export-review --plan
+    <plan-id> --dry-run --json` before any real strategy review export.
 12. Open one PR with a summary that records changed files, exact commands,
     results, runtime outputs, limitations, interface/docs/schema changes, and
     gate verdict. When counterexamples or checked evidence are relevant,
@@ -239,11 +244,12 @@ Allowed agent-facing command families are:
 
 - read/check: `version`, `workspace info`, `validate`, `gate run`,
   `memory cards`, `memory search`, `context build`, `context show`, and
-  `strategy plan/show/graph/next`, and `orchestrator plan`, preferably with
-  `--json` for machine consumers;
+  `strategy plan/show/graph/next/update-from-run`, and `orchestrator plan`,
+  preferably with `--json` for machine consumers;
 - controlled write: `draft write-artifact`, `draft write-source-note`,
-  `bundle submit`, `review request`, and `run export-review`, preferably with
-  `--dry-run --json` before real writes;
+  `bundle submit`, `review request`, `run export-review`, and
+  `strategy export-review`, preferably with `--dry-run --json` before real
+  writes;
 - provenance: `run start`, `run append-command`, `run append-artifact`,
   `run append-output`, `run finalize`, `run show`, `run evidence-report`, and
   `run replay-plan`;
@@ -352,6 +358,8 @@ commands when the result will be parsed by a program:
 - `cosheaf strategy show <plan-id> --json`
 - `cosheaf strategy graph <plan-id> --json`
 - `cosheaf strategy next <plan-id> --json`
+- `cosheaf strategy update-from-run --plan <plan-id> --run <run-id> --json`
+- `cosheaf strategy export-review --plan <plan-id> --dry-run --json`
 - `cosheaf orchestrator plan --issue <issue-id> --json`
 - `cosheaf draft write-artifact --input-json <path> --json --dry-run`
 - `cosheaf draft write-source-note --input-json <path> --json --dry-run`
@@ -379,8 +387,9 @@ write accepted knowledge, and does not authorize promotion.
 
 Strategy-plan JSON output is planning guidance only. It does not execute the
 ranked tasks, create evidence, mark verifier or gate pass, create human review,
-write accepted knowledge, or authorize promotion. The current Phase 1 strategy
-surface writes only `.cosheaf/strategy/<plan-id>/strategy.json` runtime files.
+write accepted knowledge, or authorize promotion. Runtime plans write under
+`.cosheaf/strategy/<plan-id>/strategy.json`; explicit strategy review export
+writes only non-authoritative context under `reviews/strategy/`.
 
 ## Handoff
 

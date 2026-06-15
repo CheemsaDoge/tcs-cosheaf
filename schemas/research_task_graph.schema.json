@@ -132,6 +132,44 @@
               "type": "string"
             }
           },
+          "references": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind"
+              ],
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "command",
+                    "context_pack",
+                    "research_run",
+                    "artifact",
+                    "checked_counterexample_evidence",
+                    "review_export",
+                    "validation_report",
+                    "gate_report",
+                    "failure_log",
+                    "other"
+                  ]
+                },
+                "identifier": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                }
+              }
+            }
+          },
           "notes": {
             "type": "array",
             "items": {

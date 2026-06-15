@@ -454,6 +454,132 @@ def test_context_pack_public_only_does_not_leak_private_cards(
     assert "private scope exclusions" in audit_text
 
 
+def test_context_pack_surfaces_compact_strategy_plan_summary(
+    tmp_path: Path,
+) -> None:
+    _write_context_docs(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "issues/open/strategy-summary.yaml",
+        _issue_data(
+            issue_id="issue.fixture.strategy-summary",
+            related_artifacts=["claim.fixture.strategy-summary"],
+            description="Need strategy-aware context.",
+            tags=["strategy"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/draft/claims/strategy-summary.yaml",
+        _artifact_data(
+            "claim.fixture.strategy-summary",
+            status="draft",
+            title="Strategy summary draft",
+            domain=["graph-theory"],
+            tags=["strategy"],
+        ),
+    )
+    plan = runner.invoke(
+        app,
+        [
+            "strategy",
+            "plan",
+            "--issue",
+            "issue.fixture.strategy-summary",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert plan.exit_code == 0, plan.output
+
+    result = build_context_pack(RepoContext(tmp_path), "issue.fixture.strategy-summary")
+
+    context_md = (result.task_dir / "CONTEXT.md").read_text(encoding="utf-8")
+    audit = json.loads((result.task_dir / "RETRIEVAL_AUDIT.json").read_text())
+
+    assert "## Strategy Plan Summary" in context_md
+    assert "strategy.issue.fixture.strategy-summary.plan" in context_md
+    assert "Strategy plans are guidance for review only" in context_md
+    assert audit["context_payload"]["strategy_plan_count"] == 1
+    assert audit["strategy_plans"][0]["plan_id"] == (
+        "strategy.issue.fixture.strategy-summary.plan"
+    )
+
+
+def test_context_pack_public_only_does_not_leak_private_strategy_text(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    _write_context_docs(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "issues/open/private-strategy.yaml",
+        _issue_data(
+            issue_id="issue.fixture.private-strategy",
+            related_artifacts=[
+                "definition.fixture.public-graph",
+                "claim.fixture.private-strategy",
+            ],
+            description="Need public-only strategy context.",
+            tags=["graph", "strategy"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/public/accepted/definitions/public-graph.yaml",
+        _artifact_data(
+            "definition.fixture.public-graph",
+            status="accepted",
+            title="Public graph definition",
+            domain=["graph-theory"],
+            tags=["graph"],
+        ),
+    )
+    _write_yaml(
+        tmp_path,
+        "kb/private/draft/claims/private-strategy.yaml",
+        _artifact_data(
+            "claim.fixture.private-strategy",
+            status="draft",
+            title="PRIVATE STRATEGY MARKER should not leak",
+            domain=["graph-theory"],
+            tags=["graph", "strategy"],
+            depends_on=["definition.fixture.public-graph"],
+        ),
+    )
+    plan = runner.invoke(
+        app,
+        [
+            "strategy",
+            "plan",
+            "--issue",
+            "issue.fixture.private-strategy",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert plan.exit_code == 0, plan.output
+
+    result = build_context_pack(
+        RepoContext(tmp_path),
+        "issue.fixture.private-strategy",
+        public_only=True,
+    )
+
+    rendered = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted(result.task_dir.iterdir())
+        if path.is_file()
+    )
+    assert "definition.fixture.public-graph" in rendered
+    assert "strategy.issue.fixture.private-strategy.plan" in rendered
+    assert "PRIVATE STRATEGY MARKER" not in rendered
+    assert "claim.fixture.private-strategy" not in rendered
+    assert "private strategy content excluded" in rendered
+
+
 def test_context_pack_includes_failure_memory_card_summary(
     tmp_path: Path,
 ) -> None:

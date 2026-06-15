@@ -1,0 +1,13 @@
+cases:
+  - id: case.strategy.problem-decomposition
+    kind: problem_decomposition
+  - id: case.strategy.failed-directions-not-repeated
+    kind: failed_directions_not_repeated
+  - id: case.strategy.evidence-label-separation
+    kind: evidence_label_separation
+  - id: case.strategy.skipped-not-pass
+    kind: skipped_not_pass
+  - id: case.strategy.public-only-private-leakage
+    kind: public_only_private_leakage
+  - id: case.strategy.no-authority-escalation
+    kind: no_authority_escalation

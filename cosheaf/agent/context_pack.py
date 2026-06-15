@@ -7,6 +7,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import shorten
+from typing import Any
 
 from cosheaf.core.artifact import BaseArtifact
 from cosheaf.core.paths import repo_relative_posix
@@ -27,6 +28,8 @@ from cosheaf.memory import (
 from cosheaf.memory.models import ArtifactCardStatus
 from cosheaf.storage.loader import IssueRecord, LoadedRecord, load_artifacts
 from cosheaf.storage.repo import RepoContext
+from cosheaf.strategy.models import StrategyPlan, StrategyTaskScope, StrategyTaskStatus
+from cosheaf.strategy.storage import StrategyPlanStorageResult, load_strategy_plans
 from cosheaf.verification.counterexample_evidence import (
     CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
     CheckedCounterexampleEvidenceLoadResult,
@@ -175,6 +178,30 @@ class ContextCheckedCounterexampleEvidenceEntry:
         }
 
 
+@dataclass(frozen=True)
+class ContextStrategyPlanEntry:
+    """One visible strategy-plan summary for context packs."""
+
+    plan_id: str
+    path: str
+    issue_id: str
+    visible_node_count: int
+    open_blocker_count: int
+    next_steps: tuple[str, ...]
+    private_content_excluded: bool
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "plan_id": self.plan_id,
+            "path": self.path,
+            "issue_id": self.issue_id,
+            "visible_node_count": self.visible_node_count,
+            "open_blocker_count": self.open_blocker_count,
+            "next_steps": list(self.next_steps),
+            "private_content_excluded": self.private_content_excluded,
+        }
+
+
 def build_context_pack(
     context: RepoContext,
     issue_id: str,
@@ -234,6 +261,11 @@ def build_context_pack(
         cards=cards,
         public_only=public_only,
     )
+    strategy_plans = _context_strategy_plan_entries(
+        context,
+        issue=issue,
+        public_only=public_only,
+    )
     full_artifact_pulls = _pull_full_artifacts(
         context,
         _ordered_context_cards(cards),
@@ -255,6 +287,7 @@ def build_context_pack(
             artifact_records,
             failure_entries,
             checked_counterexample_evidence,
+            strategy_plans,
         ),
         "ACCEPTANCE.md": _render_acceptance(issue),
         "RELEVANT_ARTIFACTS.md": _render_relevant_artifacts(cards, artifact_records),
@@ -270,6 +303,7 @@ def build_context_pack(
             retrieval=retrieval,
             failure_entries=failure_entries,
             checked_counterexample_evidence=checked_counterexample_evidence,
+            strategy_plans=strategy_plans,
             query=_context_query(issue, include_related_artifacts=not public_only),
             role=role_value,
             max_cards=max_cards,
@@ -529,6 +563,7 @@ def _render_context(
     checked_counterexample_evidence: tuple[
         ContextCheckedCounterexampleEvidenceEntry, ...
     ],
+    strategy_plans: tuple[ContextStrategyPlanEntry, ...],
 ) -> str:
     ordered_cards = _ordered_context_cards(cards)
     accepted = [
@@ -587,6 +622,9 @@ def _render_context(
     if checked_counterexample_evidence:
         lines.extend(["", "## Checked Counterexample Evidence", ""])
         lines.extend(_checked_counterexample_evidence_lines(checked_counterexample_evidence))
+    if strategy_plans:
+        lines.extend(["", "## Strategy Plan Summary", ""])
+        lines.extend(_strategy_plan_lines(strategy_plans))
     lines.extend(
         [
             "",
@@ -731,12 +769,25 @@ def _render_retrieval_audit(
     checked_counterexample_evidence: tuple[
         ContextCheckedCounterexampleEvidenceEntry, ...
     ],
+    strategy_plans: tuple[ContextStrategyPlanEntry, ...],
     query: str,
     role: RetrievalRole,
     max_cards: int,
     max_full_artifacts: int,
     public_only: bool,
 ) -> str:
+    context_payload: dict[str, object] = {
+        "card_count": len(retrieval.cards),
+        "full_artifact_count": len(retrieval.full_artifact_pulls),
+        "failure_entry_count": len(failure_entries),
+        "checked_counterexample_evidence_count": len(
+            checked_counterexample_evidence
+        ),
+        "content_mode": _context_payload_mode(retrieval),
+    }
+    if strategy_plans:
+        context_payload["strategy_plan_count"] = len(strategy_plans)
+
     payload = {
         "schema_version": 1,
         "issue_id": issue.id,
@@ -769,19 +820,12 @@ def _render_retrieval_audit(
         "full_artifact_pulls": [
             pull.to_dict() for pull in retrieval.full_artifact_pulls
         ],
-        "context_payload": {
-            "card_count": len(retrieval.cards),
-            "full_artifact_count": len(retrieval.full_artifact_pulls),
-            "failure_entry_count": len(failure_entries),
-            "checked_counterexample_evidence_count": len(
-                checked_counterexample_evidence
-            ),
-            "content_mode": _context_payload_mode(retrieval),
-        },
+        "context_payload": context_payload,
         "failure_memory": [entry.to_dict() for entry in failure_entries],
         "checked_counterexample_evidence": [
             entry.to_dict() for entry in checked_counterexample_evidence
         ],
+        "strategy_plans": [entry.to_dict() for entry in strategy_plans],
         "audit": retrieval.audit.to_dict(),
     }
     return json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n"
@@ -990,6 +1034,91 @@ def _checked_counterexample_support_text(
     if entry.evidence_paths:
         parts.append("evidence_paths=" + ",".join(sorted(entry.evidence_paths)))
     return "; ".join(parts) if parts else "-"
+
+
+def _context_strategy_plan_entries(
+    context: RepoContext,
+    *,
+    issue: IssueRecord,
+    public_only: bool,
+) -> tuple[ContextStrategyPlanEntry, ...]:
+    entries = [
+        _strategy_plan_entry(loaded, public_only=public_only)
+        for loaded in load_strategy_plans(context)
+        if loaded.plan.issue_id == issue.id
+    ]
+    return tuple(entry for entry in entries if entry is not None)
+
+
+def _strategy_plan_entry(
+    loaded: StrategyPlanStorageResult,
+    *,
+    public_only: bool,
+) -> ContextStrategyPlanEntry | None:
+    plan = loaded.plan
+    visible_nodes = _visible_strategy_nodes(plan, public_only=public_only)
+    private_excluded = len(visible_nodes) != len(plan.graph.nodes)
+    if not visible_nodes:
+        return None
+    visible_ids = {node.node_id for node in visible_nodes}
+    next_steps = tuple(
+        f"{step.rank}. {step.node_id}"
+        for step in plan.next_steps
+        if step.node_id in visible_ids
+    )[:5]
+    blockers = [
+        node
+        for node in visible_nodes
+        if node.status in {StrategyTaskStatus.BLOCKED, StrategyTaskStatus.FAILED}
+    ]
+    return ContextStrategyPlanEntry(
+        plan_id=plan.plan_id,
+        path=loaded.relative_path.as_posix(),
+        issue_id=plan.issue_id,
+        visible_node_count=len(visible_nodes),
+        open_blocker_count=len(blockers),
+        next_steps=next_steps,
+        private_content_excluded=private_excluded,
+    )
+
+
+def _visible_strategy_nodes(
+    plan: StrategyPlan,
+    *,
+    public_only: bool,
+) -> tuple[Any, ...]:
+    if not public_only:
+        return plan.graph.nodes
+    return tuple(
+        node for node in plan.graph.nodes if node.scope is not StrategyTaskScope.PRIVATE
+    )
+
+
+def _strategy_plan_lines(
+    entries: tuple[ContextStrategyPlanEntry, ...],
+) -> list[str]:
+    lines = [
+        (
+            "Strategy plans are guidance for review only; they are not proof, "
+            "checked evidence, gate pass, human review, accepted status, or "
+            "promotion authority."
+        )
+    ]
+    for entry in entries:
+        next_steps = "; ".join(entry.next_steps) if entry.next_steps else "-"
+        lines.extend(
+            [
+                (
+                    f"- {entry.plan_id} | path: {entry.path} | "
+                    f"visible_nodes: {entry.visible_node_count} | "
+                    f"open_blockers: {entry.open_blocker_count}"
+                ),
+                f"  - next: {next_steps}",
+            ]
+        )
+        if entry.private_content_excluded:
+            lines.append("  - private strategy content excluded by public-only scope")
+    return lines
 
 
 def _failure_entry_lines(

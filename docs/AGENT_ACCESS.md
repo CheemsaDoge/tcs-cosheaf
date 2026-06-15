@@ -159,6 +159,8 @@ Agent-safe read/check commands include:
 - `cosheaf strategy show <plan-id> --json`
 - `cosheaf strategy graph <plan-id> --json`
 - `cosheaf strategy next <plan-id> --json`
+- `cosheaf strategy update-from-run --plan <plan-id> --run <run-id> --json`
+- `cosheaf strategy export-review --plan <plan-id> --dry-run --json`
 - `cosheaf orchestrator plan --issue <issue-id> --json`
 - `cosheaf orchestrator run --issue <issue-id> --provider fake --json`
 - `cosheaf orchestrator run --issue <issue-id> --provider openai-compatible
@@ -285,16 +287,24 @@ through:
 
 ```bash
 cosheaf strategy plan --issue <issue-id> --json
+cosheaf strategy plan --issue <issue-id> --from-context context/TASKS/<issue-id> --json
 cosheaf strategy show <plan-id> --json
 cosheaf strategy graph <plan-id> --json
 cosheaf strategy next <plan-id> --json
+cosheaf strategy update-from-run --plan <plan-id> --run <run-id> --json
+cosheaf strategy export-review --plan <plan-id> --dry-run --json
 ```
 
-The Phase 1 planner reads issue metadata, direct related artifacts, one-hop
+The planner reads issue metadata, direct related artifacts, one-hop
 dependencies, artifact failure memory, candidate counterexample references,
 staged checked counterexample evidence, and research-run records. It ranks
 bounded next actions and recommends validation, gate, and context commands as
 first-class tasks.
+
+`update-from-run` attaches research-run provenance to strategy nodes without
+executing tasks or treating skipped output as a pass. `export-review` writes
+only non-authoritative review context under `reviews/strategy/` when run
+without `--dry-run`.
 
 Strategy plans are guidance only. They do not execute tasks, call hosted
 providers, require MCP, create verifier results, create human review, write
