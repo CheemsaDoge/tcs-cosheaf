@@ -2,14 +2,15 @@
 
 ## Milestone
 
-`v0.3.0` Checked Evidence + Research Run Loop implementation.
+`v0.3.0` Checked Evidence + Research Run Loop release candidate.
 
 ## Goal
 
-Start the post-`v0.2.4` line that turns external-agent research into auditable
-evidence. The immediate goal is to separate candidate counterexamples from
-checked counterexample evidence, then add a reproducible research-run record
-that Codex-style external operators can drive through CLI/Git.
+Prepare the post-`v0.2.4` checked-evidence and research-run loop line for a
+conservative `v0.3.0` release candidate. The implementation now separates
+candidate counterexamples from checked counterexample evidence, records
+reproducible research-run provenance, and lets Codex-style external operators
+drive the loop through CLI/Git.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -19,10 +20,12 @@ informal/formal semantic alignment.
 
 ## Current Baseline
 
-- Framework package metadata and `cosheaf.__version__` record `0.2.4` on
-  `main`.
+- Framework package metadata and `cosheaf.__version__` record `0.3.0` in the
+  release-candidate PR.
 - Remote tags `v0.1.1`, `v0.2.0`, `v0.2.1`, `v0.2.2`, `v0.2.3`, and
   `v0.2.4` exist.
+- The public `v0.3.0` tag and GitHub release do not exist yet; they are
+  publication-closeout work after the release-candidate PR merges.
 - The GitHub release `v0.2.4 Artifact Failure Memory` is published and is not
   a production-readiness claim.
 - `tcs-cosheaf-workspace-template` pins active demo, Makefile, CLI-agent,
@@ -49,6 +52,11 @@ informal/formal semantic alignment.
 - The external operator workflow docs, workspace-template research-run demo,
   and public KB checked-evidence policy are merged downstream surfaces for the
   v0.3.0 run loop.
+- The integration/eval/ecosystem smoke task is merged through PR #341. The
+  ecosystem matrix includes checked-evidence eval, research-run eval,
+  workspace-template research-run demo, and public KB checked-evidence policy
+  smoke rows. Optional network and external-tool rows remain skipped, not
+  pass, when unavailable.
 
 ## Active Scope
 
@@ -72,23 +80,23 @@ Compressed milestones:
 Current functional task:
 
 ```text
-v030-integration-eval-smoke
-```
-
-This task integrates the checked-evidence and research-run surfaces into the
-framework eval and ecosystem smoke matrix. It keeps the default matrix local
-and network-free except for explicitly skipped network rows, and it does not
-expand provider/MCP behavior or accepted-write authority.
-
-After this PR lands, proceed to:
-
-```text
 release-v030-readiness-and-rc
 ```
 
-That next task should audit readiness and prepare conservative release
-candidate metadata only after integration smoke coverage is merged. Package
-metadata remains `0.2.4` until that release-candidate PR.
+This task audits readiness, adds conservative `v0.3.0` release-candidate
+notes, updates release/status docs, and bumps package metadata to `0.3.0`
+without changing runtime behavior.
+
+After this PR lands and main is re-synced, proceed to:
+
+```text
+release-v030-publication-closeout
+```
+
+That follow-up task should verify no existing `v0.3.0` tag, create the
+annotated tag from reviewed main, publish a conservative GitHub release, run
+release smoke from `@v0.3.0`, and update downstream workspace-template and
+public KB pins only after release smoke passes.
 
 ## Explicit Boundaries
 
@@ -126,14 +134,16 @@ metadata remains `0.2.4` until that release-candidate PR.
 
 ## Current Operating State
 
-The V6 artifact failure-memory line is complete. New work follows the
-accelerated V7 plan for `v0.3.0`. Checked counterexample evidence is now a
-durable review-evidence surface, but it remains separate from human review,
-accepted refutation, accepted status, and promotion authority. Continue to
-avoid treating failure memory, counterexample candidates, verifier requests,
-verifier evidence, checked evidence, research-run records, provider output,
-evals, validation, gates, or context retrieval as human review, proof, accepted
-status, verifier pass, gate pass, or promotion authority.
+The V6 artifact failure-memory line is complete. The accelerated V7 functional
+implementation for `v0.3.0` is complete enough for release-candidate
+packaging. Checked counterexample evidence is now a durable review-evidence
+surface, but it remains separate from human review, accepted refutation,
+accepted status, and promotion authority. Research-run records are provenance,
+not proof or review authority. Continue to avoid treating failure memory,
+counterexample candidates, verifier requests, verifier evidence, checked
+evidence, research-run records, provider output, evals, validation, gates, or
+context retrieval as human review, proof, accepted status, verifier pass, gate
+pass, or promotion authority.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show
