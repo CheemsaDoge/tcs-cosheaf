@@ -29,10 +29,10 @@ informal/formal semantic alignment.
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.4.0` passed.
 - `tcs-cosheaf-workspace-template` active demo, Makefile, CLI-agent,
   provider-preview, fake-provider smoke, verifier-evidence, failure-memory,
-  checked-evidence, and research-run paths pin or install `@v0.3.0`.
-- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.3.0`.
-- Downstream workspace-template/public-KB pin alignment to `@v0.4.0` remains
-  the next closeout task.
+  checked-evidence, research-run, and strategy paths pin or install `@v0.4.0`.
+- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.4.0`.
+- Downstream workspace-template/public-KB pin alignment to `@v0.4.0` is
+  complete.
 - `docs/CODEX_DEVELOPMENT_PLAN_V7.md` is the completed accelerated `v0.3.0`
   plan.
 - ADR 0024 records the checked-evidence and research-run-loop direction.
@@ -66,24 +66,15 @@ Compressed milestones:
 Current task:
 
 ```text
-release-v040-publication-closeout
-```
-
-This task records the v0.4.0 publication closeout after the maintainer release
-action created the annotated tag, published the GitHub release, and ran release
-smoke from `@v0.4.0`. It must not add provider calls, require MCP, write
-accepted knowledge, create human review, change promotion behavior, or update
-downstream pins inside the framework repository.
-
-After this task merges, proceed directly to:
-
-```text
 downstream-v040-pins
 ```
 
-That follow-up should update workspace-template and public KB active pins to
-`@v0.4.0`, then rerun the documented demo/showcase, validate/gate, policy
-guard, and skipped-not-pass regressions in those downstream repositories.
+This task records that downstream pin alignment is complete after
+workspace-template PR #69 and tcs-kb-public PR #80 moved active pins to
+`@v0.4.0` and reran the documented demo, validation, gate, and policy guard
+checks. It does not add provider calls, require MCP, write accepted knowledge,
+create human review, change promotion behavior, or change framework runtime
+behavior.
 
 ## Explicit Boundaries
 
@@ -127,17 +118,16 @@ guard, and skipped-not-pass regressions in those downstream repositories.
 ## Current Operating State
 
 The accelerated V8 implementation, downstream integration, release candidate,
-tag publication, GitHub release, and post-tag release smoke for `v0.4.0` are
-complete. Checked counterexample evidence remains durable review evidence,
-research-run records remain provenance, and strategy plans remain guidance
-only.
+tag publication, GitHub release, post-tag release smoke, and downstream
+workspace/public-KB pin alignment for `v0.4.0` are complete. Checked
+counterexample evidence remains durable review evidence, research-run records
+remain provenance, and strategy plans remain guidance only.
 
-The current work records the publication closeout without changing authority
-boundaries. Continue to avoid treating failure memory, counterexample
-candidates, verifier requests, verifier evidence, checked evidence,
-research-run records, strategy plans, provider output, evals, validation,
-gates, or context retrieval as human review, proof, accepted status, verifier
-pass, gate pass, or promotion authority.
+This closeout does not change authority boundaries. Continue to avoid treating
+failure memory, counterexample candidates, verifier requests, verifier
+evidence, checked evidence, research-run records, strategy plans, provider
+output, evals, validation, gates, or context retrieval as human review, proof,
+accepted status, verifier pass, gate pass, or promotion authority.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show

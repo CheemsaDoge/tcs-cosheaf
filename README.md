@@ -10,7 +10,7 @@ issues, and verifier evidence in reviewable repository files.
 Current status: **v0.4.0 Strategy Planner + Research Task Graph published
 release**. Package metadata records `0.4.0`; the public `v0.4.0` tag and
 GitHub release are published; release smoke from `@v0.4.0` passed; downstream
-workspace-template and public KB pin alignment remains the next closeout task.
+workspace-template and public KB pin alignment is complete.
 The previous published baseline was **v0.3.0 Checked Evidence + Research Run
 Loop**. The `v0.1.1` tag remains the downstream Formal Link Layer support
 baseline; the `v0.2.0` tag packages the deterministic local-MVP workflow; the
@@ -300,8 +300,7 @@ that need artifact failure memory and attempt traceability can pin to
 `v0.2.4`. Downstream repositories that need checked counterexample evidence
 and research-run provenance can pin to `v0.3.0`. Downstream repositories that
 need Strategy Planner + Research Task Graph surfaces can pin to `v0.4.0`;
-workspace-template and public KB active pins move to `v0.4.0` in the
-downstream pin-alignment task.
+workspace-template and public KB active pins now use `v0.4.0`.
 
 ## Development Commands
 
