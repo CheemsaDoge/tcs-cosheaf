@@ -2,9 +2,9 @@
 
 TCS-Cosheaf 是一个以 Git 为持久记忆层的、带类型约束的理论计算机科学研究知识库与智能体协作框架。它把定义、命题、证明、构造、算法、归约、反例、实验、评审、议题和验证器证据保存为可审查的仓库文件，而不是只保存在聊天记录中。
 
-> 当前状态：已发布基线是 **v0.2.4 Artifact Failure Memory + Attempt Traceability**，
-> 当前开发线是 **v0.3.0 Checked Evidence + Research Run Loop**。包版本仍为
-> `0.2.4`，直到后续 release-candidate PR 才会准备 `0.3.0` 版本号。仓库已经具备
+> 当前状态：已发布版本是 **v0.3.0 Checked Evidence + Research Run Loop**。
+> 包版本为 `0.3.0`；公开 `v0.3.0` tag、GitHub release、`@v0.3.0`
+> release smoke，以及 workspace-template / public KB 的主动 pin 更新均已完成。仓库已经具备
 > Python 包脚手架、Typer CLI、Pydantic v2 模型、工作区加载、验证、门禁、上下文包、
 > 任务/编排干运行、受控草稿写入、提供商网关、托管 worker 服务、可选验证器适配器、
 > failure memory、checked counterexample evidence、research-run provenance 和 CI。

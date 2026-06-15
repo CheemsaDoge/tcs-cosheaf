@@ -1,8 +1,8 @@
 # Three-Repository Release Checklist
 
-This checklist records the `v0.3.0` Checked Evidence + Research Run Loop
-release-candidate state after the published `v0.2.4` Artifact Failure Memory +
-Attempt Traceability release, the `v0.2.3` Verification Evidence Hardening
+This checklist records the published `v0.3.0` Checked Evidence + Research Run
+Loop state after the published `v0.2.4` Artifact Failure Memory + Attempt
+Traceability release, the `v0.2.3` Verification Evidence Hardening
 release, the `v0.2.2` Provider Transport + Agent Workflow Hardening release,
 the `v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease, the
 `v0.2.0` local-MVP release, and the `v0.1.1` Formal Link Layer support
@@ -27,10 +27,8 @@ release, release smoke, and downstream workspace/public KB pin updates are
 complete.
 `v0.3.0` packages checked counterexample evidence, research-run provenance,
 external-operator run-loop docs, downstream demo/policy surfaces, and
-integration/eval smoke coverage. Package metadata records `0.3.0` in the
-release-candidate PR; the public tag, GitHub release, release smoke, and
-downstream pin updates are publication-closeout work after the
-release-candidate PR merges.
+integration/eval smoke coverage. Package metadata records `0.3.0`; the public
+tag, GitHub release, release smoke, and downstream pin updates are complete.
 
 ## Scope
 
@@ -38,7 +36,7 @@ release-candidate PR merges.
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
 - Current framework package metadata version:
-  `0.3.0` in the release-candidate PR.
+  `0.3.0`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
@@ -56,12 +54,12 @@ release-candidate PR merges.
   workflows after publication:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.3.0`.
 
-## v0.3.0 Release Candidate Baseline
+## v0.3.0 Published Release Baseline
 
-`docs/releases/v0.3.0.md` is the release-candidate note for Checked Evidence +
-Research Run Loop. This release-candidate task prepares package metadata and
-status docs only. It does not create the public tag, publish a GitHub release,
-run post-tag release smoke, or update downstream pins.
+`docs/releases/v0.3.0.md` is the published release note for Checked Evidence +
+Research Run Loop. The release-candidate task prepared package metadata and
+status docs; the later publication closeout created the public tag, published
+the GitHub release, ran post-tag release smoke, and updated downstream pins.
 
 - [x] Checked counterexample evidence is implemented as non-authoritative
   review evidence, separate from candidate counterexamples, verifier evidence,
@@ -84,16 +82,16 @@ run post-tag release smoke, or update downstream pins.
   checked-evidence policy rows.
 - [x] Optional verifier, provider, network, SAT, SMT, Lean, lake, and MCP rows
   remain skipped, not pass, when unavailable.
-- [x] `v0.3.0` release-candidate metadata is prepared in the release-candidate
+- [x] `v0.3.0` release-candidate metadata was prepared in the release-candidate
   branch.
-- [ ] The annotated `v0.3.0` tag is published.
-- [ ] GitHub release `v0.3.0 Checked Evidence + Research Run Loop` is
+- [x] The annotated `v0.3.0` tag is published.
+- [x] GitHub release `v0.3.0 Checked Evidence + Research Run Loop` is
   published.
-- [ ] Release smoke from
+- [x] Release smoke from
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.3.0` passed.
-- [ ] Workspace-template active pins moved to `@v0.3.0` after tag publication
+- [x] Workspace-template active pins moved to `@v0.3.0` after tag publication
   and release smoke.
-- [ ] Public KB CI moved to `@v0.3.0` after tag publication and release smoke.
+- [x] Public KB CI moved to `@v0.3.0` after tag publication and release smoke.
 
 ## v0.2.4 Readiness Audit Baseline
 
@@ -272,9 +270,8 @@ smoke, and downstream pin updates.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.3.0` in the
-  release-candidate PR.
-- [x] `cosheaf.__version__` records `0.3.0` in the release-candidate PR.
+- [x] `pyproject.toml` records package version `0.3.0`.
+- [x] `cosheaf.__version__` records `0.3.0`.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
@@ -284,7 +281,7 @@ smoke, and downstream pin updates.
   reviewed release-candidate main commit.
 - [x] Remote tag `v0.2.4` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
-- [ ] Remote tag `v0.3.0` exists and points through the annotated tag to the
+- [x] Remote tag `v0.3.0` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
@@ -294,7 +291,7 @@ smoke, and downstream pin updates.
   after v0.2.3 tag publication and release smoke succeeded.
 - [x] Workspace-template and public KB active pins moved to `@v0.2.4` only
   after v0.2.4 tag publication and release smoke succeeded.
-- [ ] Workspace-template and public KB active pins moved to `@v0.3.0` only
+- [x] Workspace-template and public KB active pins moved to `@v0.3.0` only
   after v0.3.0 tag publication and release smoke succeeds.
 
 ### License

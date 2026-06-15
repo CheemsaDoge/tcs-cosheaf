@@ -1,76 +1,70 @@
 # Roadmap
 
-TCS-Cosheaf is preparing the `v0.3.0` Checked Evidence + Research Run Loop
-release candidate after the published `v0.2.4` Artifact Failure Memory +
-Attempt Traceability release, the published `v0.2.3` Verification Evidence
-Hardening release, the published `v0.2.2` Provider Transport + Agent Workflow
-Hardening release, the published `v0.2.1` CLI Agent Access + Hosted Provider
-Gateway prerelease, the published `v0.2.0` local-MVP release, and the earlier
+TCS-Cosheaf has published the `v0.3.0` Checked Evidence + Research Run Loop
+release after the published `v0.2.4` Artifact Failure Memory + Attempt
+Traceability release, the published `v0.2.3` Verification Evidence Hardening
+release, the published `v0.2.2` Provider Transport + Agent Workflow Hardening
+release, the published `v0.2.1` CLI Agent Access + Hosted Provider Gateway
+prerelease, the published `v0.2.0` local-MVP release, and the earlier
 `v0.1.1` Formal Link Layer support baseline. The project is still not
 production-ready. This roadmap records durable direction and named milestones;
 live issue state belongs in GitHub issues.
 
-## Active Focus: v0.3.0 Checked Evidence + Research Run Loop
+## Completed Release Focus: v0.3.0 Checked Evidence + Research Run Loop
 
-The active post-`v0.2.4` line is `v0.3.0` Checked Evidence + Research Run Loop.
+The post-`v0.2.4` line is `v0.3.0` Checked Evidence + Research Run Loop.
 The `v0.2.x` series is treated as the completed CLI-agent, provider,
 verification-evidence, and artifact failure-memory foundation. `v0.3.0` starts
 the next stage: durable checked evidence and reproducible external-operator
 research runs.
 
-The active plan is
+The completed plan is
 [`docs/CODEX_DEVELOPMENT_PLAN_V7.md`](CODEX_DEVELOPMENT_PLAN_V7.md), with the
 kickoff audit in
 [`docs/POST_V024_V030_KICKOFF_AUDIT.md`](POST_V024_V030_KICKOFF_AUDIT.md) and
 ADR 0024 in
 [`docs/ADR/0024-checked-evidence-research-run-loop.md`](ADR/0024-checked-evidence-research-run-loop.md).
 
-This line will:
+This line:
 
-- keep `candidate_counterexample` metadata separated from durable
+- kept `candidate_counterexample` metadata separated from durable
   `checked_counterexample_evidence`;
-- build on the reviewable, repository-local checked-evidence model, schema,
-  CLI, context/readiness surfacing, security tests, and eval fixtures added in
-  the first `v0.3.0` functional increment;
-- build on research-run records with start, append, finalize, show,
+- added the reviewable, repository-local checked-evidence model, schema,
+  CLI, context/readiness surfacing, security tests, and eval fixtures;
+- added research-run records with start, append, finalize, show,
   evidence-report, export-review, and replay-plan CLI surfaces;
-- keep Codex-style agents as external CLI/Git operators rather than embedding
+- kept Codex-style agents as external CLI/Git operators rather than embedding
   GPT, Claude, or any hosted model as the default runtime;
-- keep the workspace-template research-run demo and public KB checked-evidence
+- kept the workspace-template research-run demo and public KB checked-evidence
   policy aligned with the framework surfaces;
-- integrate checked-evidence and research-run evals into the three-repository
+- integrated checked-evidence and research-run evals into the three-repository
   smoke matrix without requiring network, hosted providers, MCP, SAT, SMT,
   Lean, or lake by default; and
-- prepare a conservative `v0.3.0` release only after implementation,
-  downstream alignment, evals, and smoke coverage pass.
+- published a conservative `v0.3.0` release only after implementation,
+  downstream alignment, evals, and smoke coverage passed.
 
 The implementation, downstream demo/policy surfaces, and integration/eval smoke
-matrix have landed. The current task is the conservative `v0.3.0`
-release-candidate PR. The public `v0.3.0` tag, GitHub release, release smoke
-from `@v0.3.0`, and downstream pin updates remain publication-closeout work
-after the release-candidate PR merges.
+matrix have landed. The public `v0.3.0` tag and GitHub release are published,
+release smoke from `@v0.3.0` passed, and downstream workspace/public KB pins
+now use `v0.3.0`.
 
-This line will not make checked evidence human review, proof, accepted
+This line does not make checked evidence human review, proof, accepted
 refutation, accepted status, or promotion authority by itself. Research-run
-records will be provenance, not proof, verifier pass, gate pass, human review,
+records are provenance, not proof, verifier pass, gate pass, human review,
 accepted status, or promotion authorization. Provider calls remain explicit,
 default-off, policy-scoped, previewed, consented, and excluded from CI/default
 tests. MCP remains optional and non-blocking.
 
-## Current Release State: v0.3.0 RC, v0.2.4 Published Baseline
+## Current Release State: v0.3.0 Published Release
 
-Package metadata and `cosheaf.__version__` record `0.3.0` in the
-release-candidate PR. The public `v0.3.0` tag and GitHub release do not exist
-yet, release smoke from `@v0.3.0` has not run yet, and downstream
-workspace/public KB active pins remain on `v0.2.4` until publication closeout.
+Package metadata and `cosheaf.__version__` record `0.3.0`. The public
+`v0.3.0` tag and GitHub release are published, release smoke from `@v0.3.0`
+passed, and downstream workspace/public KB active pins now use `v0.3.0`.
 
-The latest published baseline is `v0.2.4`. The public `v0.2.4` tag and GitHub
-release are published, release smoke from `@v0.2.4` passed, and downstream
-workspace/public KB active pins now use `v0.2.4`.
-
-The release packages optional artifact-level `failure_log` support, read-only
-and controlled draft failure-log CLI surfaces, WorkerBundle failure-log
-bridges, retrieval/context/promotion-readiness surfacing, workspace-template
+The previous published baseline was `v0.2.4`. It packaged optional
+artifact-level `failure_log` support, read-only and controlled draft
+failure-log CLI surfaces, WorkerBundle failure-log bridges,
+retrieval/context/promotion-readiness surfacing, workspace-template
 demonstration, public KB policy, and security/eval regression coverage without
 turning failure memory into proof, verifier success, checked counterexample
 evidence, human review, accepted status, or promotion evidence.
