@@ -1,10 +1,11 @@
 # Three-Repository Release Checklist
 
-This checklist records the published `v0.2.4` Artifact Failure Memory +
-Attempt Traceability release state after the `v0.2.3` Verification Evidence
-Hardening release, the `v0.2.2` Provider Transport + Agent Workflow Hardening
-release, the `v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease,
-the `v0.2.0` local-MVP release, and the `v0.1.1` Formal Link Layer support
+This checklist records the `v0.3.0` Checked Evidence + Research Run Loop
+release-candidate state after the published `v0.2.4` Artifact Failure Memory +
+Attempt Traceability release, the `v0.2.3` Verification Evidence Hardening
+release, the `v0.2.2` Provider Transport + Agent Workflow Hardening release,
+the `v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease, the
+`v0.2.0` local-MVP release, and the `v0.1.1` Formal Link Layer support
 baseline. It is an operator checklist for the framework package, public KB,
 and workspace template together. It is not a production-readiness claim.
 
@@ -24,6 +25,12 @@ smoke, and downstream workspace/public KB pin updates are complete.
 readiness audit. Package metadata records `0.2.4`; the public tag, GitHub
 release, release smoke, and downstream workspace/public KB pin updates are
 complete.
+`v0.3.0` packages checked counterexample evidence, research-run provenance,
+external-operator run-loop docs, downstream demo/policy surfaces, and
+integration/eval smoke coverage. Package metadata records `0.3.0` in the
+release-candidate PR; the public tag, GitHub release, release smoke, and
+downstream pin updates are publication-closeout work after the
+release-candidate PR merges.
 
 ## Scope
 
@@ -31,7 +38,7 @@ complete.
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
 - Current framework package metadata version:
-  `0.2.4`.
+  `0.3.0` in the release-candidate PR.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
@@ -45,6 +52,48 @@ complete.
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.3`.
 - Downstream dependency for artifact-failure-memory workflows:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.2.4`.
+- Intended downstream dependency for checked-evidence and research-run
+  workflows after publication:
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.3.0`.
+
+## v0.3.0 Release Candidate Baseline
+
+`docs/releases/v0.3.0.md` is the release-candidate note for Checked Evidence +
+Research Run Loop. This release-candidate task prepares package metadata and
+status docs only. It does not create the public tag, publish a GitHub release,
+run post-tag release smoke, or update downstream pins.
+
+- [x] Checked counterexample evidence is implemented as non-authoritative
+  review evidence, separate from candidate counterexamples, verifier evidence,
+  human review, accepted refutation, accepted status, and promotion authority.
+- [x] Controlled checked-evidence CLI staging writes only under
+  `reviews/evidence/checked-counterexamples/` and refuses accepted-path,
+  path-traversal, duplicate, readonly-root, and authority-spoofing inputs.
+- [x] Research-run records are implemented as repository-local provenance
+  with start, append, finalize, show, evidence-report, export-review, and
+  replay-plan CLI surfaces.
+- [x] Research-run records remain provenance only and do not create proof,
+  human review, verifier pass, gate pass, accepted status, or promotion
+  authority.
+- [x] External operator docs describe the CLI/Git run loop without embedding
+  GPT, Claude, hosted providers, or MCP as the default runtime.
+- [x] Workspace-template research-run demo and public KB checked-evidence
+  policy surfaces are merged.
+- [x] Integration/eval/ecosystem smoke coverage includes checked-evidence eval,
+  research-run eval, workspace-template research-run demo, and public KB
+  checked-evidence policy rows.
+- [x] Optional verifier, provider, network, SAT, SMT, Lean, lake, and MCP rows
+  remain skipped, not pass, when unavailable.
+- [x] `v0.3.0` release-candidate metadata is prepared in the release-candidate
+  branch.
+- [ ] The annotated `v0.3.0` tag is published.
+- [ ] GitHub release `v0.3.0 Checked Evidence + Research Run Loop` is
+  published.
+- [ ] Release smoke from
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.3.0` passed.
+- [ ] Workspace-template active pins moved to `@v0.3.0` after tag publication
+  and release smoke.
+- [ ] Public KB CI moved to `@v0.3.0` after tag publication and release smoke.
 
 ## v0.2.4 Readiness Audit Baseline
 
@@ -223,8 +272,9 @@ smoke, and downstream pin updates.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.2.4` on `main`.
-- [x] `cosheaf.__version__` records `0.2.4` on `main`.
+- [x] `pyproject.toml` records package version `0.3.0` in the
+  release-candidate PR.
+- [x] `cosheaf.__version__` records `0.3.0` in the release-candidate PR.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
@@ -234,6 +284,8 @@ smoke, and downstream pin updates.
   reviewed release-candidate main commit.
 - [x] Remote tag `v0.2.4` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
+- [ ] Remote tag `v0.3.0` exists and points through the annotated tag to the
+  reviewed release-candidate main commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
 - [x] Workspace-template verification installs or pins `@v0.2.4` for
@@ -242,6 +294,8 @@ smoke, and downstream pin updates.
   after v0.2.3 tag publication and release smoke succeeded.
 - [x] Workspace-template and public KB active pins moved to `@v0.2.4` only
   after v0.2.4 tag publication and release smoke succeeded.
+- [ ] Workspace-template and public KB active pins moved to `@v0.3.0` only
+  after v0.3.0 tag publication and release smoke succeeds.
 
 ### License
 

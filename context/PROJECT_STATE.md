@@ -3,6 +3,38 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.3.0 Release Candidate Readiness - 2026-06-15
+
+Issue 342 prepares the `v0.3.0` Checked Evidence + Research Run Loop release
+candidate after the checked counterexample evidence core, research-run record
+CLI core, external-operator workflow docs, downstream workspace/public-KB
+surfaces, and integration/eval/ecosystem smoke matrix have landed.
+
+The release-candidate branch updates package metadata and `cosheaf.__version__`
+to `0.3.0`, adds `docs/releases/v0.3.0.md`, and refreshes release/status docs
+so they distinguish:
+
+- the published `v0.2.4` baseline, whose tag/release/smoke/downstream pins are
+  complete;
+- the `v0.3.0` release-candidate metadata, which is prepared in this PR; and
+- the later publication closeout, which must create the public `v0.3.0` tag,
+  publish the GitHub release, run release smoke from `@v0.3.0`, and update
+  downstream workspace-template/public-KB pins only after smoke passes.
+
+The readiness audit records no release blocker for entering the release
+candidate. Checked counterexample evidence remains review evidence only, not
+human review, accepted refutation, accepted status, verifier pass, gate pass,
+or promotion authority. Research-run records remain provenance only, not proof,
+human review, verifier pass, gate pass, accepted status, or promotion
+authorization. Skipped verifier, provider, optional-tool, network, or operator
+rows remain skipped, not pass.
+
+This release-candidate task does not create the public `v0.3.0` tag, publish a
+GitHub release, run post-tag release smoke, update downstream pins, add runtime
+behavior, expand provider or MCP authority, run real provider calls, write
+accepted knowledge, mark human review, promote artifacts, or change schema,
+gate, verifier, public/private policy, or accepted-promotion semantics.
+
 ## v0.3.0 Integration Eval And Ecosystem Smoke - 2026-06-15
 
 Issue 340 extends the framework ecosystem smoke matrix for the active
@@ -17,9 +49,10 @@ row and a public KB checked-evidence policy documentation smoke row. The
 existing network rows remain opt-in and skipped by default; optional external
 SAT/SMT/Lean/lake availability remains a skipped row when unavailable, not a
 pass. The default release-smoke tag in `scripts/ecosystem_smoke.py` is aligned
-with the current published baseline `v0.2.4`; package metadata and
-`cosheaf.__version__` remain `0.2.4` until the later `v0.3.0` release
-candidate PR.
+with the published baseline `v0.2.4`. At the time this integration task
+landed, package metadata and `cosheaf.__version__` still recorded `0.2.4`;
+the release-candidate entry above supersedes that state by preparing the
+`0.3.0` metadata bump.
 
 This task does not add provider or MCP behavior, call hosted providers, require
 network in default tests, write accepted knowledge, create human review, alter
