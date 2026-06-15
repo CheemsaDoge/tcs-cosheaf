@@ -132,11 +132,17 @@ The schema and DTOs include an authority notice and
 context only and must not replace source metadata, validation, gates, verifier
 evidence, human review, or explicit promotion.
 
-## Current Limits
+## Downstream Integration
 
-The current `v0.4.0` implementation still does not implement:
+The downstream v0.4.0 integration path now includes:
 
-- downstream workspace-template strategy demos;
-- public KB strategy policy docs.
+- `tcs-cosheaf-workspace-template` strategy-planner demo coverage through
+  `make strategy-demo`;
+- `tcs-kb-public` strategy-plan policy docs that keep strategy plans as
+  review context only; and
+- framework ecosystem-smoke matrix rows for strategy-planner eval,
+  workspace-template strategy demo, and public KB strategy-plan policy docs.
 
-Those are the next `v0.4.0` tasks.
+The remaining v0.4.0 work is release-candidate and publication closeout:
+version metadata, release notes, release smoke, and downstream pin alignment
+after the public tag exists.

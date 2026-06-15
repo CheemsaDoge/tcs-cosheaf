@@ -604,17 +604,18 @@ The three-repository readiness matrix is exposed through:
 python scripts/ecosystem_smoke.py --matrix --cosheaf "python -m cosheaf.cli" --framework-root . --workspace-template-root ../tcs-cosheaf-workspace-template --public-kb-root ../tcs-kb-public --json
 ```
 
-The v0.3.0 integration matrix rows cover framework local smoke, framework
-verifier-evidence eval smoke, framework checked-evidence run-loop eval,
-framework research-run loop eval, optional verifier availability, framework
-git-tag release smoke, workspace-template install demo, workspace-template
-CLI-agent demo, workspace-template research-run demo, workspace-template
-fake-provider smoke, workspace-template verifier-evidence demo, public KB
-policy guard, public KB checked-evidence policy docs, and public KB
-verifier-policy self-test coverage. The default git-tag release-smoke row
-continues to use the compatibility baseline `v0.2.4`; use
-`--framework-tag v0.3.0` when running the opt-in network release-smoke row
-against the current published release.
+The active v0.4.0 integration matrix rows cover framework local smoke,
+framework verifier-evidence eval smoke, framework checked-evidence run-loop
+eval, framework research-run loop eval, framework strategy-planner eval,
+optional verifier availability, framework git-tag release smoke,
+workspace-template install demo, workspace-template CLI-agent demo,
+workspace-template research-run demo, workspace-template strategy demo,
+workspace-template fake-provider smoke, workspace-template verifier-evidence
+demo, public KB policy guard, public KB checked-evidence policy docs, public KB
+strategy-plan policy docs, and public KB verifier-policy self-test coverage.
+The default git-tag release-smoke row uses the active release target
+`v0.4.0`; before that tag is published, it remains skipped unless
+`--include-network` is explicitly supplied.
 
 Network rows remain opt-in through `--include-network`. When optional external
 SAT/SMT/Lean/lake tools are unavailable, the optional verifier availability

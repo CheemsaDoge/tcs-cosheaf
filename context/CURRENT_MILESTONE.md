@@ -64,26 +64,24 @@ Compressed milestones:
 Current task:
 
 ```text
-strategy-run-loop-integration
+strategy-downstream-demo-policy-smoke
 ```
 
-This task implements the Phase 2 planner/run-loop integration: planning from
-existing context packs, updating strategy plans from research-run provenance,
-strategy review export, context-pack strategy summaries, promotion-readiness
-advisory warnings, deterministic strategy-planner evals, and security
-coverage. It must not add provider calls, MCP requirements, task execution,
-accepted KB writes, human review creation, promotion behavior, version bumps,
-or release tags.
+This task closes Phase 3 downstream integration: the workspace-template
+strategy demo, public KB strategy-plan policy, and framework ecosystem-smoke
+strategy rows. It must not add provider calls, MCP requirements, task
+execution, accepted KB writes, human review creation, promotion behavior,
+version bumps, or release tags.
 
 After this task merges, proceed directly to:
 
 ```text
-strategy-downstream-demo-policy-smoke
+release-v040-readiness-and-rc
 ```
 
-That follow-up should add the workspace-template strategy demo, public KB
-strategy-plan policy, and framework ecosystem-smoke rows in separate repo PRs
-where required.
+That follow-up should prepare the conservative v0.4.0 release candidate,
+including package version metadata, release notes, status docs, and the full
+release-candidate command set. It should not publish the public `v0.4.0` tag.
 
 ## Explicit Boundaries
 
