@@ -36,8 +36,11 @@ This line will:
   evidence-report, export-review, and replay-plan CLI surfaces;
 - keep Codex-style agents as external CLI/Git operators rather than embedding
   GPT, Claude, or any hosted model as the default runtime;
-- update workspace-template demos and public KB policy only after framework
-  surfaces exist; and
+- keep the workspace-template research-run demo and public KB checked-evidence
+  policy aligned with the framework surfaces;
+- integrate checked-evidence and research-run evals into the three-repository
+  smoke matrix without requiring network, hosted providers, MCP, SAT, SMT,
+  Lean, or lake by default; and
 - prepare a conservative `v0.3.0` release only after implementation,
   downstream alignment, evals, and smoke coverage pass.
 

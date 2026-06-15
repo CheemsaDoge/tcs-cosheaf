@@ -46,8 +46,9 @@ informal/formal semantic alignment.
   command/artifact/output append paths, evidence report, review export, replay
   plan, security tests, eval fixtures, and docs. It remains non-authoritative
   provenance.
-- The external operator workflow docs are now the active documentation
-  closeout task for the v0.3.0 run loop.
+- The external operator workflow docs, workspace-template research-run demo,
+  and public KB checked-evidence policy are merged downstream surfaces for the
+  v0.3.0 run loop.
 
 ## Active Scope
 
@@ -71,21 +72,23 @@ Compressed milestones:
 Current functional task:
 
 ```text
-external-operator-workflow-docs
+v030-integration-eval-smoke
 ```
 
-This task updates operator-facing docs and templates so Codex-style agents run
-the checked-evidence and research-run loop through CLI/Git without provider/MCP
-expansion or accepted-write authority.
+This task integrates the checked-evidence and research-run surfaces into the
+framework eval and ecosystem smoke matrix. It keeps the default matrix local
+and network-free except for explicitly skipped network rows, and it does not
+expand provider/MCP behavior or accepted-write authority.
 
 After this PR lands, proceed to:
 
 ```text
-workspace-run-loop-demo
+release-v030-readiness-and-rc
 ```
 
-That next downstream task should add a workspace-template demo for the
-external-operator research-run loop.
+That next task should audit readiness and prepare conservative release
+candidate metadata only after integration smoke coverage is merged. Package
+metadata remains `0.2.4` until that release-candidate PR.
 
 ## Explicit Boundaries
 

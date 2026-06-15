@@ -11,7 +11,11 @@ Current status: **v0.2.4 Artifact Failure Memory + Attempt Traceability
 published release**. The package metadata records `0.2.4`, the public
 `v0.2.4` tag and GitHub release are published, release smoke from `@v0.2.4`
 passed, and downstream workspace-template and public-KB pins have been updated
-to `v0.2.4`. The `v0.1.1` tag remains the downstream Formal Link Layer support
+to `v0.2.4`. The active development line is now **v0.3.0 Checked Evidence +
+Research Run Loop**; checked counterexample evidence and research-run
+provenance surfaces are implemented on `main`, but package metadata remains
+`0.2.4` until the later release-candidate PR. The `v0.1.1` tag remains the
+downstream Formal Link Layer support
 baseline; the `v0.2.0` tag packages the deterministic local-MVP workflow; the
 `v0.2.1` tag packages the CLI-first agent and hosted-provider gateway surfaces
 as a pin-able framework prerelease; `v0.2.2` packages the explicit default-off
@@ -35,7 +39,9 @@ minimal optional SMT-LIB path, a minimal optional plain Lean file path, and an
 optional external Lean library reference `#check` path, an optional stdlib
 OpenAI-compatible HTTP transport object plus a deliberately hard-to-trigger
 provider `real-run` CLI path that is not used by default, GitHub Actions CI,
-and collaboration templates. It is not production-ready software and does not
+checked counterexample evidence CLI/eval surfaces, research-run provenance
+CLI/eval surfaces, and collaboration templates. It is not production-ready
+software and does not
 yet provide a web UI, a default real hosted provider path, hosted worker CLI
 commands, automatic theorem proving, full Lean autoformalization, automatic
 accepted promotion, or multi-user permissions.

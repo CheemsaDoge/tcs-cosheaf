@@ -136,9 +136,9 @@ is Verification Evidence Hardening, not provider/MCP expansion.
   assumptions, uncertainty, failed attempts, verifier requests, counterexample
   candidates, risk flags, next steps, and limitations without creating human
   review, verifier results, accepted knowledge, or promotion authority.
-- [ ] Follow-up evidence taxonomy work still needs a dedicated checked
-  counterexample review artifact or report path beyond WorkerBundle candidate
-  records.
+- [x] Follow-up evidence taxonomy work is now addressed in the active
+  `v0.3.0` line through the checked counterexample evidence surface. This was
+  not part of the `v0.2.3` release itself.
 - [x] SAT result-depth fixture coverage keeps the SAT solver optional and
   covers satisfiable, unsatisfiable, malformed DIMACS, timeout, and
   unavailable-solver paths without treating skipped as pass.

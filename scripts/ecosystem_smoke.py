@@ -17,7 +17,7 @@ from typing import Any
 ISSUE_ID = "issue.ecosystem-smoke.private-context"
 PUBLIC_ARTIFACT_ID = "definition.ecosystem.graph"
 PRIVATE_ARTIFACT_ID = "claim.ecosystem.private"
-DEFAULT_FRAMEWORK_TAG = "v0.2.2"
+DEFAULT_FRAMEWORK_TAG = "v0.2.4"
 
 
 @dataclass(frozen=True)
@@ -318,6 +318,36 @@ def build_ecosystem_smoke_matrix(
             ),
         ),
         EcosystemSmokeMatrixCase(
+            id="framework.checked-evidence-run-loop-eval",
+            repo="tcs-cosheaf",
+            cwd=framework_root,
+            commands=(
+                MatrixCommand(
+                    (
+                        *shlex.split(cosheaf),
+                        "eval",
+                        "checked-evidence-run-loop",
+                        "--json",
+                    )
+                ),
+            ),
+        ),
+        EcosystemSmokeMatrixCase(
+            id="framework.research-run-loop-eval",
+            repo="tcs-cosheaf",
+            cwd=framework_root,
+            commands=(
+                MatrixCommand(
+                    (
+                        *shlex.split(cosheaf),
+                        "eval",
+                        "research-run-loop",
+                        "--json",
+                    )
+                ),
+            ),
+        ),
+        EcosystemSmokeMatrixCase(
             id="framework.optional-verifier-availability",
             repo="tcs-cosheaf",
             cwd=framework_root,
@@ -372,6 +402,13 @@ def build_ecosystem_smoke_matrix(
             env=local_env,
         ),
         EcosystemSmokeMatrixCase(
+            id="workspace-template.research-run-demo",
+            repo="tcs-cosheaf-workspace-template",
+            cwd=workspace_template_root,
+            commands=(MatrixCommand((make_executable, "research-run-demo")),),
+            env=local_env,
+        ),
+        EcosystemSmokeMatrixCase(
             id="workspace-template.provider-fake-smoke",
             repo="tcs-cosheaf-workspace-template",
             cwd=workspace_template_root,
@@ -407,6 +444,15 @@ def build_ecosystem_smoke_matrix(
             env=public_kb_env,
         ),
         EcosystemSmokeMatrixCase(
+            id="public-kb.checked-evidence-policy-docs",
+            repo="tcs-kb-public",
+            cwd=public_kb_root,
+            commands=(
+                MatrixCommand(_public_kb_checked_evidence_policy_command()),
+            ),
+            env=public_kb_env,
+        ),
+        EcosystemSmokeMatrixCase(
             id="public-kb.verifier-policy-self-test",
             repo="tcs-kb-public",
             cwd=public_kb_root,
@@ -430,6 +476,29 @@ def build_ecosystem_smoke_matrix(
         include_network=include_network,
         cases=cases,
     )
+
+
+def _public_kb_checked_evidence_policy_command() -> tuple[str, ...]:
+    code = "\n".join(
+        [
+            "from pathlib import Path",
+            "path = Path('docs/CHECKED_EVIDENCE_POLICY.md')",
+            "text = path.read_text(encoding='utf-8').lower()",
+            "required = (",
+            "    'checked evidence and research-run records are not:',",
+            "    'human review;',",
+            "    'accepted public artifacts still require complete source metadata',",
+            "    'research-run records must not contain private workspace material',",
+            "    'candidate evidence is not mislabeled as checked evidence',",
+            ")",
+            "missing = [phrase for phrase in required if phrase not in text]",
+            "raise SystemExit(",
+            "    'missing checked-evidence policy text: ' + ', '.join(missing)",
+            "    if missing else 0",
+            ")",
+        ]
+    )
+    return (sys.executable, "-c", code)
 
 
 def run_ecosystem_smoke_matrix(
