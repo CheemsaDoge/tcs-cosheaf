@@ -12,33 +12,33 @@ Layer support baseline. Downstream workspace/public-KB pin alignment for
 roadmap records durable direction and named milestones; live issue state
 belongs in GitHub issues.
 
-## Active Focus: v0.4.0 Strategy Planner + Research Task Graph
+## Completed Release Focus: v0.4.0 Strategy Planner + Research Task Graph
 
-The active post-`v0.3.0` line is `v0.4.0` Strategy Planner + Research Task
+The completed post-`v0.3.0` line is `v0.4.0` Strategy Planner + Research Task
 Graph. `v0.3.0` records checked evidence and reproducible external-operator
 research runs; `v0.4.0` adds the planning layer that decides what to try next.
 
-The active plan is
+The completed plan is
 [`docs/CODEX_DEVELOPMENT_PLAN_V8.md`](CODEX_DEVELOPMENT_PLAN_V8.md), with the
 architecture decision in
 [`docs/ADR/0025-strategy-planner-task-graph.md`](ADR/0025-strategy-planner-task-graph.md).
 
 This line:
 
-- model research problems with issue, domain, target-artifact, constraint, and
+- models research problems with issue, domain, target-artifact, constraint, and
   desired-evidence metadata;
-- model directed research task graphs with prerequisites, blocked-by edges,
+- models directed research task graphs with prerequisites, blocked-by edges,
   expected evidence, and related artifacts or evidence;
-- produce deterministic strategy plans with ranked next steps and explanations;
-- use failure memory, candidate counterexamples, checked counterexample
+- produces deterministic strategy plans with ranked next steps and explanations;
+- uses failure memory, candidate counterexamples, checked counterexample
   evidence, and research-run provenance without changing their authority;
-- integrate compact strategy references into context and read-only readiness
+- integrates compact strategy references into context and read-only readiness
   surfaces without private leakage;
 - adds deterministic eval and security coverage for strategy-planner
   boundaries;
 - adds workspace-template strategy demos and public KB strategy-plan policy;
   and
-- publishes a conservative `v0.4.0` release after implementation, downstream
+- published a conservative `v0.4.0` release after implementation, downstream
   integration, evals, and smoke coverage pass.
 
 This line will not make strategy plans proof, evidence, verifier pass, gate
@@ -112,9 +112,10 @@ remains optional and non-blocking.
 ## Previous Published Baseline: v0.3.0
 
 The previous published release was `v0.3.0`. Its public tag and GitHub release
-are published, release smoke from `@v0.3.0` passed, and downstream
-workspace/public KB active pins still use `v0.3.0` until the `v0.4.0`
-downstream pin-alignment task completes.
+are published and release smoke from `@v0.3.0` passed. Downstream
+workspace/public KB active pins now use `v0.4.0`; `v0.3.0` remains a
+historical checked-evidence and research-run baseline for users who
+intentionally pin that older line.
 
 The previous published baseline was `v0.2.4`. It packaged optional
 artifact-level `failure_log` support, read-only and controlled draft
