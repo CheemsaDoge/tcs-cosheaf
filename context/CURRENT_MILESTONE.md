@@ -2,13 +2,15 @@
 
 ## Milestone
 
-`v0.3.0` Checked Evidence + Research Run Loop published release closeout.
+`v0.4.0` Strategy Planner + Research Task Graph.
 
 ## Goal
 
-Record that the post-`v0.2.4` checked-evidence and research-run loop line has
-been implemented, packaged, tagged, smoke-tested, released, and aligned across
-the workspace-template and public KB downstream repositories.
+Turn the published `v0.3.0` checked-evidence and research-run loop into a
+planned research process. The `v0.4.0` line should decompose an issue into
+bounded research tasks, rank next steps, avoid known failed directions, and
+give Codex-style external operators a deterministic task graph to execute
+through the CLI/Git/PR workflow.
 
 This milestone does not claim production hosted multi-agent readiness. It does
 not add a web UI, multi-user permissions, automatic theorem proving,
@@ -29,65 +31,54 @@ informal/formal semantic alignment.
   provider-preview, fake-provider smoke, verifier-evidence, failure-memory,
   checked-evidence, and research-run paths pin or install `@v0.3.0`.
 - `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.3.0`.
-- `docs/CODEX_DEVELOPMENT_PLAN_V6.md` and ADR 0023 are completed durable
-  records for the `v0.2.4` artifact failure-memory line.
-- `docs/POST_V024_V6_COMPLETION_AUDIT.md` records that V6 is complete and not
-  the active task queue.
 - `docs/CODEX_DEVELOPMENT_PLAN_V7.md` is the completed accelerated `v0.3.0`
   plan.
 - ADR 0024 records the checked-evidence and research-run-loop direction.
-- `docs/POST_V024_V030_KICKOFF_AUDIT.md` records the kickoff state audit.
 - `docs/releases/v0.3.0.md` records release-candidate verification,
   publication closeout, release smoke, and downstream pin alignment.
-- The checked counterexample evidence core is implemented and merged through
-  PR #335: model, schema, CLI, controlled staging, context surfacing,
-  promotion-readiness warnings, security tests, eval fixtures, and docs. It
-  remains non-authoritative review evidence.
-- The research-run record CLI core is implemented through PR #337: model,
-  schema, lifecycle CLI, command/artifact/output append paths, evidence report,
-  review export, replay plan, security tests, eval fixtures, and docs. It
-  remains non-authoritative provenance.
-- The external operator workflow docs, workspace-template research-run demo,
-  and public KB checked-evidence policy are merged downstream surfaces for the
-  v0.3.0 run loop.
-- The integration/eval/ecosystem smoke task is merged through PR #341. The
-  ecosystem matrix includes checked-evidence eval, research-run eval,
-  workspace-template research-run demo, and public KB checked-evidence policy
-  smoke rows. Optional network and external-tool rows remain skipped, not
-  pass, when unavailable.
+- `docs/CODEX_DEVELOPMENT_PLAN_V8.md` is the active accelerated `v0.4.0`
+  plan.
+- ADR 0025 records the Strategy Planner + Research Task Graph direction.
 
-## Completed Scope
+## Active Scope
 
-The completed line is:
+The active line is:
 
 ```text
-v0.3.0 Checked Evidence + Research Run Loop
+v0.4.0 Strategy Planner + Research Task Graph
 ```
 
-Completed compressed milestones:
+Compressed milestones:
 
-1. Kickoff audit + plan/ADR landing.
-2. Checked counterexample evidence core.
-3. Research run record and CLI core.
-4. External operator workflow and downstream demos/policies.
-5. Integration, eval, and three-repository smoke.
-6. v0.3.0 release candidate and publication closeout.
+1. Kickoff + plan + ADR.
+2. Strategy/task-graph model, schema, CLI, docs, and tests.
+3. Planner/run-loop integration, context/readiness surfacing, eval, and
+   security coverage.
+4. Workspace-template strategy demo, public KB strategy policy, and ecosystem
+   smoke rows.
+5. v0.4.0 release candidate.
+6. v0.4.0 publication closeout and downstream pin alignment.
 
 ## Current And Next Functional Tasks
 
-Current closeout task:
+Current task:
 
 ```text
-release-v030-publication-closeout
+post-v030-v040-kickoff
 ```
 
-This task is documentation/status closeout only. It records the already
-completed public tag, GitHub release, release smoke, workspace-template pin
-update, and public KB CI pin update. It does not add runtime behavior.
+This task lands the accelerated `v0.4.0` plan, ADR, roadmap, current milestone,
+and project-state updates only. It must not add runtime behavior, schemas,
+provider/MCP behavior, accepted KB writes, version bumps, or release tags.
 
-After this closeout lands, new work should start from a new issue-scoped plan
-or the next approved longplan. Do not treat the completed v0.3.0 release as an
-open queue for feature expansion.
+After this task merges, proceed directly to:
+
+```text
+strategy-task-graph-core
+```
+
+That follow-up should implement the durable strategy/task-graph model, schemas,
+deterministic planner, CLI, docs, and tests in one bounded PR.
 
 ## Explicit Boundaries
 
@@ -103,6 +94,11 @@ open queue for feature expansion.
 - MCP remains optional and non-blocking.
 - No controlled-write MCP, provider MCP tools, direct accepted writes, or
   accepted-promotion bypass is part of this milestone.
+- A strategy plan is guidance only. It is not proof, checked evidence,
+  verifier evidence, verifier pass, gate pass, human review, accepted status,
+  accepted refutation, or promotion authority.
+- Strategy exports are review context only and must stay under controlled
+  review paths.
 - Worker/provider/Codex/verifier output may become draft/proposal/bundle/run
   evidence context only.
 - A `candidate_counterexample` is not checked counterexample evidence.
@@ -125,16 +121,18 @@ open queue for feature expansion.
 
 ## Current Operating State
 
-The V6 artifact failure-memory line is complete. The accelerated V7 functional
-implementation and publication for `v0.3.0` are complete. Checked
-counterexample evidence is now a durable review-evidence surface, but it
+The accelerated V7 implementation and publication for `v0.3.0` are complete.
+Checked counterexample evidence is a durable review-evidence surface, but it
 remains separate from human review, accepted refutation, accepted status, and
 promotion authority. Research-run records are provenance, not proof or review
-authority. Continue to avoid treating failure memory, counterexample
-candidates, verifier requests, verifier evidence, checked evidence,
-research-run records, provider output, evals, validation, gates, or context
-retrieval as human review, proof, accepted status, verifier pass, gate pass, or
-promotion authority.
+authority.
+
+The next work should add a deterministic planning layer on top of those
+surfaces without changing their authority. Continue to avoid treating failure
+memory, counterexample candidates, verifier requests, verifier evidence,
+checked evidence, research-run records, strategy plans, provider output,
+evals, validation, gates, or context retrieval as human review, proof,
+accepted status, verifier pass, gate pass, or promotion authority.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show

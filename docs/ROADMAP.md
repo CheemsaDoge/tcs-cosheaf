@@ -10,6 +10,39 @@ prerelease, the published `v0.2.0` local-MVP release, and the earlier
 production-ready. This roadmap records durable direction and named milestones;
 live issue state belongs in GitHub issues.
 
+## Active Focus: v0.4.0 Strategy Planner + Research Task Graph
+
+The active post-`v0.3.0` line is `v0.4.0` Strategy Planner + Research Task
+Graph. `v0.3.0` records checked evidence and reproducible external-operator
+research runs; `v0.4.0` adds the planning layer that decides what to try next.
+
+The active plan is
+[`docs/CODEX_DEVELOPMENT_PLAN_V8.md`](CODEX_DEVELOPMENT_PLAN_V8.md), with the
+architecture decision in
+[`docs/ADR/0025-strategy-planner-task-graph.md`](ADR/0025-strategy-planner-task-graph.md).
+
+This line will:
+
+- model research problems with issue, domain, target-artifact, constraint, and
+  desired-evidence metadata;
+- model directed research task graphs with prerequisites, blocked-by edges,
+  expected evidence, and related artifacts or evidence;
+- produce deterministic strategy plans with ranked next steps and explanations;
+- use failure memory, candidate counterexamples, checked counterexample
+  evidence, and research-run provenance without changing their authority;
+- integrate compact strategy references into context and read-only readiness
+  surfaces without private leakage;
+- add deterministic eval and security coverage for strategy-planner
+  boundaries;
+- add workspace-template strategy demos and public KB strategy-plan policy; and
+- prepare a conservative `v0.4.0` release only after implementation,
+  downstream alignment, evals, and smoke coverage pass.
+
+This line will not make strategy plans proof, evidence, verifier pass, gate
+pass, human review, accepted status, accepted refutation, or promotion
+authority. Provider calls remain explicit and default-off. MCP remains
+optional and non-blocking.
+
 ## Completed Release Focus: v0.3.0 Checked Evidence + Research Run Loop
 
 The post-`v0.2.4` line is `v0.3.0` Checked Evidence + Research Run Loop.
@@ -55,7 +88,7 @@ accepted status, or promotion authorization. Provider calls remain explicit,
 default-off, policy-scoped, previewed, consented, and excluded from CI/default
 tests. MCP remains optional and non-blocking.
 
-## Current Release State: v0.3.0 Published Release
+## Current Published Baseline: v0.3.0
 
 Package metadata and `cosheaf.__version__` record `0.3.0`. The public
 `v0.3.0` tag and GitHub release are published, release smoke from `@v0.3.0`
