@@ -1,14 +1,16 @@
 # Roadmap
 
-TCS-Cosheaf has published the `v0.3.0` Checked Evidence + Research Run Loop
-release after the published `v0.2.4` Artifact Failure Memory + Attempt
+TCS-Cosheaf is preparing the `v0.4.0` Strategy Planner + Research Task Graph
+release candidate after the published `v0.3.0` Checked Evidence + Research
+Run Loop release, the published `v0.2.4` Artifact Failure Memory + Attempt
 Traceability release, the published `v0.2.3` Verification Evidence Hardening
 release, the published `v0.2.2` Provider Transport + Agent Workflow Hardening
 release, the published `v0.2.1` CLI Agent Access + Hosted Provider Gateway
 prerelease, the published `v0.2.0` local-MVP release, and the earlier
-`v0.1.1` Formal Link Layer support baseline. The project is still not
-production-ready. This roadmap records durable direction and named milestones;
-live issue state belongs in GitHub issues.
+`v0.1.1` Formal Link Layer support baseline. The public `v0.4.0` tag is not
+published yet, and the project is still not production-ready. This roadmap
+records durable direction and named milestones; live issue state belongs in
+GitHub issues.
 
 ## Active Focus: v0.4.0 Strategy Planner + Research Task Graph
 
@@ -21,7 +23,7 @@ The active plan is
 architecture decision in
 [`docs/ADR/0025-strategy-planner-task-graph.md`](ADR/0025-strategy-planner-task-graph.md).
 
-This line will:
+This line:
 
 - model research problems with issue, domain, target-artifact, constraint, and
   desired-evidence metadata;
@@ -32,11 +34,12 @@ This line will:
   evidence, and research-run provenance without changing their authority;
 - integrate compact strategy references into context and read-only readiness
   surfaces without private leakage;
-- add deterministic eval and security coverage for strategy-planner
+- adds deterministic eval and security coverage for strategy-planner
   boundaries;
-- add workspace-template strategy demos and public KB strategy-plan policy; and
-- prepare a conservative `v0.4.0` release only after implementation,
-  downstream alignment, evals, and smoke coverage pass.
+- adds workspace-template strategy demos and public KB strategy-plan policy;
+  and
+- prepares a conservative `v0.4.0` release candidate after implementation,
+  downstream integration, evals, and smoke coverage pass.
 
 This line will not make strategy plans proof, evidence, verifier pass, gate
 pass, human review, accepted status, accepted refutation, or promotion
@@ -88,11 +91,30 @@ accepted status, or promotion authorization. Provider calls remain explicit,
 default-off, policy-scoped, previewed, consented, and excluded from CI/default
 tests. MCP remains optional and non-blocking.
 
+## Current Release Candidate: v0.4.0
+
+Package metadata and `cosheaf.__version__` record `0.4.0` on the
+release-candidate branch. `docs/releases/v0.4.0.md` records the conservative
+release-candidate scope. The public `v0.4.0` tag, GitHub release,
+post-tag release smoke, and downstream pin updates are not complete yet.
+
+The `v0.4.0` line now has strategy/task-graph model and schema support,
+deterministic strategy CLI surfaces, run-loop integration, context/retrieval
+surfacing, promotion-readiness advisory warnings, strategy review export,
+strategy-planner evals, security coverage, workspace-template strategy demo,
+public KB strategy-plan policy, and framework ecosystem-smoke rows.
+
+This release candidate does not make strategy plans proof, evidence, verifier
+pass, gate pass, human review, accepted status, accepted refutation, or
+promotion authority. Provider calls remain explicit and default-off. MCP
+remains optional and non-blocking.
+
 ## Current Published Baseline: v0.3.0
 
-Package metadata and `cosheaf.__version__` record `0.3.0`. The public
-`v0.3.0` tag and GitHub release are published, release smoke from `@v0.3.0`
-passed, and downstream workspace/public KB active pins now use `v0.3.0`.
+The current published release remains `v0.3.0`. Its public tag and GitHub
+release are published, release smoke from `@v0.3.0` passed, and downstream
+workspace/public KB active pins still use `v0.3.0` until the `v0.4.0`
+publication closeout completes.
 
 The previous published baseline was `v0.2.4`. It packaged optional
 artifact-level `failure_log` support, read-only and controlled draft

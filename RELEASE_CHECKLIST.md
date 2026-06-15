@@ -1,8 +1,9 @@
 # Three-Repository Release Checklist
 
-This checklist records the published `v0.3.0` Checked Evidence + Research Run
-Loop state after the published `v0.2.4` Artifact Failure Memory + Attempt
-Traceability release, the `v0.2.3` Verification Evidence Hardening
+This checklist records the `v0.4.0` Strategy Planner + Research Task Graph
+release-candidate state after the published `v0.3.0` Checked Evidence +
+Research Run Loop release, the published `v0.2.4` Artifact Failure Memory +
+Attempt Traceability release, the `v0.2.3` Verification Evidence Hardening
 release, the `v0.2.2` Provider Transport + Agent Workflow Hardening release,
 the `v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease, the
 `v0.2.0` local-MVP release, and the `v0.1.1` Formal Link Layer support
@@ -29,6 +30,10 @@ complete.
 external-operator run-loop docs, downstream demo/policy surfaces, and
 integration/eval smoke coverage. Package metadata records `0.3.0`; the public
 tag, GitHub release, release smoke, and downstream pin updates are complete.
+`v0.4.0` packages Strategy Planner + Research Task Graph surfaces. Package
+metadata records `0.4.0` in the release-candidate branch; the public tag,
+GitHub release, post-tag release smoke, and downstream pin updates are not
+complete yet.
 
 ## Scope
 
@@ -36,7 +41,7 @@ tag, GitHub release, release smoke, and downstream pin updates are complete.
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
 - Current framework package metadata version:
-  `0.3.0`.
+  `0.4.0`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
@@ -53,6 +58,41 @@ tag, GitHub release, release smoke, and downstream pin updates are complete.
 - Intended downstream dependency for checked-evidence and research-run
   workflows after publication:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.3.0`.
+- Intended downstream dependency for Strategy Planner + Research Task Graph
+  workflows after publication:
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.4.0`.
+
+## v0.4.0 Release Candidate Baseline
+
+`docs/releases/v0.4.0.md` is the release-candidate note for Strategy Planner +
+Research Task Graph. This release-candidate task prepares package metadata and
+status docs; a later publication closeout must create the public tag, publish
+the GitHub release, run post-tag release smoke, and update downstream pins.
+
+- [x] Strategy/task-graph model, schema, deterministic planner, storage, CLI,
+  docs, interface registry updates, and tests are merged.
+- [x] Planner/run-loop integration, strategy review export, context/retrieval
+  surfacing, promotion-readiness advisory warnings, deterministic evals, and
+  security tests are merged.
+- [x] Strategy plans remain guidance only and do not create proof, checked
+  evidence, verifier evidence, verifier pass, gate pass, human review,
+  accepted status, accepted refutation, or promotion authority.
+- [x] Workspace-template strategy demo and public KB strategy-plan policy
+  surfaces are merged.
+- [x] Framework ecosystem-smoke matrix includes strategy-planner eval,
+  workspace-template strategy demo, and public KB strategy-plan policy docs.
+- [x] Optional verifier, provider, network, SAT, SMT, Lean, lake, and MCP rows
+  remain skipped, not pass, when unavailable.
+- [x] `v0.4.0` release-candidate metadata is prepared in the
+  release-candidate branch.
+- [ ] The annotated `v0.4.0` tag is published.
+- [ ] GitHub release `v0.4.0 Strategy Planner + Research Task Graph` is
+  published.
+- [ ] Release smoke from
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.4.0` passed.
+- [ ] Workspace-template active pins moved to `@v0.4.0` after tag publication
+  and release smoke.
+- [ ] Public KB CI moved to `@v0.4.0` after tag publication and release smoke.
 
 ## v0.3.0 Published Release Baseline
 
@@ -270,8 +310,8 @@ smoke, and downstream pin updates.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.3.0`.
-- [x] `cosheaf.__version__` records `0.3.0`.
+- [x] `pyproject.toml` records package version `0.4.0`.
+- [x] `cosheaf.__version__` records `0.4.0`.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
@@ -283,6 +323,9 @@ smoke, and downstream pin updates.
   reviewed release-candidate main commit.
 - [x] Remote tag `v0.3.0` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
+- [x] Remote tag `v0.4.0` is absent before publication. It must remain absent
+  until the release-candidate PR merges cleanly and the maintainer publication
+  action creates the annotated tag.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
 - [x] Historical workspace-template artifact-failure-memory verification remains
@@ -293,6 +336,8 @@ smoke, and downstream pin updates.
   after v0.2.4 tag publication and release smoke succeeded.
 - [x] Workspace-template and public KB active pins moved to `@v0.3.0` only
   after v0.3.0 tag publication and release smoke succeeded.
+- [ ] Workspace-template and public KB active pins moved to `@v0.4.0` only
+  after v0.4.0 tag publication and release smoke succeeded.
 
 ### License
 
@@ -311,8 +356,8 @@ PRs:
 - [x] `make validate`
 - [x] `make gate`
 - [x] `git diff --check`
-- [x] GitHub Actions checks passed for the `v0.2.2` release-candidate and
-  pre-tag audit PRs.
+- GitHub Actions checks for release-candidate PRs are verified in GitHub PR
+  status before merge rather than recorded as a static checkbox in this file.
 
 Skipped verifier output is not a pass. Optional-tool skips must stay visible in
 gate output and release notes.
