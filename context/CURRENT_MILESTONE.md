@@ -20,19 +20,19 @@ informal/formal semantic alignment.
 
 ## Current Baseline
 
-- Framework package metadata and `cosheaf.__version__` record `0.4.0` on the
-  release-candidate branch.
+- Framework package metadata and `cosheaf.__version__` record `0.4.0`.
 - Remote tags `v0.1.1`, `v0.2.0`, `v0.2.1`, `v0.2.2`, `v0.2.3`, `v0.2.4`,
-  and `v0.3.0` exist.
-- The public `v0.4.0` tag is not published yet.
-- The GitHub release `v0.3.0 Checked Evidence + Research Run Loop` is
+  `v0.3.0`, and `v0.4.0` exist.
+- The GitHub release `v0.4.0 Strategy Planner + Research Task Graph` is
   published and is not a production-readiness claim.
 - Release smoke from
-  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.3.0` passed.
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.4.0` passed.
 - `tcs-cosheaf-workspace-template` active demo, Makefile, CLI-agent,
   provider-preview, fake-provider smoke, verifier-evidence, failure-memory,
   checked-evidence, and research-run paths pin or install `@v0.3.0`.
 - `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.3.0`.
+- Downstream workspace-template/public-KB pin alignment to `@v0.4.0` remains
+  the next closeout task.
 - `docs/CODEX_DEVELOPMENT_PLAN_V7.md` is the completed accelerated `v0.3.0`
   plan.
 - ADR 0024 records the checked-evidence and research-run-loop direction.
@@ -66,26 +66,24 @@ Compressed milestones:
 Current task:
 
 ```text
-release-v040-readiness-and-rc
+release-v040-publication-closeout
 ```
 
-This task prepares the conservative v0.4.0 release candidate: package version
-metadata, release notes, README/roadmap/checklist/current-state updates, and
-the full release-candidate command set. It must not publish the public
-`v0.4.0` tag, publish a GitHub release, update downstream pins, add provider
-calls, require MCP, write accepted knowledge, create human review, or change
-promotion behavior.
+This task records the v0.4.0 publication closeout after the maintainer release
+action created the annotated tag, published the GitHub release, and ran release
+smoke from `@v0.4.0`. It must not add provider calls, require MCP, write
+accepted knowledge, create human review, change promotion behavior, or update
+downstream pins inside the framework repository.
 
 After this task merges, proceed directly to:
 
 ```text
-release-v040-publication-closeout
+downstream-v040-pins
 ```
 
-That follow-up should be the maintainer release action and publication
-closeout: verify the release-candidate main commit, create and push the
-annotated `v0.4.0` tag, publish the GitHub release, run release smoke from the
-tag, and then align downstream pins only after release smoke passes.
+That follow-up should update workspace-template and public KB active pins to
+`@v0.4.0`, then rerun the documented demo/showcase, validate/gate, policy
+guard, and skipped-not-pass regressions in those downstream repositories.
 
 ## Explicit Boundaries
 
@@ -128,18 +126,18 @@ tag, and then align downstream pins only after release smoke passes.
 
 ## Current Operating State
 
-The accelerated V7 implementation and publication for `v0.3.0` are complete,
-and the V8 implementation/downstream integration work for `v0.4.0` has landed
-before this release-candidate task. Checked counterexample evidence remains
-durable review evidence, research-run records remain provenance, and strategy
-plans remain guidance only.
+The accelerated V8 implementation, downstream integration, release candidate,
+tag publication, GitHub release, and post-tag release smoke for `v0.4.0` are
+complete. Checked counterexample evidence remains durable review evidence,
+research-run records remain provenance, and strategy plans remain guidance
+only.
 
-The current work packages the deterministic planning layer into a conservative
-release candidate without changing authority boundaries. Continue to avoid
-treating failure memory, counterexample candidates, verifier requests, verifier
-evidence, checked evidence, research-run records, strategy plans, provider
-output, evals, validation, gates, or context retrieval as human review, proof,
-accepted status, verifier pass, gate pass, or promotion authority.
+The current work records the publication closeout without changing authority
+boundaries. Continue to avoid treating failure memory, counterexample
+candidates, verifier requests, verifier evidence, checked evidence,
+research-run records, strategy plans, provider output, evals, validation,
+gates, or context retrieval as human review, proof, accepted status, verifier
+pass, gate pass, or promotion authority.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show

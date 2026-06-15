@@ -7,13 +7,13 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.4.0 Strategy Planner + Research Task Graph release
-candidate**. Package metadata records `0.4.0`; the public `v0.4.0` tag and
-GitHub release are not published yet; post-tag release smoke and downstream
-pin alignment remain publication-closeout tasks. The current published
-baseline is **v0.3.0 Checked Evidence + Research Run Loop**. The `v0.1.1` tag
-remains the downstream Formal Link Layer support baseline; the `v0.2.0` tag
-packages the deterministic local-MVP workflow; the
+Current status: **v0.4.0 Strategy Planner + Research Task Graph published
+release**. Package metadata records `0.4.0`; the public `v0.4.0` tag and
+GitHub release are published; release smoke from `@v0.4.0` passed; downstream
+workspace-template and public KB pin alignment remains the next closeout task.
+The previous published baseline was **v0.3.0 Checked Evidence + Research Run
+Loop**. The `v0.1.1` tag remains the downstream Formal Link Layer support
+baseline; the `v0.2.0` tag packages the deterministic local-MVP workflow; the
 `v0.2.1` tag packages the CLI-first agent and hosted-provider gateway surfaces
 as a pin-able framework prerelease; `v0.2.2` packages the explicit default-off
 provider transport and agent workflow hardening surfaces; `v0.2.3` packages
@@ -26,10 +26,10 @@ failure-log bridges, retrieval/context/promotion-readiness surfacing,
 workspace/public-KB policy updates, and security/eval regression coverage;
 and `v0.3.0` packages checked counterexample evidence, research-run
 provenance, external-operator run-loop docs, downstream demo and policy
-surfaces, and integration/eval smoke coverage. The `v0.4.0` release candidate
-packages strategy/task-graph planning, run-loop integration, strategy review
-export, context/readiness surfacing, eval/security coverage, and downstream
-strategy demo/policy smoke rows. The repository has working
+surfaces, and integration/eval smoke coverage. The `v0.4.0` release packages
+strategy/task-graph planning, run-loop integration, strategy review export,
+context/readiness surfacing, eval/security coverage, and downstream strategy
+demo/policy smoke rows. The repository has working
 Python scaffolding, typed artifact models, filesystem loading, validation,
 dependency graph indexing, workspace-aware KB root loading, artifact lifecycle
 CLI
@@ -298,10 +298,10 @@ workflow evals can pin to `v0.2.2`. Downstream repositories that need
 verification-evidence hardening can pin to `v0.2.3`. Downstream repositories
 that need artifact failure memory and attempt traceability can pin to
 `v0.2.4`. Downstream repositories that need checked counterexample evidence
-and research-run provenance can pin to `v0.3.0`; the workspace-template and
-public KB active pins now use `v0.3.0`. Downstream repositories that need
-Strategy Planner + Research Task Graph surfaces should pin to `v0.4.0` only
-after the public tag is published and release smoke passes.
+and research-run provenance can pin to `v0.3.0`. Downstream repositories that
+need Strategy Planner + Research Task Graph surfaces can pin to `v0.4.0`;
+workspace-template and public KB active pins move to `v0.4.0` in the
+downstream pin-alignment task.
 
 ## Development Commands
 
