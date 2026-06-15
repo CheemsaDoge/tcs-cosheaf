@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 from typing import Any, cast
 
@@ -10,6 +11,7 @@ from cosheaf.cli import app
 from scripts.ecosystem_smoke import (
     ISSUE_ID,
     PUBLIC_ARTIFACT_ID,
+    _public_kb_strategy_plan_policy_command,
     _run_verifier_evidence_eval_smoke,
     build_ecosystem_smoke_matrix,
     build_ecosystem_smoke_plan,
@@ -192,15 +194,18 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
         "framework.verifier-evidence-eval",
         "framework.checked-evidence-run-loop-eval",
         "framework.research-run-loop-eval",
+        "framework.strategy-planner-eval",
         "framework.optional-verifier-availability",
         "framework.git-tag",
         "workspace-template.demo",
         "workspace-template.cli-agent-demo",
         "workspace-template.research-run-demo",
+        "workspace-template.strategy-demo",
         "workspace-template.provider-fake-smoke",
         "workspace-template.verifier-evidence-demo",
         "public-kb.policy-guard",
         "public-kb.checked-evidence-policy-docs",
+        "public-kb.strategy-plan-policy-docs",
         "public-kb.verifier-policy-self-test",
     }
     assert cases["framework.local-checkout"].repo == "tcs-cosheaf"
@@ -213,6 +218,10 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
         "research-run-loop",
         "--json",
     )
+    assert cases["framework.strategy-planner-eval"].argv[-2:] == (
+        "strategy-planner",
+        "--json",
+    )
     assert cases["framework.optional-verifier-availability"].repo == "tcs-cosheaf"
     assert cases["framework.git-tag"].requires_network is True
     assert cases["framework.git-tag"].skip_reason == (
@@ -221,6 +230,7 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
     assert cases["workspace-template.research-run-demo"].argv[-1] == (
         "research-run-demo"
     )
+    assert cases["workspace-template.strategy-demo"].argv[-1] == "strategy-demo"
     assert cases["workspace-template.provider-fake-smoke"].argv[-1] == (
         "provider-fake-smoke"
     )
@@ -229,6 +239,7 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
     )
     assert cases["public-kb.policy-guard"].repo == "tcs-kb-public"
     assert cases["public-kb.checked-evidence-policy-docs"].repo == "tcs-kb-public"
+    assert cases["public-kb.strategy-plan-policy-docs"].repo == "tcs-kb-public"
     assert cases["public-kb.verifier-policy-self-test"].repo == "tcs-kb-public"
 
 
@@ -241,7 +252,41 @@ def test_ecosystem_smoke_matrix_defaults_to_current_release_tag(
         public_kb_root=tmp_path / "tcs-kb-public",
     )
 
-    assert matrix.framework_tag == "v0.2.4"
+    assert matrix.framework_tag == "v0.4.0"
+
+
+def test_public_kb_strategy_plan_policy_docs_smoke_normalizes_wrapped_text(
+    tmp_path: Path,
+) -> None:
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "STRATEGY_PLAN_POLICY.md").write_text(
+        "\n".join(
+            [
+                "# Strategy Plan Policy",
+                "",
+                "Strategy plans are public review context only.",
+                "Accepted public artifacts still require complete source metadata.",
+                "Do not copy private strategy plans.",
+                "`candidate_counterexample` remains proposed evidence only.",
+                "Checked evidence can support maintainer review.",
+                "Promotion",
+                "still requires the ordinary accepted-artifact workflow.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        _public_kb_strategy_plan_policy_command(),
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr or result.stdout
 
 
 def test_ecosystem_smoke_matrix_report_is_structured_and_identifies_failures(
@@ -271,8 +316,8 @@ def test_ecosystem_smoke_matrix_report_is_structured_and_identifies_failures(
     report = run_ecosystem_smoke_matrix(matrix, command_runner=fake_runner)
 
     assert report.passed is False
-    assert report.case_count == 14
-    assert report.pass_count == 10
+    assert report.case_count == 17
+    assert report.pass_count == 13
     assert report.fail_count == 1
     assert report.skip_count == 3
     skipped = [result for result in report.results if result.status == "skipped"]

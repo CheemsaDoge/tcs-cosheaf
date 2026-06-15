@@ -3,6 +3,27 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.4.0 Downstream Strategy Smoke - 2026-06-15
+
+Issue 354 extends the three-repository ecosystem smoke matrix for the active
+`v0.4.0` Strategy Planner + Research Task Graph line after the downstream
+workspace-template strategy demo and public KB strategy-plan policy landed.
+
+The matrix now includes:
+
+- `framework.strategy-planner-eval` through
+  `cosheaf eval strategy-planner --json`;
+- `workspace-template.strategy-demo` through the workspace-template
+  `make strategy-demo` target with local framework checkout environment; and
+- `public-kb.strategy-plan-policy-docs`, a docs smoke that confirms public KB
+  strategy-plan policy keeps strategy plans non-authoritative.
+
+The default network-release row now points at the active `v0.4.0` target and
+remains skipped unless `--include-network` is explicitly supplied. This work
+does not publish the `v0.4.0` tag, does not call hosted providers, does not
+require MCP, does not execute strategy tasks, does not create human review,
+does not write accepted knowledge, and does not change promotion semantics.
+
 ## v0.4.0 Strategy Run-Loop Integration - 2026-06-15
 
 Issue 352 connects the strategy planner to the completed `v0.3.0`
