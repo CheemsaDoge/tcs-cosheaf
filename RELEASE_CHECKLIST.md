@@ -285,14 +285,14 @@ smoke, and downstream pin updates.
   reviewed release-candidate main commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
-- [x] Workspace-template verification installs or pins `@v0.2.4` for
-  artifact-failure-memory surfaces.
+- [x] Historical workspace-template artifact-failure-memory verification remains
+  recorded against `@v0.2.4`.
 - [x] Workspace-template and public KB active pins moved to `@v0.2.3` only
   after v0.2.3 tag publication and release smoke succeeded.
 - [x] Workspace-template and public KB active pins moved to `@v0.2.4` only
   after v0.2.4 tag publication and release smoke succeeded.
 - [x] Workspace-template and public KB active pins moved to `@v0.3.0` only
-  after v0.3.0 tag publication and release smoke succeeds.
+  after v0.3.0 tag publication and release smoke succeeded.
 
 ### License
 
