@@ -3,6 +3,29 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.4.0 Release Candidate - 2026-06-15
+
+Issue 356 prepares the conservative `v0.4.0` Strategy Planner + Research Task
+Graph release candidate after the strategy/task-graph core, planner/run-loop
+integration, downstream workspace/public-KB policy work, and ecosystem smoke
+rows landed.
+
+This release-candidate branch updates package metadata and `cosheaf.__version__`
+to `0.4.0`, adds `docs/releases/v0.4.0.md`, and aligns README, roadmap,
+release checklist, current milestone, and project state with the true RC
+status.
+
+The public `v0.4.0` tag is not published by this task. GitHub release
+publication, post-tag release smoke, and downstream workspace-template/public
+KB pin updates remain publication-closeout work after this PR merges cleanly.
+
+The RC continues to preserve the v0.4.0 authority boundary: strategy plans are
+guidance only, not proof, checked evidence, verifier evidence, verifier pass,
+gate pass, human review, accepted status, accepted refutation, or promotion
+authority. This task does not add hosted provider calls, does not require MCP,
+does not write accepted knowledge, does not create human review, does not
+promote artifacts, and does not change accepted-promotion semantics.
+
 ## v0.4.0 Downstream Strategy Smoke - 2026-06-15
 
 Issue 354 extends the three-repository ecosystem smoke matrix for the active

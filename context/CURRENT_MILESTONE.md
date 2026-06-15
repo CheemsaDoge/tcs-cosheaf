@@ -20,9 +20,11 @@ informal/formal semantic alignment.
 
 ## Current Baseline
 
-- Framework package metadata and `cosheaf.__version__` record `0.3.0`.
+- Framework package metadata and `cosheaf.__version__` record `0.4.0` on the
+  release-candidate branch.
 - Remote tags `v0.1.1`, `v0.2.0`, `v0.2.1`, `v0.2.2`, `v0.2.3`, `v0.2.4`,
   and `v0.3.0` exist.
+- The public `v0.4.0` tag is not published yet.
 - The GitHub release `v0.3.0 Checked Evidence + Research Run Loop` is
   published and is not a production-readiness claim.
 - Release smoke from
@@ -64,24 +66,26 @@ Compressed milestones:
 Current task:
 
 ```text
-strategy-downstream-demo-policy-smoke
+release-v040-readiness-and-rc
 ```
 
-This task closes Phase 3 downstream integration: the workspace-template
-strategy demo, public KB strategy-plan policy, and framework ecosystem-smoke
-strategy rows. It must not add provider calls, MCP requirements, task
-execution, accepted KB writes, human review creation, promotion behavior,
-version bumps, or release tags.
+This task prepares the conservative v0.4.0 release candidate: package version
+metadata, release notes, README/roadmap/checklist/current-state updates, and
+the full release-candidate command set. It must not publish the public
+`v0.4.0` tag, publish a GitHub release, update downstream pins, add provider
+calls, require MCP, write accepted knowledge, create human review, or change
+promotion behavior.
 
 After this task merges, proceed directly to:
 
 ```text
-release-v040-readiness-and-rc
+release-v040-publication-closeout
 ```
 
-That follow-up should prepare the conservative v0.4.0 release candidate,
-including package version metadata, release notes, status docs, and the full
-release-candidate command set. It should not publish the public `v0.4.0` tag.
+That follow-up should be the maintainer release action and publication
+closeout: verify the release-candidate main commit, create and push the
+annotated `v0.4.0` tag, publish the GitHub release, run release smoke from the
+tag, and then align downstream pins only after release smoke passes.
 
 ## Explicit Boundaries
 
@@ -124,18 +128,18 @@ release-candidate command set. It should not publish the public `v0.4.0` tag.
 
 ## Current Operating State
 
-The accelerated V7 implementation and publication for `v0.3.0` are complete.
-Checked counterexample evidence is a durable review-evidence surface, but it
-remains separate from human review, accepted refutation, accepted status, and
-promotion authority. Research-run records are provenance, not proof or review
-authority.
+The accelerated V7 implementation and publication for `v0.3.0` are complete,
+and the V8 implementation/downstream integration work for `v0.4.0` has landed
+before this release-candidate task. Checked counterexample evidence remains
+durable review evidence, research-run records remain provenance, and strategy
+plans remain guidance only.
 
-The current work adds the deterministic planning layer on top of those surfaces
-without changing their authority. Continue to avoid treating failure memory,
-counterexample candidates, verifier requests, verifier evidence, checked
-evidence, research-run records, strategy plans, provider output, evals,
-validation, gates, or context retrieval as human review, proof, accepted
-status, verifier pass, gate pass, or promotion authority.
+The current work packages the deterministic planning layer into a conservative
+release candidate without changing authority boundaries. Continue to avoid
+treating failure memory, counterexample candidates, verifier requests, verifier
+evidence, checked evidence, research-run records, strategy plans, provider
+output, evals, validation, gates, or context retrieval as human review, proof,
+accepted status, verifier pass, gate pass, or promotion authority.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
 names, branch names, or pull request titles, even when older examples show
