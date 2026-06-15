@@ -148,9 +148,11 @@ Implemented:
   or accepted knowledge.
 - GitHub Actions CI with separate `lint`, `typecheck`, `test`, `validate`, and
   `gate` checks.
-- Active `v0.4.0` strategy-planner core surfaces with
-  `cosheaf strategy plan/show/graph/next`, deterministic runtime plans under
-  `.cosheaf/strategy/`, and public schemas for strategy plans and task graphs.
+- Active `v0.4.0` strategy-planner surfaces with
+  `cosheaf strategy plan/show/graph/next/update-from-run/export-review`,
+  deterministic runtime plans under `.cosheaf/strategy/`, non-authoritative
+  review exports under `reviews/strategy/`, context/readiness surfacing, and
+  public schemas for strategy plans and task graphs.
 
 Planned or incomplete:
 

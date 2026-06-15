@@ -18,6 +18,8 @@ from cosheaf.gates.gatekeeper import (
 from cosheaf.gates.source_metadata_gate import missing_required_source_metadata
 from cosheaf.storage.loader import IssueRecord, LoadedRecord
 from cosheaf.storage.repo import RepoContext
+from cosheaf.strategy.models import StrategyTaskStatus
+from cosheaf.strategy.storage import load_strategy_plans
 from cosheaf.verification.counterexample_evidence import (
     load_checked_counterexample_evidence,
 )
@@ -299,6 +301,7 @@ def _artifact_report(
         )
         + _failure_memory_reasons(artifact)
         + _checked_counterexample_evidence_reasons(context, artifact)
+        + _strategy_open_blocker_reasons(context, artifact)
         + _repository_gate_reasons(gatekeeper, artifact.id)
         + _target_gate_reasons(gatekeeper, artifact.id)
     )
@@ -595,6 +598,47 @@ def _checked_counterexample_evidence_reasons(
                 ),
             )
         )
+    return tuple(reasons)
+
+
+def _strategy_open_blocker_reasons(
+    context: RepoContext,
+    artifact: BaseArtifact,
+) -> tuple[PromotionReadinessReason, ...]:
+    reasons: list[PromotionReadinessReason] = []
+    for loaded in load_strategy_plans(context):
+        plan = loaded.plan
+        if artifact.id not in set(plan.problem.target_artifacts):
+            related_to_artifact = any(
+                artifact.id in set(node.related_artifacts)
+                for node in plan.graph.nodes
+            )
+            if not related_to_artifact:
+                continue
+        for node in plan.graph.nodes:
+            if node.status not in {
+                StrategyTaskStatus.BLOCKED,
+                StrategyTaskStatus.FAILED,
+            }:
+                continue
+            related = set(node.related_artifacts)
+            targets = set(plan.problem.target_artifacts)
+            if artifact.id not in related and artifact.id not in targets:
+                continue
+            reasons.append(
+                PromotionReadinessReason(
+                    code="strategy_open_blocker",
+                    severity="warning",
+                    artifact_id=artifact.id,
+                    source_path=loaded.relative_path.as_posix(),
+                    status=node.status.value,
+                    message=(
+                        "advisory strategy blocker only; strategy plans are "
+                        "review context and not a promotion blocker by itself: "
+                        f"{plan.plan_id} {node.node_id} {node.title}"
+                    ),
+                )
+            )
     return tuple(reasons)
 
 

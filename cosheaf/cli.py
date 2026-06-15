@@ -58,22 +58,27 @@ from cosheaf.evals import (
     DEFAULT_CONTEXT_EVAL_CASES,
     DEFAULT_RESEARCH_RUN_LOOP_EVAL_CASES,
     DEFAULT_RETRIEVAL_EVAL_CASES,
+    DEFAULT_STRATEGY_PLANNER_EVAL_CASES,
     CheckedEvidenceRunLoopEvalError,
     ContextEvalError,
     ResearchRunLoopEvalError,
     RetrievalEvalError,
+    StrategyPlannerEvalError,
     load_checked_evidence_run_loop_eval_suite,
     load_context_eval_suite,
     load_research_run_loop_eval_suite,
     load_retrieval_eval_suite,
+    load_strategy_planner_eval_suite,
     resolve_checked_evidence_run_loop_eval_case_path,
     resolve_context_eval_case_path,
     resolve_research_run_loop_eval_case_path,
     resolve_retrieval_eval_case_path,
+    resolve_strategy_planner_eval_case_path,
     run_checked_evidence_run_loop_eval_suite,
     run_context_eval_suite,
     run_research_run_loop_eval_suite,
     run_retrieval_eval_suite,
+    run_strategy_planner_eval_suite,
 )
 from cosheaf.gates.gatekeeper import (
     GatekeeperRunResult,
@@ -154,7 +159,13 @@ from cosheaf.storage.repo import RepoContext
 from cosheaf.storage.writer import write_yaml_deterministic
 from cosheaf.strategy.models import STRATEGY_AUTHORITY_NOTICE, StrategyError
 from cosheaf.strategy.planner import build_strategy_plan
-from cosheaf.strategy.storage import load_strategy_plan, write_strategy_plan
+from cosheaf.strategy.storage import (
+    attach_context_reference,
+    export_strategy_review,
+    load_strategy_plan,
+    update_strategy_plan_from_run,
+    write_strategy_plan,
+)
 from cosheaf.verification.counterexample_evidence import (
     CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
     CheckedCounterexampleEvidenceError,
@@ -1191,6 +1202,11 @@ def strategy_plan(
         "--issue",
         help="Issue ID to plan for.",
     ),
+    from_context: Path | None = typer.Option(
+        None,
+        "--from-context",
+        help="Repository-local context-pack directory used as planner input.",
+    ),
     repo_root: Path = typer.Option(
         Path("."),
         "--repo-root",
@@ -1207,7 +1223,12 @@ def strategy_plan(
     try:
         context = RepoContext(repo_root)
         built = build_strategy_plan(context, issue_id)
-        result = write_strategy_plan(context, built.plan)
+        plan = (
+            attach_context_reference(context, built.plan, from_context)
+            if from_context is not None
+            else built.plan
+        )
+        result = write_strategy_plan(context, plan)
     except (StrategyError, ValidationError, ValueError, LoadError) as exc:
         _exit_with_error(
             _strategy_error_result(exc),
@@ -1221,6 +1242,84 @@ def strategy_plan(
     console.print(f"- path: {result.relative_path.as_posix()}")
     console.print("- accepted write: not performed")
     console.print(f"- authority: {STRATEGY_AUTHORITY_NOTICE}")
+
+
+@strategy_app.command("update-from-run")
+def strategy_update_from_run(
+    plan_id: str = typer.Option(..., "--plan", help="Strategy plan ID."),
+    run_id: str = typer.Option(..., "--run", help="Research run ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for strategy storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Update a strategy plan from research-run provenance."""
+    console = Console(width=120, markup=False)
+    try:
+        result = update_strategy_plan_from_run(
+            RepoContext(repo_root),
+            plan_id=plan_id,
+            run_id=run_id,
+        )
+    except (StrategyError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _strategy_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Strategy plan updated: {result.plan.plan_id}")
+    console.print(f"- run: {result.run_id}")
+    console.print("- accepted write: not performed")
+
+
+@strategy_app.command("export-review")
+def strategy_export_review(
+    plan_id: str = typer.Option(..., "--plan", help="Strategy plan ID."),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Show target review export without writing it.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for strategy storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Export strategy guidance to non-authoritative review context."""
+    console = Console(width=120, markup=False)
+    try:
+        result = export_strategy_review(
+            RepoContext(repo_root),
+            plan_id=plan_id,
+            dry_run=dry_run,
+        )
+    except (StrategyError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _strategy_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    action = "would export" if result.dry_run else "exported"
+    console.print(f"Strategy review {action}: {result.relative_path.as_posix()}")
+    console.print("- accepted write: not performed")
 
 
 @strategy_app.command("show")
@@ -2513,6 +2612,59 @@ def eval_research_run_loop(
     console.print(
         "- command_coverage_accuracy: "
         f"{report.metrics.command_coverage_accuracy:.6f}"
+    )
+    console.print(f"- skipped_not_pass_count: {report.metrics.skipped_not_pass_count}")
+    console.print(
+        "- authority_escalation_count: "
+        f"{report.metrics.authority_escalation_count}"
+    )
+    for case in report.cases:
+        failures = ",".join(case.failures) if case.failures else "-"
+        console.print(f"- {case.id}: passed={str(case.passed).lower()} {failures}")
+
+    if not report.passed:
+        raise typer.Exit(code=1)
+
+
+@eval_app.command("strategy-planner")
+def eval_strategy_planner(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    cases: Path = typer.Option(
+        DEFAULT_STRATEGY_PLANNER_EVAL_CASES,
+        "--cases",
+        help="Repository-local YAML strategy-planner eval case file.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text summary.",
+    ),
+) -> None:
+    """Run deterministic strategy-planner boundary regression cases."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        case_path = resolve_strategy_planner_eval_case_path(context, cases)
+        suite = load_strategy_planner_eval_suite(case_path)
+        report = run_strategy_planner_eval_suite(context, suite)
+    except StrategyPlannerEvalError as exc:
+        console.print(f"Strategy-planner eval failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(report.to_json(), nl=False)
+        return
+
+    verdict = "pass" if report.passed else "fail"
+    console.print(f"Strategy-planner eval verdict: {verdict}")
+    console.print(f"- cases: {report.case_count}")
+    console.print(
+        "- failed_direction_repeat_count: "
+        f"{report.metrics.failed_direction_repeat_count}"
     )
     console.print(f"- skipped_not_pass_count: {report.metrics.skipped_not_pass_count}")
     console.print(

@@ -64,24 +64,26 @@ Compressed milestones:
 Current task:
 
 ```text
-strategy-task-graph-core
+strategy-run-loop-integration
 ```
 
-This task implements the Phase 1 durable strategy/task-graph model, schemas,
-deterministic issue planner, runtime `.cosheaf/strategy/` storage, CLI,
-documentation, and tests. It must not add provider calls, MCP requirements,
-task execution, accepted KB writes, human review creation, promotion behavior,
-version bumps, or release tags.
+This task implements the Phase 2 planner/run-loop integration: planning from
+existing context packs, updating strategy plans from research-run provenance,
+strategy review export, context-pack strategy summaries, promotion-readiness
+advisory warnings, deterministic strategy-planner evals, and security
+coverage. It must not add provider calls, MCP requirements, task execution,
+accepted KB writes, human review creation, promotion behavior, version bumps,
+or release tags.
 
 After this task merges, proceed directly to:
 
 ```text
-strategy-run-loop-integration
+strategy-downstream-demo-policy-smoke
 ```
 
-That follow-up should connect strategy plans to context packs, research-run
-updates, review exports, promotion-readiness advisory warnings, evals, and
-security coverage.
+That follow-up should add the workspace-template strategy demo, public KB
+strategy-plan policy, and framework ecosystem-smoke rows in separate repo PRs
+where required.
 
 ## Explicit Boundaries
 

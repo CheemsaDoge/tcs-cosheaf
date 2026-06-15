@@ -12,6 +12,7 @@ import cosheaf.gates.gatekeeper as gatekeeper_module
 from cosheaf.cli import app
 from cosheaf.core.artifact import BaseArtifact
 from cosheaf.storage.repo import RepoContext
+from cosheaf.strategy.models import STRATEGY_AUTHORITY_NOTICE
 from cosheaf.verification.counterexample_evidence import (
     CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
 )
@@ -50,6 +51,13 @@ def _write_yaml(repo_root: Path, relative_path: str, data: dict[str, Any]) -> Pa
     path = repo_root / relative_path
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    return path
+
+
+def _write_json(repo_root: Path, relative_path: str, data: dict[str, Any]) -> Path:
+    path = repo_root / relative_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, ensure_ascii=True, indent=2) + "\n")
     return path
 
 
@@ -374,6 +382,79 @@ def test_promotion_readiness_reports_checked_evidence_as_warning_only(
     assert "not human review" in warning["message"]
     assert "not a promotion blocker by itself" in warning["message"]
     assert payload["accepted_write_performed"] is False
+
+
+def test_promotion_readiness_reports_strategy_blocker_as_warning_only(
+    tmp_path: Path,
+) -> None:
+    _write_workspace_config(tmp_path)
+    _write_yaml(
+        tmp_path,
+        "kb/private/draft/claims/claim.fixture.strategy-blocker.yaml",
+        _artifact_data("claim.fixture.strategy-blocker"),
+    )
+    plan_id = "strategy.issue.fixture.strategy-blocker.plan"
+    _write_json(
+        tmp_path,
+        f".cosheaf/strategy/{plan_id}/strategy.json",
+        {
+            "schema_version": 1,
+            "plan_id": plan_id,
+            "issue_id": "issue.fixture.strategy-blocker",
+            "created_at": "2026-06-15T00:00:00Z",
+            "problem": {
+                "issue_id": "issue.fixture.strategy-blocker",
+                "title": "Strategy blocker fixture",
+                "target_artifacts": ["claim.fixture.strategy-blocker"],
+            },
+            "graph": {
+                "nodes": [
+                    {
+                        "node_id": "task.strategy-blocker",
+                        "kind": "review_decision",
+                        "title": "Resolve strategy blocker",
+                        "status": "blocked",
+                        "scope": "private",
+                        "related_artifacts": ["claim.fixture.strategy-blocker"],
+                        "notes": ["Needs a non-authoritative strategy decision."],
+                    }
+                ],
+                "edges": [],
+            },
+            "next_steps": [],
+            "authority_notice": STRATEGY_AUTHORITY_NOTICE,
+            "accepted_write_performed": False,
+        },
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "promotion",
+            "readiness",
+            "--artifact",
+            "claim.fixture.strategy-blocker",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json_output(result.output)
+    assert payload["ready"] is True
+    artifact_report = payload["artifacts"][0]
+    assert artifact_report["ready"] is True
+    warnings = [
+        reason
+        for reason in artifact_report["reasons"]
+        if reason["code"] == "strategy_open_blocker"
+    ]
+    assert len(warnings) == 1
+    assert warnings[0]["severity"] == "warning"
+    assert warnings[0]["status"] == "blocked"
+    assert "advisory" in warnings[0]["message"]
+    assert "not a promotion blocker by itself" in warnings[0]["message"]
 
 
 def test_promotion_readiness_ignores_resolved_failure_memory(

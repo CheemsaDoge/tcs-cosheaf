@@ -241,6 +241,14 @@
   repository-local YAML case file.
 - `cosheaf eval research-run-loop --json`: emits deterministic JSON report
   output.
+- `cosheaf eval strategy-planner`: runs the default deterministic strategy
+  planner boundary suite from `evals/strategy_planner/cases.yaml`.
+- `cosheaf eval strategy-planner --repo-root <path>`: runs strategy-planner
+  evals against an explicit repository root.
+- `cosheaf eval strategy-planner --cases <path>`: uses an explicit
+  repository-local YAML case file.
+- `cosheaf eval strategy-planner --json`: emits deterministic JSON report
+  output.
 - `cosheaf run start --issue <issue-id> --operator external --json`: creates
   `.cosheaf/runs/<run-id>/run.json` and emits deterministic JSON with
   `accepted_write_performed=false`.
@@ -266,12 +274,23 @@
   strategy plan for one issue, writes
   `.cosheaf/strategy/<plan-id>/strategy.json`, and emits deterministic JSON
   with `accepted_write_performed=false` and the strategy authority notice.
+- `cosheaf strategy plan --issue <issue-id> --from-context <context-dir>
+  --json`: builds the same runtime plan and attaches a repository-local
+  context-pack reference to the context-build task.
 - `cosheaf strategy show <plan-id> --json`: loads one runtime strategy plan
   from `.cosheaf/strategy/<plan-id>/strategy.json`.
 - `cosheaf strategy graph <plan-id> --json`: emits the task graph from one
   runtime strategy plan without executing tasks.
 - `cosheaf strategy next <plan-id> --json`: emits ranked next-step guidance
   from one runtime strategy plan without executing tasks.
+- `cosheaf strategy update-from-run --plan <plan-id> --run <run-id> --json`:
+  reads `.cosheaf/runs/<run-id>/run.json`, attaches non-authoritative
+  command/output/artifact references to strategy nodes, preserves
+  failed/skipped status, and rewrites the runtime strategy plan.
+- `cosheaf strategy export-review --plan <plan-id> --dry-run --json`:
+  reports the `reviews/strategy/<plan-id>.yaml` target without writing.
+- `cosheaf strategy export-review --plan <plan-id> --json`: writes a
+  non-authoritative review-context export under `reviews/strategy/`.
 - `cosheaf graph show`: prints the directed artifact dependency graph.
 - `cosheaf graph show --repo-root <path>`: prints the graph for an explicit repository root.
 - `cosheaf gate`: runs the gatekeeper with default options and writes reports under `.cosheaf/reports/`.
@@ -577,7 +596,14 @@
   scope, expected evidence kinds, related artifacts, failure-log entries,
   candidate counterexamples, checked counterexample evidence, research-run
   IDs, optional command argv, repository-local input paths, and controlled
-  non-accepted write paths.
+  non-accepted write paths. Phase 2 nodes may also include
+  `StrategyTaskReference` entries for non-authoritative commands, context
+  packs, research runs, artifacts, checked evidence, review exports,
+  validation reports, gate reports, failure logs, or other references.
+- `cosheaf.strategy.models.StrategyTaskReference`: strict Pydantic v2 DTO for
+  one strategy node reference. Paths are repository-local and cannot point
+  into accepted KB paths. Text fields reject common secret-looking token
+  shapes.
 - `cosheaf.strategy.planner.build_strategy_plan(context, issue_id)`: builds a
   deterministic Phase 1 plan from issue metadata, direct related artifacts,
   one-hop dependencies, artifact failure memory, candidate counterexample
@@ -588,6 +614,20 @@
   generated plan under `.cosheaf/strategy/<plan-id>/strategy.json`.
 - `cosheaf.strategy.storage.load_strategy_plan(context, plan_id)`: loads and
   validates one runtime strategy plan by ID.
+- `cosheaf.strategy.storage.attach_context_reference(context, plan,
+  context_dir)`: attaches a repository-local context-pack reference to a plan
+  before writing it.
+- `cosheaf.strategy.storage.update_strategy_plan_from_run(context, *,
+  plan_id, run_id)`: reads one research-run record, attaches provenance
+  references to matching task nodes, preserves failed/skipped state, and
+  rewrites the runtime strategy plan.
+- `cosheaf.strategy.storage.export_strategy_review(context, *, plan_id,
+  dry_run)`: writes or previews a non-authoritative strategy review export
+  under `reviews/strategy/`.
+- `cosheaf.evals.strategy_planner`: deterministic strategy-planner eval
+  harness. Default cases live in `evals/strategy_planner/cases.yaml` and do
+  not require hosted providers, API keys, MCP, network, SAT, SMT, Lean, or
+  lake.
 - `cosheaf.evals.research_run_loop`: deterministic research-run loop eval
   harness. Default cases live in `evals/research_run_loop/cases.yaml` and do
   not require hosted providers, API keys, MCP, network, SAT, SMT, Lean, or
@@ -1719,11 +1759,14 @@ the caller explicitly passes a positive `max_full_artifacts` budget.
 score breakdowns, failure memory card metadata, filters, exclusions, warnings,
 `context_payload` (`card_count`, `full_artifact_count`, and `content_mode`),
 `failure_memory` structured entries, and full-artifact pull audit entries.
-`context_payload` also includes `failure_entry_count`. Full-artifact pull
-reasons include the retrieval role, policy scope, and explicit maximum pull
-budget.
+`context_payload` also includes `failure_entry_count` and
+`checked_counterexample_evidence_count`; when an associated strategy plan
+exists, it also includes `strategy_plan_count` and top-level `strategy_plans`
+summary entries. Full-artifact pull reasons include the retrieval role, policy
+scope, and explicit maximum pull budget.
 `public_only=True` excludes private cards and private artifact IDs from both
-rendered context and audit output, including private failure-log text.
+rendered context and audit output, including private failure-log text and
+private strategy-plan node text.
 
 When visible artifacts carry artifact-level `failure_log` entries, context
 packs render a `Known Failed Directions` section in `CONTEXT.md` and
@@ -2107,6 +2150,8 @@ knowledge writes, accepted refutations, or promotion.
   state, checker-required flag, source metadata status, gate verdict, verifier
   results, reasons, `ready`, and `to_dict()`. Unresolved artifact failure
   memory appears as warning reasons with code `unresolved_failure_memory`.
+  Open strategy-plan blockers may appear as warning reasons with code
+  `strategy_open_blocker`.
 - `cosheaf.gates.promotion_readiness.PromotionReadinessReason`: reason
   dataclass with `code`, `severity`, `message`, artifact/source/gate/verifier
   metadata, `blocking`, and `to_dict()`.
@@ -2114,7 +2159,8 @@ knowledge writes, accepted refutations, or promotion.
 Promotion readiness objects are advisory reporting surfaces only. They do not
 change accepted-promotion semantics, do not satisfy human review, and do not
 convert skipped verifier results into passes. Failure-memory warning reasons
-are not verifier evidence and are not promotion blockers by themselves.
+and strategy-plan warning reasons are not verifier evidence and are not
+promotion blockers by themselves.
 
 #### Verification
 
@@ -2601,8 +2647,9 @@ working directory.
   It serializes task nodes, task edges, task status, public/private/workspace
   scope labels, expected evidence kinds, related artifacts, failure-log
   entries, candidate counterexamples, checked evidence references,
-  research-run IDs, commands, input paths, write paths, and notes. It does not
-  execute tasks or grant write authority to accepted KB paths.
+  research-run IDs, commands, input paths, write paths, non-authoritative
+  task references, and notes. It does not execute tasks or grant write
+  authority to accepted KB paths.
 - `schemas/task.schema.json`: agent task YAML schema.
 - `schemas/orchestrator_run.schema.json`: orchestrator run state schema.
 - `schemas/worker_bundle_v2.schema.json`: strict reducer-oriented worker

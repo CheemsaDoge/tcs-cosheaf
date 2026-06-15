@@ -3,6 +3,36 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.4.0 Strategy Run-Loop Integration - 2026-06-15
+
+Issue 352 connects the strategy planner to the completed `v0.3.0`
+research-run loop while keeping `v0.4.0` as the active development line and
+`0.3.0` as the current package/release baseline until release-candidate work.
+
+The Phase 2 CLI adds:
+
+- `cosheaf strategy plan --issue <issue-id> --from-context <context-dir> --json`
+- `cosheaf strategy update-from-run --plan <plan-id> --run <run-id> --json`
+- `cosheaf strategy export-review --plan <plan-id> --dry-run --json`
+- `cosheaf strategy export-review --plan <plan-id> --json`
+- `cosheaf eval strategy-planner --json`
+
+Strategy task nodes can now carry non-authoritative references to commands,
+context packs, research runs, artifacts, checked counterexample evidence,
+validation reports, gate reports, and review exports. Failed and skipped
+research-run steps remain failed/skipped, not pass. Strategy review export
+writes only under `reviews/strategy/` and remains review context only.
+
+Context packs surface compact strategy-plan summaries when a plan is associated
+with the issue, and `RETRIEVAL_AUDIT.json` records strategy-plan counts and
+summary entries. Public-only context excludes private-scope strategy node text.
+Promotion readiness may report open strategy blockers as advisory warnings,
+not automatic promotion blockers.
+
+This work does not add hosted provider calls, does not require MCP, does not
+execute strategy tasks, does not create human review, does not write accepted
+knowledge, and does not change accepted-promotion semantics.
+
 ## v0.4.0 Strategy Task Graph Core - 2026-06-15
 
 Issue 350 implements the first functional `v0.4.0` strategy-planner surface.

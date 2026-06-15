@@ -10,6 +10,7 @@ from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
+from cosheaf.agent.run_logging import SECRET_VALUE_PATTERN
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.paths import normalize_repo_path
 
@@ -75,6 +76,21 @@ class StrategyTaskNodeKind(StrEnum):
     VALIDATION = "validation"
     GATE = "gate"
     RUN_REVIEW = "run_review"
+
+
+class StrategyTaskReferenceKind(StrEnum):
+    """Reviewable references attached to strategy task nodes."""
+
+    COMMAND = "command"
+    CONTEXT_PACK = "context_pack"
+    RESEARCH_RUN = "research_run"
+    ARTIFACT = "artifact"
+    CHECKED_COUNTEREXAMPLE_EVIDENCE = "checked_counterexample_evidence"
+    REVIEW_EXPORT = "review_export"
+    VALIDATION_REPORT = "validation_report"
+    GATE_REPORT = "gate_report"
+    FAILURE_LOG = "failure_log"
+    OTHER = "other"
 
 
 class StrategyEdgeKind(StrEnum):
@@ -157,6 +173,7 @@ class StrategyTaskNode(StrategyModel):
     command: tuple[str, ...] = ()
     input_paths: tuple[str, ...] = ()
     write_paths: tuple[str, ...] = ()
+    references: tuple[StrategyTaskReference, ...] = ()
     notes: tuple[str, ...] = ()
 
     @field_validator("node_id")
@@ -226,6 +243,32 @@ class StrategyTaskEdge(StrategyModel):
     @classmethod
     def _reason(cls, value: str) -> str:
         return _safe_text(value)
+
+
+class StrategyTaskReference(StrategyModel):
+    """One non-authoritative run/context/review reference for a task node."""
+
+    kind: StrategyTaskReferenceKind
+    identifier: str = ""
+    path: str = ""
+    status: str = ""
+    summary: str = ""
+
+    @field_validator("identifier", "status", "summary")
+    @classmethod
+    def _safe_optional_text(cls, value: str) -> str:
+        normalized = str(value).strip()
+        if not normalized:
+            return ""
+        return _safe_text(normalized)
+
+    @field_validator("path")
+    @classmethod
+    def _path(cls, value: str) -> str:
+        normalized = str(value).strip()
+        if not normalized:
+            return ""
+        return _validate_repo_local_path(normalized, forbid_accepted=True)
 
 
 class StrategyTaskGraph(StrategyModel):
@@ -372,6 +415,8 @@ def _safe_text(value: str) -> str:
     normalized = str(value).strip()
     if not normalized:
         raise ValueError("text field must be non-empty")
+    if SECRET_VALUE_PATTERN.search(normalized):
+        raise ValueError("text field contains secret-looking value")
     return normalized
 
 
@@ -386,6 +431,8 @@ __all__ = [
     "StrategyTaskGraph",
     "StrategyTaskNode",
     "StrategyTaskNodeKind",
+    "StrategyTaskReference",
+    "StrategyTaskReferenceKind",
     "StrategyTaskScope",
     "StrategyTaskStatus",
 ]
