@@ -3,6 +3,30 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Post-v0.3.0 to v0.4.0 Kickoff - 2026-06-15
+
+Issue 348 starts the `v0.4.0` Strategy Planner + Research Task Graph line after
+the published `v0.3.0` Checked Evidence + Research Run Loop release.
+
+The active target is now `v0.4.0`. The `v0.2.x` series is treated as the
+completed agent/access/evidence/failure-memory foundation, and `v0.3.0` is the
+completed auditable checked-evidence and research-run loop. The new line adds
+the missing planning layer: deterministic research problem decomposition,
+task-graph modeling, ranked next steps, failed-direction avoidance, and
+bounded command-oriented guidance for Codex-style external operators.
+
+This kickoff lands `docs/CODEX_DEVELOPMENT_PLAN_V8.md`, ADR 0025, roadmap,
+current milestone, and project-state updates only. It does not add runtime
+behavior, schemas, provider or MCP behavior, accepted KB writes, version
+bumps, release tags, or downstream pin changes.
+
+Strategy plans are guidance only. They are not proof, checked evidence,
+verifier evidence, verifier pass, gate pass, human review, accepted status,
+accepted refutation, or promotion authority. The planned runtime implementation
+must preserve the v0.3.0 boundaries for checked evidence and research-run
+records, keep provider calls default-off, keep MCP optional, and keep skipped
+rows visibly non-pass.
+
 ## v0.3.0 Published Release Closeout - 2026-06-15
 
 Issue 344 closes out the `v0.3.0` Checked Evidence + Research Run Loop
