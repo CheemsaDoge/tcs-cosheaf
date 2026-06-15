@@ -7,16 +7,14 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.3.0 Checked Evidence + Research Run Loop release
-candidate**. Package metadata records `0.3.0` in the release-candidate PR.
-The public `v0.3.0` tag, GitHub release, release smoke from `@v0.3.0`, and
-downstream workspace-template/public-KB pin updates are publication-closeout
-work after this PR merges. The latest published baseline remains **v0.2.4
-Artifact Failure Memory + Attempt Traceability**; the public `v0.2.4` tag and
-GitHub release are published, release smoke from `@v0.2.4` passed, and
-downstream active pins still use `v0.2.4` until the `v0.3.0` publication
-closeout. The `v0.1.1` tag remains the downstream Formal Link Layer support
-baseline; the `v0.2.0` tag packages the deterministic local-MVP workflow; the
+Current status: **v0.3.0 Checked Evidence + Research Run Loop published
+release**. Package metadata records `0.3.0`; the public `v0.3.0` tag and
+GitHub release are published; release smoke from `@v0.3.0` passed; and the
+workspace-template and public KB active pins now use `v0.3.0`. The previous
+published baseline was **v0.2.4 Artifact Failure Memory + Attempt
+Traceability**. The `v0.1.1` tag remains the downstream Formal Link Layer
+support baseline; the `v0.2.0` tag packages the deterministic local-MVP
+workflow; the
 `v0.2.1` tag packages the CLI-first agent and hosted-provider gateway surfaces
 as a pin-able framework prerelease; `v0.2.2` packages the explicit default-off
 provider transport and agent workflow hardening surfaces; `v0.2.3` packages
@@ -27,11 +25,12 @@ readiness matrix; `v0.2.4` packages optional artifact-level failure memory,
 failure-log CLI inspection and controlled draft writes, WorkerBundle
 failure-log bridges, retrieval/context/promotion-readiness surfacing,
 workspace/public-KB policy updates, and security/eval regression coverage;
-and the `v0.3.0` release candidate packages checked counterexample evidence,
-research-run provenance, external-operator run-loop docs, downstream demo and
-policy surfaces, and integration/eval smoke coverage. The repository has working Python
-scaffolding, typed artifact models, filesystem loading, validation, dependency
-graph indexing, workspace-aware KB root loading, artifact lifecycle CLI
+and `v0.3.0` packages checked counterexample evidence, research-run
+provenance, external-operator run-loop docs, downstream demo and policy
+surfaces, and integration/eval smoke coverage. The repository has working
+Python scaffolding, typed artifact models, filesystem loading, validation,
+dependency graph indexing, workspace-aware KB root loading, artifact lifecycle
+CLI
 commands, gatekeeper reports including the G10 Formal Link Gate, ranked
 context-pack generation with compact formal-link display, local task harness
 and orchestrator dry-run surfaces, controlled draft-write CLI commands,
@@ -291,10 +290,9 @@ context-send policy matrix, provider log scanner, and failure/counterexample
 workflow evals can pin to `v0.2.2`. Downstream repositories that need
 verification-evidence hardening can pin to `v0.2.3`. Downstream repositories
 that need artifact failure memory and attempt traceability can pin to
-`v0.2.4`; the workspace-template and public KB active pins now use `v0.2.4`.
-After the `v0.3.0` tag is published and release smoke passes, downstream
-repositories that need checked counterexample evidence and research-run
-provenance can pin to `v0.3.0`.
+`v0.2.4`. Downstream repositories that need checked counterexample evidence
+and research-run provenance can pin to `v0.3.0`; the workspace-template and
+public KB active pins now use `v0.3.0`.
 
 ## Development Commands
 

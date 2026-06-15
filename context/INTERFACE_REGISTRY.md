@@ -2488,8 +2488,8 @@ working directory.
   result is not counted as pass.
 - `python scripts/ecosystem_smoke.py --matrix --framework-tag <tag>`: selects
   the framework tag used by the opt-in network release-smoke row. The default
-  is the current published baseline `v0.2.4`; this does not imply a future
-  `v0.3.0` tag exists before the release-candidate/publication tasks.
+  remains the compatibility baseline `v0.2.4`; pass `--framework-tag v0.3.0`
+  when checking the current published release.
 - `python scripts/ecosystem_smoke.py --matrix --include-network`: also runs
   matrix rows that perform normal framework package install or git clone steps.
   This still does not run real hosted providers or require API keys.

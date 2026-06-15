@@ -612,8 +612,9 @@ CLI-agent demo, workspace-template research-run demo, workspace-template
 fake-provider smoke, workspace-template verifier-evidence demo, public KB
 policy guard, public KB checked-evidence policy docs, and public KB
 verifier-policy self-test coverage. The default git-tag release-smoke row
-uses the current published baseline `v0.2.4` until a later `v0.3.0` release
-candidate and tag exist.
+continues to use the compatibility baseline `v0.2.4`; use
+`--framework-tag v0.3.0` when running the opt-in network release-smoke row
+against the current published release.
 
 Network rows remain opt-in through `--include-network`. When optional external
 SAT/SMT/Lean/lake tools are unavailable, the optional verifier availability

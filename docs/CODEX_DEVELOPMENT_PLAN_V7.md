@@ -1,7 +1,8 @@
 # TCS-Cosheaf Development Plan V7
 
-Status: active accelerated plan after the published `v0.2.4` Artifact Failure
-Memory + Attempt Traceability release.
+Status: completed accelerated plan for the published `v0.3.0` Checked
+Evidence + Research Run Loop release after the published `v0.2.4` Artifact
+Failure Memory + Attempt Traceability release.
 
 Target:
 
@@ -320,8 +321,9 @@ SMT, Lean, or lake. Optional rows are skipped, not pass.
 
 ## Phase 5: v0.3.0 Release
 
-After implementation and downstream demos/policies land, prepare
-`release-v030-readiness-and-rc`.
+After implementation and downstream demos/policies landed, the project
+prepared `release-v030-readiness-and-rc`, then completed
+`release-v030-publication-closeout`.
 
 Readiness questions:
 
@@ -334,10 +336,10 @@ Readiness questions:
 - Are security/eval suites in place?
 - Are open issues/PRs empty or intentionally deferred?
 
-The release-candidate PR may bump package metadata to `0.3.0` only if
-readiness passes. It must not create the public tag. Downstream pins update
-only after the maintainer publishes the tag/release and release smoke from
-`@v0.3.0` passes.
+The release-candidate PR bumped package metadata to `0.3.0` after readiness
+passed. It did not create the public tag. Downstream pins updated only after
+the maintainer published the tag/release and release smoke from `@v0.3.0`
+passed.
 
 ## Completion Definition
 

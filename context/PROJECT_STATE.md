@@ -3,6 +3,27 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.3.0 Published Release Closeout - 2026-06-15
+
+Issue 344 closes out the `v0.3.0` Checked Evidence + Research Run Loop
+publication after the release-candidate PR merged cleanly. The annotated
+`v0.3.0` tag points through the reviewed `Prepare v0.3.0 release candidate`
+main commit, and the GitHub release `v0.3.0 Checked Evidence + Research Run
+Loop` is published.
+
+Release smoke installed `tcs-cosheaf==0.3.0` from
+`git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.3.0` and ran help,
+version, validation, gate, index rebuild, and context-build checks. The
+workspace-template active demo/Makefile/CLI-agent/provider/verifier/failure
+memory/checked-evidence/research-run paths now pin `v0.3.0`, and
+`tcs-kb-public` CI installs `tcs-cosheaf` from `v0.3.0`.
+
+This closeout is documentation/status only. It does not add runtime behavior,
+change schemas, alter verifier semantics, expand provider or MCP authority,
+write accepted knowledge, mark human review, promote artifacts, or claim
+production readiness. Checked counterexample evidence remains review evidence
+only, and research-run records remain provenance only.
+
 ## v0.3.0 Release Candidate Readiness - 2026-06-15
 
 Issue 342 prepares the `v0.3.0` Checked Evidence + Research Run Loop release
