@@ -1,14 +1,14 @@
 # Three-Repository Release Checklist
 
-This checklist records the `v0.4.0` Strategy Planner + Research Task Graph
-release-candidate state after the published `v0.3.0` Checked Evidence +
-Research Run Loop release, the published `v0.2.4` Artifact Failure Memory +
-Attempt Traceability release, the `v0.2.3` Verification Evidence Hardening
-release, the `v0.2.2` Provider Transport + Agent Workflow Hardening release,
-the `v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease, the
-`v0.2.0` local-MVP release, and the `v0.1.1` Formal Link Layer support
-baseline. It is an operator checklist for the framework package, public KB,
-and workspace template together. It is not a production-readiness claim.
+This checklist records the published `v0.4.0` Strategy Planner + Research Task
+Graph state after the published `v0.3.0` Checked Evidence + Research Run Loop
+release, the published `v0.2.4` Artifact Failure Memory + Attempt Traceability
+release, the `v0.2.3` Verification Evidence Hardening release, the `v0.2.2`
+Provider Transport + Agent Workflow Hardening release, the `v0.2.1` CLI Agent
+Access + Hosted Provider Gateway prerelease, the `v0.2.0` local-MVP release,
+and the `v0.1.1` Formal Link Layer support baseline. It is an operator
+checklist for the framework package, public KB, and workspace template
+together. It is not a production-readiness claim.
 
 `v0.1.1` remains the downstream tag baseline for early formal-link metadata.
 `v0.2.0` packages the deterministic local-MVP workflow. `v0.2.1` packages the
@@ -31,9 +31,8 @@ external-operator run-loop docs, downstream demo/policy surfaces, and
 integration/eval smoke coverage. Package metadata records `0.3.0`; the public
 tag, GitHub release, release smoke, and downstream pin updates are complete.
 `v0.4.0` packages Strategy Planner + Research Task Graph surfaces. Package
-metadata records `0.4.0` in the release-candidate branch; the public tag,
-GitHub release, post-tag release smoke, and downstream pin updates are not
-complete yet.
+metadata records `0.4.0`; the public tag, GitHub release, and post-tag release
+smoke are complete. Downstream pin updates are not complete yet.
 
 ## Scope
 
@@ -62,12 +61,13 @@ complete yet.
   workflows after publication:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.4.0`.
 
-## v0.4.0 Release Candidate Baseline
+## v0.4.0 Published Release Baseline
 
-`docs/releases/v0.4.0.md` is the release-candidate note for Strategy Planner +
-Research Task Graph. This release-candidate task prepares package metadata and
-status docs; a later publication closeout must create the public tag, publish
-the GitHub release, run post-tag release smoke, and update downstream pins.
+`docs/releases/v0.4.0.md` is the published release note for Strategy Planner +
+Research Task Graph. The release-candidate task prepared package metadata and
+status docs; the publication closeout created the public tag, published the
+GitHub release, and ran post-tag release smoke. Downstream pins remain a
+follow-up task.
 
 - [x] Strategy/task-graph model, schema, deterministic planner, storage, CLI,
   docs, interface registry updates, and tests are merged.
@@ -85,10 +85,10 @@ the GitHub release, run post-tag release smoke, and update downstream pins.
   remain skipped, not pass, when unavailable.
 - [x] `v0.4.0` release-candidate metadata is prepared in the
   release-candidate branch.
-- [ ] The annotated `v0.4.0` tag is published.
-- [ ] GitHub release `v0.4.0 Strategy Planner + Research Task Graph` is
+- [x] The annotated `v0.4.0` tag is published.
+- [x] GitHub release `v0.4.0 Strategy Planner + Research Task Graph` is
   published.
-- [ ] Release smoke from
+- [x] Release smoke from
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.4.0` passed.
 - [ ] Workspace-template active pins moved to `@v0.4.0` after tag publication
   and release smoke.
@@ -323,9 +323,8 @@ smoke, and downstream pin updates.
   reviewed release-candidate main commit.
 - [x] Remote tag `v0.3.0` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
-- [x] Remote tag `v0.4.0` is absent before publication. It must remain absent
-  until the release-candidate PR merges cleanly and the maintainer publication
-  action creates the annotated tag.
+- [x] Remote tag `v0.4.0` exists and points through the annotated tag to the
+  reviewed release-candidate main commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
 - [x] Historical workspace-template artifact-failure-memory verification remains

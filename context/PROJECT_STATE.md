@@ -3,6 +3,29 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.4.0 Publication Closeout - 2026-06-15
+
+Issue 358 closes out the `v0.4.0` Strategy Planner + Research Task Graph
+publication after the release-candidate PR merged cleanly. The annotated
+`v0.4.0` tag object is `4c58cf94499d6b18ffec1c98157b608b90a9ad63`, pointing
+through the reviewed `Prepare v0.4.0 release candidate` main commit
+`9f2e51eddeca6bc09d1915e706493ca4b4d5f99a`.
+
+The GitHub release `v0.4.0 Strategy Planner + Research Task Graph` is
+published. Release smoke installed `tcs-cosheaf==0.4.0` from
+`git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.4.0` and passed help,
+version, validation, gate, index rebuild, and context-build checks.
+
+The planned release-smoke command in the external longplan used
+`--framework-ref`, but the current `scripts/release_smoke.py` interface accepts
+`--source`; the successful smoke used the equivalent explicit git source.
+
+Downstream workspace-template and public KB active pins still need a separate
+pin-alignment task before the whole v0.4.0 line is complete. This closeout does
+not add runtime behavior, does not call hosted providers by default, does not
+require MCP, does not write accepted knowledge, does not create human review,
+does not promote artifacts, and does not change accepted-promotion semantics.
+
 ## v0.4.0 Release Candidate - 2026-06-15
 
 Issue 356 prepares the conservative `v0.4.0` Strategy Planner + Research Task
