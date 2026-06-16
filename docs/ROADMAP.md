@@ -1,17 +1,55 @@
 # Roadmap
 
 TCS-Cosheaf has published the `v0.5.0` Operator MCP + Codex Application Layer
-release after the published `v0.4.0` Strategy Planner + Research
-Task Graph release. This follows the published `v0.3.0` Checked Evidence + Research Run Loop
-release, the published `v0.2.4` Artifact Failure Memory + Attempt Traceability
-release, the published `v0.2.3` Verification Evidence Hardening release, the
-published `v0.2.2` Provider Transport + Agent Workflow Hardening release, the
-published `v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease, the
-published `v0.2.0` local-MVP release, and the earlier `v0.1.1` Formal Link
-Layer support baseline. Downstream workspace/public-KB pin alignment for
-`v0.5.0` is complete, and the project is still not production-ready. This
-roadmap records durable direction and named milestones; live issue state
-belongs in GitHub issues.
+release after the published `v0.4.0` Strategy Planner + Research Task Graph
+release. The active next line is `v0.6.0` Operator Session + Review Handoff:
+a replayable, redacted, review-context handoff layer over the existing
+CLI/MCP/service surfaces. This follows the published `v0.3.0` Checked Evidence
+and Research Run Loop release, the published `v0.2.4` Artifact Failure Memory
+and Attempt Traceability release, the published `v0.2.3` Verification Evidence
+Hardening release, the published `v0.2.2` Provider Transport and Agent Workflow
+Hardening release, the published `v0.2.1` CLI Agent Access and Hosted Provider
+Gateway prerelease, the published `v0.2.0` local-MVP release, and the earlier
+`v0.1.1` Formal Link Layer support baseline. Downstream workspace/public-KB pin
+alignment for `v0.5.0` is complete, and the project is still not
+production-ready. This roadmap records durable direction and named milestones;
+live issue state belongs in GitHub issues.
+
+## Active Release Focus: v0.6.0 Operator Session + Review Handoff
+
+The active post-`v0.5.0` line is `v0.6.0` Operator Session + Review Handoff.
+`v0.5.0` exposed a safe optional operator MCP layer and CLI-first runbooks.
+`v0.6.0` adds the missing audit layer around a whole operator session.
+
+The active plan is
+[`docs/CODEX_DEVELOPMENT_PLAN_V10.md`](CODEX_DEVELOPMENT_PLAN_V10.md), with
+the kickoff audit in
+[`docs/POST_V050_STATE_AUDIT.md`](POST_V050_STATE_AUDIT.md) and the
+architecture decision in
+[`docs/ADR/0027-operator-session-review-handoff.md`](ADR/0027-operator-session-review-handoff.md).
+
+This line will:
+
+- add strict operator-session records and runtime storage under ignored
+  `.cosheaf/operator-sessions/` paths;
+- add CLI commands to start, inspect, append safe checks/references to, scan,
+  and finalize operator sessions;
+- optionally record bounded MCP tool-call metadata when a session ID is
+  supplied;
+- scan sessions and handoff candidates for secrets, private/public leakage,
+  hidden reasoning markers, provider payloads, accepted-write attempts, and
+  authority overclaims;
+- build compact handoff bundles from finalized sessions; and
+- export explicit review-context YAML under `reviews/operator/`.
+
+This line will not make sessions, MCP recordings, scans, handoff bundles, or
+handoff exports proof, verifier evidence, verifier pass, gate pass, human
+review, accepted status, accepted refutation, public KB source metadata, or
+promotion authority. It will not add production hosted multi-agent SaaS, web
+UI, multi-user permissions, default hosted provider calls, API-key
+requirements, accepted writes, promotion through operator sessions, human-review
+creation, verifier-result mutation, automatic theorem proving, automatic Lean
+alignment, or replacement of GitHub PR review.
 
 ## Completed Release Focus: v0.5.0 Operator MCP + Codex Application Layer
 

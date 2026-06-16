@@ -3,6 +3,39 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Post-v0.5.0 To v0.6.0 Kickoff - 2026-06-16
+
+Issue 378 starts the `v0.6.0` Operator Session + Review Handoff line after the
+published `v0.5.0` Operator MCP + Codex Application Layer closeout.
+
+The kickoff audit is recorded in `docs/POST_V050_STATE_AUDIT.md`. It verified
+that package metadata, `cosheaf.__version__`, and
+`python -m cosheaf.cli version --json` report `0.5.0`; the annotated
+`v0.5.0` tag and GitHub release are published; release smoke from `@v0.5.0`
+passed during publication closeout; workspace-template active demos/scripts
+pin or install `@v0.5.0`; public KB CI installs `@v0.5.0`; and the three
+repositories had no open PRs or issue blockers before this kickoff issue was
+created.
+
+The active plan is `docs/CODEX_DEVELOPMENT_PLAN_V10.md`; ADR 0027 records the
+Operator Session + Review Handoff direction. At kickoff, the optional MCP
+surface already includes read-only/operator runtime tools and controlled
+draft/review/runtime write tools, while forbidden authority-expanding tools
+such as accepted writes, promotion, mark-human-reviewed, hosted-provider
+default, and arbitrary shell remain absent.
+
+The v0.6.0 line adds a deterministic audit and handoff layer over existing
+CLI/MCP/service behavior. It is planned to record bounded operator-session
+metadata under ignored `.cosheaf/operator-sessions/` runtime paths and to
+export explicit review context under `reviews/operator/`.
+
+This kickoff does not implement operator sessions, add dependencies, add
+schemas, change runtime behavior, bump package version, write KB artifacts,
+create human review, promote artifacts, mutate verifier results, change
+accepted-promotion semantics, or claim automatic theorem proving. Operator
+sessions, MCP recordings, leak scans, handoff bundles, and handoff exports
+must remain review context only.
+
 ## v0.5.0 Publication Closeout - 2026-06-16
 
 Issue 376 closes out the conservative `v0.5.0` Operator MCP + Codex
