@@ -112,15 +112,15 @@ This ADR does not approve:
 
 ## Follow-Ups
 
-- Land `docs/CODEX_DEVELOPMENT_PLAN_V10.md` and
+- [x] Land `docs/CODEX_DEVELOPMENT_PLAN_V10.md` and
   `docs/POST_V050_STATE_AUDIT.md`.
-- Add strict operator session DTOs and runtime storage.
-- Add the operator session CLI core.
-- Add optional MCP session recording.
-- Add the operator session leak scanner.
-- Add handoff bundle build/show commands.
-- Add handoff export to `reviews/operator/`.
-- Add downstream workspace-template and public KB policy integration.
-- Add deterministic ecosystem smoke rows.
-- Prepare and publish a conservative `v0.6.0` release only after implementation,
+- [x] Add strict operator session DTOs and runtime storage.
+- [x] Add the operator session CLI core.
+- [x] Add optional MCP session recording.
+- [x] Add the operator session leak scanner.
+- [x] Add handoff bundle build/show commands.
+- [ ] Add handoff export to `reviews/operator/`.
+- [ ] Add downstream workspace-template and public KB policy integration.
+- [ ] Add deterministic ecosystem smoke rows.
+- [ ] Prepare and publish a conservative `v0.6.0` release only after implementation,
   downstream smoke, and release verification pass.

@@ -1,5 +1,20 @@
 """Operator session DTOs and runtime storage."""
 
+from cosheaf.operator_session.handoff import (
+    OPERATOR_HANDOFF_KIND,
+    OPERATOR_HANDOFF_REQUIRED_CHECKS,
+    OperatorHandoffBundle,
+    OperatorHandoffCheckSummary,
+    OperatorHandoffKbRoot,
+    OperatorHandoffScannerSummary,
+    OperatorHandoffToolStatusCounts,
+    OperatorHandoffWriteResult,
+    build_operator_handoff,
+    load_operator_handoff,
+    operator_handoff_id,
+    operator_handoff_path,
+    write_operator_handoff,
+)
 from cosheaf.operator_session.models import (
     OPERATOR_SESSION_AUTHORITY_NOTICE,
     SKIPPED_OPERATOR_SESSION_LIMITATION,
@@ -40,6 +55,8 @@ from cosheaf.operator_session.storage import (
 )
 
 __all__ = [
+    "OPERATOR_HANDOFF_KIND",
+    "OPERATOR_HANDOFF_REQUIRED_CHECKS",
     "OPERATOR_SESSION_AUTHORITY_NOTICE",
     "OPERATOR_SESSION_RUNTIME_ROOT",
     "OPERATOR_SESSION_SCAN_KIND",
@@ -49,6 +66,12 @@ __all__ = [
     "OperatorCheckKind",
     "OperatorCheckResult",
     "OperatorCheckStatus",
+    "OperatorHandoffBundle",
+    "OperatorHandoffCheckSummary",
+    "OperatorHandoffKbRoot",
+    "OperatorHandoffScannerSummary",
+    "OperatorHandoffToolStatusCounts",
+    "OperatorHandoffWriteResult",
     "OperatorPolicyFinding",
     "OperatorPolicyFindingSeverity",
     "OperatorPolicyMode",
@@ -64,6 +87,10 @@ __all__ = [
     "OperatorToolCallRecord",
     "OperatorToolCallStatus",
     "append_operator_session_event",
+    "build_operator_handoff",
+    "load_operator_handoff",
+    "operator_handoff_id",
+    "operator_handoff_path",
     "load_operator_session",
     "load_operator_session_events",
     "operator_session_events_path",
@@ -71,5 +98,6 @@ __all__ = [
     "operator_session_scan_path",
     "scan_operator_session",
     "start_operator_session",
+    "write_operator_handoff",
     "write_operator_session",
 ]

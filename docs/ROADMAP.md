@@ -28,7 +28,8 @@ the kickoff audit in
 architecture decision in
 [`docs/ADR/0027-operator-session-review-handoff.md`](ADR/0027-operator-session-review-handoff.md).
 
-This line will:
+This line has now added the core session, recording, scanning, and runtime
+handoff-bundle surfaces, and still needs handoff export plus downstream smoke:
 
 - add strict operator-session records and runtime storage under ignored
   `.cosheaf/operator-sessions/` paths;
@@ -39,8 +40,8 @@ This line will:
 - scan sessions and handoff candidates for secrets, private/public leakage,
   hidden reasoning markers, provider payloads, accepted-write attempts, and
   authority overclaims;
-- build compact handoff bundles from finalized sessions; and
-- export explicit review-context YAML under `reviews/operator/`.
+- build compact runtime handoff bundles from finalized sessions; and
+- add explicit review-context export YAML under `reviews/operator/`.
 
 This line will not make sessions, MCP recordings, scans, handoff bundles, or
 handoff exports proof, verifier evidence, verifier pass, gate pass, human

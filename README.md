@@ -8,10 +8,14 @@ constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
 Current status: **v0.5.0 Operator MCP + Codex Application Layer published
-release**. Package metadata records `0.5.0`; the public `v0.5.0` tag, GitHub
-release, post-tag release smoke, and downstream workspace/public-KB pin
-updates are complete. The `v0.5.0` line keeps CLI as the oracle while adding
-optional MCP adapter access and operator-facing demo/runbook documentation.
+release**, with **v0.6.0 Operator Session + Review Handoff** in progress.
+Package metadata records `0.5.0`; the public `v0.5.0` tag, GitHub release,
+post-tag release smoke, and downstream workspace/public-KB pin updates are
+complete. The `v0.5.0` line keeps CLI as the oracle while adding optional MCP
+adapter access and operator-facing demo/runbook documentation. The active
+`v0.6.0` line has added bounded operator-session records, optional MCP session
+recording, leak scanning, and runtime handoff bundles; handoff export,
+downstream smoke, and release packaging remain follow-up work.
 Earlier published baselines include **v0.3.0 Checked Evidence + Research Run
 Loop** and **v0.4.0 Strategy Planner + Research Task Graph**. The `v0.1.1`
 tag remains the downstream Formal Link Layer support

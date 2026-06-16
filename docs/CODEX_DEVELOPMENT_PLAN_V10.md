@@ -873,7 +873,7 @@ Stop after this task.
 - [x] Operator session CLI landed.
 - [x] MCP session recording landed.
 - [x] Leak scanner landed.
-- [ ] Handoff bundle landed.
+- [x] Handoff bundle landed.
 - [ ] Handoff export landed.
 - [ ] Workspace demo landed.
 - [ ] Public KB handoff policy landed.

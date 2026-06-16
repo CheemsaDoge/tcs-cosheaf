@@ -19,10 +19,21 @@
   events without changing tool semantics. Operator session leak scanning is
   implemented through `cosheaf operator session scan <session-id> --json` and
   `cosheaf.operator_session.scan_operator_session`, writing runtime reports
-  under `.cosheaf/operator-sessions/<session-id>/scan.json`. Handoff
-  bundle/export remain planned V10 follow-ups. Session records and scan
-  reports are runtime review metadata only and do not grant accepted writes,
-  human review, verifier-result mutation, or promotion authority.
+  under `.cosheaf/operator-sessions/<session-id>/scan.json`. Operator handoff
+  bundle generation is implemented through `cosheaf operator handoff build
+  --session <session-id> --json`, `cosheaf operator handoff show <handoff-id>
+  --json`, and `cosheaf.operator_session.build_operator_handoff`, writing
+  runtime bundles under
+  `.cosheaf/operator-sessions/<session-id>/handoff.json`. Handoff export
+  remains a planned V10 follow-up. The handoff Python surface defines
+  `OperatorHandoffBundle`, `OperatorHandoffCheckSummary`,
+  `OperatorHandoffKbRoot`, `OperatorHandoffScannerSummary`,
+  `OperatorHandoffToolStatusCounts`, `OperatorHandoffWriteResult`,
+  `build_operator_handoff`, `load_operator_handoff`, `operator_handoff_id`,
+  `operator_handoff_path`, and `write_operator_handoff`. Session records, scan
+  reports, and handoff bundles are runtime review metadata only and do not
+  grant accepted writes, human review, verifier-result mutation, or promotion
+  authority.
 - Artifact failure-memory surfacing is implemented for read-only inspection,
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
   and controlled append, artifact cards, memory search, compact context card
@@ -101,6 +112,16 @@
   JSON with `handoff_blocked`, finding counts, finding records,
   `accepted_write_performed=false`, and the operator-session authority notice.
   Blocking findings make the command exit nonzero after emitting JSON.
+- `cosheaf operator handoff build --session <session-id> --json`: builds one
+  compact runtime review handoff bundle from a finalized operator session. It
+  runs the session leak scanner first, fails closed on blocking scanner
+  findings, writes `.cosheaf/operator-sessions/<session-id>/handoff.json`, and
+  emits deterministic JSON with check accounting, bounded tool summary,
+  scanner status, human-review checklist, known limitations, follow-up
+  recommendations, `accepted_write_performed=false`, and the authority notice.
+- `cosheaf operator handoff show <handoff-id> --json`: reads one runtime
+  operator handoff bundle without writing files. The deterministic handoff ID
+  is `handoff.<session-id>`.
 - `cosheaf workspace info`: shows the active workspace name, configured/legacy
   mode, repository root, and KB roots.
 - `cosheaf workspace info --repo-root <path>`: shows workspace configuration for
@@ -2722,6 +2743,14 @@ working directory.
   `lean_version`, and `lake_manifest`; `notes` is optional. This schema is
   metadata-only and does not imply Lean, lake, CSLib, or mathlib execution.
 - `schemas/issue.schema.json`: issue YAML schema.
+- `schemas/operator_handoff.schema.json`: operator handoff bundle schema. It
+  serializes compact runtime review context under
+  `.cosheaf/operator-sessions/<session-id>/handoff.json`, including session
+  metadata, KB root scope, referenced files, check summaries, bounded tool
+  summary counts, scanner status, known limitations, follow-up recommendations,
+  and explicit false authority fields. It does not grant accepted writes, human
+  review, promotion, verifier-result mutation, proof, gate pass, source
+  metadata, or accepted status.
 - `schemas/review.schema.json`: review YAML schema.
 - `schemas/verifier.schema.json`: verifier result schema.
 - `schemas/verifier_evidence.schema.json`: verifier evidence record v1 schema.

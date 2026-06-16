@@ -51,6 +51,10 @@ promotion authority.
 - Operator session leak scanning is implemented through
   `cosheaf operator session scan <session-id> --json`, with deterministic
   reports under `.cosheaf/operator-sessions/<session-id>/scan.json`.
+- Operator handoff bundle generation is implemented through
+  `cosheaf operator handoff build --session <session-id> --json` and
+  `cosheaf operator handoff show <handoff-id> --json`, with runtime bundles
+  under `.cosheaf/operator-sessions/<session-id>/handoff.json`.
 
 ## Active Scope
 
@@ -67,10 +71,11 @@ Compressed milestones:
 3. Operator session CLI core.
 4. Optional MCP session recording.
 5. Operator session leak scanner.
-6. Review handoff bundle and explicit review-context export.
-7. Downstream workspace-template demo and public KB policy integration.
-8. Ecosystem smoke rows for the operator-session workflow.
-9. v0.6.0 release candidate, publication closeout, and downstream pin
+6. Review handoff bundle generation.
+7. Explicit review-context handoff export.
+8. Downstream workspace-template demo and public KB policy integration.
+9. Ecosystem smoke rows for the operator-session workflow.
+10. v0.6.0 release candidate, publication closeout, and downstream pin
    alignment.
 
 ## Current And Next Functional Tasks
@@ -78,20 +83,23 @@ Compressed milestones:
 Most recently completed task:
 
 ```text
-operator-session-leak-scanner
+operator-handoff-bundle
 ```
 
-This task adds `cosheaf operator session scan <session-id> --json`. The
-scanner reads session runtime records and event transcripts, flags blocker
-findings such as secrets, environment dumps, hidden reasoning, raw provider
-payloads, accepted-write attempts, authority claims, absolute private paths,
-and public-only private artifact/path references, and writes a runtime
-`scan.json` report. Blocking findings prevent handoff by default.
+This task adds `cosheaf operator handoff build --session <session-id> --json`
+and `cosheaf operator handoff show <handoff-id> --json`. The builder requires a
+finalized session, runs the session leak scanner first, fails closed on
+blocking scanner findings, and writes a compact runtime `handoff.json` bundle
+under `.cosheaf/operator-sessions/<session-id>/`. Bundles summarize session
+metadata, KB root scope, referenced files, draft/source-note/review-context
+references, check statuses, skipped and missing check accounting, bounded tool
+summary counts, scanner status, a human-review checklist, known limitations,
+and follow-up recommendations.
 
 Next project step:
 
 ```text
-operator-handoff-bundle
+operator-handoff-export
 ```
 
 ## Explicit Boundaries

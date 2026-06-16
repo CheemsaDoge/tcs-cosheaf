@@ -121,6 +121,8 @@ from cosheaf.operator_session import (
     OperatorSessionError,
     OperatorSessionStatus,
     append_operator_session_event,
+    build_operator_handoff,
+    load_operator_handoff,
     load_operator_session,
     scan_operator_session,
     start_operator_session,
@@ -320,6 +322,11 @@ operator_session_app = typer.Typer(
     help="Operator session metadata commands.",
     no_args_is_help=True,
 )
+operator_handoff_app = typer.Typer(
+    add_completion=False,
+    help="Operator handoff bundle commands.",
+    no_args_is_help=True,
+)
 promotion_app = typer.Typer(
     add_completion=False,
     help="Read-only promotion readiness reports.",
@@ -348,6 +355,7 @@ app.add_typer(mcp_app, name="mcp")
 app.add_typer(provider_app, name="provider")
 app.add_typer(operator_app, name="operator")
 operator_app.add_typer(operator_session_app, name="session")
+operator_app.add_typer(operator_handoff_app, name="handoff")
 app.add_typer(promotion_app, name="promotion")
 memory_app.add_typer(memory_graph_app, name="graph")
 
@@ -1208,6 +1216,79 @@ def operator_session_scan(
     console.print(f"- authority: {OPERATOR_SESSION_AUTHORITY_NOTICE}")
     if result.handoff_blocked:
         raise typer.Exit(1)
+
+
+@operator_handoff_app.command("build")
+def operator_handoff_build(
+    session_id: str = typer.Option(
+        ...,
+        "--session",
+        help="Finalized operator session ID to summarize.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for operator handoff storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Build a runtime review handoff bundle from one finalized session."""
+    console = Console(width=120, markup=False)
+    try:
+        result = build_operator_handoff(
+            RepoContext(repo_root),
+            session_id=session_id,
+        )
+    except (OperatorSessionError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _operator_session_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Operator handoff built: {result.handoff.handoff_id}")
+    console.print(f"- session: {result.handoff.session_id}")
+    console.print(f"- path: {result.relative_path.as_posix()}")
+    console.print(f"- authority: {OPERATOR_SESSION_AUTHORITY_NOTICE}")
+
+
+@operator_handoff_app.command("show")
+def operator_handoff_show(
+    handoff_id: str = typer.Argument(..., help="Operator handoff ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for operator handoff storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Show one runtime operator handoff bundle."""
+    console = Console(width=120, markup=False)
+    try:
+        result = load_operator_handoff(RepoContext(repo_root), handoff_id)
+    except (OperatorSessionError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _operator_session_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Operator handoff: {result.handoff.handoff_id}")
+    console.print(f"- session: {result.handoff.session_id}")
+    console.print(f"- path: {result.relative_path.as_posix()}")
+    console.print(f"- authority: {OPERATOR_SESSION_AUTHORITY_NOTICE}")
 
 
 @run_app.command("start")
