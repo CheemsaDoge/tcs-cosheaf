@@ -3,6 +3,32 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## MCP Session Recording - 2026-06-16
+
+Issue 384 adds optional MCP tool-call recording for the `v0.6.0` Operator
+Session + Review Handoff line.
+
+MCP `tools/call` requests may now include `session_id` inside the tool
+arguments. The MCP adapter strips that metadata before invoking the existing
+tool handler, so existing tool semantics remain unchanged and MCP still works
+without session tracking. When `session_id` is present, the adapter appends a
+bounded `OperatorToolCallRecord` event under
+`.cosheaf/operator-sessions/<session-id>/events.jsonl`.
+
+The recorded event includes tool name, session mode, argument names/counts,
+normalized status (`completed`, `failed`, `denied`, or `error`), a bounded
+result summary, timestamp, and warning codes. It does not store full context
+packs, full artifact YAML, provider request/response payloads, raw
+stdout/stderr, environment dumps, API keys, hidden reasoning, or private query
+text in public-only sessions.
+
+Unknown or denied tools, validation-style MCP errors, and unexpected handler
+errors are recorded when a valid session ID is supplied. Public-mode tool
+results remain public-scoped before recording. This task does not add new MCP
+tools, arbitrary shell access, accepted writes, human-review creation,
+verifier-result mutation, promotion, provider defaults, leak scanning, handoff
+bundle generation, or handoff export behavior.
+
 ## Operator Session CLI Core - 2026-06-16
 
 Issue 382 adds the first CLI surface for `v0.6.0` Operator Session + Review
@@ -25,9 +51,10 @@ CLI records `Skipped operator-session checks are not pass evidence.`
 `--scope private` in `public_only` sessions. Finalized sessions reject later
 `append-check` and `append-ref` operations.
 
-This task does not add MCP session recording, leak scanning, handoff bundle or
+This task did not add MCP session recording, leak scanning, handoff bundle or
 export behavior, accepted writes, human-review creation, verifier-result
-mutation, promotion, provider defaults, or accepted-promotion semantics.
+mutation, promotion, provider defaults, or accepted-promotion semantics. MCP
+session recording was added later by Issue 384 as optional bounded metadata.
 
 ## Operator Session Model And Runtime Storage - 2026-06-16
 

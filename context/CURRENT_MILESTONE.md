@@ -45,6 +45,9 @@ promotion authority.
 - Operator session DTOs, runtime storage, and CLI metadata commands are
   implemented. Runtime files stay under ignored `.cosheaf/operator-sessions/`
   paths.
+- Optional MCP session recording is implemented for whitelisted `tools/call`
+  requests when callers pass `session_id` in the tool arguments. It records
+  bounded metadata only and keeps MCP usable without session tracking.
 
 ## Active Scope
 
@@ -72,20 +75,22 @@ Compressed milestones:
 Most recently completed task:
 
 ```text
-operator-session-cli-core
+mcp-session-recording
 ```
 
-This task added `cosheaf operator session` metadata commands to start, show,
-append bounded check/reference records to, and finalize operator sessions. The
-CLI does not execute arbitrary commands, does not record MCP calls, does not
-build handoff bundles, does not write accepted knowledge, does not create
-human review, does not mutate verifier results, does not promote artifacts, and
-does not change provider defaults or accepted-promotion semantics.
+This task allows optional MCP `tools/call` requests to include a
+`session_id`. When present, whitelisted tool calls append bounded
+`OperatorToolCallRecord` events under
+`.cosheaf/operator-sessions/<session-id>/events.jsonl`. The transcript records
+tool name, session mode, argument names/counts, normalized status, bounded
+summary, timestamp, and warning codes. It does not store full context packs,
+full artifact YAML, raw stdout/stderr, provider payloads, secrets, hidden
+reasoning, or private query text in public-only sessions.
 
 Next project step:
 
 ```text
-mcp-session-recording
+operator-session-leak-scanner
 ```
 
 ## Explicit Boundaries

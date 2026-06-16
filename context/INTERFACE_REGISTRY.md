@@ -13,10 +13,13 @@
   `.cosheaf/operator-sessions/<session-id>/session.json` and
   `.cosheaf/operator-sessions/<session-id>/events.jsonl`. The CLI surface is
   `cosheaf operator session ...` for starting, showing, appending bounded
-  check/reference metadata, and finalizing sessions. MCP session recording,
-  leak scanning, and handoff bundle/export remain planned V10 follow-ups.
-  Session records are runtime review metadata only and do not grant accepted
-  writes, human review, verifier-result mutation, or promotion authority.
+  check/reference metadata, and finalizing sessions. Optional MCP
+  `tools/call` session recording is implemented when callers pass
+  `session_id` in tool arguments; it records bounded `OperatorToolCallRecord`
+  events without changing tool semantics. Leak scanning and handoff
+  bundle/export remain planned V10 follow-ups. Session records are runtime
+  review metadata only and do not grant accepted writes, human review,
+  verifier-result mutation, or promotion authority.
 - Artifact failure-memory surfacing is implemented for read-only inspection,
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
   and controlled append, artifact cards, memory search, compact context card
@@ -870,7 +873,8 @@
   `prepare_review_bundle`, and `public_kb_contribution_check`.
 - `cosheaf.mcp.tool_definitions() -> list[dict[str, Any]]`: returns
   deterministic MCP-style tool metadata and JSON schemas for the MCP
-  whitelist.
+  whitelist. Every tool schema accepts optional `session_id` for bounded
+  operator-session event recording.
 - `cosheaf.mcp.prompt_definitions() -> list[dict[str, Any]]`: returns
   deterministic MCP-style prompt metadata for the governance-safe prompt
   whitelist.
@@ -885,7 +889,9 @@
   shared service layer. The class name is preserved for compatibility. It
   exposes `tools/list`, `tools/call`,
   `resources/list`, `resources/read`, `prompts/list`, `prompts/get`, and
-  `initialize`.
+  `initialize`. `tools/call` strips optional `session_id` from tool arguments
+  before invoking the selected handler and appends bounded
+  `OperatorToolCallRecord` events when session recording is requested.
 - `cosheaf.mcp.ReadOnlyMcpServer.handle(request) -> dict[str, Any]`: handles
   one JSON-RPC request mapping and returns one JSON-RPC response mapping.
 - `cosheaf.mcp.serve_stdio(context, ...) -> None`: serves line-delimited
@@ -905,6 +911,11 @@ accepted knowledge or create promotion/human-review/verifier authority.
 Strategy MCP outputs are public-scoped before being returned so private
 artifact IDs and private issue tags are not exposed through public operator
 mode.
+Optional MCP session recording stores only bounded metadata: tool name,
+session mode, argument names/counts, normalized status, result summary,
+timestamp, and warning codes. It does not store full context packs, full
+artifact YAML, raw stdout/stderr, provider payloads, secrets, hidden
+reasoning, or private query text in public-only sessions.
 Prompt templates are static governance guidance. They do not read or include
 private KB content, artifact statements, provider credentials, or environment
 data.

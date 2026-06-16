@@ -9,8 +9,10 @@ layer.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from collections.abc import Callable, Mapping
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TextIO
 
@@ -40,6 +42,15 @@ from cosheaf.memory import (
     MemoryRootScope,
 )
 from cosheaf.memory import MemorySearchError as MemorySearchServiceError
+from cosheaf.operator_session import (
+    OperatorPolicyMode,
+    OperatorSession,
+    OperatorSessionError,
+    OperatorToolCallRecord,
+    OperatorToolCallStatus,
+    append_operator_session_event,
+    load_operator_session,
+)
 from cosheaf.research.run import (
     ResearchRunError,
     append_artifact_to_research_run,
@@ -288,24 +299,126 @@ class ReadOnlyMcpServer:
 
     def _handle_tool_call(self, params: Mapping[str, Any]) -> dict[str, Any]:
         name = _required_string(params, "name")
-        arguments = _optional_mapping(
+        raw_arguments = _optional_mapping(
             params.get("arguments", {}),
             field_name="arguments",
         )
+        session_id = _optional_string(
+            raw_arguments.get("session_id"),
+            field_name="session_id",
+        )
+        arguments = {
+            str(key): value
+            for key, value in raw_arguments.items()
+            if key != "session_id"
+        }
+        session = self._load_recording_session(session_id) if session_id else None
         handler = self._tool_handlers.get(name)
         if handler is None:
-            raise McpServerError(
+            error = McpServerError(
                 "tool_not_found",
                 f"tool is not exposed by the read-only MCP server: {name}",
                 remediation=(
                     "Call tools/list and use one of the whitelisted tool names."
                 ),
             )
+            if session is not None:
+                self._record_mcp_tool_call(
+                    session=session,
+                    tool_name=name,
+                    arguments=arguments,
+                    status=OperatorToolCallStatus.DENIED,
+                    result_summary=_mcp_error_summary(
+                        name,
+                        error,
+                        status=OperatorToolCallStatus.DENIED,
+                    ),
+                    warning_codes=(error.code,),
+                )
+            raise error
         try:
             payload = handler(arguments)
+            if session is not None:
+                self._record_mcp_tool_call(
+                    session=session,
+                    tool_name=name,
+                    arguments=arguments,
+                    status=OperatorToolCallStatus.COMPLETED,
+                    result_summary=_mcp_success_summary(name, payload),
+                    warning_codes=_mcp_warning_codes(payload),
+                )
             return _tool_result(payload)
         except McpServerError as exc:
+            if session is not None:
+                status = _mcp_error_status(exc)
+                self._record_mcp_tool_call(
+                    session=session,
+                    tool_name=name,
+                    arguments=arguments,
+                    status=status,
+                    result_summary=_mcp_error_summary(name, exc, status=status),
+                    warning_codes=(exc.code,),
+                )
             return _tool_error_result(exc)
+        except Exception:
+            if session is not None:
+                self._record_mcp_tool_call(
+                    session=session,
+                    tool_name=name,
+                    arguments=arguments,
+                    status=OperatorToolCallStatus.ERROR,
+                    result_summary=f"error tool call: {name}; code=internal_error",
+                    warning_codes=("internal_error",),
+                )
+            raise
+
+    def _load_recording_session(self, session_id: str) -> OperatorSession:
+        try:
+            return load_operator_session(self.context, session_id).session
+        except OperatorSessionError as exc:
+            raise McpServerError(
+                exc.code,
+                str(exc),
+                remediation=exc.remediation,
+                details=exc.details,
+            ) from exc
+
+    def _record_mcp_tool_call(
+        self,
+        *,
+        session: OperatorSession,
+        tool_name: str,
+        arguments: Mapping[str, Any],
+        status: OperatorToolCallStatus,
+        result_summary: str,
+        warning_codes: tuple[str, ...] = (),
+    ) -> None:
+        recorded_at = datetime.now(UTC).replace(microsecond=0)
+        record = OperatorToolCallRecord(
+            event_id=_mcp_event_id(tool_name, recorded_at),
+            tool_name=tool_name,
+            status=status,
+            recorded_at=recorded_at,
+            input_metadata=_mcp_input_metadata(
+                session=session,
+                arguments=arguments,
+            ),
+            result_summary=result_summary,
+            warning_codes=warning_codes,
+        )
+        try:
+            append_operator_session_event(
+                self.context,
+                session_id=session.session_id,
+                event=record,
+            )
+        except OperatorSessionError as exc:
+            raise McpServerError(
+                exc.code,
+                str(exc),
+                remediation=exc.remediation,
+                details=exc.details,
+            ) from exc
 
     def _handle_prompt_get(self, params: Mapping[str, Any]) -> dict[str, Any]:
         name = _required_string(params, "name")
@@ -1465,7 +1578,7 @@ def tool_definitions() -> list[dict[str, Any]]:
         {
             "name": name,
             "description": descriptions[name],
-            "inputSchema": schemas[name],
+            "inputSchema": _tool_schema_with_optional_session_id(schemas[name]),
         }
         for name in READ_ONLY_TOOL_NAMES
     ]
@@ -1542,6 +1655,18 @@ def resource_definitions() -> list[dict[str, str]]:
             "mimeType": "application/json",
         },
     ]
+
+
+def _tool_schema_with_optional_session_id(schema: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a copied tool schema with optional session recording metadata."""
+    result = dict(schema)
+    properties = dict(result.get("properties", {}))
+    properties["session_id"] = {
+        "type": "string",
+        "description": "Optional operator-session ID for bounded tool-call recording.",
+    }
+    result["properties"] = properties
+    return result
 
 
 def _prompt_get_result(
@@ -1673,6 +1798,86 @@ def serve_stdio(
                 response = server.handle(request)
         output_handle.write(json.dumps(response, ensure_ascii=True) + "\n")
         output_handle.flush()
+
+
+def _mcp_input_metadata(
+    *,
+    session: OperatorSession,
+    arguments: Mapping[str, Any],
+) -> dict[str, str]:
+    keys = tuple(sorted(str(key) for key in arguments))
+    metadata = {
+        "argument_count": str(len(keys)),
+        "argument_names": ",".join(keys) if keys else "none",
+        "mcp_mode": "public_adapter",
+        "session_mode": session.policy_mode.value,
+    }
+    if session.policy_mode is OperatorPolicyMode.PUBLIC_ONLY:
+        return metadata
+    for key in keys:
+        value = arguments.get(key)
+        if _mcp_metadata_value_is_safe(key, value):
+            metadata[key] = str(value).strip()
+    return metadata
+
+
+def _mcp_metadata_value_is_safe(key: str, value: Any) -> bool:
+    if isinstance(value, bool):
+        return True
+    if isinstance(value, int) and not isinstance(value, bool):
+        return True
+    if not isinstance(value, str):
+        return False
+    normalized = value.strip()
+    if not normalized:
+        return False
+    lowered_key = key.replace("-", "_").lower()
+    if lowered_key in {"query", "summary", "description", "statement", "notes"}:
+        return False
+    if any(part in lowered_key for part in ("payload", "request", "evidence")):
+        return False
+    return bool(re.fullmatch(r"[A-Za-z0-9_./:-]+", normalized))
+
+
+def _mcp_success_summary(name: str, _payload: Mapping[str, Any]) -> str:
+    return f"completed tool call: {name}"
+
+
+def _mcp_error_summary(
+    name: str,
+    error: McpServerError,
+    *,
+    status: OperatorToolCallStatus,
+) -> str:
+    return f"{status.value} tool call: {name}; code={error.code}"
+
+
+def _mcp_warning_codes(payload: Mapping[str, Any]) -> tuple[str, ...]:
+    raw_warnings = payload.get("warning_codes")
+    if raw_warnings is None:
+        raw_warnings = payload.get("warnings")
+    if isinstance(raw_warnings, str):
+        return (raw_warnings,)
+    if isinstance(raw_warnings, list | tuple):
+        return tuple(str(item) for item in raw_warnings if str(item).strip())
+    return ()
+
+
+def _mcp_error_status(error: McpServerError) -> OperatorToolCallStatus:
+    code = error.code.lower()
+    if (
+        "denied" in code
+        or "forbidden" in code
+        or "not_allowed" in code
+        or code == "tool_not_found"
+    ):
+        return OperatorToolCallStatus.DENIED
+    return OperatorToolCallStatus.FAILED
+
+
+def _mcp_event_id(tool_name: str, recorded_at: datetime) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", tool_name.lower()).strip("-") or "tool"
+    return f"event.{slug}.s{recorded_at:%Y%m%dt%H%M%Sz}"
 
 
 def _success_response(request_id: Any, result: Mapping[str, Any]) -> dict[str, Any]:
