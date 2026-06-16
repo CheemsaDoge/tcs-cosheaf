@@ -4,9 +4,9 @@ Operator sessions are the `v0.6.0` audit layer for external-operator work.
 They record bounded metadata about one issue-focused session so a maintainer
 can review what happened without reading raw terminal or MCP transcripts.
 
-This document describes the model, runtime storage, CLI metadata surface, and
-optional MCP tool-call recording landed so far. Leak scanning, handoff bundle
-generation, and review-context export are follow-up tasks in
+This document describes the model, runtime storage, CLI metadata surface,
+optional MCP tool-call recording, leak scanning, and handoff bundle generation
+landed so far. Review-context export remains a follow-up task in
 `docs/CODEX_DEVELOPMENT_PLAN_V10.md`.
 
 ## Authority Boundary
@@ -249,11 +249,43 @@ The scanner does not mutate source-of-truth files, does not create human
 review, does not promote artifacts, and does not prove or verify any claim. It
 is a fail-closed review/handoff guard.
 
+## Handoff Bundles
+
+Build a compact runtime handoff bundle from one finalized session:
+
+```bash
+cosheaf operator handoff build --session <session-id> --json
+```
+
+Show a previously built bundle:
+
+```bash
+cosheaf operator handoff show <handoff-id> --json
+```
+
+The deterministic handoff ID is `handoff.<session-id>`, and the runtime file is
+written under:
+
+```text
+.cosheaf/operator-sessions/<session-id>/handoff.json
+```
+
+The builder runs the session leak scanner first and fails closed when blocking
+findings exist. A bundle includes session and issue metadata, policy mode, KB
+root scope, referenced files, draft/source-note/review-context references,
+check statuses, skipped and missing check accounting, bounded tool summary
+counts, scanner status, a human-review checklist, known limitations, follow-up
+recommendations, and the authority notice.
+
+Handoff bundles remain review context only. They do not create human review,
+promote artifacts, mark accepted/refuted/proved status, mutate verifier
+results, or replace validation, gates, source metadata, or review.
+
 ## Current Limitations
 
-This task does not build handoff bundles or export `reviews/operator/` files.
-Those are later `v0.6.0` tasks.
+This task does not export `reviews/operator/` files. Handoff export is a later
+`v0.6.0` task.
 
-MCP session recording and leak scanning do not change accepted promotion,
-human review, verifier results, gate behavior, provider defaults, formal-link
-semantics, or public KB policy.
+MCP session recording, leak scanning, and handoff bundle generation do not
+change accepted promotion, human review, verifier results, gate behavior,
+provider defaults, formal-link semantics, or public KB policy.

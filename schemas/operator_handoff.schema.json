@@ -1,0 +1,381 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TCS-Cosheaf Operator Handoff Bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "handoff_id",
+    "session_id",
+    "issue_id",
+    "policy_mode",
+    "session_status",
+    "operator_label",
+    "started_at",
+    "finalized_at",
+    "kb_roots",
+    "referenced_files",
+    "draft_artifacts",
+    "source_notes",
+    "review_context_records",
+    "checks",
+    "check_summary",
+    "tool_summary",
+    "scanner",
+    "skipped_checks_are_pass",
+    "human_review_checklist",
+    "known_limitations",
+    "follow_up_recommendations",
+    "authority_notice",
+    "accepted_write_performed",
+    "human_review_created",
+    "promotion_performed",
+    "verifier_result_mutated"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "kind": {
+      "const": "operator_handoff_bundle"
+    },
+    "handoff_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|[0-9]+))+$"
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|[0-9]+))+$"
+    },
+    "issue_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|[0-9]+))+$"
+    },
+    "policy_mode": {
+      "enum": [
+        "public_only",
+        "private_research"
+      ]
+    },
+    "session_status": {
+      "enum": [
+        "finalized",
+        "failed",
+        "blocked",
+        "cancelled"
+      ]
+    },
+    "operator_label": {
+      "type": "string",
+      "minLength": 1
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finalized_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "kb_roots": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/kb_root"
+      }
+    },
+    "referenced_files": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/repository_local_nonaccepted_path"
+      },
+      "uniqueItems": true
+    },
+    "draft_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "source_notes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/repository_local_nonaccepted_path"
+      },
+      "uniqueItems": true
+    },
+    "review_context_records": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/repository_local_nonaccepted_path"
+      },
+      "uniqueItems": true
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/check_result"
+      }
+    },
+    "check_summary": {
+      "$ref": "#/$defs/check_summary"
+    },
+    "tool_summary": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/tool_counts"
+      }
+    },
+    "scanner": {
+      "$ref": "#/$defs/scanner"
+    },
+    "skipped_checks_are_pass": {
+      "const": false
+    },
+    "human_review_checklist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "known_limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "follow_up_recommendations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "authority_notice": {
+      "const": "Operator session records are bounded review metadata only; they are not proof, verifier pass, gate pass, human review, accepted status, accepted refutation, or promotion authority."
+    },
+    "accepted_write_performed": {
+      "const": false
+    },
+    "human_review_created": {
+      "const": false
+    },
+    "promotion_performed": {
+      "const": false
+    },
+    "verifier_result_mutated": {
+      "const": false
+    }
+  },
+  "$defs": {
+    "repository_local_nonaccepted_path": {
+      "type": "string",
+      "not": {
+        "anyOf": [
+          {
+            "pattern": "^/"
+          },
+          {
+            "pattern": "^[A-Za-z]:"
+          },
+          {
+            "pattern": "(^|/)\\.\\.($|/)"
+          },
+          {
+            "pattern": "^kb/accepted/"
+          },
+          {
+            "pattern": "/accepted/"
+          }
+        ]
+      }
+    },
+    "kb_root": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "path",
+        "readonly",
+        "priority"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "$ref": "#/$defs/repository_local_nonaccepted_path"
+        },
+        "readonly": {
+          "type": "boolean"
+        },
+        "priority": {
+          "type": "integer"
+        }
+      }
+    },
+    "check_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "status",
+        "summary",
+        "recorded_at"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "validate",
+            "gate",
+            "test",
+            "eval",
+            "smoke",
+            "other"
+          ]
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "error",
+            "skipped"
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "report_path": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/repository_local_nonaccepted_path"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "check_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "passed",
+        "failed",
+        "errored",
+        "skipped",
+        "missing",
+        "all_required_recorded"
+      ],
+      "properties": {
+        "passed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "failed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "errored": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "skipped": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "missing": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "all_required_recorded": {
+          "type": "boolean"
+        }
+      }
+    },
+    "tool_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "completed",
+        "denied",
+        "error",
+        "failed"
+      ],
+      "properties": {
+        "completed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "denied": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "error": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "scanner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "report_path",
+        "finding_count",
+        "blocking_finding_count",
+        "handoff_blocked",
+        "findings"
+      ],
+      "properties": {
+        "report_path": {
+          "$ref": "#/$defs/repository_local_nonaccepted_path"
+        },
+        "finding_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blocking_finding_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "handoff_blocked": {
+          "type": "boolean"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

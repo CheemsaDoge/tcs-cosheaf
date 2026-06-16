@@ -38,6 +38,7 @@ SCHEMA_FILES = [
     "schemas/artifact.schema.json",
     "schemas/counterexample_evidence.schema.json",
     "schemas/issue.schema.json",
+    "schemas/operator_handoff.schema.json",
     "schemas/review.schema.json",
     "schemas/research_run.schema.json",
     "schemas/verifier.schema.json",

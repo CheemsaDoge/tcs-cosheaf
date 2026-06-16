@@ -3,6 +3,35 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Operator Handoff Bundle - 2026-06-16
+
+Issue 388 adds compact runtime handoff bundles for finalized operator sessions
+in the `v0.6.0` Operator Session + Review Handoff line.
+
+The new commands are:
+
+- `cosheaf operator handoff build --session <session-id> --json`
+- `cosheaf operator handoff show <handoff-id> --json`
+
+The deterministic handoff ID is `handoff.<session-id>`, and the runtime bundle
+is written to `.cosheaf/operator-sessions/<session-id>/handoff.json`.
+
+The builder requires the source session to be finalized, runs the session leak
+scanner first, and fails closed when scanner blockers exist. A bundle includes
+session and issue metadata, policy mode, KB root scope, referenced
+repository-local files, draft/source-note/review-context references,
+validation/gate/test/eval check statuses, skipped and missing check accounting,
+bounded tool summary counts, scanner status, a human-review checklist, known
+limitations, follow-up recommendations, and the operator-session authority
+notice.
+
+This task does not implement handoff export under `reviews/operator/`, accepted
+writes, human-review creation, verifier-result mutation, promotion, provider
+defaults, accepted-promotion semantics, or any proof/checking authority.
+Handoff bundles are runtime review context only; they are not proof, verifier
+pass, gate pass, source metadata, human review, accepted status, accepted
+refutation, or promotion authority.
+
 ## Operator Session Leak Scanner - 2026-06-16
 
 Issue 386 adds a deterministic scanner for operator-session runtime records

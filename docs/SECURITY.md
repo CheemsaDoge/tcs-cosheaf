@@ -31,6 +31,7 @@ checks:
 | Checked counterexample evidence is used as authority or leaks private context | Controlled checked-evidence staging rejects authority claims, accepted paths, and path traversal; public-only context excludes private checked-evidence text | `test_checked_evidence_stage_rejects_authority_claim_fields`, `test_checked_evidence_stage_rejects_accepted_evidence_path`, `test_checked_evidence_stage_rejects_path_traversal`, and `test_public_only_context_excludes_private_checked_evidence_text` |
 | Research-run records spoof review/promotion authority or store unsafe data | Research-run append paths reject authority claims, unsafe paths, and secret-looking summaries; run records remain provenance only | `test_research_run_append_output_rejects_authority_claims` and `test_research_run_rejects_unsafe_paths_and_secret_summaries` |
 | Operator-session records leak secrets or private/public boundary data before handoff | Operator-session scan reports block on secrets, environment dumps, hidden reasoning, provider payloads, accepted-write attempts, authority claims, absolute private paths, and public-only private references | `test_operator_session_scan_clean_session_writes_runtime_report`, `test_operator_session_scan_detects_public_only_leaks_and_blocks_handoff`, and `test_operator_session_scan_missing_session_returns_structured_error` |
+| Operator handoff hides scanner blockers, skipped checks, or missing checks | Handoff build runs the scanner first, fails closed on blockers, preserves skipped as skipped, and records missing check kinds | `test_operator_handoff_builds_review_context_bundle`, `test_operator_handoff_fails_closed_when_scan_has_blockers`, and `test_operator_handoff_requires_finalized_session` |
 
 ## Hard Boundaries
 
@@ -72,6 +73,10 @@ checks:
   block handoff on detected leaks or authority claims, but they do not create
   human review, verifier pass, gate pass, accepted status, source metadata, or
   promotion authority.
+- Operator handoff bundles are runtime review context only. They summarize
+  finalized sessions, scanner status, check statuses, and references, but they
+  do not export review records, create human review, promote artifacts, mutate
+  verifier results, or mark accepted/refuted/proved status.
 
 ## Context-Send Matrix
 
@@ -109,6 +114,10 @@ lake. Skipped or unavailable optional-tool rows remain skipped, not pass.
 Operator-session scanner tests use synthetic session/event fixtures only. The
 scanner is a fail-closed guard before handoff; it is not a substitute for
 validation, gates, source metadata, human review, or promotion checks.
+
+Operator handoff tests use synthetic finalized-session fixtures only. Handoff
+bundles are compact review context and are not a substitute for raw check
+logs, validation, gates, source metadata, human review, or promotion checks.
 
 The optional OpenAI-compatible HTTP transport is tested with injected local
 fixtures. CI must still use fake, injected mocked, or local non-live-network
