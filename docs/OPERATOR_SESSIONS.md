@@ -4,10 +4,9 @@ Operator sessions are the `v0.6.0` audit layer for external-operator work.
 They record bounded metadata about one issue-focused session so a maintainer
 can review what happened without reading raw terminal or MCP transcripts.
 
-This document describes the model, runtime storage, and CLI metadata surface
-landed in the `operator-session-model` and `operator-session-cli-core` tasks.
-MCP session recording, leak scanning, handoff bundle generation, and
-review-context export are follow-up tasks in
+This document describes the model, runtime storage, CLI metadata surface, and
+optional MCP tool-call recording landed so far. Leak scanning, handoff bundle
+generation, and review-context export are follow-up tasks in
 `docs/CODEX_DEVELOPMENT_PLAN_V10.md`.
 
 ## Authority Boundary
@@ -160,6 +159,49 @@ cosheaf operator session finalize <session-id> --json
 
 Finalized sessions are immutable for `append-check` and `append-ref`.
 
+## Optional MCP Tool-Call Recording
+
+MCP `tools/call` requests may include an optional `session_id` field inside
+the tool arguments:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "workspace_info",
+    "arguments": {
+      "session_id": "session.issue.example.0001"
+    }
+  }
+}
+```
+
+When `session_id` is present, the MCP adapter strips it before invoking the
+underlying whitelisted tool. The tool result is generated through the same
+service-layer path as before. After the tool call, the adapter appends one
+bounded `OperatorToolCallRecord` event to:
+
+```text
+.cosheaf/operator-sessions/<session-id>/events.jsonl
+```
+
+The event records only:
+
+- tool name;
+- session mode;
+- argument names and count;
+- normalized status: `completed`, `failed`, `denied`, or `error`;
+- bounded result summary;
+- timestamp; and
+- warning codes.
+
+Calls without `session_id` continue to work and do not create session events.
+Unknown tools, denied tools, expected MCP errors, and unexpected handler errors
+are recorded when a valid session ID is supplied. Public-mode MCP results are
+still public-scoped before recording.
+
 ## Privacy And Redaction Rules
 
 The model rejects direct `kb/accepted/` paths, absolute paths, parent traversal,
@@ -169,15 +211,16 @@ or stderr fields, and full artifact/private text fields.
 Tool-call records store bounded metadata and summaries only. They do not store
 full context packs, full artifact YAML, provider request/response payloads,
 arbitrary stdout/stderr, API keys, environment dumps, hidden reasoning, or full
-private artifact text by default.
+private artifact text by default. Public-only sessions record argument names
+and counts but do not record private query text.
 
 ## Current Limitations
-
-This task does not record MCP calls yet. MCP session recording is a separate
-follow-up task.
 
 This task does not build handoff bundles or export `reviews/operator/` files.
 Those are later `v0.6.0` tasks.
 
-This task does not change accepted promotion, human review, verifier results,
-gate behavior, provider defaults, formal-link semantics, or public KB policy.
+This task does not add leak scanning. That remains a separate follow-up task.
+
+MCP session recording does not change accepted promotion, human review,
+verifier results, gate behavior, provider defaults, formal-link semantics, or
+public KB policy.

@@ -159,6 +159,27 @@ Stdio keeps the adapter local, operator-launched, easy to test in CI with fake
 clients, and free from network listener security questions. HTTP or hosted
 transports require a later ADR and separate approval.
 
+## Optional Session Recording
+
+`tools/call` arguments may include an optional `session_id` for operator
+session recording. The adapter strips `session_id` before invoking the
+existing whitelisted tool, then appends bounded metadata to:
+
+```text
+.cosheaf/operator-sessions/<session-id>/events.jsonl
+```
+
+Calls without `session_id` remain stateless. Recorded events include tool name,
+session mode, argument names/counts, status, a bounded result summary,
+timestamp, and warning codes. They do not store full tool payloads, full
+context packs, full artifact YAML, raw stdout/stderr, provider payloads,
+secrets, hidden reasoning, environment dumps, or private query text in
+public-only sessions.
+
+Session recording does not make MCP authoritative. It is runtime review
+metadata only and cannot create human review, accepted status, verifier pass,
+gate pass, proof, accepted refutation, or promotion authority.
+
 ## Authority Model
 
 MCP does not create new knowledge authority. It is an optional access surface
