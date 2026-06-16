@@ -1,15 +1,16 @@
 # Three-Repository Release Checklist
 
-This checklist records the `v0.5.0` Operator MCP + Codex Application Layer
-published release state after the published `v0.4.0` Strategy Planner +
-Research Task Graph release, the published `v0.3.0` Checked Evidence +
-Research Run Loop release, the published `v0.2.4` Artifact Failure Memory +
-Attempt Traceability release, the `v0.2.3` Verification Evidence Hardening
-release, the `v0.2.2` Provider Transport + Agent Workflow Hardening release,
-the `v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease, the
-`v0.2.0` local-MVP release, and the `v0.1.1` Formal Link Layer support
-baseline. It is an operator checklist for the framework package, public KB,
-and workspace template together. It is not a production-readiness claim.
+This checklist records the `v0.6.0` Operator Session + Review Handoff release
+candidate state after the published `v0.5.0` Operator MCP + Codex Application
+Layer release, the published `v0.4.0` Strategy Planner + Research Task Graph
+release, the published `v0.3.0` Checked Evidence + Research Run Loop release,
+the published `v0.2.4` Artifact Failure Memory + Attempt Traceability release,
+the `v0.2.3` Verification Evidence Hardening release, the `v0.2.2` Provider
+Transport + Agent Workflow Hardening release, the `v0.2.1` CLI Agent Access +
+Hosted Provider Gateway prerelease, the `v0.2.0` local-MVP release, and the
+`v0.1.1` Formal Link Layer support baseline. It is an operator checklist for
+the framework package, public KB, and workspace template together. It is not a
+production-readiness claim.
 
 `v0.1.1` remains the downstream tag baseline for early formal-link metadata.
 `v0.2.0` packages the deterministic local-MVP workflow. `v0.2.1` packages the
@@ -35,8 +36,12 @@ tag, GitHub release, release smoke, and downstream pin updates are complete.
 metadata records `0.4.0`; the public tag, GitHub release, and post-tag release
 smoke are complete. Downstream pin updates are complete.
 `v0.5.0` packages optional Operator MCP + Codex Application Layer surfaces.
-Package metadata records `0.5.0`; the public tag, GitHub release, post-tag
-release smoke, and downstream pin updates are complete.
+At publication time, package metadata recorded `0.5.0`; the public tag, GitHub
+release, post-tag release smoke, and downstream pin updates are complete.
+`v0.6.0` packages Operator Session + Review Handoff surfaces. Package metadata
+records `0.6.0` in the release candidate, but the public tag, GitHub release,
+post-tag release smoke, and downstream `@v0.6.0` pin updates are not complete
+yet.
 
 ## Scope
 
@@ -44,7 +49,7 @@ release smoke, and downstream pin updates are complete.
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
 - Current framework package metadata version:
-  `0.5.0`.
+  `0.6.0`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
@@ -67,6 +72,37 @@ release smoke, and downstream pin updates are complete.
 - Intended downstream dependency for Operator MCP + Codex Application Layer
   workflows after publication:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.5.0`.
+- Intended downstream dependency for Operator Session + Review Handoff
+  workflows after publication:
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.6.0`.
+
+## v0.6.0 Release Candidate
+
+`docs/releases/v0.6.0.md` is the release-candidate note for Operator Session +
+Review Handoff. The release-candidate task prepares package metadata and status
+docs only; publication closeout must still create the public tag, publish the
+GitHub release, run post-tag release smoke, and update downstream
+workspace/public KB pins.
+
+- [x] Operator session DTOs and runtime storage exist under ignored
+  `.cosheaf/operator-sessions/` paths.
+- [x] Operator session CLI can start, show, append check/reference metadata,
+  finalize, and scan sessions.
+- [x] Optional MCP session recording remains bounded and optional.
+- [x] Leak scanner blocks handoff export when blocker findings exist.
+- [x] Handoff bundle and export surfaces treat handoff output as review context
+  only.
+- [x] Workspace-template operator-session demo is merged.
+- [x] Public KB operator-handoff policy and guard checks are merged.
+- [x] Ecosystem smoke rows cover framework, workspace-template, and public KB
+  operator-session/handoff workflows.
+- [x] Package metadata records `0.6.0` in the release-candidate branch.
+- [x] The release-candidate task does not create the public `v0.6.0` tag,
+  publish a GitHub release, run post-tag release smoke, or update downstream
+  pins.
+- [x] No accepted-write, human-review, verifier-result, provider-default, or
+  promotion semantics are changed.
+- [x] No production-readiness claim is introduced.
 
 ## v0.5.0 Published Release Baseline
 
@@ -367,8 +403,8 @@ smoke, and downstream pin updates.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.5.0`.
-- [x] `cosheaf.__version__` records `0.5.0`.
+- [x] `pyproject.toml` records package version `0.6.0`.
+- [x] `cosheaf.__version__` records `0.6.0`.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
@@ -384,6 +420,8 @@ smoke, and downstream pin updates.
   reviewed release-candidate main commit.
 - [x] Remote tag `v0.5.0` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
+- [x] Remote tag `v0.6.0` is intentionally not published by the
+  release-candidate task.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
 - [x] Historical workspace-template artifact-failure-memory verification remains
@@ -398,6 +436,8 @@ smoke, and downstream pin updates.
   after v0.4.0 tag publication and release smoke succeeded.
 - [x] Workspace-template and public KB active pins moved to `@v0.5.0` only
   after v0.5.0 tag publication and release smoke succeeded.
+- [x] Workspace-template and public KB active pins have not moved to
+  `@v0.6.0`; they must wait for v0.6.0 tag publication and release smoke.
 
 ### License
 
@@ -464,7 +504,7 @@ gate output and release notes.
 
 ## Agent Access And Provider Status
 
-Current agent/operator surfaces through the `v0.5.0` published release:
+Current agent/operator surfaces through the `v0.6.0` release candidate:
 
 - CLI-first operator workflow with stable JSON output for core read/check
   commands.
@@ -494,6 +534,14 @@ Current agent/operator surfaces through the `v0.5.0` published release:
 - Three-repository ecosystem smoke matrix.
 - Role-specific hosted worker service for fake or mocked provider worker
   calls.
+- Optional operator MCP read/write surfaces from the `v0.5.0` published
+  release, with CLI remaining the oracle.
+- Operator-session DTOs, runtime storage, CLI metadata commands, and optional
+  MCP session recording.
+- Operator-session leak scanner, runtime handoff bundle, and explicit
+  review-context handoff export.
+- Workspace-template operator-session demo and public KB operator-handoff
+  policy smoke.
 - Internal orchestrator dispatch to hosted workers through explicit provider
   selection.
 - Agent-access security regression tests and agent workflow evaluation suite.

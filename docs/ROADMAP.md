@@ -1,25 +1,29 @@
 # Roadmap
 
-TCS-Cosheaf has published the `v0.5.0` Operator MCP + Codex Application Layer
-release after the published `v0.4.0` Strategy Planner + Research Task Graph
-release. The active next line is `v0.6.0` Operator Session + Review Handoff:
-a replayable, redacted, review-context handoff layer over the existing
-CLI/MCP/service surfaces. This follows the published `v0.3.0` Checked Evidence
-and Research Run Loop release, the published `v0.2.4` Artifact Failure Memory
-and Attempt Traceability release, the published `v0.2.3` Verification Evidence
-Hardening release, the published `v0.2.2` Provider Transport and Agent Workflow
-Hardening release, the published `v0.2.1` CLI Agent Access and Hosted Provider
-Gateway prerelease, the published `v0.2.0` local-MVP release, and the earlier
-`v0.1.1` Formal Link Layer support baseline. Downstream workspace/public-KB pin
-alignment for `v0.5.0` is complete, and the project is still not
-production-ready. This roadmap records durable direction and named milestones;
-live issue state belongs in GitHub issues.
+TCS-Cosheaf has prepared the `v0.6.0` Operator Session + Review Handoff release
+candidate after the published `v0.5.0` Operator MCP + Codex Application Layer
+release and the published `v0.4.0` Strategy Planner + Research Task Graph
+release. `v0.6.0` is a replayable, redacted, review-context handoff layer over
+the existing CLI/MCP/service surfaces. The public `v0.6.0` tag, GitHub release,
+post-tag release smoke, and downstream workspace/public-KB pin updates are not
+complete yet; `v0.5.0` remains the latest published downstream baseline. This
+follows the published `v0.3.0` Checked Evidence and Research Run Loop release,
+the published `v0.2.4` Artifact Failure Memory and Attempt Traceability
+release, the published `v0.2.3` Verification Evidence Hardening release, the
+published `v0.2.2` Provider Transport and Agent Workflow Hardening release, the
+published `v0.2.1` CLI Agent Access and Hosted Provider Gateway prerelease, the
+published `v0.2.0` local-MVP release, and the earlier `v0.1.1` Formal Link
+Layer support baseline. The project is still not production-ready. This roadmap
+records durable direction and named milestones; live issue state belongs in
+GitHub issues.
 
 ## Active Release Focus: v0.6.0 Operator Session + Review Handoff
 
 The active post-`v0.5.0` line is `v0.6.0` Operator Session + Review Handoff.
 `v0.5.0` exposed a safe optional operator MCP layer and CLI-first runbooks.
-`v0.6.0` adds the missing audit layer around a whole operator session.
+`v0.6.0` adds the missing audit layer around a whole operator session. Package
+metadata now records the `0.6.0` release candidate; publication and downstream
+pin alignment remain follow-up work.
 
 The active plan is
 [`docs/CODEX_DEVELOPMENT_PLAN_V10.md`](CODEX_DEVELOPMENT_PLAN_V10.md), with
@@ -29,8 +33,8 @@ architecture decision in
 [`docs/ADR/0027-operator-session-review-handoff.md`](ADR/0027-operator-session-review-handoff.md).
 
 This line has now added the core session, recording, scanning, runtime
-handoff-bundle, and explicit handoff-export surfaces, and still needs
-downstream smoke:
+handoff-bundle, explicit handoff-export surfaces, downstream demo/policy
+coverage, ecosystem smoke rows, and release-candidate metadata:
 
 - add strict operator-session records and runtime storage under ignored
   `.cosheaf/operator-sessions/` paths;
@@ -43,6 +47,8 @@ downstream smoke:
   authority overclaims;
 - build compact runtime handoff bundles from finalized sessions; and
 - export explicit review-context YAML under `reviews/operator/`.
+- verify downstream workspace-template and public KB handoff policy coverage
+  through deterministic ecosystem smoke rows.
 
 This line will not make sessions, MCP recordings, scans, handoff bundles, or
 handoff exports proof, verifier evidence, verifier pass, gate pass, human
@@ -52,6 +58,12 @@ UI, multi-user permissions, default hosted provider calls, API-key
 requirements, accepted writes, promotion through operator sessions, human-review
 creation, verifier-result mutation, automatic theorem proving, automatic Lean
 alignment, or replacement of GitHub PR review.
+
+The publication closeout still needs to create the public `v0.6.0` tag and
+GitHub release, run post-tag release smoke, update downstream pins, and record
+the final evidence. Until then, downstream repositories should keep using the
+latest published `v0.5.0` baseline unless they intentionally test from a local
+checkout.
 
 ## Completed Release Focus: v0.5.0 Operator MCP + Codex Application Layer
 
@@ -167,13 +179,32 @@ accepted status, or promotion authorization. Provider calls remain explicit,
 default-off, policy-scoped, previewed, consented, and excluded from CI/default
 tests. MCP remains optional and non-blocking.
 
+## Current Release Candidate: v0.6.0
+
+Package metadata and `cosheaf.__version__` record `0.6.0` in the release
+candidate. `docs/releases/v0.6.0.md` records the conservative release scope and
+limitations. The public `v0.6.0` tag and GitHub release are not published yet,
+post-tag release smoke has not run, and downstream workspace/public-KB pins
+remain on `@v0.5.0` until publication closeout.
+
+The `v0.6.0` candidate includes bounded operator-session records, optional MCP
+session recording, leak scanning, runtime handoff bundles, review-context
+handoff export, downstream operator-session demo coverage, public KB
+operator-handoff policy checks, and ecosystem smoke rows.
+
+This candidate does not make sessions, MCP recordings, scans, handoff bundles,
+or handoff exports proof, source metadata, checked evidence, verifier pass,
+gate pass, human review, accepted status, accepted refutation, or promotion
+authority. It does not add default hosted provider calls, API-key requirements,
+accepted writes, promotion semantics changes, web UI, production hosted
+multi-agent runtime, or automatic theorem proving.
+
 ## Latest Published Release: v0.5.0
 
-Package metadata and `cosheaf.__version__` record `0.5.0` in the release
-candidate and published release. `docs/releases/v0.5.0.md` records the
-conservative release scope. The public `v0.5.0` tag and GitHub release are
-published, release smoke from `@v0.5.0` passed, and downstream
-workspace/public-KB pin updates are complete.
+At publication time, package metadata and `cosheaf.__version__` recorded
+`0.5.0`. `docs/releases/v0.5.0.md` records the conservative release scope. The
+public `v0.5.0` tag and GitHub release are published, release smoke from
+`@v0.5.0` passed, and downstream workspace/public-KB pin updates are complete.
 
 The `v0.5.0` release includes the optional read-only operator MCP
 surface, controlled draft/review/runtime MCP tools, operator runbook and

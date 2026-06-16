@@ -21,10 +21,13 @@ promotion authority.
 
 ## Current Baseline
 
-- Framework package metadata and `cosheaf.__version__` record `0.5.0`.
-- `python -m cosheaf.cli version --json` reports package version `0.5.0`.
+- Framework package metadata and `cosheaf.__version__` record `0.6.0` as a
+  release candidate.
+- `python -m cosheaf.cli version --json` reports package version `0.6.0`.
+- The public `v0.6.0` tag, GitHub release, post-tag release smoke, and
+  downstream `@v0.6.0` pin updates are not complete yet.
 - Remote tag `v0.5.0` exists as an annotated tag and the GitHub release is
-  published.
+  published; `v0.5.0` remains the latest published downstream baseline.
 - Release smoke from
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.5.0` passed during
   publication closeout and installed `tcs-cosheaf==0.5.0`.
@@ -64,6 +67,9 @@ promotion authority.
 - Downstream workspace-template and public-KB integration for operator-session
   handoff workflows has landed, and the ecosystem smoke matrix includes
   operator-session and handoff rows.
+- `docs/releases/v0.6.0.md` records the release-candidate scope and explicitly
+  leaves tag publication, post-tag release smoke, and downstream pin updates
+  to the publication closeout task.
 
 ## Active Scope
 
@@ -92,19 +98,18 @@ Compressed milestones:
 Most recently completed task:
 
 ```text
-ecosystem-operator-session-smoke
+release-v060-readiness-and-rc
 ```
 
-This task adds deterministic ecosystem matrix rows for the operator-session
-and handoff workflow across the framework, workspace-template, and public KB.
-The new rows cover framework operator-session CLI smoke, framework handoff
-build/show/export dry-run smoke, the workspace-template operator-session demo,
-and the public KB operator-handoff policy docs/guard surface.
+This task prepares conservative `v0.6.0` release-candidate metadata after the
+operator-session, handoff, downstream demo/policy, and ecosystem smoke rows
+landed. Package metadata records `0.6.0`, release notes document the scope and
+limitations, and publication remains a separate follow-up.
 
 Next project step:
 
 ```text
-release-v060-readiness-and-rc
+release-v060-publication-closeout
 ```
 
 ## Explicit Boundaries

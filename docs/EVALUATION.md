@@ -604,7 +604,7 @@ The three-repository readiness matrix is exposed through:
 python scripts/ecosystem_smoke.py --matrix --cosheaf "python -m cosheaf.cli" --framework-root . --workspace-template-root ../tcs-cosheaf-workspace-template --public-kb-root ../tcs-kb-public --json
 ```
 
-The active v0.5.0 integration matrix rows cover framework local smoke,
+The active integration matrix rows cover framework local smoke,
 framework verifier-evidence eval smoke, framework checked-evidence run-loop
 eval, framework research-run loop eval, framework strategy-planner eval,
 framework operator-session CLI smoke, framework operator-handoff dry-run
@@ -615,9 +615,11 @@ workspace-template operator-session demo, workspace-template fake-provider
 smoke, workspace-template verifier-evidence demo, public KB policy guard,
 public KB checked-evidence policy docs, public KB strategy-plan policy docs,
 public KB operator-handoff policy docs, and public KB verifier-policy
-self-test coverage. The default git-tag release-smoke row uses the active
-release target `v0.5.0`. It remains an opt-in network row and is skipped
-unless `--include-network` is explicitly supplied.
+self-test coverage. The default git-tag release-smoke row uses the latest
+published release target `v0.5.0`. Release-candidate checks for `v0.6.0` should
+pass `--framework-tag v0.6.0` explicitly until publication closeout updates the
+published baseline. The git-tag release-smoke row remains an opt-in network row
+and is skipped unless `--include-network` is explicitly supplied.
 
 Network rows remain opt-in through `--include-network`. When optional external
 SAT/SMT/Lean/lake tools are unavailable, the optional verifier availability
