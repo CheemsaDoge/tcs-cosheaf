@@ -4,14 +4,17 @@
 
 ### Planned Interfaces Not Yet Implemented
 
-- Operator session DTOs and runtime storage are implemented under
+- Operator session DTOs, runtime storage, and CLI metadata commands are
+  implemented under
   `cosheaf.operator_session`. The current surface defines
   `OperatorSession`, `OperatorToolCallRecord`, `OperatorArtifactRef`,
   `OperatorCheckResult`, `OperatorSessionSummary`, and
-  `OperatorPolicyFinding`, with runtime storage under
+  `OperatorPolicyFinding`, plus `OperatorSessionError`, with runtime storage under
   `.cosheaf/operator-sessions/<session-id>/session.json` and
-  `.cosheaf/operator-sessions/<session-id>/events.jsonl`. No CLI or MCP
-  session recording surface exists yet; those remain planned V10 follow-ups.
+  `.cosheaf/operator-sessions/<session-id>/events.jsonl`. The CLI surface is
+  `cosheaf operator session ...` for starting, showing, appending bounded
+  check/reference metadata, and finalizing sessions. MCP session recording,
+  leak scanning, and handoff bundle/export remain planned V10 follow-ups.
   Session records are runtime review metadata only and do not grant accepted
   writes, human review, verifier-result mutation, or promotion authority.
 - Artifact failure-memory surfacing is implemented for read-only inspection,
@@ -63,6 +66,29 @@
 - `cosheaf version`: prints the package version.
 - `cosheaf version --json`: emits deterministic JSON with `schema_version`,
   package name, and version.
+- `cosheaf operator session start --issue <issue-id> --json`: creates a
+  runtime operator-session metadata record under
+  `.cosheaf/operator-sessions/<session-id>/session.json`, with matching
+  `events.jsonl`, `accepted_write_performed=false`, and the operator-session
+  authority notice. Optional flags include `--policy public_only|private_research`,
+  `--operator-label <label>`, `--session-id <session-id>`, and
+  `--repo-root <path>`.
+- `cosheaf operator session show <session-id> --json`: reads one runtime
+  operator-session record without writing files.
+- `cosheaf operator session append-check <session-id> --kind validate|gate|test|eval --status pass|fail|error|skipped --json`:
+  appends bounded check-status metadata to an in-progress session and records a
+  matching event line. This command does not execute the check. Skipped checks
+  remain `skipped`; omitted skipped summaries are recorded as
+  `Skipped operator-session checks are not pass evidence.`
+- `cosheaf operator session append-ref <session-id> --path <repo-local-path> --kind draft|review_context|runtime|report --json`:
+  appends a safe repository-local reference to an in-progress session and
+  records a matching event line. Optional flags include `--artifact
+  <artifact-id>`, `--scope public|private|workspace|framework|unknown`, and
+  `--summary <text>`. The command rejects accepted KB paths and rejects private
+  paths or private scope in `public_only` sessions.
+- `cosheaf operator session finalize <session-id> --json`: marks an
+  in-progress operator session finalized. Finalized sessions are immutable for
+  `append-check` and `append-ref`.
 - `cosheaf workspace info`: shows the active workspace name, configured/legacy
   mode, repository root, and KB roots.
 - `cosheaf workspace info --repo-root <path>`: shows workspace configuration for

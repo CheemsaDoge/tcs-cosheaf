@@ -3,6 +3,32 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Operator Session CLI Core - 2026-06-16
+
+Issue 382 adds the first CLI surface for `v0.6.0` Operator Session + Review
+Handoff records.
+
+The new commands are:
+
+- `cosheaf operator session start --issue <issue-id> --json`
+- `cosheaf operator session show <session-id> --json`
+- `cosheaf operator session append-check <session-id> --kind validate|gate|test|eval --status pass|fail|error|skipped --json`
+- `cosheaf operator session append-ref <session-id> --path <repo-local-path> --kind draft|review_context|runtime|report --json`
+- `cosheaf operator session finalize <session-id> --json`
+
+The CLI records bounded metadata only. It does not run validation, gates,
+tests, evals, shell commands, MCP tools, providers, Lean, SAT, or SMT. Check
+records preserve skipped as skipped; when no skipped summary is supplied, the
+CLI records `Skipped operator-session checks are not pass evidence.`
+
+`append-ref` rejects accepted KB paths and rejects private paths or
+`--scope private` in `public_only` sessions. Finalized sessions reject later
+`append-check` and `append-ref` operations.
+
+This task does not add MCP session recording, leak scanning, handoff bundle or
+export behavior, accepted writes, human-review creation, verifier-result
+mutation, promotion, provider defaults, or accepted-promotion semantics.
+
 ## Operator Session Model And Runtime Storage - 2026-06-16
 
 Issue 380 adds the first functional `v0.6.0` Operator Session + Review Handoff

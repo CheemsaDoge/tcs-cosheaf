@@ -5,7 +5,7 @@ import os
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any, Literal, NoReturn, cast
 
 import typer
 from pydantic import ValidationError
@@ -46,7 +46,11 @@ from cosheaf.agent.task import WorkerType
 from cosheaf.config.workspace import KbRootConfig, WorkspaceConfigError
 from cosheaf.core.artifact import BaseArtifact, is_external_dependency_ref
 from cosheaf.core.ids import validate_artifact_id
-from cosheaf.core.paths import lifecycle_artifact_path, repo_relative_posix
+from cosheaf.core.paths import (
+    lifecycle_artifact_path,
+    normalize_repo_path,
+    repo_relative_posix,
+)
 from cosheaf.core.status import (
     ArtifactStatus,
     ArtifactType,
@@ -103,6 +107,23 @@ from cosheaf.memory import (
     build_memory_graph,
     compute_global_pagerank,
     load_memory_graph_snapshot,
+)
+from cosheaf.operator_session import (
+    OPERATOR_SESSION_AUTHORITY_NOTICE,
+    SKIPPED_OPERATOR_SESSION_LIMITATION,
+    OperatorArtifactRef,
+    OperatorArtifactRefKind,
+    OperatorCheckKind,
+    OperatorCheckResult,
+    OperatorCheckStatus,
+    OperatorPolicyMode,
+    OperatorSession,
+    OperatorSessionError,
+    OperatorSessionStatus,
+    append_operator_session_event,
+    load_operator_session,
+    start_operator_session,
+    write_operator_session,
 )
 from cosheaf.research.run import (
     RESEARCH_RUN_AUTHORITY_NOTICE,
@@ -288,6 +309,16 @@ provider_app = typer.Typer(
     help="Provider gateway preview and fake-run commands.",
     no_args_is_help=True,
 )
+operator_app = typer.Typer(
+    add_completion=False,
+    help="Operator audit and handoff commands.",
+    no_args_is_help=True,
+)
+operator_session_app = typer.Typer(
+    add_completion=False,
+    help="Operator session metadata commands.",
+    no_args_is_help=True,
+)
 promotion_app = typer.Typer(
     add_completion=False,
     help="Read-only promotion readiness reports.",
@@ -314,10 +345,44 @@ app.add_typer(eval_app, name="eval")
 app.add_typer(memory_app, name="memory")
 app.add_typer(mcp_app, name="mcp")
 app.add_typer(provider_app, name="provider")
+app.add_typer(operator_app, name="operator")
+operator_app.add_typer(operator_session_app, name="session")
 app.add_typer(promotion_app, name="promotion")
 memory_app.add_typer(memory_graph_app, name="graph")
 
 _SUPPORTED_PROVIDER_CLI_NAMES = (ProviderName.FAKE, ProviderName.OPENAI)
+_OPERATOR_SESSION_CLI_CHECK_KINDS = frozenset(
+    {
+        OperatorCheckKind.VALIDATE.value,
+        OperatorCheckKind.GATE.value,
+        OperatorCheckKind.TEST.value,
+        OperatorCheckKind.EVAL.value,
+    }
+)
+_OPERATOR_SESSION_CLI_REF_KINDS = frozenset(
+    {
+        OperatorArtifactRefKind.DRAFT.value,
+        OperatorArtifactRefKind.REVIEW_CONTEXT.value,
+        OperatorArtifactRefKind.RUNTIME.value,
+        OperatorArtifactRefKind.REPORT.value,
+    }
+)
+OperatorArtifactRefScope = Literal[
+    "public",
+    "private",
+    "workspace",
+    "framework",
+    "unknown",
+]
+_OPERATOR_SESSION_CLI_REF_SCOPES = frozenset(
+    {
+        "public",
+        "private",
+        "workspace",
+        "framework",
+        "unknown",
+    }
+)
 _FAILURE_LOG_AUTHORITY_NOTICE = (
     "failure_log is research memory only; it is not proof, verifier success, "
     "checked counterexample evidence, human review, gate success, accepted "
@@ -828,6 +893,282 @@ def counterexample_evidence_show(
     console.print(f"- path: {result.relative_path.as_posix()}")
     console.print(f"- result: {result.record.checked_result.value}")
     console.print(f"- authority: {CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE}")
+
+
+@operator_session_app.command("start")
+def operator_session_start(
+    issue_id: str = typer.Option(
+        ...,
+        "--issue",
+        help="Issue ID this operator session addresses.",
+    ),
+    policy_mode: str = typer.Option(
+        OperatorPolicyMode.PUBLIC_ONLY.value,
+        "--policy",
+        help="Session policy: public_only or private_research.",
+    ),
+    operator_label: str = typer.Option(
+        "external operator",
+        "--operator-label",
+        help="Human-readable operator label.",
+    ),
+    session_id: str | None = typer.Option(
+        None,
+        "--session-id",
+        help="Optional deterministic operator session ID.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for operator-session storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Start a repository-local operator session metadata record."""
+    console = Console(width=120, markup=False)
+    try:
+        result = start_operator_session(
+            RepoContext(repo_root),
+            issue_id=issue_id,
+            policy_mode=OperatorPolicyMode(policy_mode),
+            operator_label=operator_label,
+            session_id=session_id,
+        )
+    except (OperatorSessionError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _operator_session_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Operator session started: {result.session.session_id}")
+    console.print(f"- path: {result.relative_path.as_posix()}")
+    console.print(f"- authority: {OPERATOR_SESSION_AUTHORITY_NOTICE}")
+
+
+@operator_session_app.command("show")
+def operator_session_show(
+    session_id: str = typer.Argument(..., help="Operator session ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for operator-session storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Show one runtime operator session record."""
+    console = Console(width=120, markup=False)
+    try:
+        result = load_operator_session(RepoContext(repo_root), session_id)
+    except (OperatorSessionError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _operator_session_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Operator session: {result.session.session_id}")
+    console.print(f"- status: {result.session.status.value}")
+    console.print(f"- authority: {OPERATOR_SESSION_AUTHORITY_NOTICE}")
+
+
+@operator_session_app.command("append-check")
+def operator_session_append_check(
+    session_id: str = typer.Argument(..., help="Operator session ID."),
+    kind: str = typer.Option(
+        ...,
+        "--kind",
+        help="Check kind: validate, gate, test, or eval.",
+    ),
+    status: str = typer.Option(
+        ...,
+        "--status",
+        help="Check status: pass, fail, error, or skipped.",
+    ),
+    summary: str | None = typer.Option(
+        None,
+        "--summary",
+        help="Bounded check summary. Required for non-skipped checks.",
+    ),
+    report_path: str | None = typer.Option(
+        None,
+        "--report-path",
+        help="Optional repository-local report path.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for operator-session storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Append one external check-status summary to an operator session."""
+    console = Console(width=120, markup=False)
+    context = RepoContext(repo_root)
+    try:
+        loaded = load_operator_session(context, session_id)
+        check_kind = _parse_operator_session_check_kind(kind)
+        check_status = OperatorCheckStatus(status)
+        check_summary = _operator_session_check_summary(
+            kind=check_kind,
+            status=check_status,
+            summary=summary,
+        )
+        result_record = OperatorCheckResult(
+            kind=check_kind,
+            status=check_status,
+            summary=check_summary,
+            report_path=report_path,
+            recorded_at=datetime.now(UTC),
+        )
+        updated = loaded.session.with_check_result(result_record)
+        result = write_operator_session(context, updated)
+        append_operator_session_event(
+            context,
+            session_id=updated.session_id,
+            event=result_record,
+        )
+    except (OperatorSessionError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _operator_session_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Operator session check appended: {result.session.session_id}")
+    console.print(f"- checks: {len(result.session.check_results)}")
+
+
+@operator_session_app.command("append-ref")
+def operator_session_append_ref(
+    session_id: str = typer.Argument(..., help="Operator session ID."),
+    path: str = typer.Option(
+        ...,
+        "--path",
+        help="Repository-local path to reference.",
+    ),
+    kind: str = typer.Option(
+        ...,
+        "--kind",
+        help="Reference kind: draft, review_context, runtime, or report.",
+    ),
+    artifact_id: str | None = typer.Option(
+        None,
+        "--artifact",
+        help="Optional artifact ID associated with the reference.",
+    ),
+    scope: str = typer.Option(
+        "unknown",
+        "--scope",
+        help="Reference scope: public, private, workspace, framework, or unknown.",
+    ),
+    summary: str | None = typer.Option(
+        None,
+        "--summary",
+        help="Bounded reference summary.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for operator-session storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Append one safe file/artifact reference to an operator session."""
+    console = Console(width=120, markup=False)
+    context = RepoContext(repo_root)
+    try:
+        loaded = load_operator_session(context, session_id)
+        ref_scope = _parse_operator_session_ref_scope(scope)
+        _ensure_operator_session_ref_allowed(
+            session=loaded.session,
+            path=path,
+            scope=ref_scope,
+        )
+        ref = OperatorArtifactRef(
+            kind=_parse_operator_session_ref_kind(kind),
+            path=path,
+            artifact_id=artifact_id,
+            summary=summary,
+            scope=ref_scope,
+        )
+        updated = loaded.session.with_artifact_ref(ref)
+        result = write_operator_session(context, updated)
+        append_operator_session_event(
+            context,
+            session_id=updated.session_id,
+            event=ref,
+        )
+    except (OperatorSessionError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _operator_session_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Operator session reference appended: {result.session.session_id}")
+    console.print(f"- references: {len(result.session.artifact_refs)}")
+
+
+@operator_session_app.command("finalize")
+def operator_session_finalize(
+    session_id: str = typer.Argument(..., help="Operator session ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for operator-session storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Finalize an operator session metadata record."""
+    console = Console(width=120, markup=False)
+    context = RepoContext(repo_root)
+    try:
+        loaded = load_operator_session(context, session_id)
+        updated = loaded.session.finalize(
+            now=datetime.now(UTC),
+            status=OperatorSessionStatus.FINALIZED,
+        )
+        result = write_operator_session(context, updated)
+    except (OperatorSessionError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _operator_session_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Operator session finalized: {result.session.session_id}")
+    console.print(f"- authority: {OPERATOR_SESSION_AUTHORITY_NOTICE}")
 
 
 @run_app.command("start")
@@ -3776,6 +4117,138 @@ def _exception_to_error_result(
         remediation="Fix the request and retry.",
         blocking=True,
     )
+
+
+def _operator_session_error_result(exc: Exception) -> ErrorResult:
+    if isinstance(exc, OperatorSessionError):
+        return ErrorResult(
+            code=exc.code,
+            message=str(exc),
+            remediation=exc.remediation,
+            blocking=True,
+            details=exc.details,
+        )
+    message = (
+        _format_pydantic_errors(exc) if isinstance(exc, ValidationError) else str(exc)
+    )
+    if "accepted KB paths" in message or "accepted_write_forbidden" in message:
+        return ErrorResult(
+            code="accepted_write_forbidden",
+            message=message,
+            remediation=(
+                "Operator sessions may reference runtime, draft, and "
+                "review-context files only; do not reference accepted KB paths."
+            ),
+            blocking=True,
+        )
+    return ErrorResult(
+        code="operator_session_validation_failed",
+        message=message,
+        remediation=(
+            "Fix the operator-session metadata request and retry. Operator "
+            "sessions are review metadata only."
+        ),
+        blocking=True,
+    )
+
+
+def _parse_operator_session_check_kind(value: str) -> OperatorCheckKind:
+    normalized = value.strip()
+    if normalized not in _OPERATOR_SESSION_CLI_CHECK_KINDS:
+        raise OperatorSessionError(
+            f"unsupported operator-session check kind: {normalized}",
+            code="operator_session_validation_failed",
+            remediation="Use one of validate, gate, test, or eval.",
+        )
+    return OperatorCheckKind(normalized)
+
+
+def _parse_operator_session_ref_kind(value: str) -> OperatorArtifactRefKind:
+    normalized = value.strip()
+    if normalized not in _OPERATOR_SESSION_CLI_REF_KINDS:
+        raise OperatorSessionError(
+            f"unsupported operator-session reference kind: {normalized}",
+            code="operator_session_validation_failed",
+            remediation="Use one of draft, review_context, runtime, or report.",
+        )
+    return OperatorArtifactRefKind(normalized)
+
+
+def _parse_operator_session_ref_scope(value: str) -> OperatorArtifactRefScope:
+    normalized = value.strip()
+    if normalized not in _OPERATOR_SESSION_CLI_REF_SCOPES:
+        raise OperatorSessionError(
+            f"unsupported operator-session reference scope: {normalized}",
+            code="operator_session_validation_failed",
+            remediation=(
+                "Use one of public, private, workspace, framework, or unknown."
+            ),
+        )
+    return cast(OperatorArtifactRefScope, normalized)
+
+
+def _operator_session_check_summary(
+    *,
+    kind: OperatorCheckKind,
+    status: OperatorCheckStatus,
+    summary: str | None,
+) -> str:
+    if status is OperatorCheckStatus.SKIPPED and summary is None:
+        return SKIPPED_OPERATOR_SESSION_LIMITATION
+    if summary is None:
+        return (
+            f"{kind.value} was recorded as {status.value} by the operator-session "
+            "metadata CLI. This record does not create review, verifier, gate, "
+            "accepted-status, or promotion authority."
+        )
+    return summary
+
+
+def _ensure_operator_session_ref_allowed(
+    *,
+    session: OperatorSession,
+    path: str,
+    scope: OperatorArtifactRefScope,
+) -> None:
+    if _operator_session_path_is_accepted(path):
+        raise OperatorSessionError(
+            "operator sessions cannot reference accepted KB paths",
+            code="accepted_write_forbidden",
+            remediation=(
+                "Use draft, runtime, report, or review-context references; "
+                "accepted KB content remains outside session write authority."
+            ),
+            details={"path": normalize_repo_path(path)},
+        )
+    if (
+        session.policy_mode is OperatorPolicyMode.PUBLIC_ONLY
+        and _operator_session_ref_is_private(path=path, scope=scope)
+    ):
+        raise OperatorSessionError(
+            "public-only operator sessions cannot reference private paths or scope",
+            code="private_context_requires_policy",
+            remediation=(
+                "Start the session with --policy private_research before "
+                "recording private references."
+            ),
+            details={"path": normalize_repo_path(path), "scope": scope},
+        )
+
+
+def _operator_session_path_is_accepted(path: str) -> bool:
+    parts = _operator_session_path_parts(path)
+    return bool(parts) and parts[0] == "kb" and "accepted" in parts
+
+
+def _operator_session_ref_is_private(*, path: str, scope: str) -> bool:
+    parts = _operator_session_path_parts(path)
+    return scope == "private" or (
+        len(parts) >= 2 and parts[0] == "kb" and parts[1] == "private"
+    )
+
+
+def _operator_session_path_parts(path: str) -> tuple[str, ...]:
+    return tuple(part for part in normalize_repo_path(path).split("/") if part)
 
 
 def _checked_evidence_error_result(exc: Exception) -> ErrorResult:

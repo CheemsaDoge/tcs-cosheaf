@@ -870,7 +870,7 @@ Stop after this task.
 - [x] v0.5 completion audit landed.
 - [x] ADR 0027 landed.
 - [x] Operator session DTO/storage landed.
-- [ ] Operator session CLI landed.
+- [x] Operator session CLI landed.
 - [ ] MCP session recording landed.
 - [ ] Leak scanner landed.
 - [ ] Handoff bundle landed.
