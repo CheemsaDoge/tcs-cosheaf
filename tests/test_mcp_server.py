@@ -136,7 +136,7 @@ def _issue_data() -> dict[str, Any]:
         "updated_at": "2026-06-09T00:00:00Z",
         "authors": ["tester"],
         "severity": "medium",
-        "description": "Exercise read-only MCP tools without leaking private data.",
+        "description": "Exercise MCP tools without leaking private data.",
         "related_artifacts": [
             "claim.fixture.mcp-public",
             "claim.fixture.mcp-private",
@@ -1190,6 +1190,20 @@ def test_mcp_forbidden_tools_are_not_exposed(tmp_path: Path) -> None:
     payload = response["error"]["data"]
     assert payload["code"] == "tool_not_found"
     assert "whitelisted" in payload["remediation"]
+
+
+def test_mcp_cli_help_describes_optional_adapter_surface() -> None:
+    result = runner.invoke(app, ["mcp", "--help"])
+
+    assert result.exit_code == 0, result.output
+    assert "Optional MCP adapter commands" in result.output
+    assert "Read-only MCP server commands" not in result.output
+
+    list_help = runner.invoke(app, ["mcp", "list-tools", "--help"])
+
+    assert list_help.exit_code == 0, list_help.output
+    assert "List whitelisted MCP tool names" in list_help.output
+    assert "List read-only MCP tool names" not in list_help.output
 
 
 def test_mcp_cli_list_tools_and_stdio_tools_list(tmp_path: Path) -> None:

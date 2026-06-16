@@ -61,23 +61,21 @@ Compressed milestones:
 Current task:
 
 ```text
-operator-mcp-controlled-writes
+codex-operator-runbook-and-workspace-demo
 ```
 
-This task extends the optional stdio MCP adapter with the C.1 controlled
-draft/review/runtime write tool set. The tools wrap existing service-layer
-semantics for draft artifact writes, draft source notes, WorkerBundle
-validation/staging, draft review requests, checked counterexample evidence
-staging, draft failure-log appends, research-run provenance records, and
-strategy review exports. It does not add dependencies, add schemas, bump
-versions, write accepted knowledge, call providers, create human review,
-promote artifacts, expose arbitrary shell, or change accepted-promotion
-semantics.
+This task documents the v0.5.0 operator workflow after the read-only and
+controlled-write MCP surfaces landed. It adds the CLI-first operator workspace
+demo, keeps MCP optional, records CLI fallback, and cleans up stale docs that
+still described controlled-write MCP as unimplemented. It does not add
+dependencies, add schemas, bump versions, write accepted knowledge, call
+providers, create human review, promote artifacts, expose arbitrary shell, or
+change accepted-promotion semantics.
 
-Next implementation task after this controlled-write core merges:
+Next implementation task after this operator runbook/demo work merges:
 
 ```text
-codex-operator-runbook-and-workspace-demo
+public-kb-operator-policy-smoke
 ```
 
 ## Explicit Boundaries

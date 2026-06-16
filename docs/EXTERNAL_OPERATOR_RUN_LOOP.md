@@ -7,6 +7,9 @@ requirement, and not a hosted provider workflow.
 The CLI remains the first machine interface and the human/CI review path
 remains the authority boundary.
 
+For a concrete framework-side command sequence, see
+[`docs/OPERATOR_WORKSPACE_DEMO.md`](OPERATOR_WORKSPACE_DEMO.md).
+
 ## Authority Boundary
 
 Research-run records are provenance only. They are not proof, verifier pass,
@@ -65,7 +68,18 @@ expected.
    cosheaf context build <issue-id> --json
    ```
 
-8. Read the generated context pack when it exists:
+8. Create or inspect a strategy plan:
+
+   ```bash
+   cosheaf strategy plan --issue <issue-id> --from-context context/TASKS/<issue-id> --json
+   cosheaf strategy next strategy.<issue-id>.plan --json
+   ```
+
+   Strategy plans are guidance only. They do not execute tasks, create
+   evidence, mark verifier/gate pass, create human review, write accepted
+   knowledge, or authorize promotion.
+
+9. Read the generated context pack when it exists:
 
    ```text
    context/TASKS/<issue-id>/CONTEXT.md
@@ -75,11 +89,11 @@ expected.
    context/TASKS/<issue-id>/ACCEPTANCE.md
    ```
 
-9. Read known failure memory, candidate counterexamples, checked
+10. Read known failure memory, candidate counterexamples, checked
    counterexample evidence, verifier evidence, and promotion-readiness output
    when relevant to the issue.
-10. Make only issue-scoped edits.
-11. Record relevant commands, artifact reads/touches, and controlled outputs
+11. Make only issue-scoped edits.
+12. Record relevant commands, artifact reads/touches, and controlled outputs
     with:
 
     ```bash
@@ -88,10 +102,10 @@ expected.
     cosheaf run append-output --run <run-id> --input-json <output.json> --json
     ```
 
-12. Stage draft artifacts, source notes, bundles, failure logs, checked
+13. Stage draft artifacts, source notes, bundles, failure logs, checked
     evidence, or review requests only through the controlled CLI commands
     documented in `docs/CODEX_WORKFLOW.md` and `docs/AGENT_ACCESS.md`.
-13. Re-run the required verification commands:
+14. Re-run the required verification commands:
 
     ```bash
     make lint
@@ -102,7 +116,7 @@ expected.
     git diff --check
     ```
 
-14. Finalize and inspect the research run:
+15. Finalize and inspect the research run:
 
     ```bash
     cosheaf run finalize --run <run-id> --status completed --stop-reason "<reason>" --json
@@ -110,7 +124,7 @@ expected.
     cosheaf run replay-plan --run <run-id> --json
     ```
 
-15. Preview review export first, then export only when a review record is
+16. Preview review export first, then export only when a review record is
     intended:
 
     ```bash
@@ -118,10 +132,22 @@ expected.
     cosheaf run export-review --run <run-id> --json
     ```
 
-16. Open one PR. The PR must record the run ID/path when a run was used,
+17. Open one PR. The PR must record the run ID/path when a run was used,
     commands run, skipped rows, runtime outputs, limitations, non-goals,
     public/private scope handling, candidate-vs-checked evidence status, and
     the authority boundary.
+
+## Optional MCP Adapter
+
+MCP can expose the same bounded service-layer operations to compatible clients,
+but it is optional. CLI commands and CI checks remain the reviewable oracle.
+
+The MCP adapter may list workspace state, validation/gate results, memory
+cards/search, context packs, strategy plans, research-run provenance, and eval
+smoke results. Controlled MCP tools may stage draft/review/runtime records
+through existing service-layer policy checks. They still must not write
+accepted knowledge, promote artifacts, mark human review, mutate verifier
+results, run arbitrary shell, call hosted providers, or bypass gates.
 
 ## Recording Commands
 

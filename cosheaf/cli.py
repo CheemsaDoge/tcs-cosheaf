@@ -280,7 +280,7 @@ memory_graph_app = typer.Typer(
 )
 mcp_app = typer.Typer(
     add_completion=False,
-    help="Read-only MCP server commands.",
+    help="Optional MCP adapter commands.",
     no_args_is_help=True,
 )
 provider_app = typer.Typer(
@@ -3190,7 +3190,7 @@ def mcp_list_tools(
         help="Repository root used for command consistency.",
     ),
 ) -> None:
-    """List read-only MCP tool names."""
+    """List whitelisted MCP tool names."""
     RepoContext(repo_root)
     for tool_name in READ_ONLY_TOOL_NAMES:
         typer.echo(tool_name)
@@ -3206,10 +3206,10 @@ def mcp_serve(
     repo_root: Path = typer.Option(
         Path("."),
         "--repo-root",
-        help="Repository root to expose through read-only MCP tools.",
+        help="Repository root to expose through whitelisted MCP tools.",
     ),
 ) -> None:
-    """Serve the read-only MCP JSON-RPC surface."""
+    """Serve the optional MCP JSON-RPC surface."""
     if not stdio:
         Console(width=120, markup=False).print("MCP serve failed: --stdio is required")
         raise typer.Exit(code=1)

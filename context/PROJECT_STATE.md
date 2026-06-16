@@ -3,6 +3,24 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Operator Runbook And Workspace Demo Docs - 2026-06-16
+
+Issue 370 documents the v0.5.0 operator workflow after the read-only and
+controlled-write MCP surfaces landed.
+
+The framework docs now include `docs/OPERATOR_WORKSPACE_DEMO.md`, a CLI-first
+demo flow that covers workspace inspection, validation, gatekeeper, memory
+search, context build, strategy planning, research-run provenance,
+draft/review-context staging, check reruns, run finalization, and review-export
+dry-runs. The demo keeps MCP optional and does not require hosted providers,
+API keys, network access, public KB write access, Lean, SAT, SMT, or an
+external MCP client.
+
+This documentation work does not add runtime behavior, dependencies, schemas,
+accepted writes, promotion, human-review creation, verifier-result mutation,
+arbitrary shell, hosted-provider behavior, workspace-template content, or
+public KB content.
+
 ## Controlled Draft-Write MCP Tools - 2026-06-16
 
 Issue 368 extends the optional stdio MCP adapter for the `v0.5.0` Operator MCP
@@ -40,11 +58,13 @@ Legacy `gate_run` and `orchestrator_plan` remain available for compatibility.
 
 The MCP implementation continues to call typed Python service-layer logic
 rather than arbitrary shell. It may write deterministic runtime sidecars such
-as gate reports, context packs, and runtime strategy plans, but it does not
-write accepted KB content, promote artifacts, create human review, mutate
-verifier results, call hosted providers, or add controlled-write MCP tools.
-Public operator mode filters strategy output so private artifact IDs and
-private issue tags are not returned.
+as gate reports, context packs, and runtime strategy plans. That read-only-core
+task did not write accepted KB content, promote artifacts, create human review,
+mutate verifier results, call hosted providers, or add controlled-write MCP
+tools. Later v0.5.0 work added only narrow controlled draft/review/runtime MCP
+tools under the same no-accepted-write boundary. Public operator mode filters
+strategy output so private artifact IDs and private issue tags are not
+returned.
 
 ## Post-v0.4.0 to v0.5.0 Kickoff - 2026-06-16
 
@@ -1101,13 +1121,13 @@ failure/counterexample evals, three-repository ecosystem smoke matrix,
 workspace provider setup/preview docs, public KB source-note/backlog refresh,
 one draft-only foundation tightening, and optional read-only MCP review.
 
-This release-candidate task does not implement new runtime provider behavior,
-does not add MCP tools, does not add controlled-write MCP, does not run real
-provider calls in CI, does not require API keys, does not write accepted
-knowledge, does not mark human review, does not promote artifacts, and does
-not change schema, gate, verifier, public/private policy, or accepted
-promotion semantics. The public `v0.2.2` tag is expected only after the
-release-candidate PR and required checks pass.
+This v0.2.2 release-candidate task did not implement new runtime provider
+behavior, did not add MCP tools, did not add controlled-write MCP, did not run
+real provider calls in CI, did not require API keys, did not write accepted
+knowledge, did not mark human review, did not promote artifacts, and did not
+change schema, gate, verifier, public/private policy, or accepted promotion
+semantics. The public `v0.2.2` tag was expected only after the
+release-candidate PR and required checks passed.
 
 ## Three-Repo Compatibility Smoke Matrix - 2026-06-14
 
@@ -1361,11 +1381,13 @@ Transport + Agent Workflow Hardening` direction. The plan uses
 The next concrete work is a real-provider transport ADR and threat model
 before runtime implementation. CLI remains the first agent interface, real
 provider transport remains explicit/default-off, CI/default tests must stay
-fake or mocked, MCP remains optional, and controlled-write MCP is not planned
-unless a separate maintainer-approved issue reopens that scope. Provider,
-worker, MCP, and agent outputs still may not write accepted knowledge, mark
-human review, or bypass validation, gates, reducers, verifier results, review,
-or promotion.
+fake or mocked, and MCP remains optional. At this v0.2.2 planning point,
+controlled-write MCP was not planned unless a separate maintainer-approved
+issue reopened that scope; ADR 0026 later reopened only a narrow
+draft/review/runtime MCP write scope for the v0.5.0 line. Provider, worker,
+MCP, and agent outputs still may not write accepted knowledge, mark human
+review, or bypass validation, gates, reducers, verifier results, review, or
+promotion.
 
 This is documentation-only plan/state alignment. It does not implement real
 provider HTTP transport, provider real-run CLI, provider MCP tools,
@@ -1408,9 +1430,11 @@ accepted-write rejection, expected malformed-bundle rejection, fake-provider
 redaction, and surface counts.
 
 The default suite distinguishes `cli`, `provider`, and `optional_mcp` surfaces.
-The optional MCP case only calls the existing read-only `mcp list-tools`
-whitelist; this does not make MCP mandatory and does not add MCP write
-behavior. The harness does not add a `cosheaf eval agent-workflow` CLI command,
+At this eval task point, the optional MCP case only listed the then-existing
+read-only MCP tool whitelist; this did not make MCP mandatory and did not add
+MCP write behavior. Later v0.5.0 work added narrow controlled
+draft/review/runtime MCP tools. The harness does not add a
+`cosheaf eval agent-workflow` CLI command,
 does not run real hosted provider calls, does not require API keys, does not
 use network access, does not write accepted knowledge, and does not bypass
 validation, gates, verifier results, human review, reducers, or promotion.
@@ -1501,7 +1525,9 @@ and use structured `ErrorResult` payloads for expected failures. These
 commands are deliberately narrow: they reject accepted writes, readonly KB
 roots, accepted artifact status, and `human_reviewed` review spoofing. They do
 not promote artifacts, do not create human review, do not complete tasks, do
-not call hosted providers, and do not implement MCP writes.
+not call hosted providers, and at that issue-201 point did not implement MCP
+writes. Later v0.5.0 work added only narrow controlled draft/review/runtime MCP
+tools under the same no-accepted-write boundary.
 
 Issue 199 stabilized deterministic JSON output for the core read-only
 agent-facing CLI commands: version, workspace info, validation, gate runs,

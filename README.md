@@ -10,7 +10,10 @@ issues, and verifier evidence in reviewable repository files.
 Current status: **v0.4.0 Strategy Planner + Research Task Graph published
 release**. Package metadata records `0.4.0`; the public `v0.4.0` tag and
 GitHub release are published; release smoke from `@v0.4.0` passed; downstream
-workspace-template and public KB pin alignment is complete.
+workspace-template and public KB pin alignment is complete. The active
+development line is **v0.5.0 Operator MCP + Codex Application Layer**, which
+keeps CLI as the oracle while adding optional MCP adapter access and
+operator-facing demo/runbook documentation.
 The previous published baseline was **v0.3.0 Checked Evidence + Research Run
 Loop**. The `v0.1.1` tag remains the downstream Formal Link Layer support
 baseline; the `v0.2.0` tag packages the deterministic local-MVP workflow; the
@@ -345,8 +348,11 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md)
 - [Gatekeeper and validation gates](docs/GATES.md)
 - [Agent access](docs/AGENT_ACCESS.md)
+- [External operator run loop](docs/EXTERNAL_OPERATOR_RUN_LOOP.md)
+- [Operator workspace demo](docs/OPERATOR_WORKSPACE_DEMO.md)
 - [Strategy planner](docs/STRATEGY_PLANNER.md)
 - [Agent providers](docs/AGENT_PROVIDERS.md)
+- [MCP server](docs/MCP_SERVER.md)
 - [Evaluation](docs/EVALUATION.md)
 - [Artifact lifecycle](docs/ARTIFACT_LIFECYCLE.md)
 - [Artifact schema](docs/ARTIFACT_SCHEMA.md)
