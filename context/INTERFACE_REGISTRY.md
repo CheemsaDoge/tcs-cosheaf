@@ -33,12 +33,13 @@
   orchestrator hosted-worker dispatch, planned configuration, context policy,
   output rules, logging, OpenAI-compatible transport boundary, and
   fake-provider requirements.
-- MCP controlled-write tools are not implemented yet.
 - `docs/ADR/0017-mcp-agent-interface.md`: ADR for the optional MCP adapter. It
   records stdio transport, resource/tool/prompt boundaries, controlled-write
   requirements, forbidden tools, and private KB policy constraints. The current
-  runtime implements only the read-only stdio subset, and MCP is not required
-  for CLI-first agent workflows.
+  runtime implements the read-only stdio subset plus controlled
+  draft/review/runtime write tools. MCP is not required for CLI-first agent
+  workflows and still has no accepted-write, promotion, human-review,
+  arbitrary-shell, or hosted-provider authority.
 
 ### CLI Entry Point
 
@@ -456,15 +457,15 @@
   JSON with `real_run_performed: true`, the inline context preview, and the
   redacted provider log payload. Tests use mocked transport injection; CI does
   not call live provider networks.
-- `cosheaf mcp list-tools`: prints the read-only MCP tool whitelist, one tool
-  name per line.
+- `cosheaf mcp list-tools`: prints the MCP tool whitelist, one tool name per
+  line.
 - `cosheaf mcp list-tools --repo-root <path>`: validates command context
   against an explicit repository root before listing the same tool whitelist.
-- `cosheaf mcp serve --stdio`: starts the minimal read-only stdio JSON-RPC MCP
-  surface for the current repository. It reads one JSON-RPC request per input
-  line and writes one JSON-RPC response per output line.
-- `cosheaf mcp serve --stdio --repo-root <path>`: serves the same read-only
-  MCP surface for an explicit repository root.
+- `cosheaf mcp serve --stdio`: starts the minimal stdio JSON-RPC MCP surface
+  for the current repository. It reads one JSON-RPC request per input line and
+  writes one JSON-RPC response per output line.
+- `cosheaf mcp serve --stdio --repo-root <path>`: serves the same MCP surface
+  for an explicit repository root.
 - `cosheaf task create --issue <issue-id> --worker <worker-type>`: creates an open local agent task under `.cosheaf/tasks/` after confirming the issue exists.
 - `cosheaf task create --issue <issue-id> --worker <worker-type> --repo-root <path>`: creates the task for an explicit repository root.
 - `cosheaf task list`: lists local task records in deterministic task ID order.
@@ -810,17 +811,29 @@
 
 #### MCP Server
 
-- `cosheaf.mcp.READ_ONLY_TOOL_NAMES`: ordered read-only MCP tool whitelist:
+- `cosheaf.mcp.READ_ONLY_TOOL_NAMES`: ordered MCP tool whitelist. The constant
+  name is preserved for compatibility; the list now includes both read-only
+  tools and controlled draft/review/runtime write tools:
   `workspace_info`, `validate`, `gate`, `gate_pr_checklist`, `gate_run`,
   `memory_cards`, `memory_search`, `context_build`, `context_show`,
   `strategy_plan`, `strategy_show`, `strategy_graph`, `strategy_next`,
   `run_show`, `run_evidence_report`, `eval_strategy_planner`,
-  `eval_research_run_loop`, and `orchestrator_plan`.
+  `eval_research_run_loop`, `draft_artifact_create_or_update`,
+  `source_note_draft_create`, `worker_bundle_validate`,
+  `worker_bundle_stage`, `review_request_from_bundle`,
+  `checked_counterexample_evidence_validate`,
+  `checked_counterexample_evidence_stage`, `failure_log_add_draft`,
+  `research_run_start`, `research_run_append_command`,
+  `research_run_append_artifact`, `research_run_append_output`,
+  `research_run_finalize`, `research_run_export_review_dry_run`,
+  `research_run_export_review`, `strategy_update_from_run`,
+  `strategy_export_review_dry_run`, `strategy_export_review`, and
+  `orchestrator_plan`.
 - `cosheaf.mcp.READ_ONLY_PROMPT_NAMES`: ordered governance-safe MCP prompt
   whitelist: `start_issue_work`, `reason_about_issue`, `verify_draft`,
   `prepare_review_bundle`, and `public_kb_contribution_check`.
 - `cosheaf.mcp.tool_definitions() -> list[dict[str, Any]]`: returns
-  deterministic MCP-style tool metadata and JSON schemas for the read-only
+  deterministic MCP-style tool metadata and JSON schemas for the MCP
   whitelist.
 - `cosheaf.mcp.prompt_definitions() -> list[dict[str, Any]]`: returns
   deterministic MCP-style prompt metadata for the governance-safe prompt
@@ -832,8 +845,9 @@
   `cosheaf://artifacts/private/{artifact_id}/card`,
   `cosheaf://context/public/{issue_id}`,
   `cosheaf://context/private/{issue_id}`, and `cosheaf://gate/latest`.
-- `cosheaf.mcp.ReadOnlyMcpServer`: protocol-level read-only JSON-RPC handler
-  over the shared service layer. It exposes `tools/list`, `tools/call`,
+- `cosheaf.mcp.ReadOnlyMcpServer`: protocol-level JSON-RPC handler over the
+  shared service layer. The class name is preserved for compatibility. It
+  exposes `tools/list`, `tools/call`,
   `resources/list`, `resources/read`, `prompts/list`, `prompts/get`, and
   `initialize`.
 - `cosheaf.mcp.ReadOnlyMcpServer.handle(request) -> dict[str, Any]`: handles
@@ -841,15 +855,20 @@
 - `cosheaf.mcp.serve_stdio(context, ...) -> None`: serves line-delimited
   JSON-RPC requests over stdio streams.
 
-The read-only MCP surface does not expose arbitrary shell, draft writes,
-accepted writes, artifact promotion, hosted provider calls, environment dumps,
-or unrestricted filesystem access. Public-mode artifact-card resources deny
+The MCP surface does not expose arbitrary shell, accepted writes, artifact
+promotion, human-review creation, hosted provider calls, environment dumps, or
+unrestricted filesystem access. Public-mode artifact-card resources deny
 private artifact cards with a structured `private_resource_denied` error.
-`gate`, `gate_pr_checklist`, `gate_run`, `context_build`, and
-`strategy_plan` may write deterministic runtime sidecars, but they do not
-modify source-of-truth artifact YAML or accepted knowledge. Strategy MCP
-outputs are public-scoped before being returned so private artifact IDs and
-private issue tags are not exposed through public operator mode.
+`gate`, `gate_pr_checklist`, `gate_run`, `context_build`, and `strategy_plan`
+may write deterministic runtime sidecars. Controlled-write tools may write
+only draft/pre-accepted artifacts, draft source notes, draft informational
+review requests, checked-evidence review records, failure-log entries on
+writable non-accepted artifacts, research-run runtime records, or strategy
+review exports through shared service-layer policy checks. They do not modify
+accepted knowledge or create promotion/human-review/verifier authority.
+Strategy MCP outputs are public-scoped before being returned so private
+artifact IDs and private issue tags are not exposed through public operator
+mode.
 Prompt templates are static governance guidance. They do not read or include
 private KB content, artifact statements, provider credentials, or environment
 data.

@@ -3,10 +3,12 @@
 ## Purpose
 
 This document defines the TCS-Cosheaf MCP adapter boundary and current
-implementation status. The current implementation is a read-only stdio
-JSON-RPC surface with governance-safe prompt templates and operator-oriented
-read-only tools. It does not add external dependencies, change gates, create
-write authority, call hosted providers, or implement controlled writes.
+implementation status. The current implementation is a local stdio
+JSON-RPC surface with governance-safe prompt templates, operator-oriented
+read-only tools, and controlled draft/review/runtime write tools. It does not
+add external dependencies, change gates, write accepted knowledge, promote
+artifacts, create human review, call hosted providers, or expose arbitrary
+shell/filesystem authority.
 
 MCP is optional. CLI remains the human and CI oracle, with typed services as
 the shared implementation boundary. MCP may be useful for assistants that
@@ -14,9 +16,10 @@ support resources/tools, but it does not replace the CLI workflow or repository
 policy.
 
 The current adapter exposes typed, whitelisted service calls over MCP-style
-resources and tools. It must not expose arbitrary shell, arbitrary filesystem
-access, direct accepted promotion, or private KB context outside an explicit
-policy scope.
+resources and tools. Write-capable tools wrap existing Cosheaf service-layer
+operations for draft/proposal/review-context/runtime records only. The adapter
+must not expose arbitrary shell, arbitrary filesystem access, direct accepted
+promotion, or private KB context outside an explicit policy scope.
 
 ## Current Status
 
@@ -31,7 +34,7 @@ cosheaf mcp serve --stdio
 stdin and writes one JSON-RPC response to stdout for each request. It is a
 minimal local stdio surface, not an HTTP server and not a hosted service.
 
-Current read-only tools:
+Current read-only/runtime-inspection tools:
 
 - `workspace_info`
 - `validate`
@@ -51,6 +54,27 @@ Current read-only tools:
 - `eval_strategy_planner`
 - `eval_research_run_loop`
 - `orchestrator_plan`
+
+Current controlled draft/review/runtime write tools:
+
+- `draft_artifact_create_or_update`
+- `source_note_draft_create`
+- `worker_bundle_validate`
+- `worker_bundle_stage`
+- `review_request_from_bundle`
+- `checked_counterexample_evidence_validate`
+- `checked_counterexample_evidence_stage`
+- `failure_log_add_draft`
+- `research_run_start`
+- `research_run_append_command`
+- `research_run_append_artifact`
+- `research_run_append_output`
+- `research_run_finalize`
+- `research_run_export_review_dry_run`
+- `research_run_export_review`
+- `strategy_update_from_run`
+- `strategy_export_review_dry_run`
+- `strategy_export_review`
 
 Current read-only resources:
 
@@ -85,9 +109,12 @@ to the CLI. `gate`, `gate_pr_checklist`, and `gate_run` may write
 deterministic runtime reports under ignored runtime directories such as
 `.cosheaf/`. `context_build` may write a deterministic context pack under
 `context/TASKS/`. `strategy_plan` may write a runtime strategy plan under
-`.cosheaf/strategy/`. These runtime side effects do not modify source-of-truth
-artifact YAML, write accepted knowledge, promote artifacts, create drafts, or
-mark human review.
+`.cosheaf/strategy/`. These runtime side effects do not write accepted
+knowledge, promote artifacts, or mark human review. Controlled write tools may
+create or update only draft/pre-accepted artifacts, draft source notes, draft
+informational review requests, checked-evidence review records, failure-log
+entries on writable non-accepted artifacts, research-run runtime records, or
+strategy review exports through existing service-layer policy checks.
 
 Public-mode MCP resources and search results do not expose private artifact
 cards. Private-scoped artifact-card or context resource requests return a
@@ -104,7 +131,8 @@ The read-only smoke is covered by `tests/test_mcp_server.py`, including tool
 whitelist checks, gate and PR-checklist reporting, public artifact cards,
 public-scope strategy output, run/evidence reads, eval smoke reports,
 private-resource denial, public-only context build, forbidden-tool rejection,
-governance-safe prompts, and stdio `tools/list` behavior.
+governance-safe prompts, stdio `tools/list` behavior, and controlled
+draft/review/runtime write smoke.
 
 The current B.1 decision is:
 
@@ -112,14 +140,16 @@ The current B.1 decision is:
 - keep stdio as the only implemented MCP transport;
 - keep private-scoped resources denied unless a later approved policy mode
   explicitly permits them;
-- do not add controlled-write MCP in B.1, provider MCP tools, arbitrary shell,
-  arbitrary filesystem access, accepted writes, accepted promotion shortcuts,
-  human-review mutation, or verifier-result mutation.
+- keep controlled-write MCP outside the B.1 read-only authority model and
+  constrained to Phase C service-layer wrappers;
+- do not add provider MCP tools, arbitrary shell, arbitrary filesystem access,
+  accepted writes, accepted promotion shortcuts, human-review mutation, or
+  verifier-result mutation.
 
-Future MCP maintenance should be limited to keeping this read-only adapter
+Future MCP maintenance should keep both read-only and controlled-write tools
 compatible with existing service contracts. Controlled draft/review/runtime
-write tools belong in separate Phase C tasks and must keep accepted writes,
-promotion, and human-review creation absent.
+write tools must keep accepted writes, promotion, and human-review creation
+absent.
 
 ## Transport
 
@@ -208,10 +238,41 @@ change source-of-truth artifacts.
 
 ### Controlled-Write Tools
 
-Controlled-write MCP tools are not implemented in B.1. If Phase C adds them,
-controlled writes must wrap existing safe write semantics, require explicit
-tool scope, remain narrow, typed, repository-local, and be blocked from
-readonly public roots.
+Implemented controlled-write tools include:
+
+- `draft_artifact_create_or_update`: creates or previews one controlled
+  draft/pre-accepted artifact write.
+- `source_note_draft_create`: creates or previews one draft source-note record.
+- `worker_bundle_validate`: validates a WorkerBundle v2 manifest for review.
+- `worker_bundle_stage`: validates/stages a WorkerBundle v2 manifest for
+  review without task completion or promotion.
+- `review_request_from_bundle`: creates or previews a draft informational
+  review request from a WorkerBundle.
+- `checked_counterexample_evidence_validate`: validates checked
+  counterexample evidence without writing.
+- `checked_counterexample_evidence_stage`: stages or previews checked
+  counterexample evidence under review evidence paths.
+- `failure_log_add_draft`: appends or previews one failure-log entry on a
+  writable non-accepted artifact.
+- `research_run_start`: creates one repository-local research-run provenance
+  record.
+- `research_run_append_command`: appends one sanitized command record to a
+  research run.
+- `research_run_append_artifact`: appends one artifact read/touched marker to
+  a research run.
+- `research_run_append_output`: appends one repository-local output/reference
+  record to a research run.
+- `research_run_finalize`: finalizes one research-run provenance record.
+- `research_run_export_review_dry_run`: previews a research-run review export.
+- `research_run_export_review`: writes a research-run review-context export.
+- `strategy_update_from_run`: updates a runtime strategy plan from
+  research-run provenance.
+- `strategy_export_review_dry_run`: previews a strategy-plan review export.
+- `strategy_export_review`: writes a strategy-plan review-context export.
+
+Controlled writes wrap existing safe write semantics, require explicit tool
+scope, remain narrow, typed, repository-local, and are blocked from readonly
+public roots or accepted paths by shared service-layer policy checks.
 
 Controlled-write MCP must never write to accepted paths, run accepted
 promotion, mark human review complete, mutate verifier results, bypass gates,
@@ -279,12 +340,13 @@ Required mitigations:
 
 - expose only whitelisted service calls;
 - keep stdio as the current transport;
-- keep controlled writes disabled unless configured;
-- require confirmation or allow-write for controlled writes;
+- keep controlled writes narrow and service-layer-backed;
+- reject accepted paths, readonly public roots, promotion attempts, human-review
+  authority claims, and verifier/gate authority spoofing;
 - preserve public/private root metadata in every relevant result;
 - use `ContextSendPolicyService` for provider-send previews;
 - keep accepted promotion outside MCP authority;
-- test negative cases before enabling write tools.
+- keep negative tests for every controlled-write tool.
 
 ## Implementation Sequence
 
@@ -293,8 +355,11 @@ MCP implementation is optional and should not block CLI/provider work.
 If the maintainer approves more MCP work, use this order:
 
 1. Keep the current read-only stdio adapter constrained and tested.
-2. Stabilize CLI JSON contracts and provider boundaries first.
-3. Add security regression tests for private leakage and forbidden tools.
-4. Add controlled-write tools only after explicit allow-write configuration.
+2. Keep controlled-write MCP tools aligned with existing service-layer
+   contracts and negative authorization tests.
+3. Add security regression tests for any new private leakage or forbidden-tool
+   surface.
+4. Add provider-facing MCP tools only through a separate approved task; they
+   must remain default-off and tested without network or API keys.
 
 Each implementation step must be its own issue, branch, and PR.

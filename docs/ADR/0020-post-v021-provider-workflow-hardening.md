@@ -46,8 +46,11 @@ The project will continue with a CLI-first architecture:
   promote artifacts, or bypass validation, gates, reducers, verifier results,
   review, or promotion.
 - MCP remains optional adapter work.
-- Controlled-write MCP is not planned unless a separate maintainer-approved
-  issue explicitly reopens that scope.
+- At this post-v0.2.1 decision point, controlled-write MCP was not planned
+  unless a separate maintainer-approved issue explicitly reopened that scope.
+  ADR 0026 later reopened a narrow draft/review/runtime MCP write scope for
+  the v0.5.0 line without adding accepted-write, promotion, human-review,
+  arbitrary-shell, or hosted-provider authority.
 
 The first concrete task after landing the plan is a real-provider transport ADR
 and threat model. Runtime implementation must wait until that boundary is

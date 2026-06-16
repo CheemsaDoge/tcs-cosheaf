@@ -100,7 +100,9 @@ This ADR does not approve:
 - Land `docs/CODEX_DEVELOPMENT_PLAN_V9.md` and
   `docs/POST_V040_STATE_AUDIT.md`.
 - Expand the current read-only MCP surface to the V9 operator tool set.
+  Completed by the read-only operator MCP core task.
 - Add controlled-write MCP tools over existing safe write semantics.
+  Completed by the controlled draft-write MCP tools task.
 - Add operator runbook and workspace-template demo with CLI fallback.
 - Add public KB operator/MCP policy smoke.
 - Prepare and publish a conservative `v0.5.0` release only after downstream

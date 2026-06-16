@@ -2,14 +2,16 @@
 
 ## Status
 
-Accepted
+Accepted; amended by ADR 0026 for the `v0.5.0` controlled
+draft/review/runtime write tools.
 
 ## Context
 
-ADR 0015 and ADR 0016 make CLI the first agent interface. The repository also
-has an already-merged minimal read-only stdio MCP surface. The fixed plan does
-not require reverting that code, but it reclassifies MCP as an optional adapter
-over services rather than the primary `v0.2.1` path.
+ADR 0015 and ADR 0016 make CLI the first agent interface. At the time of this
+ADR, the repository also had an already-merged minimal read-only stdio MCP
+surface. The fixed plan did not require reverting that code, but it
+reclassified MCP as an optional adapter over services rather than the primary
+`v0.2.1` path.
 
 MCP can make TCS-Cosheaf easier for assistants that support resources/tools but
 do not have shell access. It must not turn external agents into trusted
@@ -23,8 +25,8 @@ Treat MCP as an optional adapter with these constraints:
 2. MCP resources expose context and data, not authority.
 3. MCP tools are whitelisted typed service calls, not shell commands.
 4. MCP prompts are workflow templates and cannot override repository policy.
-5. Controlled-write tools, if added later, require explicit allow-write server
-   configuration and human confirmation or explicit per-call approval.
+5. Controlled-write tools, if added later, must remain narrow service-layer
+   wrappers for draft/proposal/review-context/runtime records only.
 6. Direct accepted promotion and direct accepted-path writes remain forbidden.
 7. Tool outputs use structured content where possible.
 8. Private KB exposure requires request-level policy mode and a configured
@@ -54,12 +56,12 @@ validation, gate execution, memory search, context build, context display, and
 orchestrator planning. These tools may produce runtime reports under ignored
 sidecar directories, but they must not change source-of-truth artifacts.
 
-Controlled-write MCP tools are not planned unless a separate
-maintainer-approved issue explicitly reopens that scope. If such scope is
-approved later, any write tools may create only draft artifacts, task records,
-worker bundles, proposal records, or reducer/review context, and only when the
-server is configured for write tools and the operator confirms the specific
-action.
+ADR 0026 later reopened a narrower controlled-write scope for `v0.5.0`.
+Controlled-write MCP tools may create or update only draft/pre-accepted
+artifacts, draft source notes, WorkerBundle review submissions, draft
+informational review requests, checked-evidence review records, failure-log
+entries on writable non-accepted artifacts, research-run runtime records, or
+strategy review exports through shared service-layer policy checks.
 
 Forbidden MCP tools include arbitrary shell, arbitrary filesystem read/write,
 environment or credential dumping, direct accepted promotion, direct
@@ -91,8 +93,8 @@ passes.
 ## Consequences
 
 The already-merged read-only MCP surface may stay as optional adapter code if
-it remains constrained and tested. Controlled-write MCP is not planned unless
-the maintainer explicitly approves a separate narrowed task.
+it remains constrained and tested. ADR 0026 later approved a separate narrowed
+controlled-write task for draft/review/runtime outputs only.
 
 MCP code should call the service layer directly. It should not shell out to the
 CLI for core behavior, expose arbitrary shell, or create a second policy path.
@@ -105,7 +107,7 @@ This ADR does not:
 - make MCP a `v0.2.1` blocker;
 - add hosted provider transport;
 - add network listeners;
-- add controlled-write tools;
+- add accepted-write or promotion tools;
 - change artifact schema;
 - change validation, gate, verifier, review, or accepted-promotion behavior;
 - permit MCP to write accepted knowledge;

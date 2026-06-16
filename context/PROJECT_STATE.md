@@ -3,6 +3,30 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Controlled Draft-Write MCP Tools - 2026-06-16
+
+Issue 368 extends the optional stdio MCP adapter for the `v0.5.0` Operator MCP
++ Codex Application Layer line with the C.1 controlled draft/review/runtime
+write tool set.
+
+The MCP tool whitelist now includes controlled tools for draft artifact writes,
+draft source notes, WorkerBundle validation/staging, draft informational review
+requests generated from WorkerBundles, checked counterexample evidence
+validation/staging, failure-log appends on writable non-accepted artifacts,
+research-run provenance start/append/finalize/review-export operations, and
+strategy plan update/review-export operations.
+
+These tools call typed Python service-layer logic rather than arbitrary shell.
+They may write only draft/pre-accepted artifact records, staged source notes,
+draft informational review requests, checked-evidence review records,
+failure-log entries on writable non-accepted artifacts, research-run runtime
+records, or review-context exports. They do not write accepted KB content,
+promote artifacts, create human review, mutate verifier results, call hosted
+providers, expose environment data, or bypass validation, gate, review, or
+promotion policy. Checked counterexample evidence remains review evidence only,
+research-run records remain provenance only, and strategy plans remain guidance
+only.
+
 ## Read-Only Operator MCP Core - 2026-06-16
 
 Issue 366 extends the optional stdio MCP adapter for the `v0.5.0` Operator MCP
@@ -34,8 +58,8 @@ pin alignment to `@v0.4.0`, and the absence of open PR/issue blockers across
 the three repositories.
 
 The active plan is `docs/CODEX_DEVELOPMENT_PLAN_V9.md`; ADR 0026 records the
-Operator MCP + Codex Application Layer direction. The current MCP surface is a
-minimal read-only stdio layer. V9 will expand it only as an optional operator
+Operator MCP + Codex Application Layer direction. At kickoff, the MCP surface
+was a minimal read-only stdio layer. V9 expands it only as an optional operator
 adapter over existing service-layer or CLI-equivalent policy boundaries.
 
 This kickoff does not change runtime behavior, dependencies, schemas, package

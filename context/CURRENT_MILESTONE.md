@@ -61,20 +61,23 @@ Compressed milestones:
 Current task:
 
 ```text
-operator-mcp-readonly-core
+operator-mcp-controlled-writes
 ```
 
-This task extends the optional stdio MCP adapter with the B.1 read-only
-operator tool set for workspace, validation, gate, memory, context, strategy,
-run evidence, and eval smoke. It does not add dependencies, add schemas, bump
-versions, write KB artifacts, add controlled-write MCP tools, call providers,
-create human review, promote artifacts, or change accepted-promotion
+This task extends the optional stdio MCP adapter with the C.1 controlled
+draft/review/runtime write tool set. The tools wrap existing service-layer
+semantics for draft artifact writes, draft source notes, WorkerBundle
+validation/staging, draft review requests, checked counterexample evidence
+staging, draft failure-log appends, research-run provenance records, and
+strategy review exports. It does not add dependencies, add schemas, bump
+versions, write accepted knowledge, call providers, create human review,
+promote artifacts, expose arbitrary shell, or change accepted-promotion
 semantics.
 
-Next implementation task after this read-only core merges:
+Next implementation task after this controlled-write core merges:
 
 ```text
-operator-mcp-controlled-writes
+codex-operator-runbook-and-workspace-demo
 ```
 
 ## Explicit Boundaries
