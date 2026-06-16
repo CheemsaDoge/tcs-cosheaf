@@ -680,10 +680,10 @@ service, deterministic JSON output for core read-only CLI commands, controlled
 CLI draft/staging write commands, provider CLI commands for config checks,
 context-send preview, and deterministic fake runs, a local stdio MCP surface
 with read-only and controlled draft/review/runtime tools as optional adapter
-code, and an optional
-`skills/cosheaf-operator/` Skill package that documents the CLI-first operator
-workflow. It also has `HostedWorkerService` for role-specific fake or mocked
-provider worker calls whose outputs validate as WorkerBundle v2 or typed
+code, and an optional documentation-only
+`docs/skills/cosheaf-operator/SKILL.md` Skill package that documents the
+CLI-first operator workflow. It also has `HostedWorkerService` for role-specific
+fake or mocked provider worker calls whose outputs validate as WorkerBundle v2 or typed
 review-only sub-results, plus explicit orchestrator dispatch to those hosted
 workers through the fake provider or an OpenAI-compatible provider boundary.
 The repository has implemented an optional stdlib OpenAI-compatible HTTP

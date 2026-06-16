@@ -3,6 +3,25 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Optional Operator Skill Package - 2026-06-16
+
+Issue 372 adds a documentation-only Cosheaf operator Skill package for
+ChatGPT/Skill-like environments. The package lives at
+`docs/skills/cosheaf-operator/SKILL.md`, with stable entrypoints in
+`docs/OPERATOR_SKILL.md`, `docs/CODEX_OPERATOR_RUNBOOK.md`, and
+`docs/OPERATOR_MCP.md`.
+
+The package keeps CLI as the preferred operator path and MCP as an optional
+adapter over whitelisted service-layer operations. It documents required repo
+memory reads, workspace inspection, validate/gate baselines, bounded context
+and strategy use, research-run provenance, controlled draft/review/runtime
+writes, final verification, and PR summary expectations.
+
+This documentation work does not add runtime dependencies, schemas, provider
+defaults, hosted network calls, accepted writes, promotion authority,
+human-review creation, verifier-result mutation, arbitrary shell, public KB
+content, workspace-template behavior, or automatic theorem-proving claims.
+
 ## Operator Runbook And Workspace Demo Docs - 2026-06-16
 
 Issue 370 documents the v0.5.0 operator workflow after the read-only and

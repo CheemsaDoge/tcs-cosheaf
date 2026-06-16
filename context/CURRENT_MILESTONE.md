@@ -27,6 +27,9 @@ authority.
   provider-preview, fake-provider smoke, verifier-evidence, failure-memory,
   checked-evidence, research-run, and strategy paths pin or install `@v0.4.0`.
 - `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.4.0`.
+- `tcs-kb-public` public KB operator policy smoke is merged and records that
+  operator, MCP, provider, LLM, checked-evidence, research-run, and strategy
+  outputs are review context only.
 - Downstream workspace-template/public-KB pin alignment to `@v0.4.0` is
   complete.
 - `docs/CODEX_DEVELOPMENT_PLAN_V8.md` is the completed accelerated `v0.4.0`
@@ -61,21 +64,21 @@ Compressed milestones:
 Current task:
 
 ```text
-codex-operator-runbook-and-workspace-demo
+optional-cosheaf-operator-skill-package
 ```
 
-This task documents the v0.5.0 operator workflow after the read-only and
-controlled-write MCP surfaces landed. It adds the CLI-first operator workspace
-demo, keeps MCP optional, records CLI fallback, and cleans up stale docs that
-still described controlled-write MCP as unimplemented. It does not add
-dependencies, add schemas, bump versions, write accepted knowledge, call
-providers, create human review, promote artifacts, expose arbitrary shell, or
-change accepted-promotion semantics.
+This task adds a portable documentation-only operator Skill package and stable
+operator entrypoint docs for ChatGPT/Skill-like environments. It keeps CLI as
+the preferred path, MCP as an optional adapter, and all write surfaces limited
+to existing draft/proposal/review-context/runtime records. It does not add a
+runtime dependency, hosted-provider default, accepted write, promotion path,
+human-review creation, verifier-result mutation, arbitrary shell, schema
+change, version bump, or automatic theorem-proving claim.
 
-Next implementation task after this operator runbook/demo work merges:
+Next implementation task after this operator skill package work merges:
 
 ```text
-public-kb-operator-policy-smoke
+release-v050-readiness-and-rc
 ```
 
 ## Explicit Boundaries
