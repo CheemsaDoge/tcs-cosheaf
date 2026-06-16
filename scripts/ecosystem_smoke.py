@@ -17,7 +17,7 @@ from typing import Any
 ISSUE_ID = "issue.ecosystem-smoke.private-context"
 PUBLIC_ARTIFACT_ID = "definition.ecosystem.graph"
 PRIVATE_ARTIFACT_ID = "claim.ecosystem.private"
-DEFAULT_FRAMEWORK_TAG = "v0.4.0"
+DEFAULT_FRAMEWORK_TAG = "v0.5.0"
 
 
 @dataclass(frozen=True)
@@ -363,6 +363,34 @@ def build_ecosystem_smoke_matrix(
             ),
         ),
         EcosystemSmokeMatrixCase(
+            id="framework.operator-session-cli-smoke",
+            repo="tcs-cosheaf",
+            cwd=framework_root,
+            commands=(
+                MatrixCommand(
+                    (
+                        sys.executable,
+                        "scripts/ecosystem_smoke.py",
+                        "--operator-session-cli-smoke",
+                    )
+                ),
+            ),
+        ),
+        EcosystemSmokeMatrixCase(
+            id="framework.operator-handoff-dry-run-smoke",
+            repo="tcs-cosheaf",
+            cwd=framework_root,
+            commands=(
+                MatrixCommand(
+                    (
+                        sys.executable,
+                        "scripts/ecosystem_smoke.py",
+                        "--operator-handoff-dry-run-smoke",
+                    )
+                ),
+            ),
+        ),
+        EcosystemSmokeMatrixCase(
             id="framework.optional-verifier-availability",
             repo="tcs-cosheaf",
             cwd=framework_root,
@@ -431,6 +459,13 @@ def build_ecosystem_smoke_matrix(
             env=local_env,
         ),
         EcosystemSmokeMatrixCase(
+            id="workspace-template.operator-session-demo",
+            repo="tcs-cosheaf-workspace-template",
+            cwd=workspace_template_root,
+            commands=(MatrixCommand((make_executable, "operator-session-demo")),),
+            env=local_env,
+        ),
+        EcosystemSmokeMatrixCase(
             id="workspace-template.provider-fake-smoke",
             repo="tcs-cosheaf-workspace-template",
             cwd=workspace_template_root,
@@ -480,6 +515,15 @@ def build_ecosystem_smoke_matrix(
             cwd=public_kb_root,
             commands=(
                 MatrixCommand(_public_kb_strategy_plan_policy_command()),
+            ),
+            env=public_kb_env,
+        ),
+        EcosystemSmokeMatrixCase(
+            id="public-kb.operator-handoff-policy-docs",
+            repo="tcs-kb-public",
+            cwd=public_kb_root,
+            commands=(
+                MatrixCommand(_public_kb_operator_handoff_policy_command()),
             ),
             env=public_kb_env,
         ),
@@ -550,6 +594,39 @@ def _public_kb_strategy_plan_policy_command() -> tuple[str, ...]:
             "missing = [phrase for phrase in required if phrase not in normalized]",
             "raise SystemExit(",
             "    'missing strategy-plan policy text: ' + ', '.join(missing)",
+            "    if missing else 0",
+            ")",
+        ]
+    )
+    return (sys.executable, "-c", code)
+
+
+def _public_kb_operator_handoff_policy_command() -> tuple[str, ...]:
+    code = "\n".join(
+        [
+            "from pathlib import Path",
+            "policy = Path('docs/OPERATOR_HANDOFF_POLICY.md')",
+            "guard = Path('docs/PUBLIC_KB_POLICY_GUARD.md')",
+            "script = Path('scripts/check_public_kb_policy.py')",
+            "text = (policy.read_text(encoding='utf-8') + '\\n' + "
+            "guard.read_text(encoding='utf-8') + '\\n' + "
+            "script.read_text(encoding='utf-8')).lower()",
+            "normalized = ' '.join(text.replace('`', '').split())",
+            "required = (",
+            "    'operator handoff bundles and reviews/operator/ exports are '",
+            "    'public review context only',",
+            "    'operator handoff material is not:',",
+            "    'source metadata',",
+            "    'accepted public artifacts still require complete artifact-local '",
+            "    'source metadata',",
+            "    'public kb handoff records must not contain',",
+            "    'operator handoff is claimed as source metadata',",
+            "    'reviews/operator',",
+            "    'review_context_only',",
+            ")",
+            "missing = [phrase for phrase in required if phrase not in normalized]",
+            "raise SystemExit(",
+            "    'missing operator-handoff policy text: ' + ', '.join(missing)",
             "    if missing else 0",
             ")",
         ]
@@ -871,6 +948,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             "skipped, not pass."
         ),
     )
+    parser.add_argument(
+        "--operator-session-cli-smoke",
+        action="store_true",
+        help="Run a local operator-session CLI smoke against a temp workspace.",
+    )
+    parser.add_argument(
+        "--operator-handoff-dry-run-smoke",
+        action="store_true",
+        help=(
+            "Run a local operator handoff build/show/export dry-run smoke "
+            "against a temp workspace."
+        ),
+    )
     args = parser.parse_args(argv)
 
     if args.verifier_evidence_eval:
@@ -878,6 +968,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.optional_verifier_availability:
         return _run_optional_verifier_availability_probe()
+
+    if args.operator_session_cli_smoke:
+        return _run_operator_session_cli_smoke(Path.cwd())
+
+    if args.operator_handoff_dry_run_smoke:
+        return _run_operator_handoff_dry_run_smoke(Path.cwd())
 
     if args.matrix:
         matrix = build_ecosystem_smoke_matrix(
@@ -949,6 +1045,279 @@ def _run_with_workdir(
 
 def _network_skip_reason(include_network: bool, reason: str) -> str | None:
     return None if include_network else reason
+
+
+def _run_operator_session_cli_smoke(repo_root: Path) -> int:
+    repo_root = repo_root.resolve()
+    with tempfile.TemporaryDirectory(
+        prefix="cosheaf-operator-session-smoke-"
+    ) as temp_dir:
+        workspace = Path(temp_dir) / "workspace"
+        write_ecosystem_smoke_workspace(workspace)
+        session_id = _create_finalized_operator_session_smoke(
+            repo_root=repo_root,
+            workspace=workspace,
+        )
+        session = _run_json_cli(
+            repo_root,
+            (
+                "operator",
+                "session",
+                "show",
+                session_id,
+                "--repo-root",
+                str(workspace),
+                "--json",
+            ),
+        )
+        if session["session"]["status"] != "finalized":
+            print("operator session smoke did not finalize", file=sys.stderr)
+            return 1
+        if session["session"]["accepted_write_performed"] is not False:
+            print("operator session smoke claimed accepted write", file=sys.stderr)
+            return 1
+        print(
+            json.dumps(
+                {
+                    "kind": "operator_session_cli_smoke",
+                    "session_id": session_id,
+                    "status": "pass",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+        )
+        return 0
+
+
+def _run_operator_handoff_dry_run_smoke(repo_root: Path) -> int:
+    repo_root = repo_root.resolve()
+    with tempfile.TemporaryDirectory(
+        prefix="cosheaf-operator-handoff-smoke-"
+    ) as temp_dir:
+        workspace = Path(temp_dir) / "workspace"
+        write_ecosystem_smoke_workspace(workspace)
+        session_id = _create_finalized_operator_session_smoke(
+            repo_root=repo_root,
+            workspace=workspace,
+        )
+        scan = _run_json_cli(
+            repo_root,
+            (
+                "operator",
+                "session",
+                "scan",
+                session_id,
+                "--repo-root",
+                str(workspace),
+                "--json",
+            ),
+        )
+        if scan["handoff_blocked"] is not False:
+            print("operator handoff smoke scan blocked handoff", file=sys.stderr)
+            return 1
+        handoff = _run_json_cli(
+            repo_root,
+            (
+                "operator",
+                "handoff",
+                "build",
+                "--session",
+                session_id,
+                "--repo-root",
+                str(workspace),
+                "--json",
+            ),
+        )
+        handoff_id = handoff["handoff_id"]
+        shown = _run_json_cli(
+            repo_root,
+            (
+                "operator",
+                "handoff",
+                "show",
+                handoff_id,
+                "--repo-root",
+                str(workspace),
+                "--json",
+            ),
+        )
+        export = _run_json_cli(
+            repo_root,
+            (
+                "operator",
+                "handoff",
+                "export",
+                "--handoff",
+                handoff_id,
+                "--dry-run",
+                "--repo-root",
+                str(workspace),
+                "--json",
+            ),
+        )
+        if shown["handoff_id"] != handoff_id:
+            print("operator handoff smoke show returned wrong handoff", file=sys.stderr)
+            return 1
+        if export["dry_run"] is not True or export["written_paths"]:
+            print("operator handoff smoke export was not dry-run only", file=sys.stderr)
+            return 1
+        if (workspace / "reviews" / "operator").exists():
+            print("operator handoff smoke wrote reviews/operator", file=sys.stderr)
+            return 1
+        print(
+            json.dumps(
+                {
+                    "kind": "operator_handoff_dry_run_smoke",
+                    "session_id": session_id,
+                    "handoff_id": handoff_id,
+                    "status": "pass",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+        )
+        return 0
+
+
+def _create_finalized_operator_session_smoke(
+    *,
+    repo_root: Path,
+    workspace: Path,
+) -> str:
+    start = _run_json_cli(
+        repo_root,
+        (
+            "operator",
+            "session",
+            "start",
+            "--issue",
+            ISSUE_ID,
+            "--policy",
+            "private_research",
+            "--operator-label",
+            "ecosystem operator-session smoke",
+            "--repo-root",
+            str(workspace),
+            "--json",
+        ),
+    )
+    session_id = str(start["session_id"])
+    _run_json_cli(
+        repo_root,
+        (
+            "operator",
+            "session",
+            "append-check",
+            session_id,
+            "--kind",
+            "validate",
+            "--status",
+            "pass",
+            "--summary",
+            "cosheaf validate completed in ecosystem operator-session smoke",
+            "--repo-root",
+            str(workspace),
+            "--json",
+        ),
+    )
+    _run_json_cli(
+        repo_root,
+        (
+            "operator",
+            "session",
+            "append-check",
+            session_id,
+            "--kind",
+            "gate",
+            "--status",
+            "pass",
+            "--summary",
+            "cosheaf gate run completed in ecosystem operator-session smoke",
+            "--repo-root",
+            str(workspace),
+            "--json",
+        ),
+    )
+    _run_json_cli(
+        repo_root,
+        (
+            "operator",
+            "session",
+            "append-check",
+            session_id,
+            "--kind",
+            "test",
+            "--status",
+            "skipped",
+            "--summary",
+            "Skipped operator-session checks are not pass evidence.",
+            "--repo-root",
+            str(workspace),
+            "--json",
+        ),
+    )
+    _run_json_cli(
+        repo_root,
+        (
+            "operator",
+            "session",
+            "append-ref",
+            session_id,
+            "--kind",
+            "draft",
+            "--path",
+            "kb/private/draft/claims/claim.ecosystem.private.yaml",
+            "--artifact",
+            PRIVATE_ARTIFACT_ID,
+            "--scope",
+            "private",
+            "--summary",
+            "Private draft fixture reference only; not accepted knowledge.",
+            "--repo-root",
+            str(workspace),
+            "--json",
+        ),
+    )
+    _run_json_cli(
+        repo_root,
+        (
+            "operator",
+            "session",
+            "finalize",
+            session_id,
+            "--repo-root",
+            str(workspace),
+            "--json",
+        ),
+    )
+    return session_id
+
+
+def _run_json_cli(repo_root: Path, args: tuple[str, ...]) -> dict[str, Any]:
+    argv = (sys.executable, "-m", "cosheaf.cli", *args)
+    completed = subprocess.run(
+        argv,
+        cwd=repo_root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        print(completed.stdout, file=sys.stderr)
+        print(completed.stderr, file=sys.stderr)
+        raise RuntimeError(
+            f"command failed with {completed.returncode}: {' '.join(argv)}"
+        )
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        print(completed.stdout, file=sys.stderr)
+        print(completed.stderr, file=sys.stderr)
+        raise RuntimeError(f"command did not emit JSON: {' '.join(argv)}") from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"command JSON was not an object: {' '.join(argv)}")
+    return payload
 
 
 def _run_verifier_evidence_eval_smoke(repo_root: Path) -> int:

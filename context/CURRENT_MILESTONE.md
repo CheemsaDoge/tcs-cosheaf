@@ -31,8 +31,10 @@ promotion authority.
 - `tcs-cosheaf-workspace-template` active demo, Makefile, CLI-agent,
   provider-preview, fake-provider smoke, verifier-evidence, failure-memory,
   checked-evidence, research-run, strategy, and operator docs/scripts pin or
-  install `@v0.5.0`.
-- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.5.0`.
+  install `@v0.5.0`; its operator-session demo uses the local framework
+  checkout until `v0.6.0` is published.
+- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.5.0` and documents
+  operator handoff records as public review context only.
 - The optional MCP tool surface includes read-only/operator runtime tools and
   controlled draft/review/runtime write tools.
 - Forbidden authority-expanding MCP tools such as `write_accepted`,
@@ -59,6 +61,9 @@ promotion authority.
   `cosheaf operator handoff export --handoff <handoff-id> --dry-run --json`
   and `cosheaf operator handoff export --handoff <handoff-id> --json`, writing
   explicit review-context YAML under `reviews/operator/`.
+- Downstream workspace-template and public-KB integration for operator-session
+  handoff workflows has landed, and the ecosystem smoke matrix includes
+  operator-session and handoff rows.
 
 ## Active Scope
 
@@ -87,20 +92,19 @@ Compressed milestones:
 Most recently completed task:
 
 ```text
-operator-handoff-export
+ecosystem-operator-session-smoke
 ```
 
-This task adds `cosheaf operator handoff export --handoff <handoff-id>
---dry-run --json` and `cosheaf operator handoff export --handoff <handoff-id>
---json`. Dry-run reports the deterministic target without writing.
-Non-dry-run writes explicit review-context YAML under
-`reviews/operator/<handoff-id>.yaml`. Export fails closed when the handoff's
-scanner status contains blockers and rejects accepted KB targets.
+This task adds deterministic ecosystem matrix rows for the operator-session
+and handoff workflow across the framework, workspace-template, and public KB.
+The new rows cover framework operator-session CLI smoke, framework handoff
+build/show/export dry-run smoke, the workspace-template operator-session demo,
+and the public KB operator-handoff policy docs/guard surface.
 
 Next project step:
 
 ```text
-workspace-operator-session-demo
+release-v060-readiness-and-rc
 ```
 
 ## Explicit Boundaries

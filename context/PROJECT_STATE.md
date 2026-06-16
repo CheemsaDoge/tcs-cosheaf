@@ -3,6 +3,40 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Ecosystem Operator Session Smoke - 2026-06-16
+
+Issue 392 adds ecosystem smoke matrix rows for the `v0.6.0` Operator Session
++ Review Handoff workflow across the framework, workspace template, and public
+KB.
+
+The framework matrix now includes:
+
+- `framework.operator-session-cli-smoke`
+- `framework.operator-handoff-dry-run-smoke`
+
+The downstream matrix now includes:
+
+- `workspace-template.operator-session-demo`
+- `public-kb.operator-handoff-policy-docs`
+
+The framework-local smoke rows create temporary workspaces, start and finalize
+operator sessions, preserve skipped test/eval rows as skipped-not-pass, scan
+sessions before handoff, build/show handoff bundles, and preview handoff
+export with `--dry-run`. The workspace-template row runs the downstream
+operator-session demo with the local framework checkout. The public KB row
+checks the operator handoff policy and guard documentation surface.
+
+The ecosystem matrix default release tag is updated to `v0.5.0`, matching the
+published baseline that started the v0.6.0 line. Network rows remain opt-in,
+optional verifier availability remains skipped when tools are unavailable, and
+skips are not counted as passes.
+
+This task does not add hosted providers, require API keys, require MCP, write
+accepted knowledge, create human review, promote artifacts, mutate verifier
+results, change accepted-promotion semantics, change public KB artifacts, or
+claim theorem proving. Operator sessions and handoff bundles remain review
+context only.
+
 ## Operator Handoff Export - 2026-06-16
 
 Issue 390 adds explicit review-context export for operator handoff bundles in

@@ -116,3 +116,9 @@ Handoff export does not create human review. It writes review-context YAML
 only. Human review, accepted promotion, verifier evidence, gate behavior,
 provider defaults, formal-link semantics, public KB policy, and workspace root
 semantics remain unchanged.
+
+The ecosystem smoke matrix now includes framework operator-session CLI and
+handoff dry-run rows, plus downstream workspace-template and public-KB policy
+rows. These rows are release-readiness checks only. They do not turn handoff
+records into source metadata, human review, verifier evidence, accepted
+status, accepted refutation, or promotion authority.
