@@ -17,7 +17,10 @@ authority.
 
 ## Current Baseline
 
-- Framework package metadata and `cosheaf.__version__` record `0.4.0`.
+- Framework package metadata and `cosheaf.__version__` record `0.5.0` in the
+  release-candidate branch.
+- The public `v0.5.0` tag, GitHub release, post-tag release smoke, and
+  downstream workspace/public-KB pin updates remain publication-closeout work.
 - Remote tag `v0.4.0` exists as an annotated tag and the GitHub release is
   published.
 - Release smoke from
@@ -64,21 +67,23 @@ Compressed milestones:
 Current task:
 
 ```text
-optional-cosheaf-operator-skill-package
+release-v050-readiness-and-rc
 ```
 
-This task adds a portable documentation-only operator Skill package and stable
-operator entrypoint docs for ChatGPT/Skill-like environments. It keeps CLI as
-the preferred path, MCP as an optional adapter, and all write surfaces limited
-to existing draft/proposal/review-context/runtime records. It does not add a
-runtime dependency, hosted-provider default, accepted write, promotion path,
-human-review creation, verifier-result mutation, arbitrary shell, schema
-change, version bump, or automatic theorem-proving claim.
+This task prepares the conservative `v0.5.0` release-candidate metadata and
+status documentation after the read-only MCP tools, controlled draft-write MCP
+tools, operator runbook/workspace demo docs, public KB operator policy smoke,
+and optional operator Skill package have merged. It bumps package metadata to
+`0.5.0` and records the release-candidate audit without creating a public tag,
+publishing a GitHub release, updating downstream pins, changing runtime
+behavior, adding dependencies, widening MCP/provider authority, writing
+accepted knowledge, creating human review, promoting artifacts, changing
+schemas, or claiming automatic theorem proving.
 
-Next implementation task after this operator skill package work merges:
+Next implementation task after this release-candidate work merges:
 
 ```text
-release-v050-readiness-and-rc
+release-v050-publication-closeout
 ```
 
 ## Explicit Boundaries
