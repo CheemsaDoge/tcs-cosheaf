@@ -17,23 +17,20 @@ authority.
 
 ## Current Baseline
 
-- Framework package metadata and `cosheaf.__version__` record `0.5.0` in the
-  release-candidate branch.
-- The public `v0.5.0` tag, GitHub release, post-tag release smoke, and
-  downstream workspace/public-KB pin updates remain publication-closeout work.
-- Remote tag `v0.4.0` exists as an annotated tag and the GitHub release is
+- Framework package metadata and `cosheaf.__version__` record `0.5.0`.
+- Remote tag `v0.5.0` exists as an annotated tag and the GitHub release is
   published.
 - Release smoke from
-  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.4.0` passed during
-  the V9 kickoff audit.
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.5.0` passed during
+  publication closeout and installed `tcs-cosheaf==0.5.0`.
 - `tcs-cosheaf-workspace-template` active demo, Makefile, CLI-agent,
   provider-preview, fake-provider smoke, verifier-evidence, failure-memory,
-  checked-evidence, research-run, and strategy paths pin or install `@v0.4.0`.
-- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.4.0`.
+  checked-evidence, research-run, and strategy paths pin or install `@v0.5.0`.
+- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.5.0`.
 - `tcs-kb-public` public KB operator policy smoke is merged and records that
   operator, MCP, provider, LLM, checked-evidence, research-run, and strategy
   outputs are review context only.
-- Downstream workspace-template/public-KB pin alignment to `@v0.4.0` is
+- Downstream workspace-template/public-KB pin alignment to `@v0.5.0` is
   complete.
 - `docs/CODEX_DEVELOPMENT_PLAN_V8.md` is the completed accelerated `v0.4.0`
   plan.
@@ -67,23 +64,21 @@ Compressed milestones:
 Current task:
 
 ```text
-release-v050-readiness-and-rc
+release-v050-publication-closeout
 ```
 
-This task prepares the conservative `v0.5.0` release-candidate metadata and
-status documentation after the read-only MCP tools, controlled draft-write MCP
-tools, operator runbook/workspace demo docs, public KB operator policy smoke,
-and optional operator Skill package have merged. It bumps package metadata to
-`0.5.0` and records the release-candidate audit without creating a public tag,
-publishing a GitHub release, updating downstream pins, changing runtime
-behavior, adding dependencies, widening MCP/provider authority, writing
-accepted knowledge, creating human review, promoting artifacts, changing
-schemas, or claiming automatic theorem proving.
+This task records the conservative `v0.5.0` publication closeout after the
+release-candidate PR merged cleanly. It documents the published annotated tag,
+GitHub release, tag-based release smoke, and downstream workspace-template and
+public-KB pin updates without changing runtime behavior, adding dependencies,
+widening MCP/provider authority, writing accepted knowledge, creating human
+review, promoting artifacts, changing schemas, or claiming automatic theorem
+proving.
 
-Next implementation task after this release-candidate work merges:
+Next project step after this publication closeout:
 
 ```text
-release-v050-publication-closeout
+v0.5.0 completion audit and next-plan selection
 ```
 
 ## Explicit Boundaries

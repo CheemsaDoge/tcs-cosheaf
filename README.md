@@ -7,16 +7,14 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.5.0 Operator MCP + Codex Application Layer release
-candidate**. Package metadata records `0.5.0`; the public `v0.5.0` tag,
-GitHub release, post-tag release smoke, and downstream workspace/public-KB pin
-updates remain publication-closeout work. The latest published release remains
-**v0.4.0 Strategy Planner + Research Task Graph**, with completed downstream
-pin alignment to `@v0.4.0`. The `v0.5.0` release-candidate line keeps CLI as
-the oracle while adding optional MCP adapter access and operator-facing
-demo/runbook documentation.
-The previous published baseline was **v0.3.0 Checked Evidence + Research Run
-Loop**. The `v0.1.1` tag remains the downstream Formal Link Layer support
+Current status: **v0.5.0 Operator MCP + Codex Application Layer published
+release**. Package metadata records `0.5.0`; the public `v0.5.0` tag, GitHub
+release, post-tag release smoke, and downstream workspace/public-KB pin
+updates are complete. The `v0.5.0` line keeps CLI as the oracle while adding
+optional MCP adapter access and operator-facing demo/runbook documentation.
+Earlier published baselines include **v0.3.0 Checked Evidence + Research Run
+Loop** and **v0.4.0 Strategy Planner + Research Task Graph**. The `v0.1.1`
+tag remains the downstream Formal Link Layer support
 baseline; the `v0.2.0` tag packages the deterministic local-MVP workflow; the
 `v0.2.1` tag packages the CLI-first agent and hosted-provider gateway surfaces
 as a pin-able framework prerelease; `v0.2.2` packages the explicit default-off
@@ -33,10 +31,10 @@ provenance, external-operator run-loop docs, downstream demo and policy
 surfaces, and integration/eval smoke coverage. The `v0.4.0` release packages
 strategy/task-graph planning, run-loop integration, strategy review export,
 context/readiness surfacing, eval/security coverage, and downstream strategy
-demo/policy smoke rows. The `v0.5.0` release candidate packages optional
-operator MCP tools, controlled draft/review/runtime MCP writes, operator
-runbook/demo docs, public KB operator policy smoke, and an optional
-documentation-only operator Skill package. The repository has working
+demo/policy smoke rows. The `v0.5.0` release packages optional operator MCP
+tools, controlled draft/review/runtime MCP writes, operator runbook/demo docs,
+public KB operator policy smoke, and an optional documentation-only operator
+Skill package. The repository has working
 Python scaffolding, typed artifact models, filesystem loading, validation,
 dependency graph indexing, workspace-aware KB root loading, artifact lifecycle
 CLI
@@ -162,7 +160,7 @@ Implemented:
   deterministic runtime plans under `.cosheaf/strategy/`, non-authoritative
   review exports under `reviews/strategy/`, context/readiness surfacing, and
   public schemas for strategy plans and task graphs.
-- `v0.5.0` release-candidate operator surfaces with optional MCP
+- Published `v0.5.0` operator surfaces with optional MCP
   `list-tools`/`serve --stdio`, read-only operator tools, controlled
   draft/review/runtime MCP write tools that call service-layer policy, operator
   runbook/demo docs, public KB operator policy smoke, and an optional
@@ -312,10 +310,9 @@ that need artifact failure memory and attempt traceability can pin to
 `v0.2.4`. Downstream repositories that need checked counterexample evidence
 and research-run provenance can pin to `v0.3.0`. Downstream repositories that
 need Strategy Planner + Research Task Graph surfaces can pin to `v0.4.0`;
-workspace-template and public KB active pins now use `v0.4.0`. Downstream
-repositories should wait for the publication closeout before pinning to
-`v0.5.0`; the `v0.5.0` tag, GitHub release, release smoke from `@v0.5.0`, and
-downstream pin updates are not created by the release-candidate PR.
+downstream repositories that need Operator MCP + Codex Application Layer
+surfaces can pin to `v0.5.0`. Workspace-template and public KB active pins now
+use `v0.5.0` after tag publication and release smoke.
 
 ## Development Commands
 

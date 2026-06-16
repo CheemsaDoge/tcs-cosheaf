@@ -3,6 +3,42 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.5.0 Publication Closeout - 2026-06-16
+
+Issue 376 closes out the conservative `v0.5.0` Operator MCP + Codex
+Application Layer publication after the release-candidate PR merged cleanly.
+
+The annotated `v0.5.0` tag is published as tag object
+`49ea4c9de153ccc9c41b39ec2fc705b3735c8795`, pointing through main commit
+`25913148da5e512aa888ec76198146825509e071`. The GitHub release is published at
+`https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.5.0`.
+
+Release smoke from
+`git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.5.0` passed, installed
+`tcs-cosheaf==0.5.0`, and covered help, version, validation, gate, index
+rebuild, and context-build checks.
+
+Downstream pin alignment is complete after release smoke. Workspace-template
+PR #71 updated active demo, Makefile, provider-preview, fake-provider smoke,
+verifier-evidence, failure-memory, checked-evidence, research-run, strategy,
+and operator docs/scripts to `@v0.5.0`. Public KB PR #86 updated public KB CI
+and release-facing docs to `@v0.5.0` without changing KB artifacts, review
+records, formalization metadata, schemas, or promotion policy.
+
+The post-publication ecosystem matrix with `--include-network` and
+`--framework-tag v0.5.0` reports 17 rows: 16 pass, 0 fail, and 1 skipped. The
+skipped row is optional verifier availability and is not counted as pass.
+
+Publication closeout preserves the v0.5.0 authority boundary: CLI remains the
+human and CI oracle, MCP remains optional and local, controlled MCP writes are
+limited to draft/proposal/review-context/runtime records, and MCP/operator
+output is not proof, checked evidence, verifier evidence, verifier pass, gate
+pass, human review, accepted status, accepted refutation, or promotion
+authority. This task does not add runtime behavior, dependencies, schemas,
+default hosted provider calls, accepted writes, human-review creation,
+verifier-result mutation, promotion semantics changes, public KB content,
+workspace-template content, or automatic theorem-proving claims.
+
 ## v0.5.0 Release Candidate - 2026-06-16
 
 Issue 374 prepares the conservative `v0.5.0` Operator MCP + Codex Application
@@ -23,9 +59,10 @@ passed tests; and the no-network ecosystem matrix targeting `v0.5.0` reports
 optional verifier availability, future tag release smoke, and
 workspace-template install demo; they are not counted as pass.
 
-The public `v0.5.0` tag is not published by this task. GitHub release
-publication, post-tag release smoke, and downstream workspace-template/public
-KB pin updates remain publication-closeout work after this PR merges cleanly.
+At the time of the release-candidate task, the public `v0.5.0` tag was not
+published by that task. GitHub release publication, post-tag release smoke,
+and downstream workspace-template/public KB pin updates were intentionally
+left for the later publication closeout recorded above.
 
 The RC preserves the v0.5.0 authority boundary: MCP remains optional and local,
 CLI remains the human and CI oracle, controlled MCP writes are limited to
@@ -194,9 +231,10 @@ to `0.4.0`, adds `docs/releases/v0.4.0.md`, and aligns README, roadmap,
 release checklist, current milestone, and project state with the true RC
 status.
 
-The public `v0.4.0` tag is not published by this task. GitHub release
-publication, post-tag release smoke, and downstream workspace-template/public
-KB pin updates remain publication-closeout work after this PR merges cleanly.
+At the time of the release-candidate task, the public `v0.4.0` tag was not
+published by that task. GitHub release publication, post-tag release smoke,
+and downstream workspace-template/public KB pin updates were intentionally
+left for the later v0.4.0 publication closeout.
 
 The RC continues to preserve the v0.4.0 authority boundary: strategy plans are
 guidance only, not proof, checked evidence, verifier evidence, verifier pass,
