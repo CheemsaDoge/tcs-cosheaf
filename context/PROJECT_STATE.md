@@ -3,6 +3,30 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Operator Session Model And Runtime Storage - 2026-06-16
+
+Issue 380 adds the first functional `v0.6.0` Operator Session + Review Handoff
+surface: strict operator-session DTOs and runtime storage.
+
+The new `cosheaf.operator_session` package defines `OperatorSession`,
+`OperatorToolCallRecord`, `OperatorArtifactRef`, `OperatorCheckResult`,
+`OperatorSessionSummary`, and `OperatorPolicyFinding`. Runtime session records
+are written under ignored `.cosheaf/operator-sessions/<session-id>/` paths as
+`session.json` plus bounded `events.jsonl` event metadata. The matching schema
+is `schemas/operator_session.schema.json`, and the user-facing boundary is
+documented in `docs/OPERATOR_SESSIONS.md`.
+
+Session records are review metadata only. The model rejects direct
+`kb/accepted/` references, absolute paths, parent traversal, secret-looking
+values, hidden-reasoning fields, environment dumps, raw stdout/stderr fields,
+and full private/artifact text fields. Skipped check results must state that
+skipped is not pass evidence.
+
+This task does not add CLI commands, MCP session recording, leak scanning,
+handoff bundle/export behavior, dependencies, accepted writes, human-review
+creation, verifier-result mutation, promotion, provider defaults, or accepted
+promotion semantics.
+
 ## Post-v0.5.0 To v0.6.0 Kickoff - 2026-06-16
 
 Issue 378 starts the `v0.6.0` Operator Session + Review Handoff line after the

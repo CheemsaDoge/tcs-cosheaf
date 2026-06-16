@@ -1,0 +1,293 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TCS-Cosheaf Operator Session",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "session_id",
+    "issue_id",
+    "policy_mode",
+    "operator_label",
+    "status",
+    "started_at",
+    "authority_notice",
+    "accepted_write_performed",
+    "human_review_created",
+    "promotion_performed",
+    "verifier_result_mutated"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|[0-9]+))+$"
+    },
+    "issue_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|[0-9]+))+$"
+    },
+    "policy_mode": {
+      "enum": [
+        "public_only",
+        "private_research"
+      ]
+    },
+    "operator_label": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "in_progress",
+        "finalized",
+        "failed",
+        "blocked",
+        "cancelled"
+      ]
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finalized_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "base_commit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "head_commit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "artifact_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifact_ref"
+      },
+      "uniqueItems": true,
+      "default": []
+    },
+    "check_results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/check_result"
+      },
+      "uniqueItems": true,
+      "default": []
+    },
+    "policy_findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/policy_finding"
+      },
+      "uniqueItems": true,
+      "default": []
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "default": [
+        "Operator session records are bounded review metadata only; they are not proof, verifier pass, gate pass, human review, accepted status, accepted refutation, or promotion authority."
+      ]
+    },
+    "operator_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true,
+      "default": []
+    },
+    "authority_notice": {
+      "const": "Operator session records are bounded review metadata only; they are not proof, verifier pass, gate pass, human review, accepted status, accepted refutation, or promotion authority."
+    },
+    "accepted_write_performed": {
+      "const": false
+    },
+    "human_review_created": {
+      "const": false
+    },
+    "promotion_performed": {
+      "const": false
+    },
+    "verifier_result_mutated": {
+      "const": false
+    }
+  },
+  "$defs": {
+    "repository_local_nonaccepted_path": {
+      "type": "string",
+      "not": {
+        "anyOf": [
+          {
+            "pattern": "^/"
+          },
+          {
+            "pattern": "^[A-Za-z]:"
+          },
+          {
+            "pattern": "(^|/)\\.\\.($|/)"
+          },
+          {
+            "pattern": "^kb/accepted/"
+          },
+          {
+            "pattern": "/accepted/"
+          }
+        ]
+      }
+    },
+    "artifact_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "draft",
+            "review_context",
+            "runtime",
+            "report",
+            "source_note",
+            "other"
+          ]
+        },
+        "path": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/repository_local_nonaccepted_path"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "artifact_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\\.(?:[a-z][a-z0-9]*(?:-[a-z0-9]+)*|[0-9]+))+$"
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scope": {
+          "enum": [
+            "public",
+            "private",
+            "workspace",
+            "framework",
+            "unknown"
+          ],
+          "default": "unknown"
+        }
+      }
+    },
+    "check_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "status",
+        "summary",
+        "recorded_at"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "validate",
+            "gate",
+            "test",
+            "eval",
+            "smoke",
+            "other"
+          ]
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "error",
+            "skipped"
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "report_path": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/repository_local_nonaccepted_path"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recorded_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "policy_finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "finding_id",
+        "severity",
+        "code",
+        "message"
+      ],
+      "properties": {
+        "finding_id": {
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "blocker"
+          ]
+        },
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "path": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/repository_local_nonaccepted_path"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
