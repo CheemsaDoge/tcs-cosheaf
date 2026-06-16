@@ -811,8 +811,11 @@
 #### MCP Server
 
 - `cosheaf.mcp.READ_ONLY_TOOL_NAMES`: ordered read-only MCP tool whitelist:
-  `workspace_info`, `validate`, `gate_run`, `memory_search`, `context_build`,
-  `context_show`, and `orchestrator_plan`.
+  `workspace_info`, `validate`, `gate`, `gate_pr_checklist`, `gate_run`,
+  `memory_cards`, `memory_search`, `context_build`, `context_show`,
+  `strategy_plan`, `strategy_show`, `strategy_graph`, `strategy_next`,
+  `run_show`, `run_evidence_report`, `eval_strategy_planner`,
+  `eval_research_run_loop`, and `orchestrator_plan`.
 - `cosheaf.mcp.READ_ONLY_PROMPT_NAMES`: ordered governance-safe MCP prompt
   whitelist: `start_issue_work`, `reason_about_issue`, `verify_draft`,
   `prepare_review_bundle`, and `public_kb_contribution_check`.
@@ -842,8 +845,11 @@ The read-only MCP surface does not expose arbitrary shell, draft writes,
 accepted writes, artifact promotion, hosted provider calls, environment dumps,
 or unrestricted filesystem access. Public-mode artifact-card resources deny
 private artifact cards with a structured `private_resource_denied` error.
-`gate_run` and `context_build` may write deterministic runtime sidecars, but
-they do not modify source-of-truth artifact YAML or accepted knowledge.
+`gate`, `gate_pr_checklist`, `gate_run`, `context_build`, and
+`strategy_plan` may write deterministic runtime sidecars, but they do not
+modify source-of-truth artifact YAML or accepted knowledge. Strategy MCP
+outputs are public-scoped before being returned so private artifact IDs and
+private issue tags are not exposed through public operator mode.
 Prompt templates are static governance guidance. They do not read or include
 private KB content, artifact statements, provider credentials, or environment
 data.

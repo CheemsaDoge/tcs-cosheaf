@@ -17,9 +17,31 @@ from typing import Any, TextIO
 from cosheaf import __version__
 from cosheaf.agent.context_pack import ContextPackError
 from cosheaf.agent.orchestrator_planner import OrchestratorPlannerError
+from cosheaf.evals import (
+    DEFAULT_RESEARCH_RUN_LOOP_EVAL_CASES,
+    DEFAULT_STRATEGY_PLANNER_EVAL_CASES,
+    ResearchRunLoopEvalError,
+    StrategyPlannerEvalError,
+    load_research_run_loop_eval_suite,
+    load_strategy_planner_eval_suite,
+    resolve_research_run_loop_eval_case_path,
+    resolve_strategy_planner_eval_case_path,
+    run_research_run_loop_eval_suite,
+    run_strategy_planner_eval_suite,
+)
 from cosheaf.gates.gatekeeper import GatekeeperRunResult, ValidationReport
-from cosheaf.memory import ArtifactCard, MemoryCardError, MemoryRootScope
+from cosheaf.memory import (
+    ArtifactCard,
+    ArtifactCardStatus,
+    MemoryCardError,
+    MemoryRootScope,
+)
 from cosheaf.memory import MemorySearchError as MemorySearchServiceError
+from cosheaf.research.run import (
+    ResearchRunError,
+    build_research_run_evidence_report,
+    load_research_run,
+)
 from cosheaf.services import (
     ContextPackService,
     GateService,
@@ -31,14 +53,36 @@ from cosheaf.services import (
 )
 from cosheaf.storage.loader import IssueRecord, LoadedRecord, LoadError, load_artifacts
 from cosheaf.storage.repo import RepoContext
+from cosheaf.strategy.models import (
+    STRATEGY_AUTHORITY_NOTICE,
+    StrategyError,
+    StrategyPlan,
+)
+from cosheaf.strategy.planner import build_strategy_plan
+from cosheaf.strategy.storage import (
+    attach_context_reference,
+    load_strategy_plan,
+    write_strategy_plan,
+)
 
 READ_ONLY_TOOL_NAMES = (
     "workspace_info",
     "validate",
+    "gate",
+    "gate_pr_checklist",
     "gate_run",
+    "memory_cards",
     "memory_search",
     "context_build",
     "context_show",
+    "strategy_plan",
+    "strategy_show",
+    "strategy_graph",
+    "strategy_next",
+    "run_show",
+    "run_evidence_report",
+    "eval_strategy_planner",
+    "eval_research_run_loop",
     "orchestrator_plan",
 )
 READ_ONLY_PROMPT_NAMES = (
@@ -98,10 +142,21 @@ class ReadOnlyMcpServer:
         ] = {
             "workspace_info": self._tool_workspace_info,
             "validate": self._tool_validate,
+            "gate": self._tool_gate,
+            "gate_pr_checklist": self._tool_gate_pr_checklist,
             "gate_run": self._tool_gate_run,
+            "memory_cards": self._tool_memory_cards,
             "memory_search": self._tool_memory_search,
             "context_build": self._tool_context_build,
             "context_show": self._tool_context_show,
+            "strategy_plan": self._tool_strategy_plan,
+            "strategy_show": self._tool_strategy_show,
+            "strategy_graph": self._tool_strategy_graph,
+            "strategy_next": self._tool_strategy_next,
+            "run_show": self._tool_run_show,
+            "run_evidence_report": self._tool_run_evidence_report,
+            "eval_strategy_planner": self._tool_eval_strategy_planner,
+            "eval_research_run_loop": self._tool_eval_research_run_loop,
             "orchestrator_plan": self._tool_orchestrator_plan,
         }
 
@@ -261,7 +316,17 @@ class ReadOnlyMcpServer:
         report = ValidationService(self.context).validate_repository()
         return _validation_payload(report)
 
+    def _tool_gate(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
+        return self._run_gate_tool(arguments)
+
+    def _tool_gate_pr_checklist(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
+        pr_checklist = _required_string(arguments, "pr_checklist")
+        return self._run_gate_tool({"pr_checklist": pr_checklist})
+
     def _tool_gate_run(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
+        return self._run_gate_tool(arguments)
+
+    def _run_gate_tool(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
         pr_checklist = arguments.get("pr_checklist")
         if pr_checklist is not None and not isinstance(pr_checklist, str):
             raise McpServerError(
@@ -271,6 +336,39 @@ class ReadOnlyMcpServer:
             )
         result = GateService(self.context).run(pr_checklist_path=pr_checklist)
         return _gate_payload(self.context, result)
+
+    def _tool_memory_cards(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
+        issue_id = _optional_string(arguments.get("issue_id"), field_name="issue_id")
+        status = _optional_string(arguments.get("status"), field_name="status")
+        status_filter = None
+        if status is not None:
+            try:
+                status_filter = ArtifactCardStatus(status)
+            except ValueError as exc:
+                raise McpServerError(
+                    "invalid_arguments",
+                    f"unsupported artifact-card status: {status}",
+                    remediation="Pass a supported artifact status or omit status.",
+                ) from exc
+        try:
+            cards = MemorySearchService(self.context).cards(
+                issue_id=issue_id,
+                status=status_filter,
+            )
+        except MemoryCardError as exc:
+            raise McpServerError(
+                "memory_cards_failed",
+                str(exc),
+                remediation=(
+                    "Check the issue ID, status filter, and repository records."
+                ),
+            ) from exc
+        return {
+            "cards": [_artifact_card_payload(card) for card in cards],
+            "card_count": len(cards),
+            "public_only": True,
+            "accepted_writes": False,
+        }
 
     def _tool_memory_search(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
         query = _required_string(arguments, "query")
@@ -349,6 +447,163 @@ class ReadOnlyMcpServer:
             "public_only": True,
             "content": rendered,
         }
+
+    def _tool_strategy_plan(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
+        issue_id = _required_string(arguments, "issue_id")
+        from_context = _optional_string(
+            arguments.get("from_context"),
+            field_name="from_context",
+        )
+        try:
+            built = build_strategy_plan(self.context, issue_id)
+            plan = (
+                attach_context_reference(self.context, built.plan, Path(from_context))
+                if from_context is not None
+                else built.plan
+            )
+            public_plan = _public_strategy_plan(self.context, plan)
+            result = write_strategy_plan(self.context, public_plan)
+        except (StrategyError, LoadError, ValueError) as exc:
+            raise McpServerError(
+                _strategy_error_code(exc),
+                str(exc),
+                remediation=_strategy_error_remediation(exc),
+            ) from exc
+        payload = _strategy_plan_payload(result.plan, result.relative_path)
+        payload["public_only"] = True
+        return payload
+
+    def _tool_strategy_show(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
+        plan_id = _required_string(arguments, "plan_id")
+        try:
+            result = load_strategy_plan(self.context, plan_id)
+            plan = _public_strategy_plan(self.context, result.plan)
+        except (StrategyError, ValueError) as exc:
+            raise McpServerError(
+                _strategy_error_code(exc),
+                str(exc),
+                remediation=_strategy_error_remediation(exc),
+            ) from exc
+        payload = _strategy_plan_payload(plan, result.relative_path)
+        payload["public_only"] = True
+        return payload
+
+    def _tool_strategy_graph(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
+        plan_id = _required_string(arguments, "plan_id")
+        try:
+            result = load_strategy_plan(self.context, plan_id)
+            plan = _public_strategy_plan(self.context, result.plan)
+        except (StrategyError, ValueError) as exc:
+            raise McpServerError(
+                _strategy_error_code(exc),
+                str(exc),
+                remediation=_strategy_error_remediation(exc),
+            ) from exc
+        return {
+            "schema_version": 1,
+            "kind": "strategy_task_graph",
+            "plan_id": plan.plan_id,
+            "accepted_write_performed": False,
+            "authority_notice": STRATEGY_AUTHORITY_NOTICE,
+            "graph": plan.graph.to_dict(),
+            "public_only": True,
+        }
+
+    def _tool_strategy_next(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
+        plan_id = _required_string(arguments, "plan_id")
+        try:
+            result = load_strategy_plan(self.context, plan_id)
+            plan = _public_strategy_plan(self.context, result.plan)
+        except (StrategyError, ValueError) as exc:
+            raise McpServerError(
+                _strategy_error_code(exc),
+                str(exc),
+                remediation=_strategy_error_remediation(exc),
+            ) from exc
+        return {
+            "schema_version": 1,
+            "kind": "strategy_next_steps",
+            "plan_id": plan.plan_id,
+            "accepted_write_performed": False,
+            "authority_notice": STRATEGY_AUTHORITY_NOTICE,
+            "next_steps": [step.to_dict() for step in plan.next_steps],
+            "public_only": True,
+        }
+
+    def _tool_run_show(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
+        run_id = _required_string(arguments, "run_id")
+        try:
+            result = load_research_run(self.context, run_id)
+        except (ResearchRunError, ValueError) as exc:
+            raise McpServerError(
+                _research_run_error_code(exc),
+                str(exc),
+                remediation=_research_run_error_remediation(exc),
+            ) from exc
+        payload = result.to_dict()
+        payload["read_only"] = True
+        return payload
+
+    def _tool_run_evidence_report(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        run_id = _required_string(arguments, "run_id")
+        try:
+            result = load_research_run(self.context, run_id)
+        except (ResearchRunError, ValueError) as exc:
+            raise McpServerError(
+                _research_run_error_code(exc),
+                str(exc),
+                remediation=_research_run_error_remediation(exc),
+            ) from exc
+        payload = build_research_run_evidence_report(result.record)
+        payload["read_only"] = True
+        return payload
+
+    def _tool_eval_strategy_planner(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        cases = _optional_string(arguments.get("cases"), field_name="cases")
+        case_path = (
+            Path(cases) if cases is not None else DEFAULT_STRATEGY_PLANNER_EVAL_CASES
+        )
+        try:
+            resolved = resolve_strategy_planner_eval_case_path(self.context, case_path)
+            suite = load_strategy_planner_eval_suite(resolved)
+            report = run_strategy_planner_eval_suite(self.context, suite)
+        except StrategyPlannerEvalError as exc:
+            raise McpServerError(
+                "strategy_planner_eval_failed",
+                str(exc),
+                remediation="Check the repository-local strategy-planner eval cases.",
+            ) from exc
+        payload = report.model_dump(mode="json")
+        payload["accepted_write_performed"] = False
+        return payload
+
+    def _tool_eval_research_run_loop(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        cases = _optional_string(arguments.get("cases"), field_name="cases")
+        case_path = (
+            Path(cases) if cases is not None else DEFAULT_RESEARCH_RUN_LOOP_EVAL_CASES
+        )
+        try:
+            resolved = resolve_research_run_loop_eval_case_path(self.context, case_path)
+            suite = load_research_run_loop_eval_suite(resolved)
+            report = run_research_run_loop_eval_suite(self.context, suite)
+        except ResearchRunLoopEvalError as exc:
+            raise McpServerError(
+                "research_run_loop_eval_failed",
+                str(exc),
+                remediation="Check the repository-local research-run eval cases.",
+            ) from exc
+        payload = report.model_dump(mode="json")
+        payload["accepted_write_performed"] = False
+        return payload
 
     def _tool_orchestrator_plan(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
         issue_id = _required_string(arguments, "issue_id")
@@ -450,20 +705,50 @@ def tool_definitions() -> list[dict[str, Any]]:
     descriptions = {
         "workspace_info": "Return configured workspace and KB root metadata.",
         "validate": "Run repository validation and return structured failures.",
+        "gate": "Run gatekeeper and return report metadata.",
+        "gate_pr_checklist": "Run gatekeeper with a repository-local PR checklist.",
         "gate_run": "Run gatekeeper and return report metadata.",
+        "memory_cards": "List public compact artifact cards.",
         "memory_search": (
             "Search public artifact cards with deterministic local scoring."
         ),
         "context_build": "Build a public-only issue context pack.",
         "context_show": "Build and return public-only issue context text.",
+        "strategy_plan": "Build a public-scoped runtime strategy plan.",
+        "strategy_show": "Read one public-scoped runtime strategy plan.",
+        "strategy_graph": "Read one public-scoped strategy task graph.",
+        "strategy_next": "Read public-scoped strategy next-step guidance.",
+        "run_show": "Read one research-run provenance record.",
+        "run_evidence_report": "Return read-only evidence counts for a run.",
+        "eval_strategy_planner": "Run deterministic strategy-planner eval smoke.",
+        "eval_research_run_loop": "Run deterministic research-run loop eval smoke.",
         "orchestrator_plan": "Create a deterministic plan without executing workers.",
     }
     schemas: dict[str, dict[str, Any]] = {
         "workspace_info": {"type": "object", "additionalProperties": False},
         "validate": {"type": "object", "additionalProperties": False},
+        "gate": {
+            "type": "object",
+            "properties": {"pr_checklist": {"type": "string"}},
+            "additionalProperties": False,
+        },
+        "gate_pr_checklist": {
+            "type": "object",
+            "properties": {"pr_checklist": {"type": "string"}},
+            "required": ["pr_checklist"],
+            "additionalProperties": False,
+        },
         "gate_run": {
             "type": "object",
             "properties": {"pr_checklist": {"type": "string"}},
+            "additionalProperties": False,
+        },
+        "memory_cards": {
+            "type": "object",
+            "properties": {
+                "issue_id": {"type": "string"},
+                "status": {"type": "string"},
+            },
             "additionalProperties": False,
         },
         "memory_search": {
@@ -490,6 +775,55 @@ def tool_definitions() -> list[dict[str, Any]]:
             "type": "object",
             "properties": {"issue_id": {"type": "string"}},
             "required": ["issue_id"],
+            "additionalProperties": False,
+        },
+        "strategy_plan": {
+            "type": "object",
+            "properties": {
+                "issue_id": {"type": "string"},
+                "from_context": {"type": "string"},
+            },
+            "required": ["issue_id"],
+            "additionalProperties": False,
+        },
+        "strategy_show": {
+            "type": "object",
+            "properties": {"plan_id": {"type": "string"}},
+            "required": ["plan_id"],
+            "additionalProperties": False,
+        },
+        "strategy_graph": {
+            "type": "object",
+            "properties": {"plan_id": {"type": "string"}},
+            "required": ["plan_id"],
+            "additionalProperties": False,
+        },
+        "strategy_next": {
+            "type": "object",
+            "properties": {"plan_id": {"type": "string"}},
+            "required": ["plan_id"],
+            "additionalProperties": False,
+        },
+        "run_show": {
+            "type": "object",
+            "properties": {"run_id": {"type": "string"}},
+            "required": ["run_id"],
+            "additionalProperties": False,
+        },
+        "run_evidence_report": {
+            "type": "object",
+            "properties": {"run_id": {"type": "string"}},
+            "required": ["run_id"],
+            "additionalProperties": False,
+        },
+        "eval_strategy_planner": {
+            "type": "object",
+            "properties": {"cases": {"type": "string"}},
+            "additionalProperties": False,
+        },
+        "eval_research_run_loop": {
+            "type": "object",
+            "properties": {"cases": {"type": "string"}},
             "additionalProperties": False,
         },
         "orchestrator_plan": {
@@ -815,6 +1149,7 @@ def _gate_payload(context: RepoContext, result: GatekeeperRunResult) -> dict[str
         "verdict": result.report.verdict,
         "json_path": _repo_relative_or_string(context, result.json_path),
         "markdown_path": _repo_relative_or_string(context, result.markdown_path),
+        "accepted_writes": False,
         "blocking_issues": [
             issue.to_dict() for issue in result.report.blocking_issues
         ],
@@ -822,7 +1157,106 @@ def _gate_payload(context: RepoContext, result: GatekeeperRunResult) -> dict[str
             issue.to_dict() for issue in result.report.nonblocking_issues
         ],
         "summary": result.report.summary,
+        "gates": [gate.to_dict() for gate in result.report.gates],
     }
+
+
+def _strategy_plan_payload(plan: StrategyPlan, relative_path: Path) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "kind": "strategy_plan",
+        "plan_id": plan.plan_id,
+        "path": relative_path.as_posix(),
+        "accepted_write_performed": False,
+        "authority_notice": STRATEGY_AUTHORITY_NOTICE,
+        "plan": plan.to_dict(),
+    }
+
+
+def _public_strategy_plan(context: RepoContext, plan: StrategyPlan) -> StrategyPlan:
+    """Return a public-scoped strategy plan for MCP public mode."""
+    public_artifact_ids = {
+        card.id for card in MemorySearchService(context).cards()
+    }
+    raw = plan.to_dict()
+    problem = dict(raw["problem"])
+    problem["target_artifacts"] = [
+        artifact_id
+        for artifact_id in problem.get("target_artifacts", [])
+        if artifact_id in public_artifact_ids
+    ]
+    problem["tags"] = []
+    problem["public_private_scope_labels"] = [
+        scope
+        for scope in problem.get("public_private_scope_labels", [])
+        if scope != "private"
+    ] or ["workspace"]
+    raw["problem"] = problem
+
+    original_nodes = [
+        dict(node)
+        for node in raw["graph"]["nodes"]
+        if node.get("scope") != "private"
+    ]
+    kept_node_ids = {node["node_id"] for node in original_nodes}
+    nodes = []
+    for node in original_nodes:
+        node["depends_on"] = [
+            node_id
+            for node_id in node.get("depends_on", [])
+            if node_id in kept_node_ids
+        ]
+        node["blocked_by"] = [
+            node_id
+            for node_id in node.get("blocked_by", [])
+            if node_id in kept_node_ids
+        ]
+        node["related_artifacts"] = [
+            artifact_id
+            for artifact_id in node.get("related_artifacts", [])
+            if artifact_id in public_artifact_ids
+        ]
+        nodes.append(node)
+
+    graph = dict(raw["graph"])
+    graph["nodes"] = nodes
+    graph["edges"] = [
+        edge
+        for edge in graph.get("edges", [])
+        if edge.get("from_node") in kept_node_ids
+        and edge.get("to_node") in kept_node_ids
+    ]
+    raw["graph"] = graph
+    raw["next_steps"] = [
+        step
+        for step in raw.get("next_steps", [])
+        if step.get("node_id") in kept_node_ids
+    ]
+    return StrategyPlan.model_validate(raw)
+
+
+def _strategy_error_code(exc: BaseException) -> str:
+    return getattr(exc, "code", "strategy_tool_failed")
+
+
+def _strategy_error_remediation(exc: BaseException) -> str:
+    return getattr(
+        exc,
+        "remediation",
+        "Check the issue ID, plan ID, context path, and strategy runtime files.",
+    )
+
+
+def _research_run_error_code(exc: BaseException) -> str:
+    return getattr(exc, "code", "research_run_tool_failed")
+
+
+def _research_run_error_remediation(exc: BaseException) -> str:
+    return getattr(
+        exc,
+        "remediation",
+        "Check the run ID and repository-local research-run runtime files.",
+    )
 
 
 def _artifact_card_payload(card: ArtifactCard) -> dict[str, Any]:

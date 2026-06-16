@@ -61,18 +61,20 @@ Compressed milestones:
 Current task:
 
 ```text
-post-v040-v050-kickoff
+operator-mcp-readonly-core
 ```
 
-This task verifies the completed v0.4.0 state, records the active V9 plan and
-ADR, and identifies current CLI/MCP surfaces to wrap later. It does not
-implement MCP behavior, add dependencies, add schemas, bump versions, write KB
-artifacts, alter provider behavior, or change accepted-promotion semantics.
+This task extends the optional stdio MCP adapter with the B.1 read-only
+operator tool set for workspace, validation, gate, memory, context, strategy,
+run evidence, and eval smoke. It does not add dependencies, add schemas, bump
+versions, write KB artifacts, add controlled-write MCP tools, call providers,
+create human review, promote artifacts, or change accepted-promotion
+semantics.
 
-Next implementation task after this kickoff merges:
+Next implementation task after this read-only core merges:
 
 ```text
-operator-mcp-readonly-core
+operator-mcp-controlled-writes
 ```
 
 ## Explicit Boundaries
