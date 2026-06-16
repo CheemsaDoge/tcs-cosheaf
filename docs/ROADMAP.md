@@ -1,7 +1,8 @@
 # Roadmap
 
 TCS-Cosheaf has published the `v0.4.0` Strategy Planner + Research Task Graph
-release after the published `v0.3.0` Checked Evidence + Research Run Loop
+release and is now pursuing the `v0.5.0` Operator MCP + Codex Application
+Layer. This follows the published `v0.3.0` Checked Evidence + Research Run Loop
 release, the published `v0.2.4` Artifact Failure Memory + Attempt Traceability
 release, the published `v0.2.3` Verification Evidence Hardening release, the
 published `v0.2.2` Provider Transport + Agent Workflow Hardening release, the
@@ -11,6 +12,39 @@ Layer support baseline. Downstream workspace/public-KB pin alignment for
 `v0.4.0` is complete, and the project is still not production-ready. This
 roadmap records durable direction and named milestones; live issue state
 belongs in GitHub issues.
+
+## Active Focus: v0.5.0 Operator MCP + Codex Application Layer
+
+The active post-`v0.4.0` line is `v0.5.0` Operator MCP + Codex Application
+Layer. `v0.4.0` records planned research processes through strategy plans;
+`v0.5.0` makes those workflows safer and easier for Codex-style operators to
+drive through optional MCP tools and documented CLI fallback.
+
+The active plan is
+[`docs/CODEX_DEVELOPMENT_PLAN_V9.md`](CODEX_DEVELOPMENT_PLAN_V9.md), with the
+kickoff audit in
+[`docs/POST_V040_STATE_AUDIT.md`](POST_V040_STATE_AUDIT.md) and the
+architecture decision in
+[`docs/ADR/0026-operator-mcp-codex-application-layer.md`](ADR/0026-operator-mcp-codex-application-layer.md).
+
+This line will:
+
+- expand the existing minimal read-only MCP surface into an optional operator
+  MCP tool layer for workspace, validate, gate, memory, context, strategy,
+  research-run evidence, and eval smoke;
+- add controlled MCP write tools that wrap existing safe draft/proposal,
+  review-context, and runtime write semantics;
+- keep CLI as the human and CI oracle, with documented fallback when MCP is
+  unavailable;
+- add operator runbooks, workspace-template demo coverage, and public KB
+  policy smoke for operator/MCP outputs; and
+- package a conservative `v0.5.0` release only after tests, docs, downstream
+  demo/policy, and release smoke pass.
+
+This line will not make MCP output proof, evidence, verifier pass, gate pass,
+human review, accepted status, accepted refutation, or promotion authority. It
+will not expose accepted writes, promotion, human-review creation, arbitrary
+shell, or default hosted provider calls through MCP.
 
 ## Completed Release Focus: v0.4.0 Strategy Planner + Research Task Graph
 
