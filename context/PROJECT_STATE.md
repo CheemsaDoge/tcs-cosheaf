@@ -3,6 +3,27 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Post-v0.4.0 to v0.5.0 Kickoff - 2026-06-16
+
+Issue 364 starts the `v0.5.0` Operator MCP + Codex Application Layer line
+after the published `v0.4.0` Strategy Planner + Research Task Graph closeout.
+
+The kickoff audit is recorded in `docs/POST_V040_STATE_AUDIT.md`. It verified
+package metadata `0.4.0`, the annotated `v0.4.0` tag, the published GitHub
+release, a fresh release smoke from `@v0.4.0`, workspace-template/public-KB
+pin alignment to `@v0.4.0`, and the absence of open PR/issue blockers across
+the three repositories.
+
+The active plan is `docs/CODEX_DEVELOPMENT_PLAN_V9.md`; ADR 0026 records the
+Operator MCP + Codex Application Layer direction. The current MCP surface is a
+minimal read-only stdio layer. V9 will expand it only as an optional operator
+adapter over existing service-layer or CLI-equivalent policy boundaries.
+
+This kickoff does not change runtime behavior, dependencies, schemas, package
+version, provider behavior, MCP behavior, accepted writes, human-review state,
+artifact status, promotion semantics, workspace-template content, public KB
+content, or downstream pins.
+
 ## v0.4.0 Documentation And Code Audit Closeout - 2026-06-16
 
 Issue 362 closes out stale active-line wording after the published `v0.4.0`
