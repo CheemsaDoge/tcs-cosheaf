@@ -16,8 +16,8 @@ The post-release audit in `docs/POST_V021_STATE_AUDIT.md` confirmed that:
 
 - downstream repositories pin `tcs-cosheaf@v0.2.1`;
 - MCP is optional and not required for ordinary CLI-first work;
-- controlled-write MCP is closed as not planned unless a separate approved
-  issue reopens the scope;
+- controlled-write MCP was closed for the v0.2.2 line unless a separate
+  approved issue reopened the scope;
 - the system is not documented as permanently local-only;
 - no accepted artifacts were added during the `v0.2.1` closeout;
 - real provider calls are not default-enabled and are not used in CI/default
@@ -65,7 +65,7 @@ This decision does not authorize:
 - real provider calls in CI or default tests;
 - mandatory provider SDK dependencies;
 - provider real-run commands without explicit consent and network gates;
-- controlled-write MCP;
+- controlled-write MCP in the v0.2.2 provider-transport line;
 - provider MCP tools;
 - arbitrary shell through MCP;
 - direct accepted writes;
@@ -89,6 +89,8 @@ Workspace-template demos must remain fake-only by default. Public KB policy and
 content work must stay separate from provider/MCP/runtime changes. Release
 notes must remain conservative and must not claim production readiness.
 
-Current documentation should describe controlled-write MCP as not planned unless
-a new approved issue exists. Superseded historical plans may still mention
-older options as history, but they do not authorize implementation.
+At the time of this ADR, current documentation described controlled-write MCP
+as not planned unless a new approved issue existed. ADR 0026 later reopened a
+narrow draft/review/runtime MCP write scope for the v0.5.0 line. Superseded
+historical plans may still mention older options as history, but they do not
+authorize implementation outside their active milestone.

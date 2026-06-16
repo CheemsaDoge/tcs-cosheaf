@@ -195,6 +195,8 @@ For Codex-style execution, use the CLI as the first machine interface and the
 human/CI oracle. MCP is optional and is not required for ordinary repository
 work. The detailed v0.3.0 runbook is
 [`docs/EXTERNAL_OPERATOR_RUN_LOOP.md`](EXTERNAL_OPERATOR_RUN_LOOP.md).
+The v0.5.0 operator workspace demo is
+[`docs/OPERATOR_WORKSPACE_DEMO.md`](OPERATOR_WORKSPACE_DEMO.md).
 
 Follow this sequence for nontrivial issue work:
 
@@ -255,6 +257,12 @@ Allowed agent-facing command families are:
   `run replay-plan`;
 - ordinary repository verification: `make lint`, `make typecheck`,
   `make test`, `make validate`, `make gate`, and `git diff --check`.
+
+Optional MCP tools expose the same service-layer boundaries for compatible
+clients. They remain whitelisted adapter calls, not arbitrary shell. Controlled
+MCP tools may create only draft, review-context, or runtime records already
+allowed by Cosheaf policy, and they do not create accepted knowledge, human
+review, verifier pass, gate pass, or promotion authority.
 
 Forbidden agent actions are:
 

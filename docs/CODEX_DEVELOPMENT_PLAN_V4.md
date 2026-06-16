@@ -218,7 +218,8 @@ prefer draft unless source metadata and human review evidence are complete.
 
 Re-evaluate read-only MCP only as optional adapter maintenance. Do not add new
 MCP tools, provider MCP tools, arbitrary shell, controlled-write MCP, or
-accepted-write behavior without separate maintainer approval.
+accepted-write behavior in the v0.2.2 line without separate maintainer
+approval.
 
 ## Phase I: v0.2.2 Release Candidate
 
@@ -232,7 +233,9 @@ and verified behavior. They must still state:
 - no AI review as human review;
 - not a production hosted multi-agent platform;
 - MCP remains optional;
-- controlled-write MCP remains not planned unless separately approved.
+- at this v0.2.2 planning point, controlled-write MCP was out of scope unless
+  separately approved. Later V9 work reopened only a narrow draft/review/runtime
+  controlled-write MCP scope.
 
 ## Per-PR Requirements
 

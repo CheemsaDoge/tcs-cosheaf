@@ -18,8 +18,8 @@ MCP behavior, promotion policy, or KB artifacts.
 - `tcs-kb-public` CI installs `tcs-cosheaf@v0.2.1`.
 - At audit time, the only open item across the three repositories was this
   framework audit issue, `CheemsaDoge/tcs-cosheaf#227`; open PRs were empty.
-- Controlled-write MCP is not an approved near-term task. The historical
-  controlled-write MCP issue is closed as `not planned`.
+- At audit time, controlled-write MCP was not an approved near-term task. The
+  historical controlled-write MCP issue was closed as `not planned`.
 - MCP remains optional and is not required for ordinary CLI-first agent work.
 - Documentation does not present the whole system as permanently local-only;
   `local-only` appears only for explicit local/dry-run/developer-tool modes or
@@ -135,12 +135,13 @@ Exception to track:
 
 - Some historical design docs still mention controlled-write MCP as later
   optional work. Those statements are not current approval. They should be
-  interpreted through issue #190 and the current milestone: controlled-write
-  MCP is not planned unless a separate maintainer-approved issue reopens that
-  scope.
+  interpreted through issue #190 and the then-current milestone:
+  controlled-write MCP was not planned unless a separate maintainer-approved
+  issue reopened that scope. ADR 0026 later reopened only a narrow
+  draft/review/runtime MCP write scope for the v0.5.0 line.
 
-Conclusion: MCP is optional, and controlled-write MCP is not an active
-approved implementation path.
+Conclusion at audit time: MCP was optional, and controlled-write MCP was not
+an active approved implementation path for the v0.2.1 closeout.
 
 ### Local-Only Language
 
