@@ -1,6 +1,6 @@
 # TCS-Cosheaf Development Plan V10: v0.6.0 Operator Session + Review Handoff
 
-Status: proposed next accelerated line after published `v0.5.0` Operator MCP + Codex Application Layer closeout.
+Status: completed and published as the conservative `v0.6.0` Operator Session + Review Handoff release.
 
 Target:
 
@@ -875,9 +875,9 @@ Stop after this task.
 - [x] Leak scanner landed.
 - [x] Handoff bundle landed.
 - [x] Handoff export landed.
-- [ ] Workspace demo landed.
-- [ ] Public KB handoff policy landed.
-- [ ] Ecosystem smoke rows landed.
-- [ ] v0.6.0 RC prepared.
-- [ ] v0.6.0 tag/release/downstream pins closed out.
+- [x] Workspace demo landed.
+- [x] Public KB handoff policy landed.
+- [x] Ecosystem smoke rows landed.
+- [x] v0.6.0 RC prepared.
+- [x] v0.6.0 tag/release/downstream pins closed out.
 ```
