@@ -32,6 +32,7 @@ checks:
 | Research-run records spoof review/promotion authority or store unsafe data | Research-run append paths reject authority claims, unsafe paths, and secret-looking summaries; run records remain provenance only | `test_research_run_append_output_rejects_authority_claims` and `test_research_run_rejects_unsafe_paths_and_secret_summaries` |
 | Operator-session records leak secrets or private/public boundary data before handoff | Operator-session scan reports block on secrets, environment dumps, hidden reasoning, provider payloads, accepted-write attempts, authority claims, absolute private paths, and public-only private references | `test_operator_session_scan_clean_session_writes_runtime_report`, `test_operator_session_scan_detects_public_only_leaks_and_blocks_handoff`, and `test_operator_session_scan_missing_session_returns_structured_error` |
 | Operator handoff hides scanner blockers, skipped checks, or missing checks | Handoff build runs the scanner first, fails closed on blockers, preserves skipped as skipped, and records missing check kinds | `test_operator_handoff_builds_review_context_bundle`, `test_operator_handoff_fails_closed_when_scan_has_blockers`, and `test_operator_handoff_requires_finalized_session` |
+| Operator handoff export is mistaken for human review or writes outside review context | Export writes only `reviews/operator/` YAML, dry-run writes nothing, accepted targets are rejected, and blocked scanner status fails closed | `test_operator_handoff_export_dry_run_reports_target_without_writing`, `test_operator_handoff_export_writes_review_context_yaml`, `test_operator_handoff_export_rejects_accepted_write_target`, and `test_operator_handoff_export_fails_closed_when_handoff_scanner_blocked` |
 
 ## Hard Boundaries
 
@@ -77,6 +78,10 @@ checks:
   finalized sessions, scanner status, check statuses, and references, but they
   do not export review records, create human review, promote artifacts, mutate
   verifier results, or mark accepted/refuted/proved status.
+- Operator handoff export is explicit review context only. It writes under
+  `reviews/operator/`, rejects accepted KB targets, and does not create human
+  review, promote artifacts, mutate verifier results, or mark
+  accepted/refuted/proved status.
 
 ## Context-Send Matrix
 
@@ -118,6 +123,8 @@ validation, gates, source metadata, human review, or promotion checks.
 Operator handoff tests use synthetic finalized-session fixtures only. Handoff
 bundles are compact review context and are not a substitute for raw check
 logs, validation, gates, source metadata, human review, or promotion checks.
+Handoff export tests use synthetic handoff fixtures only and do not write
+accepted KB content.
 
 The optional OpenAI-compatible HTTP transport is tested with injected local
 fixtures. CI must still use fake, injected mocked, or local non-live-network

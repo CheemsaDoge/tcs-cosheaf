@@ -874,7 +874,7 @@ Stop after this task.
 - [x] MCP session recording landed.
 - [x] Leak scanner landed.
 - [x] Handoff bundle landed.
-- [ ] Handoff export landed.
+- [x] Handoff export landed.
 - [ ] Workspace demo landed.
 - [ ] Public KB handoff policy landed.
 - [ ] Ecosystem smoke rows landed.

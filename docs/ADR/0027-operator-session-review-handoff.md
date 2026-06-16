@@ -119,7 +119,7 @@ This ADR does not approve:
 - [x] Add optional MCP session recording.
 - [x] Add the operator session leak scanner.
 - [x] Add handoff bundle build/show commands.
-- [ ] Add handoff export to `reviews/operator/`.
+- [x] Add handoff export to `reviews/operator/`.
 - [ ] Add downstream workspace-template and public KB policy integration.
 - [ ] Add deterministic ecosystem smoke rows.
 - [ ] Prepare and publish a conservative `v0.6.0` release only after implementation,

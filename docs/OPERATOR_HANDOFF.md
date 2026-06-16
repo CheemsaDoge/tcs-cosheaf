@@ -43,8 +43,14 @@ The deterministic handoff ID is:
 handoff.<session-id>
 ```
 
-This runtime bundle should not be committed. Explicit review-context export to
-`reviews/operator/<handoff-id>.yaml` is a later task.
+This runtime bundle should not be committed by default. Explicit
+review-context export writes to:
+
+```text
+reviews/operator/<handoff-id>.yaml
+```
+
+That export is persisted review context only. It is not human review.
 
 ## CLI Surface
 
@@ -60,9 +66,25 @@ Show a previously built handoff:
 cosheaf operator handoff show <handoff-id> --json
 ```
 
+Preview the review-context export target without writing:
+
+```bash
+cosheaf operator handoff export --handoff <handoff-id> --dry-run --json
+```
+
+Persist explicit review-context YAML:
+
+```bash
+cosheaf operator handoff export --handoff <handoff-id> --json
+```
+
 The build command first runs the operator-session leak scanner. Blocking
 scanner findings fail closed with a structured error and prevent handoff
 creation.
+
+The export command also fails closed if the handoff bundle contains blocking
+scanner status. Non-dry-run export writes only under `reviews/operator/` and
+rejects accepted KB targets.
 
 ## Bundle Contents
 
@@ -90,9 +112,7 @@ hidden reasoning, environment dumps, API keys, or arbitrary stdout/stderr.
 
 ## Current Limitations
 
-This task does not add handoff export. A handoff can be built and shown from
-runtime storage, but it is not persisted under `reviews/operator/` yet.
-
-Handoff bundles do not change accepted promotion, human review, verifier
-results, gate behavior, provider defaults, formal-link semantics, public KB
-policy, or workspace root semantics.
+Handoff export does not create human review. It writes review-context YAML
+only. Human review, accepted promotion, verifier evidence, gate behavior,
+provider defaults, formal-link semantics, public KB policy, and workspace root
+semantics remain unchanged.

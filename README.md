@@ -14,8 +14,8 @@ post-tag release smoke, and downstream workspace/public-KB pin updates are
 complete. The `v0.5.0` line keeps CLI as the oracle while adding optional MCP
 adapter access and operator-facing demo/runbook documentation. The active
 `v0.6.0` line has added bounded operator-session records, optional MCP session
-recording, leak scanning, and runtime handoff bundles; handoff export,
-downstream smoke, and release packaging remain follow-up work.
+recording, leak scanning, runtime handoff bundles, and explicit handoff export;
+downstream smoke and release packaging remain follow-up work.
 Earlier published baselines include **v0.3.0 Checked Evidence + Research Run
 Loop** and **v0.4.0 Strategy Planner + Research Task Graph**. The `v0.1.1`
 tag remains the downstream Formal Link Layer support

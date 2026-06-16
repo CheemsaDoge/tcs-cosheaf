@@ -403,6 +403,19 @@ write accepted knowledge, or authorize promotion. Runtime plans write under
 `.cosheaf/strategy/<plan-id>/strategy.json`; explicit strategy review export
 writes only non-authoritative context under `reviews/strategy/`.
 
+Operator-session and handoff JSON output is review context only:
+
+- `cosheaf operator session start/show/append-check/append-ref/finalize/scan`
+- `cosheaf operator handoff build/show`
+- `cosheaf operator handoff export --dry-run`
+- `cosheaf operator handoff export`
+
+Session records, scan reports, and runtime handoff bundles stay under ignored
+`.cosheaf/operator-sessions/` paths. Handoff export writes only explicit
+review-context YAML under `reviews/operator/`. It does not create human review,
+does not mark verifier or gate pass, does not write accepted knowledge, and
+does not authorize promotion.
+
 ## Handoff
 
 User handoff messages should be written in Chinese. Project-facing documentation should remain in English unless a task explicitly requests otherwise.

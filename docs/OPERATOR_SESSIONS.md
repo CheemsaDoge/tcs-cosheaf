@@ -5,9 +5,8 @@ They record bounded metadata about one issue-focused session so a maintainer
 can review what happened without reading raw terminal or MCP transcripts.
 
 This document describes the model, runtime storage, CLI metadata surface,
-optional MCP tool-call recording, leak scanning, and handoff bundle generation
-landed so far. Review-context export remains a follow-up task in
-`docs/CODEX_DEVELOPMENT_PLAN_V10.md`.
+optional MCP tool-call recording, leak scanning, handoff bundle generation, and
+explicit review-context handoff export landed so far.
 
 ## Authority Boundary
 
@@ -46,13 +45,13 @@ Session records are runtime files under ignored `.cosheaf/` paths:
 They are not source-of-truth artifacts. They should not be committed unless a
 future task explicitly asks for a review-context export.
 
-Future handoff export is planned for:
+Handoff export writes explicit review-context YAML under:
 
 ```text
 reviews/operator/<handoff-id>.yaml
 ```
 
-That export will also be review context only, not human review or accepted
+That export is also review context only, not human review or accepted
 knowledge.
 
 ## Model Surface
@@ -263,6 +262,18 @@ Show a previously built bundle:
 cosheaf operator handoff show <handoff-id> --json
 ```
 
+Preview the export target without writing:
+
+```bash
+cosheaf operator handoff export --handoff <handoff-id> --dry-run --json
+```
+
+Persist explicit review-context YAML:
+
+```bash
+cosheaf operator handoff export --handoff <handoff-id> --json
+```
+
 The deterministic handoff ID is `handoff.<session-id>`, and the runtime file is
 written under:
 
@@ -283,9 +294,7 @@ results, or replace validation, gates, source metadata, or review.
 
 ## Current Limitations
 
-This task does not export `reviews/operator/` files. Handoff export is a later
-`v0.6.0` task.
-
-MCP session recording, leak scanning, and handoff bundle generation do not
-change accepted promotion, human review, verifier results, gate behavior,
-provider defaults, formal-link semantics, or public KB policy.
+Handoff export writes review-context YAML only. MCP session recording, leak
+scanning, handoff bundle generation, and handoff export do not change accepted
+promotion, human review, verifier results, gate behavior, provider defaults,
+formal-link semantics, or public KB policy.
