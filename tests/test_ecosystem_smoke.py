@@ -11,7 +11,10 @@ from cosheaf.cli import app
 from scripts.ecosystem_smoke import (
     ISSUE_ID,
     PUBLIC_ARTIFACT_ID,
+    _public_kb_operator_handoff_policy_command,
     _public_kb_strategy_plan_policy_command,
+    _run_operator_handoff_dry_run_smoke,
+    _run_operator_session_cli_smoke,
     _run_verifier_evidence_eval_smoke,
     build_ecosystem_smoke_matrix,
     build_ecosystem_smoke_plan,
@@ -195,17 +198,21 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
         "framework.checked-evidence-run-loop-eval",
         "framework.research-run-loop-eval",
         "framework.strategy-planner-eval",
+        "framework.operator-session-cli-smoke",
+        "framework.operator-handoff-dry-run-smoke",
         "framework.optional-verifier-availability",
         "framework.git-tag",
         "workspace-template.demo",
         "workspace-template.cli-agent-demo",
         "workspace-template.research-run-demo",
         "workspace-template.strategy-demo",
+        "workspace-template.operator-session-demo",
         "workspace-template.provider-fake-smoke",
         "workspace-template.verifier-evidence-demo",
         "public-kb.policy-guard",
         "public-kb.checked-evidence-policy-docs",
         "public-kb.strategy-plan-policy-docs",
+        "public-kb.operator-handoff-policy-docs",
         "public-kb.verifier-policy-self-test",
     }
     assert cases["framework.local-checkout"].repo == "tcs-cosheaf"
@@ -222,6 +229,8 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
         "strategy-planner",
         "--json",
     )
+    assert cases["framework.operator-session-cli-smoke"].repo == "tcs-cosheaf"
+    assert cases["framework.operator-handoff-dry-run-smoke"].repo == "tcs-cosheaf"
     assert cases["framework.optional-verifier-availability"].repo == "tcs-cosheaf"
     assert cases["framework.git-tag"].requires_network is True
     assert cases["framework.git-tag"].skip_reason == (
@@ -231,6 +240,9 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
         "research-run-demo"
     )
     assert cases["workspace-template.strategy-demo"].argv[-1] == "strategy-demo"
+    assert cases["workspace-template.operator-session-demo"].argv[-1] == (
+        "operator-session-demo"
+    )
     assert cases["workspace-template.provider-fake-smoke"].argv[-1] == (
         "provider-fake-smoke"
     )
@@ -240,6 +252,7 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
     assert cases["public-kb.policy-guard"].repo == "tcs-kb-public"
     assert cases["public-kb.checked-evidence-policy-docs"].repo == "tcs-kb-public"
     assert cases["public-kb.strategy-plan-policy-docs"].repo == "tcs-kb-public"
+    assert cases["public-kb.operator-handoff-policy-docs"].repo == "tcs-kb-public"
     assert cases["public-kb.verifier-policy-self-test"].repo == "tcs-kb-public"
 
 
@@ -252,7 +265,15 @@ def test_ecosystem_smoke_matrix_defaults_to_current_release_tag(
         public_kb_root=tmp_path / "tcs-kb-public",
     )
 
-    assert matrix.framework_tag == "v0.4.0"
+    assert matrix.framework_tag == "v0.5.0"
+
+
+def test_operator_session_cli_smoke_uses_temp_workspace() -> None:
+    assert _run_operator_session_cli_smoke(Path.cwd()) == 0
+
+
+def test_operator_handoff_dry_run_smoke_uses_temp_workspace() -> None:
+    assert _run_operator_handoff_dry_run_smoke(Path.cwd()) == 0
 
 
 def test_public_kb_strategy_plan_policy_docs_smoke_normalizes_wrapped_text(
@@ -289,6 +310,48 @@ def test_public_kb_strategy_plan_policy_docs_smoke_normalizes_wrapped_text(
     assert result.returncode == 0, result.stderr or result.stdout
 
 
+def test_public_kb_operator_handoff_policy_docs_smoke(tmp_path: Path) -> None:
+    docs = tmp_path / "docs"
+    scripts = tmp_path / "scripts"
+    docs.mkdir()
+    scripts.mkdir()
+    (docs / "OPERATOR_HANDOFF_POLICY.md").write_text(
+        "\n".join(
+            [
+                "# Operator Handoff Policy",
+                "",
+                "Operator handoff bundles and `reviews/operator/` exports are",
+                "public review context only.",
+                "Operator handoff material is not:",
+                "- source metadata;",
+                "Accepted public artifacts still require complete artifact-local",
+                "source metadata.",
+                "Public KB handoff records must not contain private workspace paths.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (docs / "PUBLIC_KB_POLICY_GUARD.md").write_text(
+        "The guard scans reviews/operator and review_context_only fields.\n",
+        encoding="utf-8",
+    )
+    (scripts / "check_public_kb_policy.py").write_text(
+        "raise SystemExit('operator handoff is claimed as source metadata')\n",
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        _public_kb_operator_handoff_policy_command(),
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr or result.stdout
+
+
 def test_ecosystem_smoke_matrix_report_is_structured_and_identifies_failures(
     tmp_path: Path,
 ) -> None:
@@ -316,8 +379,8 @@ def test_ecosystem_smoke_matrix_report_is_structured_and_identifies_failures(
     report = run_ecosystem_smoke_matrix(matrix, command_runner=fake_runner)
 
     assert report.passed is False
-    assert report.case_count == 17
-    assert report.pass_count == 13
+    assert report.case_count == 21
+    assert report.pass_count == 17
     assert report.fail_count == 1
     assert report.skip_count == 3
     skipped = [result for result in report.results if result.status == "skipped"]
