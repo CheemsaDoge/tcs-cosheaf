@@ -2,16 +2,14 @@
 
 TCS-Cosheaf 是一个以 Git 为持久记忆层的、带类型约束的理论计算机科学研究知识库与智能体协作框架。它把定义、命题、证明、构造、算法、归约、反例、实验、评审、议题和验证器证据保存为可审查的仓库文件，而不是只保存在聊天记录中。
 
-> 当前状态：**v0.5.0 Operator MCP + Codex Application Layer published release**。
-> 包版本为 `0.5.0`；公开 `v0.5.0` tag、GitHub release、`@v0.5.0`
-> release smoke 和 downstream pin 更新已经完成。仓库已经具备
-> Python 包脚手架、Typer CLI、Pydantic v2 模型、工作区加载、验证、门禁、上下文包、
-> 任务/编排干运行、受控草稿写入、提供商网关、托管 worker 服务、可选验证器适配器、
-> failure memory、checked counterexample evidence、research-run provenance、
-> strategy planner / task graph、可选 operator MCP surface、受控 draft/review/runtime MCP 写入、
-> operator runbook / demo 文档、可选 operator Skill 文档包和 CI。
-> 它仍不是生产就绪软件，也不提供 Web UI、默认真实托管提供商路径、自动定理证明、
-> 完整 Lean 自动形式化、自动 accepted 提升或多用户权限系统。
+> 当前状态：**v0.6.0 Operator Session + Review Handoff release candidate**。
+> 包版本记录为 `0.6.0`；公开 `v0.6.0` tag、GitHub release、post-tag
+> release smoke 和 downstream pin 更新尚未完成。最新已发布的下游基线仍是
+> `v0.5.0`。本候选版本加入 operator session、可选 MCP session recording、
+> leak scanning、handoff bundle、review-context handoff export、下游 demo/policy
+> smoke 和 ecosystem matrix 覆盖。它仍不是生产就绪软件，也不提供 Web UI、
+> 默认真实托管提供商路径、自动定理证明、完整 Lean 自动形式化、自动 accepted
+> 提升或多用户权限系统。
 
 ## 为什么需要它
 

@@ -3,6 +3,31 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.6.0 Release Candidate - 2026-06-16
+
+Issue 394 prepares the conservative `v0.6.0` Operator Session + Review Handoff
+release candidate after the operator-session model/CLI, optional MCP session
+recording, leak scanner, handoff bundle, handoff export, downstream
+workspace-template demo, public KB handoff policy, and ecosystem smoke rows
+landed.
+
+The release-candidate task updates package metadata and `cosheaf.__version__`
+to `0.6.0`, adds `docs/releases/v0.6.0.md`, and aligns README, roadmap,
+release checklist, evaluation notes, current milestone, and project state with
+the true RC boundary.
+
+At this stage the public `v0.6.0` tag is not published, no GitHub release is
+created, post-tag release smoke has not run, and downstream workspace-template
+and public KB pins remain on the latest published `v0.5.0` baseline. Those
+steps belong to the separate publication closeout task after the RC PR merges.
+
+The RC preserves the v0.6.0 authority boundary: operator sessions, MCP
+recordings, leak scans, handoff bundles, and handoff exports are review context
+only. They do not create proof, source metadata, verifier pass, gate pass,
+human review, accepted status, accepted refutation, or promotion authority.
+Skipped verifier/provider/network rows remain skipped and are not counted as
+passes.
+
 ## Ecosystem Operator Session Smoke - 2026-06-16
 
 Issue 392 adds ecosystem smoke matrix rows for the `v0.6.0` Operator Session
