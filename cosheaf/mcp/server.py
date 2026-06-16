@@ -14,9 +14,12 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any, TextIO
 
+from pydantic import ValidationError
+
 from cosheaf import __version__
 from cosheaf.agent.context_pack import ContextPackError
 from cosheaf.agent.orchestrator_planner import OrchestratorPlannerError
+from cosheaf.agent.worker_bundle_v2 import WorkerBundleV2Error
 from cosheaf.evals import (
     DEFAULT_RESEARCH_RUN_LOOP_EVAL_CASES,
     DEFAULT_STRATEGY_PLANNER_EVAL_CASES,
@@ -39,18 +42,30 @@ from cosheaf.memory import (
 from cosheaf.memory import MemorySearchError as MemorySearchServiceError
 from cosheaf.research.run import (
     ResearchRunError,
+    append_artifact_to_research_run,
+    append_command_to_research_run,
+    append_output_to_research_run,
     build_research_run_evidence_report,
+    export_research_run_review,
+    finalize_research_run,
     load_research_run,
+    start_research_run,
 )
 from cosheaf.services import (
+    BundleValidationService,
     ContextPackService,
+    ControlledWriteResult,
+    DraftWriteService,
+    DraftWriteServiceError,
     GateService,
     MemorySearchService,
     OrchestratorPlanService,
+    ServiceError,
     ValidationService,
     WorkspaceInfoResult,
     WorkspaceService,
 )
+from cosheaf.services.models import DraftArtifactWriteRequest, WorkerBundleSubmitRequest
 from cosheaf.storage.loader import IssueRecord, LoadedRecord, LoadError, load_artifacts
 from cosheaf.storage.repo import RepoContext
 from cosheaf.strategy.models import (
@@ -61,8 +76,16 @@ from cosheaf.strategy.models import (
 from cosheaf.strategy.planner import build_strategy_plan
 from cosheaf.strategy.storage import (
     attach_context_reference,
+    export_strategy_review,
     load_strategy_plan,
+    update_strategy_plan_from_run,
     write_strategy_plan,
+)
+from cosheaf.verification.counterexample_evidence import (
+    CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
+    CheckedCounterexampleEvidenceError,
+    stage_checked_counterexample_evidence,
+    validate_checked_counterexample_evidence_payload,
 )
 
 READ_ONLY_TOOL_NAMES = (
@@ -83,6 +106,24 @@ READ_ONLY_TOOL_NAMES = (
     "run_evidence_report",
     "eval_strategy_planner",
     "eval_research_run_loop",
+    "draft_artifact_create_or_update",
+    "source_note_draft_create",
+    "worker_bundle_validate",
+    "worker_bundle_stage",
+    "review_request_from_bundle",
+    "checked_counterexample_evidence_validate",
+    "checked_counterexample_evidence_stage",
+    "failure_log_add_draft",
+    "research_run_start",
+    "research_run_append_command",
+    "research_run_append_artifact",
+    "research_run_append_output",
+    "research_run_finalize",
+    "research_run_export_review_dry_run",
+    "research_run_export_review",
+    "strategy_update_from_run",
+    "strategy_export_review_dry_run",
+    "strategy_export_review",
     "orchestrator_plan",
 )
 READ_ONLY_PROMPT_NAMES = (
@@ -96,6 +137,11 @@ PRIVATE_SCOPE_REMEDIATION = (
     "Private MCP resources require an explicit private research policy mode "
     "and operator consent; the current M.3 public surface does not grant that "
     "permission."
+)
+MCP_CONTROLLED_WRITE_AUTHORITY_NOTICE = (
+    "Controlled MCP writes may create only draft, proposal, review-context, "
+    "or runtime records allowed by Cosheaf policy. They do not write accepted "
+    "knowledge, create human review, verify proofs, or promote artifacts."
 )
 
 
@@ -157,6 +203,34 @@ class ReadOnlyMcpServer:
             "run_evidence_report": self._tool_run_evidence_report,
             "eval_strategy_planner": self._tool_eval_strategy_planner,
             "eval_research_run_loop": self._tool_eval_research_run_loop,
+            "draft_artifact_create_or_update": (
+                self._tool_draft_artifact_create_or_update
+            ),
+            "source_note_draft_create": self._tool_source_note_draft_create,
+            "worker_bundle_validate": self._tool_worker_bundle_validate,
+            "worker_bundle_stage": self._tool_worker_bundle_stage,
+            "review_request_from_bundle": self._tool_review_request_from_bundle,
+            "checked_counterexample_evidence_validate": (
+                self._tool_checked_counterexample_evidence_validate
+            ),
+            "checked_counterexample_evidence_stage": (
+                self._tool_checked_counterexample_evidence_stage
+            ),
+            "failure_log_add_draft": self._tool_failure_log_add_draft,
+            "research_run_start": self._tool_research_run_start,
+            "research_run_append_command": self._tool_research_run_append_command,
+            "research_run_append_artifact": self._tool_research_run_append_artifact,
+            "research_run_append_output": self._tool_research_run_append_output,
+            "research_run_finalize": self._tool_research_run_finalize,
+            "research_run_export_review_dry_run": (
+                self._tool_research_run_export_review_dry_run
+            ),
+            "research_run_export_review": self._tool_research_run_export_review,
+            "strategy_update_from_run": self._tool_strategy_update_from_run,
+            "strategy_export_review_dry_run": (
+                self._tool_strategy_export_review_dry_run
+            ),
+            "strategy_export_review": self._tool_strategy_export_review,
             "orchestrator_plan": self._tool_orchestrator_plan,
         }
 
@@ -605,6 +679,359 @@ class ReadOnlyMcpServer:
         payload["accepted_write_performed"] = False
         return payload
 
+    def _tool_draft_artifact_create_or_update(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        request = dict(_required_mapping(arguments, "request"))
+        dry_run = _optional_bool(arguments.get("dry_run"), field_name="dry_run")
+        if str(request.get("status", "")).strip() == "accepted":
+            raise McpServerError(
+                "accepted_write_forbidden",
+                "draft artifact MCP writes cannot target accepted knowledge",
+                remediation=(
+                    "Use draft status and the explicit promotion workflow after "
+                    "review and gates."
+                ),
+            )
+        try:
+            parsed = DraftArtifactWriteRequest.model_validate(request)
+            result = DraftWriteService(self.context).write_artifact_request(
+                parsed,
+                dry_run=dry_run,
+            )
+        except (DraftWriteServiceError, ValidationError) as exc:
+            raise _mcp_error_from_exception(
+                exc,
+                default_code="draft_write_failed",
+                default_remediation="Fix the draft artifact request and retry.",
+            ) from exc
+        return _controlled_write_payload(result)
+
+    def _tool_source_note_draft_create(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        request = dict(_required_mapping(arguments, "request"))
+        dry_run = _optional_bool(arguments.get("dry_run"), field_name="dry_run")
+        try:
+            result = DraftWriteService(self.context).write_source_note(
+                request,
+                dry_run=dry_run,
+            )
+        except DraftWriteServiceError as exc:
+            raise _mcp_error_from_exception(
+                exc,
+                default_code="source_note_write_failed",
+                default_remediation="Fix the source-note request and retry.",
+            ) from exc
+        return _controlled_write_payload(result)
+
+    def _tool_worker_bundle_validate(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        bundle_path = _required_string(arguments, "bundle_path")
+        try:
+            bundle = BundleValidationService(self.context).validate(bundle_path)
+        except WorkerBundleV2Error as exc:
+            raise McpServerError(
+                "worker_bundle_validate_failed",
+                str(exc),
+                remediation=(
+                    "Fix the WorkerBundle v2 manifest and keep outputs "
+                    "review-only."
+                ),
+            ) from exc
+        return {
+            "schema_version": 1,
+            "kind": "worker_bundle_validation",
+            "bundle_id": bundle.bundle_id,
+            "task_id": bundle.task_id,
+            "accepted_write_performed": False,
+            "authority_notice": MCP_CONTROLLED_WRITE_AUTHORITY_NOTICE,
+            "bundle": bundle.to_dict(),
+        }
+
+    def _tool_worker_bundle_stage(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        payload = {
+            "task_id": _required_string(arguments, "task_id"),
+            "bundle_path": _required_string(arguments, "bundle_path"),
+            "complete_task": _optional_bool(
+                arguments.get("complete_task"),
+                field_name="complete_task",
+            ),
+        }
+        dry_run = _optional_bool(arguments.get("dry_run"), field_name="dry_run")
+        try:
+            request = WorkerBundleSubmitRequest.model_validate(payload)
+            result = BundleValidationService(self.context).submit(
+                request,
+                dry_run=dry_run,
+            )
+        except (ServiceError, ValidationError) as exc:
+            raise _mcp_error_from_exception(
+                exc,
+                default_code="bundle_submit_failed",
+                default_remediation="Fix the WorkerBundle stage request and retry.",
+            ) from exc
+        response = result.to_dict()
+        response["accepted_write_performed"] = False
+        response["authority_notice"] = MCP_CONTROLLED_WRITE_AUTHORITY_NOTICE
+        response["dry_run"] = dry_run
+        return response
+
+    def _tool_review_request_from_bundle(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        bundle_path = _required_string(arguments, "bundle_path")
+        dry_run = _optional_bool(arguments.get("dry_run"), field_name="dry_run")
+        try:
+            result = DraftWriteService(
+                self.context
+            ).write_review_request_from_bundle(
+                bundle_path,
+                dry_run=dry_run,
+            )
+        except DraftWriteServiceError as exc:
+            raise _mcp_error_from_exception(
+                exc,
+                default_code="review_request_failed",
+                default_remediation="Fix the WorkerBundle before review staging.",
+            ) from exc
+        write = result.write_result
+        payload = _controlled_write_payload(write)
+        payload.update(
+            {
+                "bundle_id": result.bundle.bundle_id,
+                "task_id": result.bundle.task_id,
+                "review_id": write.record_id,
+                "generated_request": dict(result.request),
+            }
+        )
+        return payload
+
+    def _tool_checked_counterexample_evidence_validate(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        evidence = dict(_required_mapping(arguments, "evidence"))
+        try:
+            record = validate_checked_counterexample_evidence_payload(evidence)
+        except (CheckedCounterexampleEvidenceError, ValidationError, ValueError) as exc:
+            raise _mcp_checked_evidence_error(exc) from exc
+        return {
+            "schema_version": 1,
+            "kind": "checked_counterexample_evidence_validation",
+            "valid": True,
+            "accepted_write_performed": False,
+            "authority_notice": CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
+            "evidence": record.to_dict(),
+        }
+
+    def _tool_checked_counterexample_evidence_stage(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        evidence = dict(_required_mapping(arguments, "evidence"))
+        dry_run = _optional_bool(arguments.get("dry_run"), field_name="dry_run")
+        try:
+            result = stage_checked_counterexample_evidence(
+                self.context,
+                evidence,
+                dry_run=dry_run,
+            )
+        except (CheckedCounterexampleEvidenceError, ValidationError, ValueError) as exc:
+            raise _mcp_checked_evidence_error(exc) from exc
+        return result.to_dict()
+
+    def _tool_failure_log_add_draft(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        artifact_id = _required_string(arguments, "artifact_id")
+        entry = dict(_required_mapping(arguments, "entry"))
+        dry_run = _optional_bool(arguments.get("dry_run"), field_name="dry_run")
+        try:
+            result = DraftWriteService(self.context).append_failure_log_entry(
+                artifact_id,
+                entry,
+                dry_run=dry_run,
+            )
+        except DraftWriteServiceError as exc:
+            raise _mcp_error_from_exception(
+                exc,
+                default_code="draft_write_failed",
+                default_remediation="Fix the failure-log entry and target artifact.",
+            ) from exc
+        return _controlled_write_payload(result)
+
+    def _tool_research_run_start(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        try:
+            result = start_research_run(
+                self.context,
+                issue_id=_required_string(arguments, "issue_id"),
+                operator_kind=_required_string(arguments, "operator_kind"),
+                operator_label=_required_string(arguments, "operator_label"),
+                run_id=_optional_string(arguments.get("run_id"), field_name="run_id"),
+            )
+        except (ResearchRunError, ValueError) as exc:
+            raise _mcp_research_run_error(exc) from exc
+        return result.to_dict()
+
+    def _tool_research_run_append_command(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        run_id = _required_string(arguments, "run_id")
+        command = dict(_required_mapping(arguments, "command"))
+        try:
+            result = append_command_to_research_run(
+                self.context,
+                run_id=run_id,
+                payload=command,
+            )
+        except (ResearchRunError, ValueError) as exc:
+            raise _mcp_research_run_error(exc) from exc
+        return result.to_dict()
+
+    def _tool_research_run_append_artifact(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        try:
+            result = append_artifact_to_research_run(
+                self.context,
+                run_id=_required_string(arguments, "run_id"),
+                artifact_id=_required_string(arguments, "artifact_id"),
+                mode=_required_string(arguments, "mode"),
+            )
+        except (ResearchRunError, ValueError) as exc:
+            raise _mcp_research_run_error(exc) from exc
+        return result.to_dict()
+
+    def _tool_research_run_append_output(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        run_id = _required_string(arguments, "run_id")
+        output = dict(_required_mapping(arguments, "output"))
+        try:
+            result = append_output_to_research_run(
+                self.context,
+                run_id=run_id,
+                payload=output,
+            )
+        except (ResearchRunError, ValueError) as exc:
+            raise _mcp_research_run_error(exc) from exc
+        return result.to_dict()
+
+    def _tool_research_run_finalize(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        try:
+            result = finalize_research_run(
+                self.context,
+                run_id=_required_string(arguments, "run_id"),
+                status=_required_string(arguments, "status"),
+                stop_reason=_required_string(arguments, "stop_reason"),
+            )
+        except (ResearchRunError, ValueError) as exc:
+            raise _mcp_research_run_error(exc) from exc
+        return result.to_dict()
+
+    def _tool_research_run_export_review_dry_run(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        return self._research_run_export_review(arguments, dry_run=True)
+
+    def _tool_research_run_export_review(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        return self._research_run_export_review(arguments, dry_run=False)
+
+    def _research_run_export_review(
+        self,
+        arguments: Mapping[str, Any],
+        *,
+        dry_run: bool,
+    ) -> dict[str, Any]:
+        try:
+            result = export_research_run_review(
+                self.context,
+                run_id=_required_string(arguments, "run_id"),
+                dry_run=dry_run,
+            )
+        except (ResearchRunError, ValueError) as exc:
+            raise _mcp_research_run_error(exc) from exc
+        return result.to_dict()
+
+    def _tool_strategy_update_from_run(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        try:
+            result = update_strategy_plan_from_run(
+                self.context,
+                plan_id=_required_string(arguments, "plan_id"),
+                run_id=_required_string(arguments, "run_id"),
+            )
+        except (StrategyError, ValueError) as exc:
+            raise McpServerError(
+                _strategy_error_code(exc),
+                str(exc),
+                remediation=_strategy_error_remediation(exc),
+            ) from exc
+        payload = result.to_dict()
+        payload["plan"] = _public_strategy_plan(self.context, result.plan).to_dict()
+        payload["public_only"] = True
+        return payload
+
+    def _tool_strategy_export_review_dry_run(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        return self._strategy_export_review(arguments, dry_run=True)
+
+    def _tool_strategy_export_review(
+        self,
+        arguments: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        return self._strategy_export_review(arguments, dry_run=False)
+
+    def _strategy_export_review(
+        self,
+        arguments: Mapping[str, Any],
+        *,
+        dry_run: bool,
+    ) -> dict[str, Any]:
+        try:
+            result = export_strategy_review(
+                self.context,
+                plan_id=_required_string(arguments, "plan_id"),
+                dry_run=dry_run,
+            )
+        except (StrategyError, ValueError) as exc:
+            raise McpServerError(
+                _strategy_error_code(exc),
+                str(exc),
+                remediation=_strategy_error_remediation(exc),
+            ) from exc
+        payload = result.to_dict()
+        payload["plan"] = _public_strategy_plan(self.context, result.plan).to_dict()
+        payload["public_only"] = True
+        return payload
+
     def _tool_orchestrator_plan(self, arguments: Mapping[str, Any]) -> dict[str, Any]:
         issue_id = _required_string(arguments, "issue_id")
         try:
@@ -722,6 +1149,56 @@ def tool_definitions() -> list[dict[str, Any]]:
         "run_evidence_report": "Return read-only evidence counts for a run.",
         "eval_strategy_planner": "Run deterministic strategy-planner eval smoke.",
         "eval_research_run_loop": "Run deterministic research-run loop eval smoke.",
+        "draft_artifact_create_or_update": (
+            "Create or preview one controlled draft artifact write."
+        ),
+        "source_note_draft_create": (
+            "Create or preview one draft source-note record."
+        ),
+        "worker_bundle_validate": (
+            "Validate one WorkerBundle v2 manifest for review."
+        ),
+        "worker_bundle_stage": (
+            "Stage a WorkerBundle v2 manifest for review without promotion."
+        ),
+        "review_request_from_bundle": (
+            "Create or preview a draft review request from a WorkerBundle."
+        ),
+        "checked_counterexample_evidence_validate": (
+            "Validate checked counterexample evidence without writing."
+        ),
+        "checked_counterexample_evidence_stage": (
+            "Stage or preview checked counterexample evidence for review."
+        ),
+        "failure_log_add_draft": (
+            "Append or preview one failure-log entry on a draft artifact."
+        ),
+        "research_run_start": "Start one repository-local research-run record.",
+        "research_run_append_command": (
+            "Append one command provenance record to a research run."
+        ),
+        "research_run_append_artifact": (
+            "Append one artifact read/touched marker to a research run."
+        ),
+        "research_run_append_output": (
+            "Append one output/reference record to a research run."
+        ),
+        "research_run_finalize": "Finalize one repository-local research run.",
+        "research_run_export_review_dry_run": (
+            "Preview a research-run review export without writing."
+        ),
+        "research_run_export_review": (
+            "Export one research run as non-authoritative review context."
+        ),
+        "strategy_update_from_run": (
+            "Update a runtime strategy plan from research-run provenance."
+        ),
+        "strategy_export_review_dry_run": (
+            "Preview a strategy-plan review export without writing."
+        ),
+        "strategy_export_review": (
+            "Export one strategy plan as non-authoritative review context."
+        ),
         "orchestrator_plan": "Create a deterministic plan without executing workers.",
     }
     schemas: dict[str, dict[str, Any]] = {
@@ -824,6 +1301,157 @@ def tool_definitions() -> list[dict[str, Any]]:
         "eval_research_run_loop": {
             "type": "object",
             "properties": {"cases": {"type": "string"}},
+            "additionalProperties": False,
+        },
+        "draft_artifact_create_or_update": {
+            "type": "object",
+            "properties": {
+                "request": {"type": "object"},
+                "dry_run": {"type": "boolean"},
+            },
+            "required": ["request"],
+            "additionalProperties": False,
+        },
+        "source_note_draft_create": {
+            "type": "object",
+            "properties": {
+                "request": {"type": "object"},
+                "dry_run": {"type": "boolean"},
+            },
+            "required": ["request"],
+            "additionalProperties": False,
+        },
+        "worker_bundle_validate": {
+            "type": "object",
+            "properties": {"bundle_path": {"type": "string"}},
+            "required": ["bundle_path"],
+            "additionalProperties": False,
+        },
+        "worker_bundle_stage": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string"},
+                "bundle_path": {"type": "string"},
+                "complete_task": {"type": "boolean"},
+                "dry_run": {"type": "boolean"},
+            },
+            "required": ["task_id", "bundle_path"],
+            "additionalProperties": False,
+        },
+        "review_request_from_bundle": {
+            "type": "object",
+            "properties": {
+                "bundle_path": {"type": "string"},
+                "dry_run": {"type": "boolean"},
+            },
+            "required": ["bundle_path"],
+            "additionalProperties": False,
+        },
+        "checked_counterexample_evidence_validate": {
+            "type": "object",
+            "properties": {"evidence": {"type": "object"}},
+            "required": ["evidence"],
+            "additionalProperties": False,
+        },
+        "checked_counterexample_evidence_stage": {
+            "type": "object",
+            "properties": {
+                "evidence": {"type": "object"},
+                "dry_run": {"type": "boolean"},
+            },
+            "required": ["evidence"],
+            "additionalProperties": False,
+        },
+        "failure_log_add_draft": {
+            "type": "object",
+            "properties": {
+                "artifact_id": {"type": "string"},
+                "entry": {"type": "object"},
+                "dry_run": {"type": "boolean"},
+            },
+            "required": ["artifact_id", "entry"],
+            "additionalProperties": False,
+        },
+        "research_run_start": {
+            "type": "object",
+            "properties": {
+                "issue_id": {"type": "string"},
+                "operator_kind": {"type": "string"},
+                "operator_label": {"type": "string"},
+                "run_id": {"type": "string"},
+            },
+            "required": ["issue_id", "operator_kind", "operator_label"],
+            "additionalProperties": False,
+        },
+        "research_run_append_command": {
+            "type": "object",
+            "properties": {
+                "run_id": {"type": "string"},
+                "command": {"type": "object"},
+            },
+            "required": ["run_id", "command"],
+            "additionalProperties": False,
+        },
+        "research_run_append_artifact": {
+            "type": "object",
+            "properties": {
+                "run_id": {"type": "string"},
+                "artifact_id": {"type": "string"},
+                "mode": {"type": "string"},
+            },
+            "required": ["run_id", "artifact_id", "mode"],
+            "additionalProperties": False,
+        },
+        "research_run_append_output": {
+            "type": "object",
+            "properties": {
+                "run_id": {"type": "string"},
+                "output": {"type": "object"},
+            },
+            "required": ["run_id", "output"],
+            "additionalProperties": False,
+        },
+        "research_run_finalize": {
+            "type": "object",
+            "properties": {
+                "run_id": {"type": "string"},
+                "status": {"type": "string"},
+                "stop_reason": {"type": "string"},
+            },
+            "required": ["run_id", "status", "stop_reason"],
+            "additionalProperties": False,
+        },
+        "research_run_export_review_dry_run": {
+            "type": "object",
+            "properties": {"run_id": {"type": "string"}},
+            "required": ["run_id"],
+            "additionalProperties": False,
+        },
+        "research_run_export_review": {
+            "type": "object",
+            "properties": {"run_id": {"type": "string"}},
+            "required": ["run_id"],
+            "additionalProperties": False,
+        },
+        "strategy_update_from_run": {
+            "type": "object",
+            "properties": {
+                "plan_id": {"type": "string"},
+                "run_id": {"type": "string"},
+            },
+            "required": ["plan_id", "run_id"],
+            "additionalProperties": False,
+        },
+        "strategy_export_review_dry_run": {
+            "type": "object",
+            "properties": {"plan_id": {"type": "string"}},
+            "required": ["plan_id"],
+            "additionalProperties": False,
+        },
+        "strategy_export_review": {
+            "type": "object",
+            "properties": {"plan_id": {"type": "string"}},
+            "required": ["plan_id"],
             "additionalProperties": False,
         },
         "orchestrator_plan": {
@@ -1339,6 +1967,109 @@ def _repo_relative_or_string(context: RepoContext, path: Path) -> str:
         return str(path)
 
 
+def _controlled_write_payload(result: ControlledWriteResult) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "kind": result.kind,
+        "path": result.relative_path.as_posix(),
+        "written_paths": [path.as_posix() for path in result.written_paths],
+        "dry_run": result.dry_run,
+        "accepted_write_performed": result.accepted_write_performed,
+        "record_id": result.record_id,
+        "authority_notice": MCP_CONTROLLED_WRITE_AUTHORITY_NOTICE,
+    }
+
+
+def _mcp_error_from_exception(
+    exc: BaseException,
+    *,
+    default_code: str,
+    default_remediation: str,
+) -> McpServerError:
+    if isinstance(exc, ServiceError):
+        return McpServerError(
+            exc.code,
+            str(exc),
+            remediation=exc.remediation,
+            blocking=exc.blocking,
+            details=exc.details,
+        )
+    if isinstance(exc, ValidationError):
+        return McpServerError(
+            default_code,
+            _pydantic_error_message(exc),
+            remediation=default_remediation,
+        )
+    return McpServerError(
+        default_code,
+        str(exc),
+        remediation=default_remediation,
+    )
+
+
+def _mcp_checked_evidence_error(exc: BaseException) -> McpServerError:
+    if isinstance(exc, CheckedCounterexampleEvidenceError):
+        return McpServerError(
+            exc.code,
+            str(exc),
+            remediation=exc.remediation,
+            details=exc.details,
+        )
+    if isinstance(exc, ValidationError):
+        return McpServerError(
+            "checked_evidence_validation_failed",
+            _pydantic_error_message(exc),
+            remediation=(
+                "Fix the checked counterexample evidence fields and retry. "
+                "Checked evidence is review evidence only."
+            ),
+        )
+    return McpServerError(
+        "checked_evidence_validation_failed",
+        str(exc),
+        remediation=(
+            "Fix the checked counterexample evidence fields and retry. "
+            "Checked evidence is review evidence only."
+        ),
+    )
+
+
+def _mcp_research_run_error(exc: BaseException) -> McpServerError:
+    if isinstance(exc, ResearchRunError):
+        return McpServerError(
+            exc.code,
+            str(exc),
+            remediation=exc.remediation,
+            details=exc.details,
+        )
+    if isinstance(exc, ValidationError):
+        return McpServerError(
+            "research_run_validation_failed",
+            _pydantic_error_message(exc),
+            remediation=(
+                "Fix the research-run payload and retry. "
+                "Research runs are provenance only."
+            ),
+        )
+    return McpServerError(
+        "research_run_validation_failed",
+        str(exc),
+        remediation=(
+            "Fix the research-run payload and retry. "
+            "Research runs are provenance only."
+        ),
+    )
+
+
+def _pydantic_error_message(exc: ValidationError) -> str:
+    messages = []
+    for error in exc.errors():
+        loc = ".".join(str(part) for part in error.get("loc", ()))
+        message = str(error.get("msg", "invalid value"))
+        messages.append(f"{loc}: {message}" if loc else message)
+    return "; ".join(messages) if messages else str(exc)
+
+
 def _required_string(mapping: Mapping[str, Any], key: str) -> str:
     value = mapping.get(key)
     if not isinstance(value, str) or not value.strip():
@@ -1346,8 +2077,36 @@ def _required_string(mapping: Mapping[str, Any], key: str) -> str:
             "invalid_arguments",
             f"{key} must be a non-empty string",
             remediation="Pass the required string argument.",
-        )
+    )
     return value.strip()
+
+
+def _required_mapping(mapping: Mapping[str, Any], key: str) -> Mapping[str, Any]:
+    value = mapping.get(key)
+    if not isinstance(value, Mapping):
+        raise McpServerError(
+            "invalid_arguments",
+            f"{key} must be an object",
+            remediation="Pass the required JSON object argument.",
+        )
+    return value
+
+
+def _optional_bool(
+    value: Any,
+    *,
+    field_name: str,
+    default: bool = False,
+) -> bool:
+    if value is None:
+        return default
+    if not isinstance(value, bool):
+        raise McpServerError(
+            "invalid_arguments",
+            f"{field_name} must be a boolean when provided",
+            remediation="Pass true/false or omit the argument.",
+        )
+    return value
 
 
 def _optional_string(value: Any, *, field_name: str) -> str | None:

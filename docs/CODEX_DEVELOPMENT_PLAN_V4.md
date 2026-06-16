@@ -38,8 +38,9 @@ At the start of this plan:
 - Provider MCP tools are not implemented.
 - MCP is optional adapter work and is not required for ordinary CLI-first
   agent work.
-- Controlled-write MCP is not planned unless a separate maintainer-approved
-  issue explicitly reopens that scope.
+- At this v0.2.2 planning point, controlled-write MCP was not planned unless a
+  separate maintainer-approved issue explicitly reopened that scope. The later
+  V9/ADR 0026 line reopened a narrow draft/review/runtime MCP write scope.
 
 ## Non-Negotiable Invariants
 
@@ -86,8 +87,9 @@ MCP:
 
 - MCP is optional and not a `v0.2.2` blocker.
 - Read-only MCP may be maintained as compatibility adapter work.
-- Controlled-write MCP is not planned unless a separate approved issue
-  explicitly reopens it.
+- At this v0.2.2 planning point, controlled-write MCP was not planned unless a
+  separate approved issue explicitly reopened it. Later V9 work reopened only
+  a narrow draft/review/runtime controlled-write scope.
 - MCP must not expose arbitrary shell, direct promotion, accepted writes,
   provider real-run, secrets, or environment dumps.
 

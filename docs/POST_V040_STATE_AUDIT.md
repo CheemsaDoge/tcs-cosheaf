@@ -153,12 +153,14 @@ Current MCP surface:
   - `context_show`
   - `orchestrator_plan`
 
-Gap for V9:
+Gap for V9 at kickoff:
 
-The current MCP surface is a minimal read-only stdio layer. It does not yet
-cover the V9 read-only set for PR checklist gate, memory cards, strategy
-commands, research-run evidence, or eval smoke. It also does not implement V9
-controlled-write MCP tools.
+At the kickoff audit, the MCP surface was a minimal read-only stdio layer. It
+did not yet cover the V9 read-only set for PR checklist gate, memory cards,
+strategy commands, research-run evidence, or eval smoke, and it did not
+implement V9 controlled-write MCP tools. Those gaps are implementation-line
+status, not permanent project limits; newer `PROJECT_STATE` entries supersede
+this audit snapshot.
 
 The current `cosheaf mcp list-tools` command emits deterministic text, not
 JSON. V9 should provide structured tool responses and stable error codes for

@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import pytest
 import yaml  # type: ignore[import-untyped]
 from typer.testing import CliRunner
 
@@ -17,8 +18,32 @@ from cosheaf.mcp.server import (
 )
 from cosheaf.research.run import start_research_run
 from cosheaf.storage.repo import RepoContext
+from cosheaf.verification.counterexample_evidence import (
+    CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
+)
 
 runner = CliRunner()
+
+CONTROLLED_TOOL_NAMES = [
+    "draft_artifact_create_or_update",
+    "source_note_draft_create",
+    "worker_bundle_validate",
+    "worker_bundle_stage",
+    "review_request_from_bundle",
+    "checked_counterexample_evidence_validate",
+    "checked_counterexample_evidence_stage",
+    "failure_log_add_draft",
+    "research_run_start",
+    "research_run_append_command",
+    "research_run_append_artifact",
+    "research_run_append_output",
+    "research_run_finalize",
+    "research_run_export_review_dry_run",
+    "research_run_export_review",
+    "strategy_update_from_run",
+    "strategy_export_review_dry_run",
+    "strategy_export_review",
+]
 
 
 def _write_yaml(repo_root: Path, relative_path: str, data: dict[str, Any]) -> None:
@@ -206,6 +231,180 @@ def _start_research_run_fixture(context: RepoContext) -> str:
     return result.record.run_id
 
 
+def _draft_artifact_request(**overrides: Any) -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "artifact_id": "claim.fixture.mcp-draft",
+        "artifact_type": "claim",
+        "title": "MCP draft claim",
+        "domain": ["testing"],
+        "status": "draft",
+        "statement": "A controlled MCP draft claim.",
+        "authors": ["tester"],
+        "tags": ["mcp"],
+        "depends_on": ["claim.fixture.mcp-public"],
+        "supersedes": [],
+        "target_surface": "draft",
+    }
+    data.update(overrides)
+    return data
+
+
+def _source_note_request(**overrides: Any) -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "source_id": "source.fixture.mcp",
+        "kind": "paper",
+        "title": "MCP Source Note",
+        "authors": ["A. Maintainer"],
+        "year": 2026,
+        "notes": "Controlled source-note fixture.",
+    }
+    data.update(overrides)
+    return data
+
+
+def _worker_bundle_data(**overrides: Any) -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "bundle_id": "bundle.issue.fixture.mcp.reasoner.0001",
+        "task_id": "task.issue.fixture.mcp.reasoner",
+        "worker_role": "reasoner",
+        "created_at": "2026-06-16T08:00:00Z",
+        "summary": "Drafted one reviewable claim for MCP tests.",
+        "used_artifacts": ["claim.fixture.mcp-public"],
+        "used_sources": ["sources/notes/source.fixture.mcp.yaml"],
+        "claims": ["The MCP fixture claim remains draft until review."],
+        "proposed_artifacts": [
+            {
+                "path": "kb/private/draft/claims/claim.fixture.bundle-output.yaml",
+                "summary": "Draft claim proposed by the worker bundle.",
+            }
+        ],
+        "assumptions": ["Fixture assumption."],
+        "uncertainty": ["No human review was performed."],
+        "verification_requests": ["Run validation and gate before review."],
+        "failed_attempts": ["A direct proof attempt did not close the claim."],
+        "counterexamples": ["Candidate remains unchecked."],
+        "counterexample_candidates": [
+            {
+                "candidate_id": "candidate.fixture.mcp.0001",
+                "target_claim": "claim.fixture.mcp-private",
+                "construction_summary": "A tiny unchecked candidate.",
+                "evidence_paths": [".cosheaf/evidence/candidate.json"],
+                "verifier_request_ids": ["verifier.request.fixture.mcp.0001"],
+                "status": "proposed",
+                "limitations": "Not checked by a verifier or reviewer.",
+            }
+        ],
+        "failures_or_counterexamples": ["No machine proof was performed."],
+        "dependency_questions": ["Should another definition be cited?"],
+        "risk_flags": ["needs_human_review"],
+        "next_steps": ["Request human review before promotion."],
+        "confidence": "medium",
+    }
+    data.update(overrides)
+    return data
+
+
+def _write_worker_bundle(
+    repo_root: Path,
+    *,
+    relative_path: str = "outputs/bundle.yaml",
+    **overrides: Any,
+) -> str:
+    _write_yaml(repo_root, relative_path, _worker_bundle_data(**overrides))
+    return relative_path
+
+
+def _checked_evidence_data(**overrides: Any) -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "schema_version": 1,
+        "evidence_id": (
+            "checked-counterexample.claim.fixture.mcp.candidate.0001.habc123"
+        ),
+        "target_artifact_id": "claim.fixture.mcp-private",
+        "candidate_id": "candidate.fixture.mcp.0001",
+        "candidate_source": "worker_bundle",
+        "check_method": "verifier_result",
+        "checked_result": "checked_refutes",
+        "verifier_evidence_ids": ["verifier-evidence.claim.fixture.mcp.habc123"],
+        "review_record_paths": [],
+        "evidence_paths": [".cosheaf/evidence/candidate-check.json"],
+        "created_at": "2026-06-16T08:00:00Z",
+        "checker": "mcp-test-checker",
+        "limitations": [
+            "Checked counterexample evidence is evidence for review only.",
+            CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
+        ],
+    }
+    data.update(overrides)
+    return data
+
+
+def _failure_log_entry(**overrides: Any) -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "failure_id": "failure.fixture.mcp.0001",
+        "attempted_at": "2026-06-16T08:00:00Z",
+        "recorded_by": "mcp-test",
+        "origin": "agent",
+        "attempt_kind": "proof_attempt",
+        "target": "claim.fixture.mcp-private",
+        "direction": "Try a direct proof.",
+        "summary": "The direct proof attempt failed.",
+        "failed_because": "The fixture needs a smaller lemma.",
+        "evidence_paths": [],
+        "related_verifier_results": [],
+        "related_counterexample_candidates": [],
+        "next_possible_directions": ["Try a smaller lemma."],
+        "status": "open",
+        "limitations": "Failure memory only; not proof or review evidence.",
+    }
+    data.update(overrides)
+    return data
+
+
+def _command_record(**overrides: Any) -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "argv": ["python", "-m", "pytest"],
+        "cwd": ".",
+        "started_at": "2026-06-16T08:01:00Z",
+        "ended_at": "2026-06-16T08:02:00Z",
+        "exit_code": 0,
+        "status": "completed",
+    }
+    data.update(overrides)
+    return data
+
+
+def _output_ref(**overrides: Any) -> dict[str, Any]:
+    data: dict[str, Any] = {
+        "kind": "controlled_write",
+        "path": "kb/private/draft/claims/claim.fixture.mcp-draft.yaml",
+        "identifier": "claim.fixture.mcp-draft",
+        "status": "completed",
+        "summary": "controlled draft artifact write",
+    }
+    data.update(overrides)
+    return data
+
+
+def _tool_payload(response: dict[str, Any]) -> dict[str, Any]:
+    assert "error" not in response
+    result = response["result"]
+    assert isinstance(result, dict)
+    assert result["isError"] is False
+    payload = result["structuredContent"]
+    assert isinstance(payload, dict)
+    assert payload["accepted_write_performed"] is False
+    return payload
+
+
+def _tool_error_code(response: dict[str, Any]) -> str:
+    if "error" in response:
+        return str(response["error"]["data"]["code"])
+    result = response["result"]
+    assert result["isError"] is True
+    return str(result["structuredContent"]["code"])
+
+
 def _request(method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     return {"jsonrpc": "2.0", "id": 1, "method": method, "params": params or {}}
 
@@ -267,6 +466,408 @@ def test_mcp_tools_list_exposes_operator_readonly_core(tmp_path: Path) -> None:
     assert "promote_artifact" not in tool_names
     assert "mark_human_reviewed" not in tool_names
     assert "arbitrary_shell" not in tool_names
+
+
+def test_mcp_tools_list_exposes_controlled_write_core(tmp_path: Path) -> None:
+    server = ReadOnlyMcpServer(_fixture_repo(tmp_path))
+
+    response = server.handle(_request("tools/list"))
+
+    tool_names = [tool["name"] for tool in response["result"]["tools"]]
+    for name in CONTROLLED_TOOL_NAMES:
+        assert name in tool_names
+    assert "write_accepted" not in tool_names
+    assert "promote_artifact" not in tool_names
+    assert "mark_human_reviewed" not in tool_names
+    assert "run_hosted_provider_by_default" not in tool_names
+    assert "arbitrary_shell" not in tool_names
+
+
+def test_mcp_controlled_write_tools_wrap_safe_services(tmp_path: Path) -> None:
+    context = _fixture_repo(tmp_path)
+    server = ReadOnlyMcpServer(context)
+    bundle_path = _write_worker_bundle(tmp_path)
+
+    draft_dry = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "draft_artifact_create_or_update",
+                "arguments": {"request": _draft_artifact_request(), "dry_run": True},
+            },
+        )
+    )
+    assert _tool_payload(draft_dry)["dry_run"] is True
+    assert not (
+        tmp_path / "kb/private/draft/claims/claim.fixture.mcp-draft.yaml"
+    ).exists()
+
+    draft_write = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "draft_artifact_create_or_update",
+                "arguments": {"request": _draft_artifact_request()},
+            },
+        )
+    )
+    draft_payload = _tool_payload(draft_write)
+    assert draft_payload["kind"] == "draft_artifact"
+    assert draft_payload["written_paths"] == [
+        "kb/private/draft/claims/claim.fixture.mcp-draft.yaml"
+    ]
+
+    source_write = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "source_note_draft_create",
+                "arguments": {"request": _source_note_request()},
+            },
+        )
+    )
+    source_payload = _tool_payload(source_write)
+    assert source_payload["kind"] == "source_note"
+    assert source_payload["path"] == "sources/notes/source.fixture.mcp.yaml"
+
+    bundle_validate = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "worker_bundle_validate",
+                "arguments": {"bundle_path": bundle_path},
+            },
+        )
+    )
+    assert _tool_payload(bundle_validate)["bundle_id"] == (
+        "bundle.issue.fixture.mcp.reasoner.0001"
+    )
+
+    bundle_stage = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "worker_bundle_stage",
+                "arguments": {
+                    "task_id": "task.issue.fixture.mcp.reasoner",
+                    "bundle_path": bundle_path,
+                    "dry_run": True,
+                },
+            },
+        )
+    )
+    assert _tool_payload(bundle_stage)["accepted_for_review"] is True
+
+    review_request = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "review_request_from_bundle",
+                "arguments": {"bundle_path": bundle_path},
+            },
+        )
+    )
+    review_payload = _tool_payload(review_request)
+    assert review_payload["kind"] == "review_request"
+    assert review_payload["written_paths"] == [
+        "reviews/requests/review.request.bundle.issue.fixture.mcp.reasoner.0001.yaml"
+    ]
+
+    checked_validate = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "checked_counterexample_evidence_validate",
+                "arguments": {"evidence": _checked_evidence_data()},
+            },
+        )
+    )
+    assert _tool_payload(checked_validate)["valid"] is True
+
+    checked_stage = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "checked_counterexample_evidence_stage",
+                "arguments": {"evidence": _checked_evidence_data(), "dry_run": True},
+            },
+        )
+    )
+    assert _tool_payload(checked_stage)["dry_run"] is True
+
+    failure_write = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "failure_log_add_draft",
+                "arguments": {
+                    "artifact_id": "claim.fixture.mcp-private",
+                    "entry": _failure_log_entry(),
+                },
+            },
+        )
+    )
+    assert _tool_payload(failure_write)["kind"] == "artifact_failure_log_entry"
+
+    run_start = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "research_run_start",
+                "arguments": {
+                    "issue_id": "issue.fixture.mcp",
+                    "operator_kind": "external",
+                    "operator_label": "MCP test",
+                    "run_id": "run.issue.fixture.mcp.controlled",
+                },
+            },
+        )
+    )
+    run_id = _tool_payload(run_start)["run_id"]
+
+    for name, arguments in [
+        (
+            "research_run_append_command",
+            {"run_id": run_id, "command": _command_record()},
+        ),
+        (
+            "research_run_append_artifact",
+            {
+                "run_id": run_id,
+                "artifact_id": "claim.fixture.mcp-private",
+                "mode": "read",
+            },
+        ),
+        (
+            "research_run_append_output",
+            {"run_id": run_id, "output": _output_ref()},
+        ),
+    ]:
+        response = server.handle(
+            _request("tools/call", {"name": name, "arguments": arguments})
+        )
+        _tool_payload(response)
+
+    finalize = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "research_run_finalize",
+                "arguments": {
+                    "run_id": run_id,
+                    "status": "completed",
+                    "stop_reason": "MCP controlled-write smoke completed.",
+                },
+            },
+        )
+    )
+    assert _tool_payload(finalize)["status"] == "completed"
+
+    run_export_dry = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "research_run_export_review_dry_run",
+                "arguments": {"run_id": run_id},
+            },
+        )
+    )
+    assert _tool_payload(run_export_dry)["dry_run"] is True
+
+    run_export = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "research_run_export_review",
+                "arguments": {"run_id": run_id},
+            },
+        )
+    )
+    assert _tool_payload(run_export)["written_paths"] == [
+        f"reviews/runs/{run_id}.yaml"
+    ]
+
+    plan_response = server.handle(
+        _request(
+            "tools/call",
+            {"name": "strategy_plan", "arguments": {"issue_id": "issue.fixture.mcp"}},
+        )
+    )
+    plan_id = _tool_payload(plan_response)["plan_id"]
+
+    strategy_update = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "strategy_update_from_run",
+                "arguments": {"plan_id": plan_id, "run_id": run_id},
+            },
+        )
+    )
+    assert _tool_payload(strategy_update)["plan_id"] == plan_id
+
+    strategy_export_dry = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "strategy_export_review_dry_run",
+                "arguments": {"plan_id": plan_id},
+            },
+        )
+    )
+    assert _tool_payload(strategy_export_dry)["dry_run"] is True
+
+    strategy_export = server.handle(
+        _request(
+            "tools/call",
+            {
+                "name": "strategy_export_review",
+                "arguments": {"plan_id": plan_id},
+            },
+        )
+    )
+    assert _tool_payload(strategy_export)["written_paths"] == [
+        f"reviews/strategy/{plan_id}.yaml"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("tool_name", "arguments", "expected_code"),
+    [
+        (
+            "draft_artifact_create_or_update",
+            {"request": _draft_artifact_request(status="accepted")},
+            "accepted_write_forbidden",
+        ),
+        (
+            "source_note_draft_create",
+            {
+                "request": _source_note_request(
+                    target_path="kb/public/accepted/sources/source.fixture.bad.yaml"
+                )
+            },
+            "accepted_write_forbidden",
+        ),
+        (
+            "worker_bundle_validate",
+            {"bundle_path": "missing/bundle.yaml"},
+            "worker_bundle_validate_failed",
+        ),
+        (
+            "worker_bundle_stage",
+            {
+                "task_id": "task.issue.fixture.mcp.reasoner",
+                "bundle_path": "missing/bundle.yaml",
+            },
+            "bundle_submit_failed",
+        ),
+        (
+            "review_request_from_bundle",
+            {"bundle_path": "missing/bundle.yaml"},
+            "review_request_failed",
+        ),
+        (
+            "checked_counterexample_evidence_validate",
+            {"evidence": {**_checked_evidence_data(), "human_reviewed": True}},
+            "authority_claim_forbidden",
+        ),
+        (
+            "checked_counterexample_evidence_stage",
+            {"evidence": {**_checked_evidence_data(), "promote": True}},
+            "authority_claim_forbidden",
+        ),
+        (
+            "failure_log_add_draft",
+            {
+                "artifact_id": "claim.fixture.mcp-public",
+                "entry": _failure_log_entry(),
+            },
+            "accepted_write_forbidden",
+        ),
+        (
+            "research_run_start",
+            {
+                "issue_id": "issue.fixture.mcp",
+                "operator_kind": "external",
+                "operator_label": "MCP test",
+                "run_id": "not a valid run id",
+            },
+            "research_run_validation_failed",
+        ),
+        (
+            "research_run_append_command",
+            {
+                "run_id": "run.missing",
+                "command": {**_command_record(), "human_reviewed": True},
+            },
+            "authority_claim_forbidden",
+        ),
+        (
+            "research_run_append_artifact",
+            {
+                "run_id": "run.missing",
+                "artifact_id": "claim.fixture.mcp-private",
+                "mode": "accepted",
+            },
+            "research_run_not_found",
+        ),
+        (
+            "research_run_append_output",
+            {
+                "run_id": "run.missing",
+                "output": {**_output_ref(), "promotion_authority": True},
+            },
+            "authority_claim_forbidden",
+        ),
+        (
+            "research_run_finalize",
+            {
+                "run_id": "run.missing",
+                "status": "completed",
+                "stop_reason": "missing run",
+            },
+            "research_run_not_found",
+        ),
+        (
+            "research_run_export_review_dry_run",
+            {"run_id": "run.missing"},
+            "research_run_not_found",
+        ),
+        (
+            "research_run_export_review",
+            {"run_id": "run.missing"},
+            "research_run_not_found",
+        ),
+        (
+            "strategy_update_from_run",
+            {"plan_id": "strategy.issue.missing.plan", "run_id": "run.missing"},
+            "strategy_plan_not_found",
+        ),
+        (
+            "strategy_export_review_dry_run",
+            {"plan_id": "strategy.issue.missing.plan"},
+            "strategy_plan_not_found",
+        ),
+        (
+            "strategy_export_review",
+            {"plan_id": "strategy.issue.missing.plan"},
+            "strategy_plan_not_found",
+        ),
+    ],
+)
+def test_mcp_controlled_write_tools_return_expected_errors(
+    tmp_path: Path,
+    tool_name: str,
+    arguments: dict[str, Any],
+    expected_code: str,
+) -> None:
+    server = ReadOnlyMcpServer(_fixture_repo(tmp_path))
+
+    response = server.handle(
+        _request("tools/call", {"name": tool_name, "arguments": arguments})
+    )
+
+    assert _tool_error_code(response) == expected_code
 
 
 def test_mcp_tool_call_returns_structured_workspace_info(tmp_path: Path) -> None:

@@ -588,12 +588,13 @@ enforce.
 
 MCP is an optional adapter, not the primary agent path.
 
-The current MCP surface is a minimal read-only stdio JSON-RPC implementation.
-It exposes whitelisted read-only tools, scope-aware resource templates, and
-governance-safe prompt templates. Prompts are static workflow guidance: they
-include accepted/draft distinctions, require artifact IDs, forbid accepted
-knowledge writes, and require final test/validate/gate checks. Prompt templates
-do not include private KB content or artifact text.
+The current MCP surface is a local stdio JSON-RPC implementation. It exposes
+whitelisted read-only tools, controlled draft/review/runtime write tools,
+scope-aware resource templates, and governance-safe prompt templates. Prompts
+are static workflow guidance: they include accepted/draft distinctions,
+require artifact IDs, forbid accepted knowledge writes, and require final
+test/validate/gate checks. Prompt templates do not include private KB content
+or artifact text.
 
 MCP must not expose:
 
@@ -604,11 +605,13 @@ MCP must not expose:
 - secrets, environment dumps, or provider credentials;
 - private KB context outside the selected scope.
 
-Controlled-write MCP tools are not planned unless a separate
-maintainer-approved issue explicitly reopens that scope. If such scope is
-approved later, it must require explicit allow-write configuration and must
-still reject accepted writes, direct promotion, readonly-root writes, and human
-review spoofing.
+Controlled-write MCP tools wrap existing safe service-layer semantics for
+draft/pre-accepted artifact writes, draft source notes, WorkerBundle
+validation/staging, draft informational review requests, checked-evidence
+staging, failure-log appends on writable non-accepted artifacts, research-run
+provenance records, and strategy review exports. They still reject accepted
+writes, direct promotion, readonly public-root writes, human-review spoofing,
+verifier-result mutation, and arbitrary shell access.
 
 ## Skill Boundary
 
@@ -675,8 +678,9 @@ As of this document, the repository has a thin typed service layer, versioned
 agent-access DTO/JSON Schema contracts, a provider-send context preview policy
 service, deterministic JSON output for core read-only CLI commands, controlled
 CLI draft/staging write commands, provider CLI commands for config checks,
-context-send preview, and deterministic fake runs, a minimal read-only stdio
-MCP surface that is optional adapter code, and an optional
+context-send preview, and deterministic fake runs, a local stdio MCP surface
+with read-only and controlled draft/review/runtime tools as optional adapter
+code, and an optional
 `skills/cosheaf-operator/` Skill package that documents the CLI-first operator
 workflow. It also has `HostedWorkerService` for role-specific fake or mocked
 provider worker calls whose outputs validate as WorkerBundle v2 or typed
@@ -687,9 +691,9 @@ transport object that remains default-off and only runs when explicitly
 configured and injected. It also has a provider `real-run` CLI path that
 requires inline preview, explicit send consent, explicit network permission,
 endpoint/API-key environment configuration, and redacted runtime logging. It
-has not added hosted worker CLI commands or controlled-write MCP tools.
-Controlled-write MCP is not planned unless separately approved. Existing local
-CLI, validation, gate, index, retrieval, context-pack, task, orchestrator
+has not added hosted worker CLI commands or hosted-provider MCP tools.
+Existing local CLI, validation, gate, index, retrieval, context-pack, task,
+orchestrator
 dry-run, fake provider, hosted-worker dispatch, and optional verifier surfaces
 keep their current behavior. The `v0.3.0` line now also includes checked
 counterexample evidence validation, controlled staging, context/readiness

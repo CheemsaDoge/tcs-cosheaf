@@ -377,7 +377,7 @@ layer across the framework package, workspace template, and public KB:
 - CLI output for agent-facing commands should remain stable, structured, and
   machine-readable where needed.
 - The service layer is the shared implementation boundary for CLI, hosted
-  provider workers, internal orchestrator code, and optional future MCP.
+  provider workers, internal orchestrator code, and optional MCP.
 - Hosted model API/provider support remains explicit, default-off, and
   implemented behind configuration, consent, policy scope, fake or mocked
   tests, and no-real-API-in-CI rules.
@@ -388,8 +388,10 @@ layer across the framework package, workspace template, and public KB:
   configuration, consent, and context-sending rules permit.
 - MCP is an optional adapter for assistants that need resources/tools rather
   than shell access. It is not required for ordinary CLI-first work.
-- Controlled-write MCP is not planned unless a separate maintainer-approved
-  issue explicitly reopens that scope.
+- V9 has reopened a narrow controlled-write MCP scope for draft, review-context,
+  and runtime outputs only. It still does not allow accepted writes, promotion,
+  human-review creation, verifier-result mutation, arbitrary shell, or hosted
+  provider calls.
 - Skill is an optional operator runbook, not a source of truth and not an
   authority expansion.
 
