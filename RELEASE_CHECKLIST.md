@@ -1,7 +1,7 @@
 # Three-Repository Release Checklist
 
-This checklist records the `v0.6.0` Operator Session + Review Handoff release
-candidate state after the published `v0.5.0` Operator MCP + Codex Application
+This checklist records the published `v0.6.0` Operator Session + Review Handoff
+release state after the published `v0.5.0` Operator MCP + Codex Application
 Layer release, the published `v0.4.0` Strategy Planner + Research Task Graph
 release, the published `v0.3.0` Checked Evidence + Research Run Loop release,
 the published `v0.2.4` Artifact Failure Memory + Attempt Traceability release,
@@ -39,9 +39,8 @@ smoke are complete. Downstream pin updates are complete.
 At publication time, package metadata recorded `0.5.0`; the public tag, GitHub
 release, post-tag release smoke, and downstream pin updates are complete.
 `v0.6.0` packages Operator Session + Review Handoff surfaces. Package metadata
-records `0.6.0` in the release candidate, but the public tag, GitHub release,
-post-tag release smoke, and downstream `@v0.6.0` pin updates are not complete
-yet.
+records `0.6.0`; the public tag, GitHub release, post-tag release smoke, and
+downstream `@v0.6.0` pin updates are complete.
 
 ## Scope
 
@@ -76,13 +75,13 @@ yet.
   workflows after publication:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.6.0`.
 
-## v0.6.0 Release Candidate
+## v0.6.0 Published Release Baseline
 
-`docs/releases/v0.6.0.md` is the release-candidate note for Operator Session +
-Review Handoff. The release-candidate task prepares package metadata and status
-docs only; publication closeout must still create the public tag, publish the
-GitHub release, run post-tag release smoke, and update downstream
-workspace/public KB pins.
+`docs/releases/v0.6.0.md` is the published release note for Operator Session +
+Review Handoff. The release-candidate task prepared package metadata and status
+docs; the publication closeout created the public tag, published the GitHub
+release, ran post-tag release smoke, and updated downstream workspace/public KB
+pins.
 
 - [x] Operator session DTOs and runtime storage exist under ignored
   `.cosheaf/operator-sessions/` paths.
@@ -97,9 +96,26 @@ workspace/public KB pins.
 - [x] Ecosystem smoke rows cover framework, workspace-template, and public KB
   operator-session/handoff workflows.
 - [x] Package metadata records `0.6.0` in the release-candidate branch.
-- [x] The release-candidate task does not create the public `v0.6.0` tag,
-  publish a GitHub release, run post-tag release smoke, or update downstream
-  pins.
+- [x] The release-candidate task left tag publication, GitHub release,
+  post-tag release smoke, and downstream pins to this publication closeout.
+- [x] The annotated `v0.6.0` tag is published as tag object
+  `74fa02076607ab035011f10b7cae1b11246d0c5f`, pointing through main commit
+  `acc8d715f830672f516e41921eb6416978232374`.
+- [x] GitHub release `v0.6.0 - Operator Session + Review Handoff` is
+  published at
+  `https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.6.0`.
+- [x] Release smoke from
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.6.0` passed and
+  installed `tcs-cosheaf==0.6.0`.
+- [x] Workspace-template active pins moved to `@v0.6.0` after tag publication
+  and release smoke in workspace-template PR #75.
+- [x] Public KB CI moved to `@v0.6.0` after tag publication and release smoke
+  in public KB PR #90.
+- [x] The post-publication no-network ecosystem matrix with
+  `--framework-tag v0.6.0` reports 21 rows: 18 pass, 0 fail, and 3 skipped.
+  Optional verifier availability, framework git-tag release smoke, and
+  workspace-template install demo remain skipped by default because network
+  rows are opt-in. These skipped rows are not pass results.
 - [x] No accepted-write, human-review, verifier-result, provider-default, or
   promotion semantics are changed.
 - [x] No production-readiness claim is introduced.
@@ -420,8 +436,8 @@ smoke, and downstream pin updates.
   reviewed release-candidate main commit.
 - [x] Remote tag `v0.5.0` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
-- [x] Remote tag `v0.6.0` is intentionally not published by the
-  release-candidate task.
+- [x] Remote tag `v0.6.0` exists and points through the annotated tag to the
+  reviewed release-candidate main commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
 - [x] Historical workspace-template artifact-failure-memory verification remains
@@ -436,8 +452,8 @@ smoke, and downstream pin updates.
   after v0.4.0 tag publication and release smoke succeeded.
 - [x] Workspace-template and public KB active pins moved to `@v0.5.0` only
   after v0.5.0 tag publication and release smoke succeeded.
-- [x] Workspace-template and public KB active pins have not moved to
-  `@v0.6.0`; they must wait for v0.6.0 tag publication and release smoke.
+- [x] Workspace-template and public KB active pins moved to `@v0.6.0` only
+  after v0.6.0 tag publication and release smoke succeeded.
 
 ### License
 
@@ -504,7 +520,7 @@ gate output and release notes.
 
 ## Agent Access And Provider Status
 
-Current agent/operator surfaces through the `v0.6.0` release candidate:
+Current agent/operator surfaces through the published `v0.6.0` release:
 
 - CLI-first operator workflow with stable JSON output for core read/check
   commands.

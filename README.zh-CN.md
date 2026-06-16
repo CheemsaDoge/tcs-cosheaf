@@ -2,12 +2,13 @@
 
 TCS-Cosheaf 是一个以 Git 为持久记忆层的、带类型约束的理论计算机科学研究知识库与智能体协作框架。它把定义、命题、证明、构造、算法、归约、反例、实验、评审、议题和验证器证据保存为可审查的仓库文件，而不是只保存在聊天记录中。
 
-> 当前状态：**v0.6.0 Operator Session + Review Handoff release candidate**。
-> 包版本记录为 `0.6.0`；公开 `v0.6.0` tag、GitHub release、post-tag
-> release smoke 和 downstream pin 更新尚未完成。最新已发布的下游基线仍是
-> `v0.5.0`。本候选版本加入 operator session、可选 MCP session recording、
-> leak scanning、handoff bundle、review-context handoff export、下游 demo/policy
-> smoke 和 ecosystem matrix 覆盖。它仍不是生产就绪软件，也不提供 Web UI、
+> 当前状态：**v0.6.0 Operator Session + Review Handoff release**。
+> 包版本记录为 `0.6.0`；公开 `v0.6.0` tag 和 GitHub release 已发布；
+> 从 `@v0.6.0` 的 post-tag release smoke 已通过；workspace-template 与
+> public KB downstream pin 已更新到 `@v0.6.0`。本版本加入 operator session、
+> 可选 MCP session recording、leak scanning、handoff bundle、
+> review-context handoff export、下游 demo/policy smoke 和 ecosystem matrix
+> 覆盖。它仍不是生产就绪软件，也不提供 Web UI、
 > 默认真实托管提供商路径、自动定理证明、完整 Lean 自动形式化、自动 accepted
 > 提升或多用户权限系统。
 
