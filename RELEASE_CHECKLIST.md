@@ -1,14 +1,15 @@
 # Three-Repository Release Checklist
 
-This checklist records the published `v0.4.0` Strategy Planner + Research Task
-Graph state after the published `v0.3.0` Checked Evidence + Research Run Loop
-release, the published `v0.2.4` Artifact Failure Memory + Attempt Traceability
-release, the `v0.2.3` Verification Evidence Hardening release, the `v0.2.2`
-Provider Transport + Agent Workflow Hardening release, the `v0.2.1` CLI Agent
-Access + Hosted Provider Gateway prerelease, the `v0.2.0` local-MVP release,
-and the `v0.1.1` Formal Link Layer support baseline. It is an operator
-checklist for the framework package, public KB, and workspace template
-together. It is not a production-readiness claim.
+This checklist records the `v0.5.0` Operator MCP + Codex Application Layer
+release-candidate state after the published `v0.4.0` Strategy Planner +
+Research Task Graph release, the published `v0.3.0` Checked Evidence +
+Research Run Loop release, the published `v0.2.4` Artifact Failure Memory +
+Attempt Traceability release, the `v0.2.3` Verification Evidence Hardening
+release, the `v0.2.2` Provider Transport + Agent Workflow Hardening release,
+the `v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease, the
+`v0.2.0` local-MVP release, and the `v0.1.1` Formal Link Layer support
+baseline. It is an operator checklist for the framework package, public KB,
+and workspace template together. It is not a production-readiness claim.
 
 `v0.1.1` remains the downstream tag baseline for early formal-link metadata.
 `v0.2.0` packages the deterministic local-MVP workflow. `v0.2.1` packages the
@@ -33,6 +34,10 @@ tag, GitHub release, release smoke, and downstream pin updates are complete.
 `v0.4.0` packages Strategy Planner + Research Task Graph surfaces. Package
 metadata records `0.4.0`; the public tag, GitHub release, and post-tag release
 smoke are complete. Downstream pin updates are complete.
+`v0.5.0` packages optional Operator MCP + Codex Application Layer surfaces.
+Package metadata records `0.5.0` in the release-candidate branch. The public
+tag, GitHub release, post-tag release smoke, and downstream pin updates remain
+publication-closeout work.
 
 ## Scope
 
@@ -40,7 +45,7 @@ smoke are complete. Downstream pin updates are complete.
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
 - Current framework package metadata version:
-  `0.4.0`.
+  `0.5.0`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
@@ -60,6 +65,56 @@ smoke are complete. Downstream pin updates are complete.
 - Intended downstream dependency for Strategy Planner + Research Task Graph
   workflows after publication:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.4.0`.
+- Intended downstream dependency for Operator MCP + Codex Application Layer
+  workflows after publication:
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.5.0`.
+
+## v0.5.0 Release Candidate Baseline
+
+`docs/releases/v0.5.0.md` is the release-candidate note for Operator MCP +
+Codex Application Layer. The release-candidate task prepares package metadata
+and status docs only. Publication closeout must later create the public tag,
+publish the GitHub release, run post-tag release smoke, and update downstream
+workspace/public KB pins.
+
+- [x] Read-only operator MCP tools exist for whitelisted workspace, validate,
+  gate, PR-checklist, public memory, public-only context, public-scoped
+  strategy, research-run read/report, and deterministic eval smoke surfaces.
+- [x] Controlled draft/review/runtime MCP tools wrap service-layer logic for
+  draft artifacts, staged source notes, WorkerBundle validation/staging, draft
+  review requests, checked counterexample evidence staging, non-accepted
+  failure-log appends, research-run provenance, and strategy review exports.
+- [x] Controlled MCP tools reject accepted writes, promotion, human-review
+  creation, verifier-result mutation, hosted provider calls, arbitrary shell,
+  and policy bypasses.
+- [x] Workspace operator demo documentation is merged and remains CLI-first
+  with MCP optional.
+- [x] Public KB operator policy smoke is merged and records operator/MCP output
+  as review context only.
+- [x] Optional operator Skill package is documentation only and does not grant
+  runtime authority.
+- [x] No default hosted provider, API-key, or network dependency is added.
+- [x] No accepted-write, human-review, verifier-result, or promotion semantics
+  are changed.
+- [x] At release-candidate start, there were no open framework PRs or issues
+  before issue 374 was created.
+- [x] `v0.5.0` release-candidate metadata is prepared in the
+  release-candidate branch.
+- [x] Release-candidate local verification reports `0.5.0` from
+  `python -m cosheaf.cli version --json`, 679 passing tests, validation over
+  20 YAML records, and `Gate verdict: pass`.
+- [x] The no-network ecosystem matrix with `--framework-tag v0.5.0` reports
+  17 rows: 14 pass, 0 fail, and 3 skipped. Optional verifier availability,
+  future tag release smoke, and workspace-template install demo remain skipped
+  by default and are not counted as pass.
+- [ ] The annotated `v0.5.0` tag is published.
+- [ ] GitHub release `v0.5.0 Operator MCP + Codex Application Layer` is
+  published.
+- [ ] Release smoke from
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.5.0` passed.
+- [ ] Workspace-template active pins moved to `@v0.5.0` after tag publication
+  and release smoke.
+- [ ] Public KB CI moved to `@v0.5.0` after tag publication and release smoke.
 
 ## v0.4.0 Published Release Baseline
 
@@ -310,8 +365,8 @@ smoke, and downstream pin updates.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.4.0`.
-- [x] `cosheaf.__version__` records `0.4.0`.
+- [x] `pyproject.toml` records package version `0.5.0`.
+- [x] `cosheaf.__version__` records `0.5.0`.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
@@ -325,6 +380,8 @@ smoke, and downstream pin updates.
   reviewed release-candidate main commit.
 - [x] Remote tag `v0.4.0` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
+- [ ] Remote tag `v0.5.0` exists and points through the annotated tag to the
+  reviewed release-candidate main commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
 - [x] Historical workspace-template artifact-failure-memory verification remains
@@ -337,6 +394,8 @@ smoke, and downstream pin updates.
   after v0.3.0 tag publication and release smoke succeeded.
 - [x] Workspace-template and public KB active pins moved to `@v0.4.0` only
   after v0.4.0 tag publication and release smoke succeeded.
+- [ ] Workspace-template and public KB active pins moved to `@v0.5.0` only
+  after v0.5.0 tag publication and release smoke succeeded.
 
 ### License
 
@@ -403,8 +462,7 @@ gate output and release notes.
 
 ## Agent Access And Provider Status
 
-Framework surfaces introduced through `v0.2.2` and retained in the `v0.2.3`
-release:
+Current agent/operator surfaces through the `v0.5.0` release candidate:
 
 - CLI-first operator workflow with stable JSON output for core read/check
   commands.
@@ -438,7 +496,12 @@ release:
   selection.
 - Agent-access security regression tests and agent workflow evaluation suite.
 - Optional operator Skill package.
-- Optional read-only MCP surface. MCP is not required for `v0.2.2`.
+- Optional read-only operator MCP surface for whitelisted workspace, validate,
+  gate, memory, context, strategy, research-run, and eval smoke tools.
+- Optional controlled draft/review/runtime MCP write surface that wraps
+  existing service-layer policy and refuses accepted writes, promotion,
+  human-review creation, verifier-result mutation, hosted provider calls, and
+  arbitrary shell.
 
 Boundaries:
 

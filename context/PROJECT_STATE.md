@@ -3,6 +3,40 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.5.0 Release Candidate - 2026-06-16
+
+Issue 374 prepares the conservative `v0.5.0` Operator MCP + Codex Application
+Layer release candidate after the read-only MCP tools, controlled draft-write
+MCP tools, operator runbook/workspace demo docs, public KB operator policy
+smoke, and optional operator Skill package have merged.
+
+This release-candidate branch updates package metadata and `cosheaf.__version__`
+to `0.5.0`, adds `docs/releases/v0.5.0.md`, and aligns README, roadmap,
+release checklist, current milestone, and project state with the true RC
+status.
+
+Observed release-candidate verification reports `0.5.0` from
+`python -m cosheaf.cli version --json`; `make lint`, `make typecheck`,
+`make test`, `make validate`, and `make gate` pass; `make test` reports 679
+passed tests; and the no-network ecosystem matrix targeting `v0.5.0` reports
+17 rows: 14 pass, 0 fail, and 3 skipped. The skipped rows are
+optional verifier availability, future tag release smoke, and
+workspace-template install demo; they are not counted as pass.
+
+The public `v0.5.0` tag is not published by this task. GitHub release
+publication, post-tag release smoke, and downstream workspace-template/public
+KB pin updates remain publication-closeout work after this PR merges cleanly.
+
+The RC preserves the v0.5.0 authority boundary: MCP remains optional and local,
+CLI remains the human and CI oracle, controlled MCP writes are limited to
+draft/proposal/review-context/runtime records, and MCP/operator output is not
+proof, checked evidence, verifier evidence, verifier pass, gate pass, human
+review, accepted status, accepted refutation, or promotion authority. This
+task does not add runtime behavior, dependencies, schemas, default hosted
+provider calls, accepted writes, human-review creation, verifier-result
+mutation, promotion semantics changes, public KB content, workspace-template
+content, or automatic theorem-proving claims.
+
 ## Optional Operator Skill Package - 2026-06-16
 
 Issue 372 adds a documentation-only Cosheaf operator Skill package for

@@ -1,24 +1,27 @@
 # Roadmap
 
-TCS-Cosheaf has published the `v0.4.0` Strategy Planner + Research Task Graph
-release and is now pursuing the `v0.5.0` Operator MCP + Codex Application
-Layer. This follows the published `v0.3.0` Checked Evidence + Research Run Loop
+TCS-Cosheaf has prepared the `v0.5.0` Operator MCP + Codex Application Layer
+release candidate after the published `v0.4.0` Strategy Planner + Research
+Task Graph release. This follows the published `v0.3.0` Checked Evidence + Research Run Loop
 release, the published `v0.2.4` Artifact Failure Memory + Attempt Traceability
 release, the published `v0.2.3` Verification Evidence Hardening release, the
 published `v0.2.2` Provider Transport + Agent Workflow Hardening release, the
 published `v0.2.1` CLI Agent Access + Hosted Provider Gateway prerelease, the
 published `v0.2.0` local-MVP release, and the earlier `v0.1.1` Formal Link
 Layer support baseline. Downstream workspace/public-KB pin alignment for
-`v0.4.0` is complete, and the project is still not production-ready. This
+`v0.4.0` is complete, `v0.5.0` publication closeout is still pending, and the
+project is still not production-ready. This
 roadmap records durable direction and named milestones; live issue state
 belongs in GitHub issues.
 
 ## Active Focus: v0.5.0 Operator MCP + Codex Application Layer
 
 The active post-`v0.4.0` line is `v0.5.0` Operator MCP + Codex Application
-Layer. `v0.4.0` records planned research processes through strategy plans;
-`v0.5.0` makes those workflows safer and easier for Codex-style operators to
-drive through optional MCP tools and documented CLI fallback.
+Layer. The release-candidate metadata is prepared; publication closeout must
+still publish the tag/release, run release smoke from `@v0.5.0`, and update
+downstream pins. `v0.4.0` records planned research processes through strategy
+plans; `v0.5.0` makes those workflows safer and easier for Codex-style
+operators to drive through optional MCP tools and documented CLI fallback.
 
 The active plan is
 [`docs/CODEX_DEVELOPMENT_PLAN_V9.md`](CODEX_DEVELOPMENT_PLAN_V9.md), with the
@@ -38,8 +41,8 @@ This line will:
   unavailable;
 - add operator runbooks, workspace-template demo coverage, and public KB
   policy smoke for operator/MCP outputs; and
-- package a conservative `v0.5.0` release only after tests, docs, downstream
-  demo/policy, and release smoke pass.
+- publish a conservative `v0.5.0` release only after tests, docs, downstream
+  demo/policy, tag-based release smoke, and pin updates pass.
 
 This line will not make MCP output proof, evidence, verifier pass, gate pass,
 human review, accepted status, accepted refutation, or promotion authority. It
@@ -125,9 +128,26 @@ accepted status, or promotion authorization. Provider calls remain explicit,
 default-off, policy-scoped, previewed, consented, and excluded from CI/default
 tests. MCP remains optional and non-blocking.
 
-## Current Published Release: v0.4.0
+## Current Release Candidate: v0.5.0
 
-Package metadata and `cosheaf.__version__` record `0.4.0`.
+Package metadata and `cosheaf.__version__` record `0.5.0` in the release
+candidate. `docs/releases/v0.5.0.md` records the conservative release-candidate
+scope. The public `v0.5.0` tag, GitHub release, post-tag release smoke, and
+downstream workspace/public-KB pin updates remain publication-closeout work.
+
+The `v0.5.0` release candidate includes the optional read-only operator MCP
+surface, controlled draft/review/runtime MCP tools, operator runbook and
+workspace demo docs, public KB operator policy smoke, and optional
+documentation-only operator Skill package.
+
+This release candidate does not make MCP or operator output proof, checked
+evidence, verifier pass, gate pass, human review, accepted status, accepted
+refutation, or promotion authority. It does not add default hosted provider
+calls, API-key requirements, accepted writes, promotion semantics changes, web
+UI, production hosted multi-agent runtime, or automatic theorem proving.
+
+## Latest Published Release: v0.4.0
+
 `docs/releases/v0.4.0.md` records the conservative release scope. The public
 `v0.4.0` tag and GitHub release are published, and release smoke from
 `@v0.4.0` passed. Downstream workspace/public-KB pin updates are complete.
