@@ -48,6 +48,9 @@ promotion authority.
 - Optional MCP session recording is implemented for whitelisted `tools/call`
   requests when callers pass `session_id` in the tool arguments. It records
   bounded metadata only and keeps MCP usable without session tracking.
+- Operator session leak scanning is implemented through
+  `cosheaf operator session scan <session-id> --json`, with deterministic
+  reports under `.cosheaf/operator-sessions/<session-id>/scan.json`.
 
 ## Active Scope
 
@@ -75,22 +78,20 @@ Compressed milestones:
 Most recently completed task:
 
 ```text
-mcp-session-recording
+operator-session-leak-scanner
 ```
 
-This task allows optional MCP `tools/call` requests to include a
-`session_id`. When present, whitelisted tool calls append bounded
-`OperatorToolCallRecord` events under
-`.cosheaf/operator-sessions/<session-id>/events.jsonl`. The transcript records
-tool name, session mode, argument names/counts, normalized status, bounded
-summary, timestamp, and warning codes. It does not store full context packs,
-full artifact YAML, raw stdout/stderr, provider payloads, secrets, hidden
-reasoning, or private query text in public-only sessions.
+This task adds `cosheaf operator session scan <session-id> --json`. The
+scanner reads session runtime records and event transcripts, flags blocker
+findings such as secrets, environment dumps, hidden reasoning, raw provider
+payloads, accepted-write attempts, authority claims, absolute private paths,
+and public-only private artifact/path references, and writes a runtime
+`scan.json` report. Blocking findings prevent handoff by default.
 
 Next project step:
 
 ```text
-operator-session-leak-scanner
+operator-handoff-bundle
 ```
 
 ## Explicit Boundaries

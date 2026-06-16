@@ -122,6 +122,7 @@ from cosheaf.operator_session import (
     OperatorSessionStatus,
     append_operator_session_event,
     load_operator_session,
+    scan_operator_session,
     start_operator_session,
     write_operator_session,
 )
@@ -1169,6 +1170,44 @@ def operator_session_finalize(
         return
     console.print(f"Operator session finalized: {result.session.session_id}")
     console.print(f"- authority: {OPERATOR_SESSION_AUTHORITY_NOTICE}")
+
+
+@operator_session_app.command("scan")
+def operator_session_scan(
+    session_id: str = typer.Argument(..., help="Operator session ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for operator-session storage.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Scan one operator session for leaks before handoff."""
+    console = Console(width=120, markup=False)
+    try:
+        result = scan_operator_session(RepoContext(repo_root), session_id)
+    except (OperatorSessionError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _operator_session_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        if result.handoff_blocked:
+            raise typer.Exit(1)
+        return
+    console.print(f"Operator session scan: {result.session_id}")
+    console.print(f"- findings: {result.finding_count}")
+    console.print(f"- blockers: {result.blocking_finding_count}")
+    console.print(f"- report: {result.report_path.as_posix()}")
+    console.print(f"- authority: {OPERATOR_SESSION_AUTHORITY_NOTICE}")
+    if result.handoff_blocked:
+        raise typer.Exit(1)
 
 
 @run_app.command("start")
