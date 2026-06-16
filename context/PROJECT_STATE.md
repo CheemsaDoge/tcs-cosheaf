@@ -3,6 +3,34 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Operator Session Leak Scanner - 2026-06-16
+
+Issue 386 adds a deterministic scanner for operator-session runtime records
+and future handoff candidates.
+
+The new command is:
+
+- `cosheaf operator session scan <session-id> --json`
+
+The scanner reads `.cosheaf/operator-sessions/<session-id>/session.json` and
+`.cosheaf/operator-sessions/<session-id>/events.jsonl`, then writes a runtime
+report to `.cosheaf/operator-sessions/<session-id>/scan.json`. The report
+includes `handoff_blocked`, finding counts, and stable finding records.
+Blocking findings make the CLI exit nonzero after emitting JSON.
+
+The scanner detects API-key-shaped values, bearer tokens, environment dumps,
+secret-looking environment values, hidden-reasoning markers, raw provider
+payloads, absolute private paths, accepted-write attempts, authority claims,
+and private artifact IDs or private path references in `public_only` sessions.
+It scans raw text plus parsed JSON so corrupted or unsafe runtime files can
+still produce findings instead of being silently treated as clean.
+
+This task does not implement handoff bundle/export behavior, accepted writes,
+human-review creation, verifier-result mutation, promotion, provider defaults,
+or accepted-promotion semantics. The scan report is runtime review metadata
+only and is not proof, verifier pass, gate pass, human review, accepted status,
+accepted refutation, source metadata, or promotion authority.
+
 ## MCP Session Recording - 2026-06-16
 
 Issue 384 adds optional MCP tool-call recording for the `v0.6.0` Operator

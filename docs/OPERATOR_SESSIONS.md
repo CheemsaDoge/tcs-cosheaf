@@ -214,13 +214,46 @@ arbitrary stdout/stderr, API keys, environment dumps, hidden reasoning, or full
 private artifact text by default. Public-only sessions record argument names
 and counts but do not record private query text.
 
+## Leak Scanner
+
+Before building or exporting a handoff bundle, scan the session:
+
+```bash
+cosheaf operator session scan <session-id> --json
+```
+
+The scanner reads:
+
+```text
+.cosheaf/operator-sessions/<session-id>/session.json
+.cosheaf/operator-sessions/<session-id>/events.jsonl
+```
+
+and writes a deterministic runtime report to:
+
+```text
+.cosheaf/operator-sessions/<session-id>/scan.json
+```
+
+The report includes `handoff_blocked`, `finding_count`,
+`blocking_finding_count`, and stable finding records. Blocking findings cause
+the CLI to exit nonzero after emitting JSON.
+
+The scanner flags API-key-shaped values, bearer-token-like strings,
+environment dumps, secret-looking environment values, hidden-reasoning
+markers, raw provider payloads, absolute private paths, accepted-write
+attempts, authority claims, and private artifact IDs or private path
+references in `public_only` sessions.
+
+The scanner does not mutate source-of-truth files, does not create human
+review, does not promote artifacts, and does not prove or verify any claim. It
+is a fail-closed review/handoff guard.
+
 ## Current Limitations
 
 This task does not build handoff bundles or export `reviews/operator/` files.
 Those are later `v0.6.0` tasks.
 
-This task does not add leak scanning. That remains a separate follow-up task.
-
-MCP session recording does not change accepted promotion, human review,
-verifier results, gate behavior, provider defaults, formal-link semantics, or
-public KB policy.
+MCP session recording and leak scanning do not change accepted promotion,
+human review, verifier results, gate behavior, provider defaults, formal-link
+semantics, or public KB policy.

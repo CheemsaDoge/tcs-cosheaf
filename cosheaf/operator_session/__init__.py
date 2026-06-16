@@ -19,6 +19,13 @@ from cosheaf.operator_session.models import (
     OperatorToolCallRecord,
     OperatorToolCallStatus,
 )
+from cosheaf.operator_session.security import (
+    OPERATOR_SESSION_SCAN_KIND,
+    OperatorSessionScanFinding,
+    OperatorSessionScanResult,
+    operator_session_scan_path,
+    scan_operator_session,
+)
 from cosheaf.operator_session.storage import (
     OPERATOR_SESSION_RUNTIME_ROOT,
     OperatorSessionEventWriteResult,
@@ -35,6 +42,7 @@ from cosheaf.operator_session.storage import (
 __all__ = [
     "OPERATOR_SESSION_AUTHORITY_NOTICE",
     "OPERATOR_SESSION_RUNTIME_ROOT",
+    "OPERATOR_SESSION_SCAN_KIND",
     "SKIPPED_OPERATOR_SESSION_LIMITATION",
     "OperatorArtifactRef",
     "OperatorArtifactRefKind",
@@ -48,6 +56,8 @@ __all__ = [
     "OperatorSessionError",
     "OperatorSessionEvent",
     "OperatorSessionEventWriteResult",
+    "OperatorSessionScanFinding",
+    "OperatorSessionScanResult",
     "OperatorSessionStatus",
     "OperatorSessionSummary",
     "OperatorSessionWriteResult",
@@ -58,6 +68,8 @@ __all__ = [
     "load_operator_session_events",
     "operator_session_events_path",
     "operator_session_path",
+    "operator_session_scan_path",
+    "scan_operator_session",
     "start_operator_session",
     "write_operator_session",
 ]

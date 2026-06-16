@@ -16,10 +16,13 @@
   check/reference metadata, and finalizing sessions. Optional MCP
   `tools/call` session recording is implemented when callers pass
   `session_id` in tool arguments; it records bounded `OperatorToolCallRecord`
-  events without changing tool semantics. Leak scanning and handoff
-  bundle/export remain planned V10 follow-ups. Session records are runtime
-  review metadata only and do not grant accepted writes, human review,
-  verifier-result mutation, or promotion authority.
+  events without changing tool semantics. Operator session leak scanning is
+  implemented through `cosheaf operator session scan <session-id> --json` and
+  `cosheaf.operator_session.scan_operator_session`, writing runtime reports
+  under `.cosheaf/operator-sessions/<session-id>/scan.json`. Handoff
+  bundle/export remain planned V10 follow-ups. Session records and scan
+  reports are runtime review metadata only and do not grant accepted writes,
+  human review, verifier-result mutation, or promotion authority.
 - Artifact failure-memory surfacing is implemented for read-only inspection,
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
   and controlled append, artifact cards, memory search, compact context card
@@ -92,6 +95,12 @@
 - `cosheaf operator session finalize <session-id> --json`: marks an
   in-progress operator session finalized. Finalized sessions are immutable for
   `append-check` and `append-ref`.
+- `cosheaf operator session scan <session-id> --json`: scans one operator
+  session runtime record and event transcript for leaks before handoff, writes
+  `.cosheaf/operator-sessions/<session-id>/scan.json`, and emits deterministic
+  JSON with `handoff_blocked`, finding counts, finding records,
+  `accepted_write_performed=false`, and the operator-session authority notice.
+  Blocking findings make the command exit nonzero after emitting JSON.
 - `cosheaf workspace info`: shows the active workspace name, configured/legacy
   mode, repository root, and KB roots.
 - `cosheaf workspace info --repo-root <path>`: shows workspace configuration for
@@ -1997,6 +2006,24 @@ review, promotion, proof, or public/private policy bypasses.
   user/workspace filesystem paths. The scanner is a regression/security helper;
   it does not make provider calls, write logs, redact data, validate knowledge,
   run gates, or authorize promotion.
+- `cosheaf.operator_session.security.OperatorSessionScanFinding`: dataclass
+  for one deterministic operator-session scan finding. It records stable
+  `code`, `severity`, explanatory `message`, source path, optional line, and
+  optional field path metadata.
+- `cosheaf.operator_session.security.OperatorSessionScanResult`: dataclass
+  for one operator-session scan report with session ID, policy mode, finding
+  counts, `handoff_blocked`, report path, `accepted_write_performed=false`,
+  authority notice, and finding records.
+- `cosheaf.operator_session.security.scan_operator_session(context, session_id, *, write_report=True) -> OperatorSessionScanResult`:
+  scans `.cosheaf/operator-sessions/<session-id>/session.json` and
+  `events.jsonl`, writes `.cosheaf/operator-sessions/<session-id>/scan.json`
+  when requested, and flags API-key-shaped values, bearer tokens, environment
+  dumps, secret-looking environment values, hidden-reasoning markers, raw
+  provider payloads, absolute private paths, accepted-write attempts, authority
+  claims, and public-only private artifact/path references. The scanner is a
+  fail-closed handoff guard only; it does not create human review, verifier
+  pass, gate pass, source metadata, accepted status, accepted refutation, or
+  promotion authority.
 - `cosheaf.agent.hosted_workers.HostedWorkerStatus`: normalized hosted worker
   status enum with `completed`, `rejected`, `failed`, and `skipped`.
 - `cosheaf.agent.hosted_workers.HostedWorkerInput`: strict Pydantic v2 model

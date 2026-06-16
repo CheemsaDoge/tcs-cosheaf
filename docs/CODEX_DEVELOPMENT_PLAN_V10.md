@@ -872,7 +872,7 @@ Stop after this task.
 - [x] Operator session DTO/storage landed.
 - [x] Operator session CLI landed.
 - [x] MCP session recording landed.
-- [ ] Leak scanner landed.
+- [x] Leak scanner landed.
 - [ ] Handoff bundle landed.
 - [ ] Handoff export landed.
 - [ ] Workspace demo landed.
