@@ -2,22 +2,27 @@
 
 ## Milestone
 
-`v0.5.0` Operator MCP + Codex Application Layer.
+`v0.6.0` Operator Session + Review Handoff.
 
 ## Goal
 
-Turn the published `v0.4.0` Strategy Planner + Research Task Graph release
-into a safe operator-facing tool layer that Codex-style agents can use through
-MCP or CLI without gaining accepted-write, human-review, or promotion
-authority.
+Turn the published `v0.5.0` Operator MCP + Codex Application Layer release
+into a replayable, reviewable, privacy-audited operator session workflow.
 
-MCP is an adapter layer for operator access. It is not a new truth,
-accepted-knowledge, review, proof, verifier, gate, provider, or promotion
-authority.
+The v0.6.0 line should help a maintainer inspect what an external operator did:
+which issue was worked on, which tools were called, which context and draft or
+review-context files were referenced, which checks ran, which checks were
+skipped, whether public/private boundaries held, and what needs human review
+next.
+
+Operator sessions and handoff bundles are review context only. They are not a
+new truth, accepted-knowledge, review, proof, verifier, gate, provider, or
+promotion authority.
 
 ## Current Baseline
 
 - Framework package metadata and `cosheaf.__version__` record `0.5.0`.
+- `python -m cosheaf.cli version --json` reports package version `0.5.0`.
 - Remote tag `v0.5.0` exists as an annotated tag and the GitHub release is
   published.
 - Release smoke from
@@ -25,38 +30,38 @@ authority.
   publication closeout and installed `tcs-cosheaf==0.5.0`.
 - `tcs-cosheaf-workspace-template` active demo, Makefile, CLI-agent,
   provider-preview, fake-provider smoke, verifier-evidence, failure-memory,
-  checked-evidence, research-run, and strategy paths pin or install `@v0.5.0`.
+  checked-evidence, research-run, strategy, and operator docs/scripts pin or
+  install `@v0.5.0`.
 - `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.5.0`.
-- `tcs-kb-public` public KB operator policy smoke is merged and records that
-  operator, MCP, provider, LLM, checked-evidence, research-run, and strategy
-  outputs are review context only.
-- Downstream workspace-template/public-KB pin alignment to `@v0.5.0` is
-  complete.
-- `docs/CODEX_DEVELOPMENT_PLAN_V8.md` is the completed accelerated `v0.4.0`
-  plan.
-- ADR 0025 records the Strategy Planner + Research Task Graph direction.
-- `docs/CODE_AUDIT_V040.md` records the v0.4.0 code audit closeout.
-- `docs/POST_V040_STATE_AUDIT.md` records the V9 kickoff audit.
-- `docs/CODEX_DEVELOPMENT_PLAN_V9.md` is the active accelerated `v0.5.0`
-  plan.
-- ADR 0026 records the Operator MCP + Codex Application Layer direction.
+- The optional MCP tool surface includes read-only/operator runtime tools and
+  controlled draft/review/runtime write tools.
+- Forbidden authority-expanding MCP tools such as `write_accepted`,
+  `promote_artifact`, `mark_human_reviewed`,
+  `run_hosted_provider_by_default`, and `arbitrary_shell` are absent.
+- `docs/POST_V050_STATE_AUDIT.md` records the v0.5.0 completion audit for the
+  v0.6.0 kickoff.
+- `docs/CODEX_DEVELOPMENT_PLAN_V10.md` is the active accelerated v0.6.0 plan.
+- ADR 0027 records the Operator Session + Review Handoff direction.
 
 ## Active Scope
 
 The active line is:
 
 ```text
-v0.5.0 Operator MCP + Codex Application Layer
+v0.6.0 Operator Session + Review Handoff
 ```
 
 Compressed milestones:
 
-1. Post-v0.4.0 kickoff audit, V9 plan, and ADR.
-2. Read-only operator MCP server core.
-3. Controlled draft-write MCP tools.
-4. Codex operator runbook and workspace demo.
-5. Public KB operator policy smoke and optional operator skill docs.
-6. v0.5.0 release candidate, publication closeout, and downstream pin
+1. Post-v0.5.0 kickoff audit, V10 plan, and ADR.
+2. Operator session model and runtime storage.
+3. Operator session CLI core.
+4. Optional MCP session recording.
+5. Operator session leak scanner.
+6. Review handoff bundle and explicit review-context export.
+7. Downstream workspace-template demo and public KB policy integration.
+8. Ecosystem smoke rows for the operator-session workflow.
+9. v0.6.0 release candidate, publication closeout, and downstream pin
    alignment.
 
 ## Current And Next Functional Tasks
@@ -64,57 +69,50 @@ Compressed milestones:
 Current task:
 
 ```text
-release-v050-publication-closeout
+post-v050-v060-kickoff
 ```
 
-This task records the conservative `v0.5.0` publication closeout after the
-release-candidate PR merged cleanly. It documents the published annotated tag,
-GitHub release, tag-based release smoke, and downstream workspace-template and
-public-KB pin updates without changing runtime behavior, adding dependencies,
-widening MCP/provider authority, writing accepted knowledge, creating human
-review, promoting artifacts, changing schemas, or claiming automatic theorem
-proving.
+This task records the completed v0.5.0 state, lands the V10 plan and ADR, and
+updates roadmap/project-state memory. It does not implement operator sessions,
+add dependencies, add schemas, change runtime behavior, bump package version,
+write KB artifacts, create human review, promote artifacts, mutate verifier
+results, or change accepted-promotion semantics.
 
-Next project step after this publication closeout:
+Next project step after this kickoff:
 
 ```text
-v0.5.0 completion audit and next-plan selection
+operator-session-model
 ```
 
 ## Explicit Boundaries
 
 - CLI remains the human and CI oracle.
-- Codex-style agents are external operators that call CLI/MCP tools, edit
-  files, run tests, and open PRs.
-- MCP remains optional; CLI fallback must stay documented and usable.
-- Do not embed GPT, Claude, or any hosted model as the default Cosheaf runtime.
-- Real provider calls remain default-off and require explicit configuration,
-  credentials, policy scope, context preview, network permission, and operator
-  consent.
+- MCP remains optional and local.
+- Operator sessions record bounded metadata and safe references; they do not
+  execute arbitrary commands.
+- Operator-session storage is planned as runtime state under ignored
+  `.cosheaf/operator-sessions/` paths.
+- Review handoff export is planned as explicit review context under
+  `reviews/operator/`.
+- No accepted KB writes through sessions, MCP, handoff bundles, or exports.
+- No promotion through sessions, MCP, handoff bundles, or exports.
+- No human-review creation through sessions, MCP, handoff bundles, or exports.
+- No verifier-result mutation through sessions, MCP, handoff bundles, or
+  exports.
+- No hosted provider default and no API-key requirement.
 - No real provider calls run in CI or default tests.
-- No accepted KB writes through MCP.
-- No promotion through MCP.
-- No human-review creation through MCP.
-- No arbitrary shell through MCP.
-- Operator/MCP output is not proof, checked evidence, verifier evidence,
-  verifier pass, gate pass, human review, accepted status, accepted refutation,
-  or promotion authority.
-- Controlled writes may create only draft, proposal, review-context, or
-  runtime records already allowed by Cosheaf policy.
-- Research-run records remain provenance.
-- Strategy plans remain guidance.
-- Checked counterexample evidence remains review evidence.
-- Accepted knowledge still requires validation, gates, human review where
-  policy requires it, verifier evidence where applicable, and explicit
-  promotion.
-- AI review is not human review.
-- Validation/gate success is not accepted status.
-- Skipped verifier, provider, SAT, SMT, Lean, lake, optional-tool, network, or
-  operator results are not passes.
-- Public KB accepted artifacts still require complete source metadata and
-  human review.
+- Session logs must be redacted and bounded.
+- Secrets, environment dumps, hidden reasoning markers, provider payloads, and
+  private content in public mode must be rejected or redacted.
+- Validation/gate/eval pass does not equal human review or accepted status.
+- Skipped verifier, provider, SAT, SMT, Lean, lake, optional-tool, network,
+  MCP, session, or eval results are not passes.
+- Public KB accepted artifacts still require complete source metadata and human
+  review.
 - Formal links remain metadata unless a checker actually records a result.
+- A successful Lean `#check` means only import and symbol resolution; it does
+  not prove informal/formal semantic alignment.
 
 Maintain the current maintainer override: do not add `codex` prefixes to issue
-names, branch names, or pull request titles, even when older examples show
-that prefix.
+names, branch names, or pull request titles, even when older examples show that
+prefix.
