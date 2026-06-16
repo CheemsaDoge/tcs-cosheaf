@@ -1,7 +1,7 @@
 # Three-Repository Release Checklist
 
 This checklist records the `v0.5.0` Operator MCP + Codex Application Layer
-release-candidate state after the published `v0.4.0` Strategy Planner +
+published release state after the published `v0.4.0` Strategy Planner +
 Research Task Graph release, the published `v0.3.0` Checked Evidence +
 Research Run Loop release, the published `v0.2.4` Artifact Failure Memory +
 Attempt Traceability release, the `v0.2.3` Verification Evidence Hardening
@@ -35,9 +35,8 @@ tag, GitHub release, release smoke, and downstream pin updates are complete.
 metadata records `0.4.0`; the public tag, GitHub release, and post-tag release
 smoke are complete. Downstream pin updates are complete.
 `v0.5.0` packages optional Operator MCP + Codex Application Layer surfaces.
-Package metadata records `0.5.0` in the release-candidate branch. The public
-tag, GitHub release, post-tag release smoke, and downstream pin updates remain
-publication-closeout work.
+Package metadata records `0.5.0`; the public tag, GitHub release, post-tag
+release smoke, and downstream pin updates are complete.
 
 ## Scope
 
@@ -69,12 +68,12 @@ publication-closeout work.
   workflows after publication:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.5.0`.
 
-## v0.5.0 Release Candidate Baseline
+## v0.5.0 Published Release Baseline
 
-`docs/releases/v0.5.0.md` is the release-candidate note for Operator MCP +
-Codex Application Layer. The release-candidate task prepares package metadata
-and status docs only. Publication closeout must later create the public tag,
-publish the GitHub release, run post-tag release smoke, and update downstream
+`docs/releases/v0.5.0.md` is the published release note for Operator MCP +
+Codex Application Layer. The release-candidate task prepared package metadata
+and status docs; the publication closeout created the public tag, published
+the GitHub release, ran post-tag release smoke, and updated downstream
 workspace/public KB pins.
 
 - [x] Read-only operator MCP tools exist for whitelisted workspace, validate,
@@ -107,14 +106,17 @@ workspace/public KB pins.
   17 rows: 14 pass, 0 fail, and 3 skipped. Optional verifier availability,
   future tag release smoke, and workspace-template install demo remain skipped
   by default and are not counted as pass.
-- [ ] The annotated `v0.5.0` tag is published.
-- [ ] GitHub release `v0.5.0 Operator MCP + Codex Application Layer` is
+- [x] The annotated `v0.5.0` tag is published as tag object
+  `49ea4c9de153ccc9c41b39ec2fc705b3735c8795`, pointing through main commit
+  `25913148da5e512aa888ec76198146825509e071`.
+- [x] GitHub release `v0.5.0 Operator MCP + Codex Application Layer` is
   published.
-- [ ] Release smoke from
+- [x] Release smoke from
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.5.0` passed.
-- [ ] Workspace-template active pins moved to `@v0.5.0` after tag publication
-  and release smoke.
-- [ ] Public KB CI moved to `@v0.5.0` after tag publication and release smoke.
+- [x] Workspace-template active pins moved to `@v0.5.0` after tag publication
+  and release smoke in workspace-template PR #71.
+- [x] Public KB CI moved to `@v0.5.0` after tag publication and release smoke
+  in public KB PR #86.
 
 ## v0.4.0 Published Release Baseline
 
@@ -380,7 +382,7 @@ smoke, and downstream pin updates.
   reviewed release-candidate main commit.
 - [x] Remote tag `v0.4.0` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
-- [ ] Remote tag `v0.5.0` exists and points through the annotated tag to the
+- [x] Remote tag `v0.5.0` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
@@ -394,7 +396,7 @@ smoke, and downstream pin updates.
   after v0.3.0 tag publication and release smoke succeeded.
 - [x] Workspace-template and public KB active pins moved to `@v0.4.0` only
   after v0.4.0 tag publication and release smoke succeeded.
-- [ ] Workspace-template and public KB active pins moved to `@v0.5.0` only
+- [x] Workspace-template and public KB active pins moved to `@v0.5.0` only
   after v0.5.0 tag publication and release smoke succeeded.
 
 ### License
@@ -462,7 +464,7 @@ gate output and release notes.
 
 ## Agent Access And Provider Status
 
-Current agent/operator surfaces through the `v0.5.0` release candidate:
+Current agent/operator surfaces through the `v0.5.0` published release:
 
 - CLI-first operator workflow with stable JSON output for core read/check
   commands.
