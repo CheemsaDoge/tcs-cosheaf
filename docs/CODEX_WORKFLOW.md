@@ -197,6 +197,10 @@ work. The detailed v0.3.0 runbook is
 [`docs/EXTERNAL_OPERATOR_RUN_LOOP.md`](EXTERNAL_OPERATOR_RUN_LOOP.md).
 The v0.5.0 operator workspace demo is
 [`docs/OPERATOR_WORKSPACE_DEMO.md`](OPERATOR_WORKSPACE_DEMO.md).
+The stable Codex operator entrypoint is
+[`docs/CODEX_OPERATOR_RUNBOOK.md`](CODEX_OPERATOR_RUNBOOK.md), and the
+portable Skill-like instruction package is
+[`docs/OPERATOR_SKILL.md`](OPERATOR_SKILL.md).
 
 Follow this sequence for nontrivial issue work:
 
