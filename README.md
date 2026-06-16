@@ -7,14 +7,13 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.6.0 Operator Session + Review Handoff release
-candidate**. Package metadata records `0.6.0`, but the public `v0.6.0` tag,
-GitHub release, post-tag release smoke, and downstream workspace/public-KB pin
-updates are **not** complete yet. The latest published downstream baseline
-remains **v0.5.0 Operator MCP + Codex Application Layer**. The `v0.6.0`
-candidate adds bounded operator-session records, optional MCP session
-recording, leak scanning, runtime handoff bundles, explicit handoff export,
-workspace/public-KB downstream smoke, and release-candidate documentation.
+Current status: **v0.6.0 Operator Session + Review Handoff release**. Package
+metadata records `0.6.0`; the public `v0.6.0` tag and GitHub release are
+published; post-tag release smoke from `@v0.6.0` passed; and downstream
+workspace/public-KB pins have moved to `@v0.6.0`. The `v0.6.0` release adds
+bounded operator-session records, optional MCP session recording, leak
+scanning, runtime handoff bundles, explicit handoff export,
+workspace/public-KB downstream smoke, and release documentation.
 Earlier published baselines include **v0.3.0 Checked Evidence + Research Run
 Loop** and **v0.4.0 Strategy Planner + Research Task Graph**. The `v0.1.1`
 tag remains the downstream Formal Link Layer support
@@ -37,10 +36,9 @@ context/readiness surfacing, eval/security coverage, and downstream strategy
 demo/policy smoke rows. The `v0.5.0` release packages optional operator MCP
 tools, controlled draft/review/runtime MCP writes, operator runbook/demo docs,
 public KB operator policy smoke, and an optional documentation-only operator
-Skill package. The `v0.6.0` release candidate packages operator-session and
-review-handoff surfaces, but downstream repositories should not pin to
-`@v0.6.0` until the release is published and post-tag smoke passes. The
-repository has working
+Skill package. The `v0.6.0` release packages operator-session and
+review-handoff surfaces; downstream repositories that need those surfaces can
+pin to `@v0.6.0`. The repository has working
 Python scaffolding, typed artifact models, filesystem loading, validation,
 dependency graph indexing, workspace-aware KB root loading, artifact lifecycle
 CLI
@@ -171,10 +169,10 @@ Implemented:
   draft/review/runtime MCP write tools that call service-layer policy, operator
   runbook/demo docs, public KB operator policy smoke, and an optional
   documentation-only operator Skill package.
-- Prepared `v0.6.0` release-candidate metadata for operator-session and review
-  handoff surfaces: bounded operator-session records, optional MCP session
-  recording, leak scanning, runtime handoff bundles, review-context handoff
-  export, downstream demo/policy smoke, and ecosystem matrix rows.
+- Published `v0.6.0` operator-session and review handoff surfaces: bounded
+  operator-session records, optional MCP session recording, leak scanning,
+  runtime handoff bundles, review-context handoff export, downstream
+  demo/policy smoke, and ecosystem matrix rows.
 
 Planned or incomplete:
 
@@ -321,10 +319,10 @@ that need artifact failure memory and attempt traceability can pin to
 and research-run provenance can pin to `v0.3.0`. Downstream repositories that
 need Strategy Planner + Research Task Graph surfaces can pin to `v0.4.0`;
 downstream repositories that need Operator MCP + Codex Application Layer
-surfaces can pin to `v0.5.0`. Workspace-template and public KB active pins now
-use `v0.5.0` after tag publication and release smoke. Downstream repositories
-should not pin to `v0.6.0` until the public tag, GitHub release, post-tag
-release smoke, and downstream pin PRs are complete.
+surfaces can pin to `v0.5.0`. Downstream repositories that need Operator
+Session + Review Handoff surfaces can pin to `v0.6.0`. Workspace-template and
+public KB active pins now use `v0.6.0` after tag publication, GitHub release,
+post-tag release smoke, and downstream pin PRs completed.
 
 ## Development Commands
 

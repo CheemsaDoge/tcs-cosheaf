@@ -21,23 +21,22 @@ promotion authority.
 
 ## Current Baseline
 
-- Framework package metadata and `cosheaf.__version__` record `0.6.0` as a
-  release candidate.
+- Framework package metadata and `cosheaf.__version__` record `0.6.0`.
 - `python -m cosheaf.cli version --json` reports package version `0.6.0`.
-- The public `v0.6.0` tag, GitHub release, post-tag release smoke, and
-  downstream `@v0.6.0` pin updates are not complete yet.
-- Remote tag `v0.5.0` exists as an annotated tag and the GitHub release is
-  published; `v0.5.0` remains the latest published downstream baseline.
+- The public `v0.6.0` tag is published as annotated tag object
+  `74fa02076607ab035011f10b7cae1b11246d0c5f`, peeled to main commit
+  `acc8d715f830672f516e41921eb6416978232374`.
+- The GitHub release is published at
+  `https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.6.0`.
 - Release smoke from
-  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.5.0` passed during
-  publication closeout and installed `tcs-cosheaf==0.5.0`.
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.6.0` passed during
+  publication closeout and installed `tcs-cosheaf==0.6.0`.
 - `tcs-cosheaf-workspace-template` active demo, Makefile, CLI-agent,
   provider-preview, fake-provider smoke, verifier-evidence, failure-memory,
   checked-evidence, research-run, strategy, and operator docs/scripts pin or
-  install `@v0.5.0`; its operator-session demo uses the local framework
-  checkout until `v0.6.0` is published.
-- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.5.0` and documents
-  operator handoff records as public review context only.
+  install `@v0.6.0` after workspace-template PR #75.
+- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.6.0` after public KB PR
+  #90 and documents operator handoff records as public review context only.
 - The optional MCP tool surface includes read-only/operator runtime tools and
   controlled draft/review/runtime write tools.
 - Forbidden authority-expanding MCP tools such as `write_accepted`,
@@ -67,9 +66,9 @@ promotion authority.
 - Downstream workspace-template and public-KB integration for operator-session
   handoff workflows has landed, and the ecosystem smoke matrix includes
   operator-session and handoff rows.
-- `docs/releases/v0.6.0.md` records the release-candidate scope and explicitly
-  leaves tag publication, post-tag release smoke, and downstream pin updates
-  to the publication closeout task.
+- `docs/releases/v0.6.0.md` records the release scope, publication closeout,
+  post-tag release smoke, downstream pin updates, and final ecosystem matrix
+  counts.
 
 ## Active Scope
 
@@ -95,21 +94,27 @@ Compressed milestones:
 
 ## Current And Next Functional Tasks
 
-Most recently completed task:
+Recently completed release-candidate task:
 
 ```text
 release-v060-readiness-and-rc
 ```
 
-This task prepares conservative `v0.6.0` release-candidate metadata after the
+That task prepared conservative `v0.6.0` release-candidate metadata after the
 operator-session, handoff, downstream demo/policy, and ecosystem smoke rows
 landed. Package metadata records `0.6.0`, release notes document the scope and
-limitations, and publication remains a separate follow-up.
+limitations, and publication was completed by the follow-up closeout.
+
+Most recently completed publication task:
+
+```text
+release-v060-publication-closeout
+```
 
 Next project step:
 
 ```text
-release-v060-publication-closeout
+new post-v0.6.0 audit before starting another capability line
 ```
 
 ## Explicit Boundaries

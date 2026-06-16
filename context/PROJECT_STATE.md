@@ -3,6 +3,45 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.6.0 Publication Closeout - 2026-06-17
+
+Issue 396 closes out the published `v0.6.0` Operator Session + Review Handoff
+release after the release-candidate PR merged.
+
+The annotated `v0.6.0` tag is published as tag object
+`74fa02076607ab035011f10b7cae1b11246d0c5f`, peeled to main commit
+`acc8d715f830672f516e41921eb6416978232374`. The GitHub release is published at
+`https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.6.0`.
+
+Post-tag release smoke from
+`git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.6.0` passed, installed
+`tcs-cosheaf==0.6.0`, and ran help, version, validate, gate, index rebuild,
+and context build in a temporary release-smoke workspace.
+
+Workspace-template PR #75 moved active Makefile, demo scripts, and docs to
+`@v0.6.0`; local verification ran `make install`, `make workspace-info`,
+`make validate`, `make gate`, `make index`, `make pr-checklist`,
+`make context`, `make demo`, and `git diff --check`, and GitHub Actions
+`validate` passed. Public KB PR #90 moved CI/docs to `@v0.6.0`; local
+verification ran installation from `@v0.6.0`, `cosheaf version`,
+`cosheaf workspace info`, `cosheaf validate`, public KB policy guard
+self-test and guard, both gate commands, and `git diff --check`, and GitHub
+Actions `validate` passed.
+
+The post-publication no-network ecosystem matrix with
+`--framework-tag v0.6.0` reports 21 rows: 18 pass, 0 fail, and 3 skipped.
+Optional verifier availability, framework git-tag release smoke, and
+workspace-template install demo remain skipped by default because network rows
+are opt-in. These skipped rows are not pass results; the separate release smoke
+above covers the tag install path.
+
+Publication closeout did not change runtime behavior, add dependencies, change
+schemas, write KB artifacts, create human review, promote artifacts, change
+accepted-promotion semantics, or widen MCP/provider authority. Operator
+sessions and handoff bundles remain review context only, not proof, verifier
+pass, gate pass, human review, source metadata, accepted status, accepted
+refutation, or promotion authority.
+
 ## v0.6.0 Release Candidate - 2026-06-16
 
 Issue 394 prepares the conservative `v0.6.0` Operator Session + Review Handoff
@@ -16,10 +55,10 @@ to `0.6.0`, adds `docs/releases/v0.6.0.md`, and aligns README, roadmap,
 release checklist, evaluation notes, current milestone, and project state with
 the true RC boundary.
 
-At this stage the public `v0.6.0` tag is not published, no GitHub release is
-created, post-tag release smoke has not run, and downstream workspace-template
-and public KB pins remain on the latest published `v0.5.0` baseline. Those
-steps belong to the separate publication closeout task after the RC PR merges.
+At that release-candidate stage, publication was deliberately deferred: no
+public tag, GitHub release, post-tag release smoke, or downstream
+workspace-template/public KB pin update was created by the RC task. The
+publication closeout section above supersedes that historical snapshot.
 
 The RC preserves the v0.6.0 authority boundary: operator sessions, MCP
 recordings, leak scans, handoff bundles, and handoff exports are review context
@@ -236,8 +275,8 @@ pin or install `@v0.5.0`; public KB CI installs `@v0.5.0`; and the three
 repositories had no open PRs or issue blockers before this kickoff issue was
 created.
 
-The active plan is `docs/CODEX_DEVELOPMENT_PLAN_V10.md`; ADR 0027 records the
-Operator Session + Review Handoff direction. At kickoff, the optional MCP
+The then-active plan was `docs/CODEX_DEVELOPMENT_PLAN_V10.md`; ADR 0027
+records the Operator Session + Review Handoff direction. At kickoff, the optional MCP
 surface already includes read-only/operator runtime tools and controlled
 draft/review/runtime write tools, while forbidden authority-expanding tools
 such as accepted writes, promotion, mark-human-reviewed, hosted-provider
@@ -419,9 +458,9 @@ release, a fresh release smoke from `@v0.4.0`, workspace-template/public-KB
 pin alignment to `@v0.4.0`, and the absence of open PR/issue blockers across
 the three repositories.
 
-The active plan is `docs/CODEX_DEVELOPMENT_PLAN_V9.md`; ADR 0026 records the
-Operator MCP + Codex Application Layer direction. At kickoff, the MCP surface
-was a minimal read-only stdio layer. V9 expands it only as an optional operator
+The then-active plan was `docs/CODEX_DEVELOPMENT_PLAN_V9.md`; ADR 0026
+records the Operator MCP + Codex Application Layer direction. At kickoff, the
+MCP surface was a minimal read-only stdio layer. V9 expands it only as an optional operator
 adapter over existing service-layer or CLI-equivalent policy boundaries.
 
 This kickoff does not change runtime behavior, dependencies, schemas, package
