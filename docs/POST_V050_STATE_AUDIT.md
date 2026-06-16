@@ -223,11 +223,11 @@ controlled commands to approved review-context locations such as
 review request paths documented by the relevant command. Those exports are
 review context only.
 
-For the v0.6.0 line, operator-session storage is planned as runtime state under
-`.cosheaf/operator-sessions/`. Handoff export is planned as explicit
-review-context YAML under `reviews/operator/`. Neither location is accepted
-knowledge, verifier evidence by itself, gate pass, human review, accepted
-status, accepted refutation, or promotion authority.
+The v0.6.0 line implemented operator-session storage as runtime state under
+`.cosheaf/operator-sessions/` and handoff export as explicit review-context
+YAML under `reviews/operator/`. Neither location is accepted knowledge,
+verifier evidence by itself, gate pass, human review, accepted status, accepted
+refutation, or promotion authority.
 
 ## What Must Not Become Operator-Session Authority
 
