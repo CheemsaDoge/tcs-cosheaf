@@ -4,10 +4,11 @@ Operator sessions are the `v0.6.0` audit layer for external-operator work.
 They record bounded metadata about one issue-focused session so a maintainer
 can review what happened without reading raw terminal or MCP transcripts.
 
-This document describes the model and storage layer landed in the
-`operator-session-model` task. CLI commands, MCP session recording, leak
-scanning, handoff bundle generation, and review-context export are follow-up
-tasks in `docs/CODEX_DEVELOPMENT_PLAN_V10.md`.
+This document describes the model, runtime storage, and CLI metadata surface
+landed in the `operator-session-model` and `operator-session-cli-core` tasks.
+MCP session recording, leak scanning, handoff bundle generation, and
+review-context export are follow-up tasks in
+`docs/CODEX_DEVELOPMENT_PLAN_V10.md`.
 
 ## Authority Boundary
 
@@ -84,6 +85,81 @@ Session records include:
 - authority disclaimers; and
 - non-authority false fields.
 
+## CLI Surface
+
+The operator-session CLI records bounded metadata and references only. It does
+not run validation, gates, tests, evals, MCP tools, providers, Lean, SAT, SMT,
+or shell commands.
+
+Start a session:
+
+```bash
+cosheaf operator session start --issue <issue-id> --json
+```
+
+Optional start arguments:
+
+```bash
+cosheaf operator session start \
+  --issue <issue-id> \
+  --policy public_only \
+  --operator-label "external operator" \
+  --session-id <session-id> \
+  --json
+```
+
+Supported policies are `public_only` and `private_research`. The default is
+`public_only`. Public-only sessions reject private references.
+
+Inspect a session:
+
+```bash
+cosheaf operator session show <session-id> --json
+```
+
+Append a check-status summary:
+
+```bash
+cosheaf operator session append-check <session-id> \
+  --kind validate \
+  --status pass \
+  --summary "validation command completed outside this metadata recorder" \
+  --report-path .cosheaf/reports/validate.json \
+  --json
+```
+
+Allowed CLI check kinds are `validate`, `gate`, `test`, and `eval`. Allowed
+statuses are `pass`, `fail`, `error`, and `skipped`. A skipped check remains
+`skipped`; when no skipped summary is supplied the CLI records:
+
+```text
+Skipped operator-session checks are not pass evidence.
+```
+
+Append a safe repository-local reference:
+
+```bash
+cosheaf operator session append-ref <session-id> \
+  --kind draft \
+  --path kb/private/draft/claims/claim.example.yaml \
+  --artifact claim.example \
+  --scope private \
+  --summary "private draft reference only" \
+  --json
+```
+
+Allowed CLI reference kinds are `draft`, `review_context`, `runtime`, and
+`report`. References to `kb/accepted/` are rejected. References to private
+paths or `--scope private` are rejected in `public_only` sessions.
+
+Finalize a session:
+
+```bash
+cosheaf operator session finalize <session-id> --json
+```
+
+Finalized sessions are immutable for `append-check` and `append-ref`.
+
 ## Privacy And Redaction Rules
 
 The model rejects direct `kb/accepted/` paths, absolute paths, parent traversal,
@@ -96,9 +172,6 @@ arbitrary stdout/stderr, API keys, environment dumps, hidden reasoning, or full
 private artifact text by default.
 
 ## Current Limitations
-
-This task does not add CLI commands yet. There is no `cosheaf operator session`
-CLI surface until the next task.
 
 This task does not record MCP calls yet. MCP session recording is a separate
 follow-up task.

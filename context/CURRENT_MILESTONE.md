@@ -42,6 +42,9 @@ promotion authority.
   v0.6.0 kickoff.
 - `docs/CODEX_DEVELOPMENT_PLAN_V10.md` is the active accelerated v0.6.0 plan.
 - ADR 0027 records the Operator Session + Review Handoff direction.
+- Operator session DTOs, runtime storage, and CLI metadata commands are
+  implemented. Runtime files stay under ignored `.cosheaf/operator-sessions/`
+  paths.
 
 ## Active Scope
 
@@ -66,22 +69,23 @@ Compressed milestones:
 
 ## Current And Next Functional Tasks
 
-Current task:
-
-```text
-operator-session-model
-```
-
-This task adds strict operator-session DTOs and runtime storage under ignored
-`.cosheaf/operator-sessions/` paths. It does not add CLI commands, MCP session
-recording, handoff bundle/export behavior, dependencies, accepted writes,
-human-review creation, verifier-result mutation, promotion, provider defaults,
-or accepted-promotion semantics.
-
-Next project step after this model/storage task:
+Most recently completed task:
 
 ```text
 operator-session-cli-core
+```
+
+This task added `cosheaf operator session` metadata commands to start, show,
+append bounded check/reference records to, and finalize operator sessions. The
+CLI does not execute arbitrary commands, does not record MCP calls, does not
+build handoff bundles, does not write accepted knowledge, does not create
+human review, does not mutate verifier results, does not promote artifacts, and
+does not change provider defaults or accepted-promotion semantics.
+
+Next project step:
+
+```text
+mcp-session-recording
 ```
 
 ## Explicit Boundaries
@@ -90,7 +94,7 @@ operator-session-cli-core
 - MCP remains optional and local.
 - Operator sessions record bounded metadata and safe references; they do not
   execute arbitrary commands.
-- Operator-session storage is planned as runtime state under ignored
+- Operator-session storage is runtime state under ignored
   `.cosheaf/operator-sessions/` paths.
 - Review handoff export is planned as explicit review context under
   `reviews/operator/`.
