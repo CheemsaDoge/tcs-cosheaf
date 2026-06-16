@@ -32,6 +32,7 @@ from cosheaf.operator_session.storage import (
     load_operator_session_events,
 )
 from cosheaf.storage.repo import RepoContext
+from cosheaf.storage.writer import write_yaml_deterministic
 
 OPERATOR_HANDOFF_KIND = "operator_handoff_bundle"
 OPERATOR_HANDOFF_REQUIRED_CHECKS: tuple[OperatorCheckKind, ...] = (
@@ -159,6 +160,47 @@ class OperatorHandoffBundle(OperatorHandoffModel):
         return value
 
 
+class OperatorHandoffExportResult(OperatorHandoffModel):
+    """One explicit review-context export result for a handoff bundle."""
+
+    schema_version: Literal[1] = 1
+    kind: Literal["operator_handoff_export"] = "operator_handoff_export"
+    handoff_id: str
+    source_runtime_path: str
+    target_path: str
+    dry_run: bool
+    written_paths: tuple[str, ...] = ()
+    review_context_only: Literal[True] = True
+    handoff: OperatorHandoffBundle
+    authority_notice: str = OPERATOR_SESSION_AUTHORITY_NOTICE
+    accepted_write_performed: Literal[False] = False
+    human_review_created: Literal[False] = False
+    promotion_performed: Literal[False] = False
+    verifier_result_mutated: Literal[False] = False
+
+    @field_validator("handoff_id")
+    @classmethod
+    def _handoff_id(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("source_runtime_path", "target_path")
+    @classmethod
+    def _paths(cls, value: str) -> str:
+        return _validate_repo_local_nonaccepted_path(value)
+
+    @field_validator("written_paths", mode="before")
+    @classmethod
+    def _written_paths(cls, value: Any) -> tuple[str, ...]:
+        return tuple(_validate_repo_local_nonaccepted_path(item) for item in value)
+
+    @field_validator("authority_notice")
+    @classmethod
+    def _authority_notice(cls, value: str) -> str:
+        if value != OPERATOR_SESSION_AUTHORITY_NOTICE:
+            raise ValueError("authority_notice must preserve handoff boundary")
+        return value
+
+
 @dataclass(frozen=True)
 class OperatorHandoffWriteResult:
     """One loaded or written operator handoff bundle."""
@@ -253,6 +295,49 @@ def write_operator_handoff(
     return OperatorHandoffWriteResult(handoff=handoff, relative_path=relative_path)
 
 
+def export_operator_handoff(
+    context: RepoContext,
+    *,
+    handoff_id: str,
+    dry_run: bool = False,
+    target_path: str | Path | None = None,
+) -> OperatorHandoffExportResult:
+    """Export one handoff as explicit review context under reviews/operator."""
+    loaded = load_operator_handoff(context, handoff_id)
+    handoff = loaded.handoff
+    if handoff.scanner.handoff_blocked or handoff.scanner.blocking_finding_count > 0:
+        raise OperatorSessionError(
+            "operator handoff export blocked by scanner findings",
+            code="operator_handoff_blocked_by_scan",
+            remediation=(
+                "Rebuild the handoff from a clean scanned session before export."
+            ),
+            details={
+                "handoff_id": handoff.handoff_id,
+                "scanner_report": handoff.scanner.report_path,
+            },
+        )
+    relative_target = (
+        operator_handoff_export_path(handoff.handoff_id)
+        if target_path is None
+        else _normalize_export_target(target_path)
+    )
+    _ensure_operator_handoff_export_target(context, relative_target)
+    result = OperatorHandoffExportResult(
+        handoff_id=handoff.handoff_id,
+        source_runtime_path=loaded.relative_path.as_posix(),
+        target_path=relative_target.as_posix(),
+        dry_run=dry_run,
+        written_paths=() if dry_run else (relative_target.as_posix(),),
+        handoff=handoff,
+    )
+    if not dry_run:
+        target = context.resolve(relative_target)
+        _ensure_repo_local(context, target)
+        write_yaml_deterministic(target, result.to_dict())
+    return result
+
+
 def load_operator_handoff(
     context: RepoContext,
     handoff_id: str,
@@ -301,6 +386,12 @@ def operator_handoff_path(handoff_id: str) -> Path:
         )
     session_id = validate_artifact_id(resolved.removeprefix(prefix))
     return Path(".cosheaf") / "operator-sessions" / session_id / "handoff.json"
+
+
+def operator_handoff_export_path(handoff_id: str) -> Path:
+    """Return the explicit review-context export path for one handoff ID."""
+    resolved = validate_artifact_id(handoff_id.strip())
+    return Path("reviews") / "operator" / f"{resolved}.yaml"
 
 
 def _kb_roots(context: RepoContext) -> tuple[OperatorHandoffKbRoot, ...]:
@@ -473,6 +564,62 @@ def _validate_repo_local_nonaccepted_path(value: str) -> str:
     return normalized
 
 
+def _normalize_export_target(value: str | Path) -> Path:
+    normalized = _validate_repo_local_path(str(value))
+    return Path(normalized)
+
+
+def _validate_repo_local_path(value: str) -> str:
+    raw = str(value).strip()
+    normalized = normalize_repo_path(raw)
+    is_absolute = Path(raw).is_absolute() or PureWindowsPath(raw).is_absolute()
+    parts = PurePosixPath(normalized).parts
+    if (
+        not normalized
+        or is_absolute
+        or raw.startswith("/")
+        or normalized == ".."
+        or normalized.startswith("../")
+        or normalized == "."
+        or ".." in parts
+    ):
+        raise ValueError("path must be repository-local")
+    return normalized
+
+
+def _ensure_operator_handoff_export_target(
+    context: RepoContext,
+    relative_target: Path,
+) -> None:
+    normalized = normalize_repo_path(relative_target)
+    if normalized.startswith("kb/accepted/") or "/accepted/" in normalized:
+        raise OperatorSessionError(
+            "operator handoff export target must not be an accepted KB path",
+            code="accepted_write_forbidden",
+            remediation="Export handoff review context under reviews/operator/ only.",
+            details={"path": normalized},
+        )
+    if not normalized.startswith("reviews/operator/"):
+        raise OperatorSessionError(
+            "operator handoff export target must be under reviews/operator/",
+            code="invalid_operator_handoff_export_path",
+            remediation=(
+                "Use the deterministic reviews/operator/<handoff-id>.yaml path."
+            ),
+            details={"path": normalized},
+        )
+    if Path(normalized).suffix.lower() not in {".yaml", ".yml"}:
+        raise OperatorSessionError(
+            "operator handoff export target must be YAML",
+            code="invalid_operator_handoff_export_path",
+            remediation=(
+                "Use the deterministic reviews/operator/<handoff-id>.yaml path."
+            ),
+            details={"path": normalized},
+        )
+    _ensure_repo_local(context, context.resolve(relative_target))
+
+
 def _ensure_repo_local(context: RepoContext, target: Path) -> None:
     try:
         target.resolve().relative_to(context.repo_root.resolve())
@@ -496,12 +643,15 @@ __all__ = [
     "OPERATOR_HANDOFF_REQUIRED_CHECKS",
     "OperatorHandoffBundle",
     "OperatorHandoffCheckSummary",
+    "OperatorHandoffExportResult",
     "OperatorHandoffKbRoot",
     "OperatorHandoffScannerSummary",
     "OperatorHandoffToolStatusCounts",
     "OperatorHandoffWriteResult",
     "build_operator_handoff",
+    "export_operator_handoff",
     "load_operator_handoff",
+    "operator_handoff_export_path",
     "operator_handoff_id",
     "operator_handoff_path",
     "write_operator_handoff",

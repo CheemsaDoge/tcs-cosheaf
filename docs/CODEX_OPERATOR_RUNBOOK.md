@@ -22,6 +22,8 @@ cosheaf operator session finalize <session-id> --json
 cosheaf operator session scan <session-id> --json
 cosheaf operator handoff build --session <session-id> --json
 cosheaf operator handoff show handoff.<session-id> --json
+cosheaf operator handoff export --handoff handoff.<session-id> --dry-run --json
+cosheaf operator handoff export --handoff handoff.<session-id> --json
 ```
 
 These records are session metadata only. Run `cosheaf validate`,
@@ -31,9 +33,9 @@ evidence.
 
 Handoff bundles are compact runtime review context under
 `.cosheaf/operator-sessions/<session-id>/handoff.json`. The build command
-fails closed when the leak scanner reports blockers. Handoff export to
-`reviews/operator/` is planned separately and is not part of the current
-command surface.
+fails closed when the leak scanner reports blockers. Handoff export writes
+explicit review-context YAML under `reviews/operator/`; it is not human review,
+accepted knowledge, verifier evidence, gate pass, or promotion authority.
 
 The runbook is documentation only. It does not embed an agent runtime, call
 hosted providers by default, require MCP, write accepted knowledge, create

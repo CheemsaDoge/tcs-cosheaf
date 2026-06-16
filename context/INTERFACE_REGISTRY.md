@@ -25,15 +25,22 @@
   --json`, and `cosheaf.operator_session.build_operator_handoff`, writing
   runtime bundles under
   `.cosheaf/operator-sessions/<session-id>/handoff.json`. Handoff export
-  remains a planned V10 follow-up. The handoff Python surface defines
+  is implemented through `cosheaf operator handoff export --handoff
+  <handoff-id> --dry-run --json`, `cosheaf operator handoff export --handoff
+  <handoff-id> --json`, and
+  `cosheaf.operator_session.export_operator_handoff`, writing explicit
+  review-context YAML under `reviews/operator/<handoff-id>.yaml`. The handoff
+  Python surface defines
   `OperatorHandoffBundle`, `OperatorHandoffCheckSummary`,
-  `OperatorHandoffKbRoot`, `OperatorHandoffScannerSummary`,
-  `OperatorHandoffToolStatusCounts`, `OperatorHandoffWriteResult`,
-  `build_operator_handoff`, `load_operator_handoff`, `operator_handoff_id`,
+  `OperatorHandoffExportResult`, `OperatorHandoffKbRoot`,
+  `OperatorHandoffScannerSummary`, `OperatorHandoffToolStatusCounts`,
+  `OperatorHandoffWriteResult`, `build_operator_handoff`,
+  `export_operator_handoff`, `load_operator_handoff`,
+  `operator_handoff_export_path`, `operator_handoff_id`,
   `operator_handoff_path`, and `write_operator_handoff`. Session records, scan
-  reports, and handoff bundles are runtime review metadata only and do not
-  grant accepted writes, human review, verifier-result mutation, or promotion
-  authority.
+  reports, handoff bundles, and exported handoff YAML are review metadata only
+  and do not grant accepted writes, human review, verifier-result mutation, or
+  promotion authority.
 - Artifact failure-memory surfacing is implemented for read-only inspection,
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
   and controlled append, artifact cards, memory search, compact context card
@@ -122,6 +129,15 @@
 - `cosheaf operator handoff show <handoff-id> --json`: reads one runtime
   operator handoff bundle without writing files. The deterministic handoff ID
   is `handoff.<session-id>`.
+- `cosheaf operator handoff export --handoff <handoff-id> --dry-run --json`:
+  reports the deterministic review-context export target
+  `reviews/operator/<handoff-id>.yaml` without writing files.
+- `cosheaf operator handoff export --handoff <handoff-id> --json`: writes one
+  explicit review-context YAML record under `reviews/operator/`. Export fails
+  closed when the handoff contains blocking scanner status, rejects accepted KB
+  targets, includes scanner status and the authority notice, and does not
+  create human review, accepted status, verifier pass, gate pass, or promotion
+  authority.
 - `cosheaf workspace info`: shows the active workspace name, configured/legacy
   mode, repository root, and KB roots.
 - `cosheaf workspace info --repo-root <path>`: shows workspace configuration for

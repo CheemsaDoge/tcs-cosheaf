@@ -122,6 +122,7 @@ from cosheaf.operator_session import (
     OperatorSessionStatus,
     append_operator_session_event,
     build_operator_handoff,
+    export_operator_handoff,
     load_operator_handoff,
     load_operator_session,
     scan_operator_session,
@@ -1288,6 +1289,52 @@ def operator_handoff_show(
     console.print(f"Operator handoff: {result.handoff.handoff_id}")
     console.print(f"- session: {result.handoff.session_id}")
     console.print(f"- path: {result.relative_path.as_posix()}")
+    console.print(f"- authority: {OPERATOR_SESSION_AUTHORITY_NOTICE}")
+
+
+@operator_handoff_app.command("export")
+def operator_handoff_export(
+    handoff_id: str = typer.Option(
+        ...,
+        "--handoff",
+        help="Operator handoff ID to export as review context.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Report the export target without writing.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root used for operator handoff export.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Export one handoff bundle as explicit review-context YAML."""
+    console = Console(width=120, markup=False)
+    try:
+        result = export_operator_handoff(
+            RepoContext(repo_root),
+            handoff_id=handoff_id,
+            dry_run=dry_run,
+        )
+    except (OperatorSessionError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _operator_session_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    action = "dry-run" if result.dry_run else "written"
+    console.print(f"Operator handoff export {action}: {result.handoff_id}")
+    console.print(f"- target: {result.target_path}")
     console.print(f"- authority: {OPERATOR_SESSION_AUTHORITY_NOTICE}")
 
 

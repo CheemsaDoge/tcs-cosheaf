@@ -3,6 +3,32 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Operator Handoff Export - 2026-06-16
+
+Issue 390 adds explicit review-context export for operator handoff bundles in
+the `v0.6.0` Operator Session + Review Handoff line.
+
+The new commands are:
+
+- `cosheaf operator handoff export --handoff <handoff-id> --dry-run --json`
+- `cosheaf operator handoff export --handoff <handoff-id> --json`
+
+The deterministic export target is `reviews/operator/<handoff-id>.yaml`.
+Dry-run reports the target path without writing. Non-dry-run writes only
+review-context YAML under `reviews/operator/`.
+
+Export reads an existing runtime handoff bundle from
+`.cosheaf/operator-sessions/<session-id>/handoff.json`, includes the handoff's
+scanner result and authority disclaimer, fails closed when scanner blockers are
+present, and rejects accepted KB export targets.
+
+This task does not create human review, promote artifacts, mutate verifier
+results, mark accepted/refuted/proved status, change gate behavior, change
+accepted-promotion semantics, call hosted providers, or write KB artifacts.
+Exported operator handoffs are review context only; they are not proof,
+verifier pass, gate pass, source metadata, human review, accepted status,
+accepted refutation, or promotion authority.
+
 ## Operator Handoff Bundle - 2026-06-16
 
 Issue 388 adds compact runtime handoff bundles for finalized operator sessions

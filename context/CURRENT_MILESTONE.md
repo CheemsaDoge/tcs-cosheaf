@@ -55,6 +55,10 @@ promotion authority.
   `cosheaf operator handoff build --session <session-id> --json` and
   `cosheaf operator handoff show <handoff-id> --json`, with runtime bundles
   under `.cosheaf/operator-sessions/<session-id>/handoff.json`.
+- Operator handoff export is implemented through
+  `cosheaf operator handoff export --handoff <handoff-id> --dry-run --json`
+  and `cosheaf operator handoff export --handoff <handoff-id> --json`, writing
+  explicit review-context YAML under `reviews/operator/`.
 
 ## Active Scope
 
@@ -83,23 +87,20 @@ Compressed milestones:
 Most recently completed task:
 
 ```text
-operator-handoff-bundle
+operator-handoff-export
 ```
 
-This task adds `cosheaf operator handoff build --session <session-id> --json`
-and `cosheaf operator handoff show <handoff-id> --json`. The builder requires a
-finalized session, runs the session leak scanner first, fails closed on
-blocking scanner findings, and writes a compact runtime `handoff.json` bundle
-under `.cosheaf/operator-sessions/<session-id>/`. Bundles summarize session
-metadata, KB root scope, referenced files, draft/source-note/review-context
-references, check statuses, skipped and missing check accounting, bounded tool
-summary counts, scanner status, a human-review checklist, known limitations,
-and follow-up recommendations.
+This task adds `cosheaf operator handoff export --handoff <handoff-id>
+--dry-run --json` and `cosheaf operator handoff export --handoff <handoff-id>
+--json`. Dry-run reports the deterministic target without writing.
+Non-dry-run writes explicit review-context YAML under
+`reviews/operator/<handoff-id>.yaml`. Export fails closed when the handoff's
+scanner status contains blockers and rejects accepted KB targets.
 
 Next project step:
 
 ```text
-operator-handoff-export
+workspace-operator-session-demo
 ```
 
 ## Explicit Boundaries
@@ -110,7 +111,7 @@ operator-handoff-export
   execute arbitrary commands.
 - Operator-session storage is runtime state under ignored
   `.cosheaf/operator-sessions/` paths.
-- Review handoff export is planned as explicit review context under
+- Review handoff export writes explicit review context under
   `reviews/operator/`.
 - No accepted KB writes through sessions, MCP, handoff bundles, or exports.
 - No promotion through sessions, MCP, handoff bundles, or exports.
