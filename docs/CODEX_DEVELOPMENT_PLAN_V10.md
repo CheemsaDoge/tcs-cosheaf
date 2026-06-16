@@ -867,9 +867,9 @@ Stop after this task.
 ## Completion checklist for V10
 
 ```text
-- [ ] v0.5 completion audit landed.
-- [ ] ADR 0027 landed.
-- [ ] Operator session DTO/storage landed.
+- [x] v0.5 completion audit landed.
+- [x] ADR 0027 landed.
+- [x] Operator session DTO/storage landed.
 - [ ] Operator session CLI landed.
 - [ ] MCP session recording landed.
 - [ ] Leak scanner landed.

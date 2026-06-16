@@ -69,19 +69,19 @@ Compressed milestones:
 Current task:
 
 ```text
-post-v050-v060-kickoff
+operator-session-model
 ```
 
-This task records the completed v0.5.0 state, lands the V10 plan and ADR, and
-updates roadmap/project-state memory. It does not implement operator sessions,
-add dependencies, add schemas, change runtime behavior, bump package version,
-write KB artifacts, create human review, promote artifacts, mutate verifier
-results, or change accepted-promotion semantics.
+This task adds strict operator-session DTOs and runtime storage under ignored
+`.cosheaf/operator-sessions/` paths. It does not add CLI commands, MCP session
+recording, handoff bundle/export behavior, dependencies, accepted writes,
+human-review creation, verifier-result mutation, promotion, provider defaults,
+or accepted-promotion semantics.
 
-Next project step after this kickoff:
+Next project step after this model/storage task:
 
 ```text
-operator-session-model
+operator-session-cli-core
 ```
 
 ## Explicit Boundaries

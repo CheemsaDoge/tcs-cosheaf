@@ -4,6 +4,16 @@
 
 ### Planned Interfaces Not Yet Implemented
 
+- Operator session DTOs and runtime storage are implemented under
+  `cosheaf.operator_session`. The current surface defines
+  `OperatorSession`, `OperatorToolCallRecord`, `OperatorArtifactRef`,
+  `OperatorCheckResult`, `OperatorSessionSummary`, and
+  `OperatorPolicyFinding`, with runtime storage under
+  `.cosheaf/operator-sessions/<session-id>/session.json` and
+  `.cosheaf/operator-sessions/<session-id>/events.jsonl`. No CLI or MCP
+  session recording surface exists yet; those remain planned V10 follow-ups.
+  Session records are runtime review metadata only and do not grant accepted
+  writes, human review, verifier-result mutation, or promotion authority.
 - Artifact failure-memory surfacing is implemented for read-only inspection,
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
   and controlled append, artifact cards, memory search, compact context card
