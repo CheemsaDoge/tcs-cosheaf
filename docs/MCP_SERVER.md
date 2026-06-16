@@ -3,15 +3,15 @@
 ## Purpose
 
 This document defines the TCS-Cosheaf MCP adapter boundary and current
-implementation status. The current implementation is a minimal read-only stdio
-JSON-RPC surface with governance-safe prompt templates. It does not add
-external dependencies, change gates, create write authority, call hosted
-providers, or implement controlled writes.
+implementation status. The current implementation is a read-only stdio
+JSON-RPC surface with governance-safe prompt templates and operator-oriented
+read-only tools. It does not add external dependencies, change gates, create
+write authority, call hosted providers, or implement controlled writes.
 
-MCP is optional. It is not the primary agent interface and not a `v0.2.1`
-blocker. The preferred path for coding agents is CLI first, with typed services
-as the shared implementation boundary. MCP may be useful for assistants that
-support resources/tools but do not have shell access.
+MCP is optional. CLI remains the human and CI oracle, with typed services as
+the shared implementation boundary. MCP may be useful for assistants that
+support resources/tools, but it does not replace the CLI workflow or repository
+policy.
 
 The current adapter exposes typed, whitelisted service calls over MCP-style
 resources and tools. It must not expose arbitrary shell, arbitrary filesystem
@@ -35,10 +35,21 @@ Current read-only tools:
 
 - `workspace_info`
 - `validate`
+- `gate`
+- `gate_pr_checklist`
 - `gate_run`
+- `memory_cards`
 - `memory_search`
 - `context_build`
 - `context_show`
+- `strategy_plan`
+- `strategy_show`
+- `strategy_graph`
+- `strategy_next`
+- `run_show`
+- `run_evidence_report`
+- `eval_strategy_planner`
+- `eval_research_run_loop`
 - `orchestrator_plan`
 
 Current read-only resources:
@@ -70,44 +81,45 @@ accepted knowledge writes and promotion, and require final test/validate/gate
 checks. Prompt templates do not include artifact text or private KB content.
 
 The current tools call the Python service layer directly. They do not shell out
-to the CLI. `gate_run` may write deterministic runtime reports under ignored
-runtime directories such as `.cosheaf/`, and `context_build` may write a
-deterministic context pack under `context/TASKS/`. They do not modify
-source-of-truth artifact YAML, write accepted knowledge, promote artifacts,
-create drafts, or mark human review.
+to the CLI. `gate`, `gate_pr_checklist`, and `gate_run` may write
+deterministic runtime reports under ignored runtime directories such as
+`.cosheaf/`. `context_build` may write a deterministic context pack under
+`context/TASKS/`. `strategy_plan` may write a runtime strategy plan under
+`.cosheaf/strategy/`. These runtime side effects do not modify source-of-truth
+artifact YAML, write accepted knowledge, promote artifacts, create drafts, or
+mark human review.
 
 Public-mode MCP resources and search results do not expose private artifact
 cards. Private-scoped artifact-card or context resource requests return a
 structured `private_resource_denied` error unless a later private policy mode
 explicitly permits them.
 
-## Post-v0.2.1 Optional Adapter Review
+## Read-Only Operator Core
 
-This review keeps MCP in its intended place after the CLI/provider hardening
-work: MCP is an optional read-only adapter, not the primary agent interface,
-not a provider transport, and not a release blocker for ordinary CLI-first
-workflows.
+The read-only operator core keeps MCP in its intended place after the
+CLI/provider hardening work: MCP is an optional read-only adapter, not a
+provider transport, and not a replacement for ordinary CLI-first workflows.
 
-No new MCP tools are introduced by this review. The existing read-only smoke is
-covered by `tests/test_mcp_server.py`, including tool whitelist checks, public
-scope resource reads, private-resource denial, public-only context build,
+The read-only smoke is covered by `tests/test_mcp_server.py`, including tool
+whitelist checks, gate and PR-checklist reporting, public artifact cards,
+public-scope strategy output, run/evidence reads, eval smoke reports,
+private-resource denial, public-only context build, forbidden-tool rejection,
 governance-safe prompts, and stdio `tools/list` behavior.
 
-The current H.1 decision is:
+The current B.1 decision is:
 
-- keep `workspace_info`, `validate`, `gate_run`, `memory_search`,
-  `context_build`, `context_show`, and `orchestrator_plan` as the read-only
-  tool set;
+- keep the B.1 read-only tool set listed above;
 - keep stdio as the only implemented MCP transport;
 - keep private-scoped resources denied unless a later approved policy mode
   explicitly permits them;
-- do not add controlled-write MCP, provider MCP tools, arbitrary shell,
+- do not add controlled-write MCP in B.1, provider MCP tools, arbitrary shell,
   arbitrary filesystem access, accepted writes, accepted promotion shortcuts,
   human-review mutation, or verifier-result mutation.
 
 Future MCP maintenance should be limited to keeping this read-only adapter
-compatible with existing service contracts unless a separate maintainer-approved
-issue explicitly reopens scope.
+compatible with existing service contracts. Controlled draft/review/runtime
+write tools belong in separate Phase C tasks and must keep accepted writes,
+promotion, and human-review creation absent.
 
 ## Transport
 
@@ -166,30 +178,40 @@ Implemented read-only tools include:
 
 - `workspace_info`: returns workspace and KB root policy metadata.
 - `validate`: runs or returns validation results.
-- `gate_run`: runs gatekeeper and returns structured report metadata.
+- `gate`: runs gatekeeper and returns structured report metadata.
+- `gate_pr_checklist`: runs gatekeeper with a repository-local PR checklist.
+- `gate_run`: legacy alias for gatekeeper report metadata.
+- `memory_cards`: lists public compact artifact cards.
 - `memory_search`: searches bounded public artifact cards.
 - `context_build`: builds an issue-scoped public-only context pack.
 - `context_show`: builds and returns public-only context text.
+- `strategy_plan`: builds a public-scoped runtime strategy plan.
+- `strategy_show`: reads one public-scoped runtime strategy plan.
+- `strategy_graph`: reads one public-scoped strategy task graph.
+- `strategy_next`: reads public-scoped strategy next-step guidance.
+- `run_show`: reads one research-run provenance record.
+- `run_evidence_report`: returns read-only evidence counts for a run.
+- `eval_strategy_planner`: runs deterministic strategy-planner eval smoke.
+- `eval_research_run_loop`: runs deterministic research-run loop eval smoke.
 - `orchestrator_plan`: creates a deterministic plan without executing workers.
 
 Later read-only tools may include:
 
 - `context.preview_provider_send`: returns provider-send preview metadata only.
 - `task.list`: lists local task records.
-- `bundle.validate`: validates a worker bundle without merging outputs.
 
 Read-only tools must still respect public/private policy. A tool that triggers
-local computation such as validation or gate execution is still read-only if it
-only writes deterministic runtime reports under ignored sidecar directories and
-does not change source-of-truth artifacts.
+local computation such as validation, gate execution, context building,
+strategy planning, or eval smoke is still read-only if it only writes
+deterministic runtime reports under ignored sidecar directories and does not
+change source-of-truth artifacts.
 
 ### Controlled-Write Tools
 
-Controlled-write MCP tools are not planned unless a separate
-maintainer-approved issue explicitly reopens that scope. If such scope is
-approved later, controlled writes must require both server configuration and
-per-call confirmation or policy approval, must be narrow, typed,
-repository-local, and blocked from readonly public roots.
+Controlled-write MCP tools are not implemented in B.1. If Phase C adds them,
+controlled writes must wrap existing safe write semantics, require explicit
+tool scope, remain narrow, typed, repository-local, and be blocked from
+readonly public roots.
 
 Controlled-write MCP must never write to accepted paths, run accepted
 promotion, mark human review complete, mutate verifier results, bypass gates,

@@ -3,6 +3,25 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Read-Only Operator MCP Core - 2026-06-16
+
+Issue 366 extends the optional stdio MCP adapter for the `v0.5.0` Operator MCP
++ Codex Application Layer line with the B.1 read-only operator tool set.
+
+The read-only whitelist now covers workspace info, validation, gate and
+PR-checklist gate reports, public memory cards/search, public-only context
+build/show, public-scoped strategy plan/show/graph/next, research-run
+show/evidence reports, and deterministic strategy/research-run eval smoke.
+Legacy `gate_run` and `orchestrator_plan` remain available for compatibility.
+
+The MCP implementation continues to call typed Python service-layer logic
+rather than arbitrary shell. It may write deterministic runtime sidecars such
+as gate reports, context packs, and runtime strategy plans, but it does not
+write accepted KB content, promote artifacts, create human review, mutate
+verifier results, call hosted providers, or add controlled-write MCP tools.
+Public operator mode filters strategy output so private artifact IDs and
+private issue tags are not returned.
+
 ## Post-v0.4.0 to v0.5.0 Kickoff - 2026-06-16
 
 Issue 364 starts the `v0.5.0` Operator MCP + Codex Application Layer line
