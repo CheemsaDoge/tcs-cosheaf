@@ -17,10 +17,10 @@
 - Local commit: `c21cb1d Close out v0.9.0 docs and code audit`
 - Author/committer: `CheemsaDoge <cheemsadoge@gmail.com>`
 
-PR #425 is open and not draft, but it is blocked by required CI checks as of
-2026-06-18:
+PR #425 is open and not draft. The last completed CI run before the handoff
+metadata update had this result:
 
-| Check | Current result |
+| Check | Last completed result |
 |-------|----------------|
 | lint | failure |
 | typecheck | failure |
@@ -28,9 +28,11 @@ PR #425 is open and not draft, but it is blocked by required CI checks as of
 | validate | success |
 | gate | success |
 
-Do not merge PR #425 while lint/typecheck remain red. If the next agent fixes
-the Python lint/typecheck failures on this branch, update the PR description so
-it no longer presents the change as documentation-only.
+The follow-up handoff-document update may trigger a fresh CI run. Re-check PR
+#425 before acting on it; do not merge while lint/typecheck remain red or while
+required checks are still queued. If the next agent fixes the Python
+lint/typecheck failures on this branch, update the PR description so it no
+longer presents the change as documentation-only.
 
 ## Framework release state
 
