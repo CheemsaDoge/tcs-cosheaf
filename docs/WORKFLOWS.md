@@ -11,25 +11,33 @@ issue -> librarian context -> FSM plan -> bounded local loop -> evidence/failure
 summary -> draft proposal -> review handoff -> benchmark report
 ```
 
-## Current v0.9.0 Surface
+## Current Surface
 
-The published `v0.9.0` framework exposes an initial `cosheaf workflow` CLI:
+The current framework exposes the persistent workflow core from V14 B.1:
 
 ```bash
 cosheaf workflow start --issue <issue-id> --query <query> --json
+cosheaf workflow show <workflow-id> --json
 cosheaf workflow step <workflow-id> --json
+cosheaf workflow run <workflow-id> --max-steps <n> --execute-local-actions --json
 cosheaf workflow readiness <workflow-id> --json
 ```
 
 Current behavior:
 
-- `workflow start` emits a workflow JSON record with issue, query, timestamps,
-  status, and an explicit authority notice.
-- `workflow step` currently emits an ephemeral step status message; it does not
-  yet persist the step to workflow storage.
-- `workflow readiness` currently emits an ephemeral readiness message; it does
-  not yet load a persisted workflow record or produce the full readiness
-  classifier planned in the V14 plan.
+- `workflow start` persists `.cosheaf/workflows/<workflow-id>/workflow.json`,
+  initializes `events.jsonl`, writes placeholder component files for
+  librarian/FSM/loop review context, and records an explicit authority notice.
+- `workflow show` reads one persisted workflow record.
+- `workflow step` appends one deterministic step and records a bounded event.
+  By default it records a planned step; `--execute-local-action` runs only an
+  action from the whitelisted local action registry.
+- `workflow run` executes a bounded number of workflow steps. With
+  `--execute-local-actions`, it still uses only the whitelisted local action
+  registry and forbids accepted writes, network, hosted providers, and arbitrary
+  shell.
+- `workflow readiness` loads persisted workflow state and classifies it as
+  `ready_for_draft_proposal`, a specific blocker class, or `inconclusive`.
 
 The current implementation lives under:
 
@@ -38,9 +46,9 @@ cosheaf/workflow/engine.py
 cosheaf/workflow/cli.py
 ```
 
-## Planned Runtime Layout
+## Runtime Layout
 
-The intended persisted runtime layout remains:
+Workflow runtime records are written under ignored `.cosheaf/` paths:
 
 ```text
 .cosheaf/workflows/<workflow-id>/workflow.json
@@ -58,9 +66,6 @@ artifacts and must not be treated as accepted knowledge.
 
 The following V14 targets are not complete in the current `v0.9.0` release:
 
-- persistent workflow storage and replay under `.cosheaf/workflows/`;
-- `workflow show`;
-- bounded `workflow run --max-steps ... --execute-local-actions`;
 - draft proposal generation from workflow output;
 - workflow handoff build/show/scan/export commands;
 - workflow scanner integration for private leakage, accepted-write attempts,

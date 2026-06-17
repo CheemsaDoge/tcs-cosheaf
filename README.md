@@ -12,12 +12,12 @@ Package metadata records `0.9.0`; the public `v0.9.0` tag and GitHub release
 are published at
 <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0>.
 The current line includes the deterministic execution-kernel baseline from
-`v0.8.0` plus an initial reviewable-workflow CLI surface. A documentation
-closeout audit found that the `cosheaf workflow` surface is still thin:
-`start` emits a workflow JSON record, while `step` and `readiness` are
-ephemeral and do not yet read or write the planned persisted
-`.cosheaf/workflows/<workflow-id>/` state. Draft-proposal, workflow-handoff,
-and `cosheaf eval reviewable-workflow` commands remain follow-up work.
+`v0.8.0` plus reviewable-workflow CLI surfaces. The current development line
+adds persistent workflow runtime records under
+`.cosheaf/workflows/<workflow-id>/`, `workflow show`, persisted `workflow
+step`, bounded `workflow run`, and persisted readiness reports. Draft-proposal,
+workflow-handoff, scanner/export, and `cosheaf eval reviewable-workflow`
+commands remain follow-up work.
 
 The `v0.9.0` line does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, Lean semantic alignment, human review, accepted
@@ -180,9 +180,10 @@ Implemented:
 - Published `v0.9.0` initial reviewable-workflow surfaces:
   `cosheaf workflow start`, `cosheaf workflow step`, and
   `cosheaf workflow readiness`, with explicit authority notices. The current
-  workflow CLI remains a thin initial surface; persistent workflow state,
-  draft proposals, workflow handoffs, and reviewable-workflow eval coverage are
-  follow-up work.
+  development line extends that surface with persisted workflow state,
+  `cosheaf workflow show`, and bounded `cosheaf workflow run` through the
+  whitelisted local action registry. Draft proposals, workflow handoffs, and
+  reviewable-workflow eval coverage are follow-up work.
 
 Planned or incomplete:
 
@@ -190,8 +191,6 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- Persistent reviewable-workflow storage and replay under
-  `.cosheaf/workflows/<workflow-id>/`.
 - Workflow draft-proposal and workflow handoff commands.
 - `cosheaf eval reviewable-workflow --json` benchmark coverage.
 - Hosted PR checklist source discovery beyond explicit local markdown files.

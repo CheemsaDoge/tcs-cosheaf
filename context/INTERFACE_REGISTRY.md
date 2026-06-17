@@ -6,18 +6,24 @@
 
 - Reviewable-workflow DTOs and CLI metadata commands are implemented under
   `cosheaf.workflow`. The current Python surface defines `WorkflowStatus`,
-  `ReadinessClass`, `WorkflowStep`, `WorkflowRecord`,
-  `WorkflowReadinessReport`, `WORKFLOW_AUTHORITY_NOTICE`, `start_workflow`,
-  `append_step`, and `assess_readiness`. The current CLI surface is
-  `cosheaf workflow start --issue <issue-id> --query <query> --json`,
-  `cosheaf workflow step <workflow-id> --json`, and
-  `cosheaf workflow readiness <workflow-id> --json`. In the published
-  `v0.9.0` implementation, `start` emits one workflow JSON record, while
-  `step` and `readiness` are ephemeral and do not yet load or persist
-  `.cosheaf/workflows/<workflow-id>/` runtime state. Workflow output is review
-  context only and does not grant proof, source metadata, human review,
-  verifier pass, gate pass, accepted status, accepted refutation, or promotion
-  authority.
+  `ReadinessClass`, `WorkflowInput`, `WorkflowOutput`,
+  `WorkflowEvidenceRef`, `WorkflowFailureSummary`,
+  `WorkflowAuthorityNotice`, `WorkflowReadinessSummary`, `WorkflowStep`,
+  `WorkflowRecord`, `WorkflowReadinessReport`, `WorkflowWriteResult`,
+  `WorkflowStepResult`, `WorkflowRunResult`, `WorkflowError`,
+  `WORKFLOW_AUTHORITY_NOTICE`, `start_workflow`, `load_workflow`,
+  `write_workflow`, `step_workflow`, `run_workflow`, `append_step`,
+  `append_workflow_event`, `assess_readiness`, and workflow storage path
+  helpers. Runtime records are JSON under
+  `.cosheaf/workflows/<workflow-id>/workflow.json`, `events.jsonl`,
+  `librarian.json`, `fsm.json`, `loop.json`, and `readiness.json`. The CLI
+  surface is `cosheaf workflow start --issue <issue-id> --query <query>
+  --json`, `cosheaf workflow show <workflow-id> --json`, `cosheaf workflow
+  step <workflow-id> --json`, `cosheaf workflow run <workflow-id>
+  --max-steps <n> --execute-local-actions --json`, and `cosheaf workflow
+  readiness <workflow-id> --json`. Workflow output is review context only and
+  does not grant proof, source metadata, human review, verifier pass, gate pass,
+  accepted status, accepted refutation, or promotion authority.
 - Operator session DTOs, runtime storage, and CLI metadata commands are
   implemented under
   `cosheaf.operator_session`. The current surface defines
@@ -134,17 +140,27 @@
 - `cosheaf version`: prints the package version.
 - `cosheaf version --json`: emits deterministic JSON with `schema_version`,
   package name, and version.
-- `cosheaf workflow start --issue <issue-id> --query <query> --json`: emits an
-  initial reviewable-workflow JSON record with issue, query, status, timestamps,
-  and the workflow authority notice. In `v0.9.0`, this command does not yet
-  persist `.cosheaf/workflows/<workflow-id>/workflow.json`.
-- `cosheaf workflow step <workflow-id> --json`: emits an ephemeral step status
-  message for the current thin workflow surface. It does not yet persist a
-  workflow event or execute a bounded local action.
-- `cosheaf workflow readiness <workflow-id> --json`: reports that readiness is
-  not yet assessable from persisted state in the current thin workflow surface.
-  It does not yet load a workflow record or produce the full V14 readiness
-  classifier.
+- `cosheaf workflow start --issue <issue-id> --query <query> --json`: persists
+  a reviewable-workflow runtime record with issue, query, status, timestamps,
+  component review-context files, readiness report, event log, and the workflow
+  authority notice. Optional flags include `--workflow-id <workflow-id>` and
+  `--repo-root <path>`.
+- `cosheaf workflow show <workflow-id> --json`: reads one persisted
+  reviewable-workflow runtime record without writing files.
+- `cosheaf workflow step <workflow-id> --json`: appends one deterministic
+  workflow step and event. By default it records a planned step. Optional flags
+  include `--action <action-id>`, `--execute-local-action`, and `--repo-root
+  <path>`. Local execution uses only the whitelisted local action registry and
+  blocks accepted writes, network access, hosted providers, and arbitrary shell.
+- `cosheaf workflow run <workflow-id> --max-steps <n>
+  --execute-local-actions --json`: runs a bounded number of workflow steps.
+  Without `--execute-local-actions`, it records planned steps only. With the
+  flag, it uses only whitelisted local actions and still records results as
+  review context.
+- `cosheaf workflow readiness <workflow-id> --json`: loads persisted workflow
+  state and classifies readiness as `ready_for_draft_proposal`, a blocker class,
+  or `inconclusive`. Readiness is review guidance only; it is not acceptance,
+  review, proof, verifier pass, or gate pass.
 - `cosheaf operator session start --issue <issue-id> --json`: creates a
   runtime operator-session metadata record under
   `.cosheaf/operator-sessions/<session-id>/session.json`, with matching

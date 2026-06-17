@@ -383,15 +383,19 @@ workflow records:
 
 ```bash
 cosheaf workflow start --issue <issue-id> --query <query> --json
+cosheaf workflow show <workflow-id> --json
 cosheaf workflow step <workflow-id> --json
+cosheaf workflow run <workflow-id> --max-steps <n> --execute-local-actions --json
 cosheaf workflow readiness <workflow-id> --json
 ```
 
-The current implementation is an initial surface. `start` emits a workflow JSON
-record with an authority notice, while `step` and `readiness` are still
-ephemeral and do not yet persist or load `.cosheaf/workflows/<workflow-id>/`
-runtime state. Draft proposals, workflow handoffs, workflow scanner
-integration, and `cosheaf eval reviewable-workflow --json` remain future work.
+The current implementation persists runtime review context under
+`.cosheaf/workflows/<workflow-id>/`. `start` writes `workflow.json`,
+`events.jsonl`, component review-context files, and a readiness report. `step`
+persists one planned step by default, and `run --execute-local-actions` executes
+only whitelisted local actions through the existing action registry. Draft
+proposals, workflow handoffs, workflow scanner integration, and `cosheaf eval
+reviewable-workflow --json` remain future work.
 
 Agents must treat workflow output as review context only. It is not proof,
 source metadata, human review, verifier pass, gate pass, accepted status,

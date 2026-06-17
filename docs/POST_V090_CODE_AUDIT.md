@@ -18,9 +18,10 @@ published code from the broader V14 plan.
 - Local `main` was at `4c00cb1 V14 F.1: v0.9.0 RC metadata (#423)` before this
   documentation closeout branch was created.
 
-## Code Audit Findings
+## Code Audit Findings At Publication Closeout
 
-The current workflow implementation is present but thin:
+At the publication closeout captured by this audit, the workflow
+implementation was present but thin:
 
 - `cosheaf/workflow/engine.py` defines workflow DTOs, authority notices,
   `start_workflow`, `append_step`, and `assess_readiness`.
@@ -28,14 +29,18 @@ The current workflow implementation is present but thin:
   `workflow readiness`.
 - `workflow start` returns a JSON record but does not write
   `.cosheaf/workflows/<workflow-id>/workflow.json`.
-- `workflow step` creates an in-memory `WorkflowStep` but only prints
+- `workflow step` created an in-memory `WorkflowStep` but only printed
   `ephemeral, not persisted`.
-- `workflow readiness` prints that readiness is not yet assessable from
+- `workflow readiness` printed that readiness was not yet assessable from
   persisted state.
 
-Therefore, the current code does not yet satisfy the full V14 Phase B-F target.
-It is a published initial workflow surface, not a completed issue-to-handoff
-workflow engine.
+Therefore, the code audited here did not yet satisfy the full V14 Phase B-F
+target. It was a published initial workflow surface, not a completed
+issue-to-handoff workflow engine. A later V14 B.1 follow-up adds persistent
+workflow runtime storage, `workflow show`, persisted `workflow step`, bounded
+`workflow run`, and persisted readiness reports; draft proposals, workflow
+handoffs, scanner integration, and reviewable-workflow evals remain future
+work.
 
 Initial local quality checks during this closeout found that the documentation
 branch did not pass the normal full verification ladder:
@@ -69,7 +74,7 @@ Checks that now pass locally on PR #425:
 - `git diff --check` reported only expected LF/CRLF working-copy warnings and
   no whitespace errors.
 
-## V14 Items Still Missing
+## V14 Items Still Missing After The Publication Closeout
 
 - persistent workflow runtime storage;
 - workflow show/run commands;
@@ -114,7 +119,7 @@ No automatic theorem proving, Lean semantic alignment, default hosted-provider
 execution, arbitrary shell execution, accepted-write path, or multi-user
 permission surface is established by `v0.9.0`.
 
-## Recommended Next Work
+## Recommended Next Work Recorded During Publication Closeout
 
 1. Finish PR #425 by waiting for GitHub CI on the latest pushed commit and
    merge only after required checks are green.
@@ -124,4 +129,6 @@ permission surface is established by `v0.9.0`.
 4. Fix public-KB framework pin and workflow-output policy drift in a separate
    PR.
 5. Continue V14 implementation from persistent workflow storage and tests
-   rather than treating `v0.9.0` as a complete workflow engine.
+   rather than treating `v0.9.0` as a complete workflow engine. This item is
+   addressed by the later V14 B.1 workflow-core follow-up; proposal, handoff,
+   scanner, eval, and downstream policy work remain.

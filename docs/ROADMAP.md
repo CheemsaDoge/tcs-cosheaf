@@ -11,19 +11,17 @@ Layer support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: v0.9.0 documentation closeout and workflow gap audit
+## Active Development Focus: V14 reviewable-workflow completion
 
-The active closeout work is to align documentation with the real `v0.9.0`
-release state and code audit. The public `v0.9.0` tag and GitHub release are
-published, and package metadata records `0.9.0`. The current workflow surface
-is intentionally thin: `workflow start` emits a JSON record, while
-`workflow step` and `workflow readiness` are still ephemeral and do not yet
-read or write persisted `.cosheaf/workflows/<workflow-id>/` state.
+The public `v0.9.0` tag and GitHub release are published, and package metadata
+records `0.9.0`. The current V14 implementation line has moved beyond the
+published thin surface by adding persistent workflow runtime records under
+`.cosheaf/workflows/<workflow-id>/`, `workflow show`, persisted `workflow
+step`, bounded `workflow run`, and persisted readiness reports. These outputs
+remain runtime review context only.
 
 The next implementation work should start from these remaining V14 gaps:
 
-- persistent workflow runtime storage and replay;
-- `workflow show` and bounded `workflow run`;
 - draft proposal generation from workflow output;
 - workflow handoff build/show/scan/export;
 - workflow scanner and reviewable-workflow eval coverage;
@@ -203,10 +201,12 @@ Package metadata and `cosheaf.__version__` record `0.9.0`.
 limitations. The public `v0.9.0` tag and GitHub release are published.
 
 The `v0.9.0` release includes the first reviewable-workflow CLI surface on top
-of the `v0.8.0` deterministic execution-kernel baseline. The workflow surface
-is not a complete issue-to-handoff engine yet: persistent workflow storage,
-draft proposal generation, workflow handoff commands, and
-`cosheaf eval reviewable-workflow --json` remain future work.
+of the `v0.8.0` deterministic execution-kernel baseline. At publication time,
+the workflow surface was not a complete issue-to-handoff engine. The current
+V14 follow-up line has since added persistent workflow storage, `workflow
+show`, persisted `workflow step`, bounded `workflow run`, and readiness
+reports. Draft proposal generation, workflow handoff commands, scanner
+integration, and `cosheaf eval reviewable-workflow --json` remain future work.
 
 This release does not make workflow, session, MCP, loop, scanner, handoff, or
 eval output proof, source metadata, checked evidence, verifier pass, gate pass,
