@@ -1,8 +1,8 @@
 # Current Milestone
 
-Milestone: **v0.7.0 Bounded Research Loop + Attempt Memory release candidate**
+Milestone: **v0.7.0 Bounded Research Loop + Attempt Memory**
 
-Status: **release candidate prepared (Phase F.1)**
+Status: **completed**
 
 Started: 2026-06-17
 
@@ -94,12 +94,12 @@ Current v0.7.0 status:
 - non-dry-run loop execution remains refused until a later explicit
   deterministic implementation.
 
-Task F.1 `release-v070-readiness-and-rc` is active on branch
-`release-v070-readiness-and-rc`. It bumps package version to `0.7.0`, adds
-`docs/releases/v0.7.0.md`, and aligns README/roadmap/milestone/project-state
-docs with the RC state. The RC does not claim `v0.7.0` is published. The
-public tag, GitHub release, post-tag release smoke, and downstream pin
-alignment remain future Phase F.2 steps.
+Phase F.2 completed: tag `v0.7.0` published, GitHub release created
+(https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.7.0),
+post-tag install smoke passed, workspace-template PR #78 and public-KB
+PR #93 aligned downstream pins.
+
+The v0.7.0 line is published and complete.
 
 ## Non-negotiable invariants
 
