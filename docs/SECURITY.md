@@ -35,7 +35,8 @@ checks:
 | Operator handoff export is mistaken for human review or writes outside review context | Export writes only `reviews/operator/` YAML, dry-run writes nothing, accepted targets are rejected, and blocked scanner status fails closed | `test_operator_handoff_export_dry_run_reports_target_without_writing`, `test_operator_handoff_export_writes_review_context_yaml`, `test_operator_handoff_export_rejects_accepted_write_target`, and `test_operator_handoff_export_fails_closed_when_handoff_scanner_blocked` |
 | Research loop claims accepted/promotion/human-review authority | Loop models carry authority notice; attempts reject accepted KB paths and authority-overclaim fields; loop statuses are runtime-only; no verifier/human-review/promotion authority is granted | `test_authority_overclaim_rejected`, `test_accepted_path_rejected`, and `test_invalid_status_transition_after_finalize` |
 | Research loop storage leaks private data or bypasses Git ignore | Loop/attempt storage and scan reports stay under ignored `.cosheaf/research-loops/`; public mode rejects private content; the loop scanner blocks secrets, private public-mode material, provider payloads, accepted-write attempts, hidden reasoning, and authority claims | `test_public_mode_rejects_private_refs`, `test_storage_paths_are_deterministic`, `test_research_loop_scan_blocks_leaks_and_reports_metrics`, and `test_research_loop_scan_service_clean_loop` |
-| Reviewable workflow output is mistaken for proof, review, or acceptance | Workflow records carry authority notices and remain review context only; persistent workflow runtime records and bounded local-action workflow runs still do not create accepted knowledge, human review, verifier pass, gate pass, source metadata, accepted refutation, or promotion authority | `tests/test_workflow.py`; full workflow scanner/handoff coverage remains follow-up V14 work |
+| Reviewable workflow output is mistaken for proof, review, or acceptance | Workflow records, draft proposals, scanner reports, and handoff packets carry authority notices and remain review context only; they do not create accepted knowledge, human review, verifier pass, gate pass, source metadata, accepted refutation, or promotion authority | `tests/test_workflow.py` and `tests/test_workflow_handoff.py` |
+| Workflow handoff hides leaks, source fabrication, authority claims, or skipped-result ambiguity | Workflow handoff build scans runtime inputs first, scan fails closed on blocking findings, export reruns the scanner, and skipped workflow results remain warning/non-pass evidence | `test_workflow_handoff_build_show_scan_and_export_dry_run`, `test_workflow_handoff_scan_blocks_private_leakage`, `test_workflow_handoff_scan_blocks_accepted_write_attempt`, `test_workflow_handoff_scan_blocks_human_review_overclaim`, `test_workflow_handoff_scan_blocks_source_metadata_fabrication`, and `test_workflow_handoff_preserves_skipped_not_pass_warning` |
 
 ## Hard Boundaries
 
@@ -81,10 +82,22 @@ checks:
   fail closed on blocking findings before any future handoff export path.
 - Reviewable workflow records are review context only. Persistent workflow
   runtime storage, `workflow show`, persisted `workflow step`, bounded
-  `workflow run`, and readiness reports must not be treated as proof, source
+  `workflow run`, readiness reports, draft proposals, workflow handoff packets,
+  handoff scans, and handoff exports must not be treated as proof, source
   metadata, human review, verifier pass, gate pass, accepted status, accepted
-  refutation, or promotion authority. Future draft proposal, handoff, scanner,
-  or eval work must preserve the same boundary.
+  refutation, or promotion authority. Future eval work must preserve the same
+  boundary.
+- Workflow handoff scan reports are runtime review metadata only. They must
+  fail closed on accepted-write attempts, private leakage, hidden reasoning,
+  provider payload dumps, secrets/env dumps, human-review overclaims,
+  verifier/gate pass overclaims, source-metadata fabrication, and accepted
+  theorem/refutation claims without promotion. They do not create human review,
+  verifier pass, gate pass, accepted status, source metadata, or promotion
+  authority.
+- Workflow handoff export is explicit review context only. It writes under
+  `reviews/workflow/`, rejects accepted KB targets, reruns the handoff scanner,
+  and does not create human review, promote artifacts, mutate verifier results,
+  or mark accepted/refuted/proved status.
 - Checked counterexample evidence is review evidence only. It must not claim
   human review, accepted refutation, accepted status, verifier pass, gate pass,
   or promotion authority, and public-only context must not expose private
@@ -147,6 +160,12 @@ bundles are compact review context and are not a substitute for raw check
 logs, validation, gates, source metadata, human review, or promotion checks.
 Handoff export tests use synthetic handoff fixtures only and do not write
 accepted KB content.
+
+Workflow handoff tests use synthetic workflow runtime fixtures only. Handoff
+bundles and scan reports are compact review context and are not substitutes
+for raw workflow records, validation, gates, source metadata, human review, or
+promotion checks. Handoff export dry-run writes nothing; non-dry-run export is
+restricted to `reviews/workflow/` and must not write accepted KB content.
 
 The optional OpenAI-compatible HTTP transport is tested with injected local
 fixtures. CI must still use fake, injected mocked, or local non-live-network

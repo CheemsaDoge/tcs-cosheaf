@@ -22,10 +22,22 @@
   `DraftDependencySummary`, `DraftReviewChecklist`,
   `WorkflowProposalProvenance`, `DraftProposalWriteResult`,
   `WORKFLOW_DRAFT_PROPOSAL_AUTHORITY_NOTICE`, `build_draft_proposal`, and
-  `write_draft_proposal`. Runtime records are JSON under
+  `write_draft_proposal`. Workflow review handoffs are implemented in
+  `cosheaf.workflow.handoff`; the Python surface defines
+  `WorkflowHandoffBundle`, `WorkflowHandoffActionSummary`,
+  `WorkflowHandoffCandidateClaim`, `WorkflowHandoffScannerFinding`,
+  `WorkflowHandoffScanResult`, `WorkflowHandoffScannerSummary`,
+  `WorkflowHandoffExportResult`, `WorkflowHandoffWriteResult`,
+  `WORKFLOW_HANDOFF_AUTHORITY_NOTICE`, `build_workflow_handoff`,
+  `load_workflow_handoff`, `scan_workflow_handoff`,
+  `export_workflow_handoff`, `workflow_handoff_id`,
+  `workflow_id_from_handoff_id`, `workflow_handoff_path`,
+  `workflow_handoff_scan_path`, `workflow_handoff_export_path`, and
+  `write_workflow_handoff`. Runtime records are JSON under
   `.cosheaf/workflows/<workflow-id>/workflow.json`, `events.jsonl`,
   `librarian.json`, `fsm.json`, `loop.json`, `readiness.json`, and optional
-  review-context proposal JSON. The CLI surface is `cosheaf workflow start
+  review-context proposal JSON, plus workflow handoff JSON and handoff scan
+  JSON under the same runtime directory. The CLI surface is `cosheaf workflow start
   --issue <issue-id> --query <query> --json`, `cosheaf workflow show
   <workflow-id> --json`, `cosheaf workflow step <workflow-id> --json`,
   `cosheaf workflow run <workflow-id> --max-steps <n>
@@ -33,10 +45,14 @@
   --json`, `cosheaf workflow draft-proposal <workflow-id> --dry-run --json`,
   `cosheaf workflow draft-proposal <workflow-id> --out <path> --json`, and
   `cosheaf workflow draft-proposal <workflow-id> --private-root <path>
-  --artifact-id <artifact-id> --json`. Workflow output and draft proposals are
+  --artifact-id <artifact-id> --json`, `cosheaf workflow handoff build
+  <workflow-id> --json`, `cosheaf workflow handoff show <handoff-id> --json`,
+  `cosheaf workflow handoff scan <handoff-id> --json`, and `cosheaf workflow
+  handoff export <handoff-id> --dry-run --json`. Workflow output, draft
+  proposals, handoff scan reports, handoff bundles, and handoff exports are
   review context or draft artifacts only and do not grant proof, source
   metadata, human review, verifier pass, gate pass, accepted status, accepted
-  refutation, or promotion authority.
+  theorem/refutation, or promotion authority.
 - Operator session DTOs, runtime storage, and CLI metadata commands are
   implemented under
   `cosheaf.operator_session`. The current surface defines
@@ -185,6 +201,27 @@
   writable private draft root. The artifact remains `status: draft` and this
   command does not create human review, accepted status, verifier pass, gate
   pass, source metadata, or promotion authority.
+- `cosheaf workflow handoff build <workflow-id> --json`: scans workflow
+  runtime inputs, fails closed on blocking scanner findings, builds a compact
+  runtime review handoff bundle from workflow/draft-proposal output, writes
+  `.cosheaf/workflows/<workflow-id>/handoff.json`, and records scanner status
+  in `.cosheaf/workflows/<workflow-id>/handoff-scan.json`.
+- `cosheaf workflow handoff show <handoff-id> --json`: reads one runtime
+  workflow handoff bundle without writing files. The deterministic handoff ID
+  is `handoff.<workflow-id>`.
+- `cosheaf workflow handoff scan <handoff-id> --json`: scans workflow runtime
+  and handoff JSON for accepted-write attempts, private leakage, hidden
+  reasoning markers, provider payload dumps, secrets/env dumps, human-review
+  overclaims, verifier/gate pass overclaims, source metadata fabrication, and
+  accepted theorem/refutation claims without promotion. Blocking findings make
+  the command exit nonzero after emitting JSON; skipped workflow results remain
+  warning/non-pass evidence.
+- `cosheaf workflow handoff export <handoff-id> --dry-run --json`: reports the
+  deterministic review-context export target
+  `reviews/workflow/<handoff-id>.yaml` without writing files. Non-dry-run
+  export writes only under `reviews/workflow/` after a clean scan and does not
+  create human review, accepted status, verifier pass, gate pass, source
+  metadata, or promotion authority.
 - `cosheaf operator session start --issue <issue-id> --json`: creates a
   runtime operator-session metadata record under
   `.cosheaf/operator-sessions/<session-id>/session.json`, with matching

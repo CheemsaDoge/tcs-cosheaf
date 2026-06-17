@@ -16,8 +16,9 @@ The current line includes the deterministic execution-kernel baseline from
 adds persistent workflow runtime records under
 `.cosheaf/workflows/<workflow-id>/`, `workflow show`, persisted `workflow
 step`, bounded `workflow run`, persisted readiness reports, and
-`workflow draft-proposal` for review-only proposal output. Workflow-handoff,
-scanner/export, and `cosheaf eval reviewable-workflow` commands remain
+`workflow draft-proposal` for review-only proposal output, plus
+`workflow handoff build/show/scan/export` for review-context handoff packets
+with fail-closed scanner guards. `cosheaf eval reviewable-workflow` remains
 follow-up work.
 
 The `v0.9.0` line does not add production autonomy, hosted-provider defaults,
@@ -184,8 +185,10 @@ Implemented:
   development line extends that surface with persisted workflow state,
   `cosheaf workflow show`, bounded `cosheaf workflow run` through the
   whitelisted local action registry, and `cosheaf workflow draft-proposal` for
-  review-context JSON or writable private draft artifact output. Workflow
-  handoffs and reviewable-workflow eval coverage are follow-up work.
+  review-context JSON or writable private draft artifact output, plus
+  `cosheaf workflow handoff build/show/scan/export` for review-context handoff
+  packets with fail-closed scanner guards. Reviewable-workflow eval coverage is
+  follow-up work.
 
 Planned or incomplete:
 
@@ -193,7 +196,6 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- Workflow handoff commands.
 - `cosheaf eval reviewable-workflow --json` benchmark coverage.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
@@ -389,6 +391,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Research loops](docs/RESEARCH_LOOPS.md)
 - [Reviewable workflows](docs/WORKFLOWS.md)
 - [Draft proposals](docs/DRAFT_PROPOSALS.md)
+- [Review handoffs](docs/REVIEW_HANDOFFS.md)
 - [External operator run loop](docs/EXTERNAL_OPERATOR_RUN_LOOP.md)
 - [Operator workspace demo](docs/OPERATOR_WORKSPACE_DEMO.md)
 - [Operator Skill package](docs/OPERATOR_SKILL.md)

@@ -3,6 +3,47 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V14 D.1 workflow review handoff scanner - 2026-06-18
+
+Issue #430 implements workflow review handoff packets and a fail-closed
+handoff scanner for persisted reviewable workflows. The workflow surface now
+adds:
+
+- `cosheaf workflow handoff build <workflow-id> --json`;
+- `cosheaf workflow handoff show <handoff-id> --json`;
+- `cosheaf workflow handoff scan <handoff-id> --json`;
+- `cosheaf workflow handoff export <handoff-id> --dry-run --json`.
+
+The Python surface lives in `cosheaf.workflow.handoff` and defines workflow
+handoff DTOs, scanner findings/results, deterministic handoff IDs, runtime
+paths, build/show/load/scan/export helpers, and the workflow handoff authority
+notice.
+
+Runtime handoff packets are written under:
+
+```text
+.cosheaf/workflows/<workflow-id>/handoff.json
+.cosheaf/workflows/<workflow-id>/handoff-scan.json
+```
+
+The handoff packet includes issue summary, query/objective, librarian context
+summary, FSM trace, actions executed, failures and avoided directions,
+candidate claims, evidence and limitations, scanner findings, a human-review
+checklist, and an explicit non-authority notice.
+
+The scanner blocks accepted-write attempts, private leakage, hidden reasoning
+markers, provider payload dumps, API keys/secrets/env dumps, human-review
+overclaims, verifier/gate pass overclaims, source metadata fabrication, and
+accepted theorem/refutation claims without promotion. Skipped workflow results
+remain warning/non-pass evidence.
+
+This task does not implement `cosheaf eval reviewable-workflow --json`,
+downstream workspace-template demos, public-KB workflow packet policy guards,
+promotion changes, human-review creation, verifier mutation, accepted writes,
+or hosted-provider behavior. Workflow handoff packets are review context only.
+They are not proof, source metadata, human review, verifier pass, gate pass,
+accepted status, accepted theorem/refutation, or promotion authority.
+
 ## V14 C.1 draft proposal from workflow - 2026-06-18
 
 Issue #428 implements draft proposal generation from persisted reviewable
@@ -24,12 +65,13 @@ under a writable private draft root. It refuses `kb/accepted/` targets, public
 or readonly KB output paths, and candidate status overclaims. Private draft
 artifact output remains `status: draft` and does not create human review.
 
-This follow-up still does not implement workflow handoff build/show/scan/
-export, workflow scanner integration, reviewable-workflow eval coverage,
-downstream workspace-template demo targets, or public-KB workflow packet policy
-guards. Workflow output and draft proposals remain review context or draft
-artifacts only. They are not proof, source metadata, human review, verifier
-pass, gate pass, accepted status, accepted refutation, or promotion authority.
+This follow-up did not implement workflow handoff build/show/scan/export,
+workflow scanner integration, reviewable-workflow eval coverage, downstream
+workspace-template demo targets, or public-KB workflow packet policy guards.
+The later V14 D.1 section above addresses the workflow handoff/scanner items.
+Workflow output and draft proposals remain review context or draft artifacts
+only. They are not proof, source metadata, human review, verifier pass, gate
+pass, accepted status, accepted refutation, or promotion authority.
 
 ## V14 B.1 workflow core follow-up - 2026-06-18
 
@@ -61,9 +103,10 @@ context, not hidden or treated as pass.
 
 At B.1 closeout, this follow-up did not implement draft proposals or later
 workflow handoff/scanner/eval/downstream policy work. V14 C.1 above supersedes
-the draft-proposal gap. Workflow output remains review context only. It is not
-proof, source metadata, human review, verifier pass, gate pass, accepted
-status, accepted refutation, or promotion authority.
+the draft-proposal gap, and V14 D.1 above supersedes the workflow handoff/
+scanner gap. Workflow output remains review context only. It is not proof,
+source metadata, human review, verifier pass, gate pass, accepted status,
+accepted refutation, or promotion authority.
 
 ## v0.9.0 documentation closeout, code audit, and CI repair - 2026-06-18
 
@@ -121,10 +164,11 @@ Local verification after the repair:
 - `git diff --check`: no whitespace errors, only LF/CRLF working-copy warnings.
 
 The quality ladder was green locally on PR #425. Later V14 B.1 follow-up work
-adds persisted workflow runtime storage, `workflow show`, persisted `workflow
-step`, bounded `workflow run`, and persisted readiness reports. This still does
-not make the V14 issue-to-handoff workflow engine complete; draft proposal,
-workflow handoff, scanner, eval, and downstream policy work remain incomplete.
+added persisted workflow runtime storage, `workflow show`, persisted `workflow
+step`, bounded `workflow run`, and persisted readiness reports. Later V14 C.1
+and D.1 follow-ups added draft proposal generation and workflow handoff/
+scanner coverage. Reviewable-workflow eval and downstream policy work remain
+incomplete.
 
 Downstream state observed during closeout:
 

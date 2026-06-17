@@ -1,8 +1,8 @@
 # Draft Proposals
 
 Draft proposals convert persisted workflow runtime output into reviewable
-candidate material. They are a handoff surface for humans and later review
-workflows, not accepted knowledge.
+candidate material. They are a handoff surface for humans and workflow review
+handoff packets, not accepted knowledge.
 
 ## Commands
 
@@ -70,3 +70,7 @@ The command refuses output paths under `kb/accepted/`, refuses public/readonly
 KB output paths, refuses candidate status overclaims, and supports dry-run
 execution. Validation, gates, source review, human review, and accepted
 promotion remain separate lifecycle steps.
+
+Use `cosheaf workflow handoff build <workflow-id> --json` when a workflow is
+ready for a compact review packet. The handoff remains review context only and
+does not create human review or source metadata.

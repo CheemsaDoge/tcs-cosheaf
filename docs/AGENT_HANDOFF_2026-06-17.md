@@ -59,9 +59,9 @@ Do not describe `v0.9.0` as a complete issue-to-handoff workflow engine. It is
 a published initial reviewable-workflow surface.
 
 Later V14 follow-up work adds persistent workflow storage, `workflow show`,
-persisted `workflow step`, bounded `workflow run`, and persisted readiness
-reports. Draft proposals, workflow handoffs, scanner integration, and
-`cosheaf eval reviewable-workflow --json` remain incomplete.
+persisted `workflow step`, bounded `workflow run`, persisted readiness reports,
+draft proposals, and workflow handoff build/show/scan/export with scanner
+integration. `cosheaf eval reviewable-workflow --json` remains incomplete.
 
 The normal verification ladder is green locally on this checkout after the
 code-quality closeout:

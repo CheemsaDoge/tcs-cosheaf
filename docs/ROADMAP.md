@@ -17,14 +17,13 @@ The public `v0.9.0` tag and GitHub release are published, and package metadata
 records `0.9.0`. The current V14 implementation line has moved beyond the
 published thin surface by adding persistent workflow runtime records under
 `.cosheaf/workflows/<workflow-id>/`, `workflow show`, persisted `workflow
-step`, bounded `workflow run`, and persisted readiness reports. These outputs
-remain runtime review context only.
+step`, bounded `workflow run`, persisted readiness reports, draft proposal
+generation, and workflow handoff build/show/scan/export. These outputs remain
+runtime review context only.
 
 The next implementation work should start from these remaining V14 gaps:
 
-- draft proposal generation from workflow output;
-- workflow handoff build/show/scan/export;
-- workflow scanner and reviewable-workflow eval coverage;
+- reviewable-workflow eval coverage;
 - downstream workspace-template/public-KB pin and policy closeout.
 
 The authority boundary is unchanged: workflow records, loop records, task
@@ -205,8 +204,9 @@ of the `v0.8.0` deterministic execution-kernel baseline. At publication time,
 the workflow surface was not a complete issue-to-handoff engine. The current
 V14 follow-up line has since added persistent workflow storage, `workflow
 show`, persisted `workflow step`, bounded `workflow run`, and readiness
-reports. Draft proposal generation, workflow handoff commands, scanner
-integration, and `cosheaf eval reviewable-workflow --json` remain future work.
+reports, draft proposal generation, and workflow handoff build/show/scan/export
+with scanner integration. `cosheaf eval reviewable-workflow --json` remains
+future work.
 
 This release does not make workflow, session, MCP, loop, scanner, handoff, or
 eval output proof, source metadata, checked evidence, verifier pass, gate pass,
