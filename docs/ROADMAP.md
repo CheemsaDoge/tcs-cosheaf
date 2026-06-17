@@ -11,27 +11,35 @@ Layer support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V14 reviewable-workflow completion
+## Active Development Focus: V15 cross-check evidence
 
 The public `v0.9.0` tag and GitHub release are published, and package metadata
-records `0.9.0`. The current V14 implementation line has moved beyond the
-published thin surface by adding persistent workflow runtime records under
+records `0.9.0`. The V14 implementation line moved beyond the published thin
+surface by adding persistent workflow runtime records under
 `.cosheaf/workflows/<workflow-id>/`, `workflow show`, persisted `workflow
 step`, bounded `workflow run`, persisted readiness reports, draft proposal
 generation, and workflow handoff build/show/scan/export. These outputs remain
 runtime review context only. The framework line now also includes
 `cosheaf eval reviewable-workflow --json` as a deterministic regression signal
-for issue-to-reviewable-packet behavior.
+for issue-to-reviewable-packet behavior. Downstream workspace-template and
+public KB closeout work for the reviewable-workflow demo and policy guard has
+landed.
 
-The next implementation work should start from these remaining V14 gaps:
+The next implementation work is V15:
 
-- downstream workspace-template/public-KB pin and policy closeout.
+- typed checker registry design and implementation;
+- cross-check evidence reports attached to reviewable workflow context;
+- proof-obligation and gap taxonomy;
+- deterministic eval and downstream policy smoke for cross-check reports;
+- conservative `v0.10.0` release packaging after implementation.
 
 The authority boundary is unchanged: workflow records, loop records, task
-packets, operator results, handoffs, and eval reports are review context only.
-They do not write accepted knowledge, create human review, mutate verifier
-results, mark gate pass, promote artifacts, call hosted providers by default,
-execute arbitrary shell through Cosheaf, or claim automatic theorem proving.
+packets, operator results, handoffs, eval reports, future checker-registry
+records, and future cross-check reports are review context only unless a real
+checker result explicitly records verifier evidence. They do not write accepted
+knowledge, create human review, fabricate source metadata, mark gate pass,
+promote artifacts, call hosted providers by default, execute arbitrary shell
+through Cosheaf, or claim automatic theorem proving.
 
 ## Completed Release Focus: v0.6.0 Operator Session + Review Handoff
 
@@ -208,6 +216,8 @@ show`, persisted `workflow step`, bounded `workflow run`, and readiness
 reports, draft proposal generation, and workflow handoff build/show/scan/export
 with scanner integration. The later V14 E.1 follow-up adds
 `cosheaf eval reviewable-workflow --json` framework benchmark coverage.
+Downstream workspace-template PR #83 and public KB PR #97 closed the V14
+demo/policy guard items.
 
 This release does not make workflow, session, MCP, loop, scanner, handoff, or
 eval output proof, source metadata, checked evidence, verifier pass, gate pass,

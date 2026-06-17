@@ -3,6 +3,34 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V15 Phase A kickoff after V14 closeout - 2026-06-18
+
+V14 is closed for the reviewable-workflow MVP line. The public `v0.9.0` tag
+and release remain the published baseline, and later V14 follow-ups on `main`
+now provide the complete post-tag reviewable-workflow path:
+
+- persistent workflow runtime storage;
+- `workflow show`, persisted `workflow step`, bounded `workflow run`, and
+  persisted readiness reports;
+- `workflow draft-proposal`;
+- `workflow handoff build/show/scan/export`;
+- `cosheaf eval reviewable-workflow --json`;
+- workspace-template `make reviewable-workflow-demo` in downstream PR #83;
+- public KB workflow-packet policy guard coverage in downstream PR #97.
+
+The downstream closeout keeps the same authority boundary. Workflow packets,
+draft proposals, handoff bundles, handoff exports, scanner reports, eval
+reports, and downstream demo outputs are review context or draft artifacts
+only. They are not proof, source metadata, human review, verifier pass, gate
+pass, accepted status, accepted theorem/refutation, or promotion authority.
+
+V15 starts from `docs/POST_V090_STATE_AUDIT.md`,
+`docs/CODEX_DEVELOPMENT_PLAN_V15.md`, and
+`docs/ADR/0031-cross-check-evidence-checker-registry.md`. The next
+implementation line is typed checker registry plus cross-check evidence
+reports for review, without changing accepted-promotion, human-review, source
+metadata, verifier/gate, formal-link, or skipped-not-pass semantics.
+
 ## V14 E.1 reviewable workflow benchmark and ecosystem smoke - 2026-06-18
 
 Issue #432 adds the framework-side deterministic reviewable-workflow eval and
@@ -26,10 +54,11 @@ accepted knowledge in the caller repository. It is a regression signal only,
 not proof, source metadata, human review, verifier pass, gate pass, accepted
 status, accepted theorem/refutation, or promotion authority.
 
-This task does not implement downstream workspace-template
-`reviewable-workflow-demo`, public-KB workflow packet policy guards,
-promotion changes, human-review creation, verifier mutation, accepted writes,
-or hosted-provider behavior.
+This task did not itself implement downstream workspace-template
+`reviewable-workflow-demo` or public-KB workflow packet policy guards. Those
+downstream V14 closeout items later landed in workspace-template PR #83 and
+public-KB PR #97. This task did not add promotion changes, human-review
+creation, verifier mutation, accepted writes, or hosted-provider behavior.
 
 ## V14 D.1 workflow review handoff scanner - 2026-06-18
 
@@ -68,8 +97,8 @@ remain warning/non-pass evidence.
 At D.1 closeout this task did not implement reviewable-workflow eval coverage,
 downstream workspace-template demos, public-KB workflow packet policy guards,
 promotion changes, human-review creation, verifier mutation, accepted writes,
-or hosted-provider behavior. The later V14 E.1 section above addresses the
-framework eval portion only. Workflow handoff packets are review context only.
+or hosted-provider behavior. The later V14 E.1 and downstream closeout sections
+above address those follow-ups. Workflow handoff packets are review context only.
 They are not proof, source metadata, human review, verifier pass, gate pass,
 accepted status, accepted theorem/refutation, or promotion authority.
 
@@ -97,9 +126,9 @@ artifact output remains `status: draft` and does not create human review.
 This follow-up did not implement workflow handoff build/show/scan/export,
 workflow scanner integration, reviewable-workflow eval coverage, downstream
 workspace-template demo targets, or public-KB workflow packet policy guards.
-The later V14 D.1 section above addresses the workflow handoff/scanner items,
-and V14 E.1 addresses the framework eval portion. Workflow output and draft
-proposals remain review context or draft artifacts only. They are not proof,
+The later V14 D.1, V14 E.1, and downstream closeout sections above address
+those follow-ups. Workflow output and draft proposals remain review context or
+draft artifacts only. They are not proof,
 source metadata, human review, verifier pass, gate pass, accepted status,
 accepted refutation, or promotion authority.
 
@@ -162,7 +191,7 @@ first surface:
   persist `.cosheaf/workflows/<workflow-id>/` state.
 
 At that closeout point, the following V14 items remained incomplete and were
-not to be claimed as complete:
+not to be claimed as complete until later PRs landed:
 
 - persisted workflow runtime storage and replay;
 - `workflow show` and bounded `workflow run`;
@@ -170,8 +199,10 @@ not to be claimed as complete:
 - workflow handoff build/show/scan/export commands;
 - workflow scanner integration;
 - `cosheaf eval reviewable-workflow --json`, later addressed by V14 E.1;
-- workspace-template `reviewable-workflow-demo`;
-- public-KB workflow-output policy guard and framework pin closeout.
+- workspace-template `reviewable-workflow-demo`, later addressed by
+  workspace-template PR #83;
+- public-KB workflow-output policy guard and framework pin closeout, later
+  addressed by public-KB PR #97.
 
 Initial verification during this documentation/code-audit closeout found
 lint/typecheck failures in existing V13/V14 Python code. PR #425 now includes a
@@ -198,15 +229,21 @@ added persisted workflow runtime storage, `workflow show`, persisted `workflow
 step`, bounded `workflow run`, and persisted readiness reports. Later V14 C.1,
 D.1, and E.1 follow-ups added draft proposal generation, workflow handoff/
 scanner coverage, and the framework reviewable-workflow eval. Downstream
-workspace-template demo and public-KB workflow policy work remain incomplete.
+workspace-template demo and public-KB workflow policy work later landed in
+workspace-template PR #83 and public-KB PR #97.
 
-Downstream state observed during closeout:
+Downstream state observed during the original closeout:
 
 - local workspace-template checkout was on `release-v090-pins`; README and
   Makefile referenced `v0.9.0`, but several scripts still defaulted to
   `v0.8.0` and some docs still mentioned `v0.7.0`;
-- local public-KB `main` still installed `tcs-cosheaf` from `v0.7.0` in CI and
-  README text.
+- local public-KB `main` installed `tcs-cosheaf` from `v0.7.0` in CI and
+  README text at that time.
+
+Later downstream closeout PRs aligned the workspace-template active pins and
+public-KB CI pin to `v0.9.0`, added workspace-template
+`make reviewable-workflow-demo`, and added public-KB workflow packet policy
+guard coverage.
 
 No authority boundary changed. Workflow, loop, operator-session, provider,
 MCP, eval, and handoff outputs remain review context only. They are not proof,

@@ -90,20 +90,22 @@ Checks that now pass locally on PR #425:
   refutation, or promotion authority.
 
 The first seven items above were later addressed by V14 B.1 through E.1. The
-workspace-template reviewable-workflow demo target and public-KB policy guard
-remain downstream follow-up work.
+workspace-template reviewable-workflow demo target was later addressed by
+workspace-template PR #83, and the public-KB policy guard was later addressed
+by public-KB PR #97.
 
 ## Downstream State Observed During Closeout
 
-The workspace-template branch `release-v090-pins` was checked out locally and
-contained partial `v0.9.0` pin updates. Its README and Makefile referenced
-`v0.9.0`, but several scripts still defaulted to `v0.8.0`, and some docs still
-mentioned `v0.7.0`.
+At the original closeout, the workspace-template branch `release-v090-pins`
+was checked out locally and contained partial `v0.9.0` pin updates. Its README
+and Makefile referenced `v0.9.0`, but several scripts still defaulted to
+`v0.8.0`, and some docs still mentioned `v0.7.0`. Later workspace-template
+closeout PRs aligned active pins and added the reviewable-workflow demo.
 
-The public KB local `main` still installed the framework from `v0.7.0` in
-`.github/workflows/ci.yml` and README text. That downstream repository still
-needs a dedicated pin/policy closeout PR for `v0.9.0` or for whichever release
-the maintainer chooses as the supported public-KB baseline.
+At the original closeout, the public KB local `main` still installed the
+framework from `v0.7.0` in `.github/workflows/ci.yml` and README text. Later
+public-KB closeout PRs aligned CI to `v0.9.0` and added reviewable-workflow
+policy guard coverage.
 
 ## Authority Boundary
 
@@ -130,9 +132,11 @@ permission surface is established by `v0.9.0`.
 2. Keep the v0.9.0 workflow surface described as initial/thin despite the
    green quality ladder.
 3. Fix downstream workspace-template pin/script/doc drift in a separate PR.
+   Later workspace-template closeout PRs completed this.
 4. Fix public-KB framework pin and workflow-output policy drift in a separate
-   PR.
+   PR. Later public-KB closeout PRs completed this.
 5. Continue V14 implementation from persistent workflow storage and tests
    rather than treating `v0.9.0` as a complete workflow engine. This item is
    addressed by the later V14 B.1 workflow-core follow-up; proposal, handoff,
-   scanner, eval, and downstream policy work remain.
+   scanner, eval, and downstream policy work are addressed by later V14
+   follow-ups and downstream closeout PRs.

@@ -63,9 +63,9 @@ Later V14 follow-up work adds persistent workflow storage, `workflow show`,
 persisted `workflow step`, bounded `workflow run`, persisted readiness reports,
 draft proposals, and workflow handoff build/show/scan/export with scanner
 integration. Later V14 E.1 adds framework
-`cosheaf eval reviewable-workflow --json` coverage. Downstream
-workspace-template demo and public-KB policy closeout remain separate follow-up
-work.
+`cosheaf eval reviewable-workflow --json` coverage. Downstream closeout later
+adds workspace-template `make reviewable-workflow-demo` and public-KB workflow
+packet policy guard coverage.
 
 The normal verification ladder is green locally on this checkout after the
 code-quality closeout:

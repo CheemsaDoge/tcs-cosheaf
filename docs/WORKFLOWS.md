@@ -113,13 +113,16 @@ kb/private/draft/claims/<artifact-id>.yaml
 Those files are still draft artifacts. They are not source reviewed, human
 reviewed, accepted, or promoted by the proposal command.
 
-## Not Implemented Yet
+## Downstream Status
 
-The following V14 downstream targets are not complete in the current
-post-`v0.9.0` development line:
+The V14 downstream workflow closeout has landed:
 
-- workspace-template `make reviewable-workflow-demo`;
-- public-KB policy guard for workflow packets as non-source metadata.
+- workspace-template PR #83 adds `make reviewable-workflow-demo`;
+- public KB PR #97 guards against using workflow packets as source metadata,
+  accepted proof, or human review.
+
+Those downstream changes do not change the framework authority boundary and do
+not make workflow packets accepted knowledge.
 
 ## Authority Boundary
 
