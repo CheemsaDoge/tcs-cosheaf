@@ -3,6 +3,44 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V16 Phase A.1 post-v0.10.0 kickoff - 2026-06-18
+
+Issue #446 lands the V16 documentation-only kickoff for
+`v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns` on branch
+`post-v0100-v0110-kickoff`.
+
+This task verifies the published V15 closeout state and records the next line
+of work in durable repo memory:
+
+- `docs/POST_V0100_STATE_AUDIT.md`;
+- `docs/CODEX_DEVELOPMENT_PLAN_V16.md`;
+- `docs/ADR/0032-external-operator-campaign-harness.md`;
+- roadmap, current milestone, and project-state updates.
+
+The audit confirms:
+
+- package version `0.10.0`;
+- public `v0.10.0` tag and GitHub release;
+- post-tag release smoke from `@v0.10.0`;
+- checker registry CLI and tests;
+- workflow cross-check/evidence report CLI and tests;
+- proof/source/formalization gap taxonomy and workflow handoff surfacing;
+- workspace-template active pins at `@v0.10.0`;
+- public KB CI/docs pins at `@v0.10.0`;
+- no stale open PRs/issues across the three repositories before issue #446 was
+  opened for this task; and
+- unchanged accepted-write, human-review, source-metadata, verifier/gate, and
+  promotion authority.
+
+This task does not add campaign runtime. It does not change code, schema,
+dependencies, CLI behavior, package version, KB artifacts, tags, releases,
+accepted promotion semantics, gatekeeper semantics, verifier adapter contracts,
+public KB content, or workspace-template behavior.
+
+V16 implementation starts next with `campaign-model-core`: durable campaign
+models, ignored runtime storage under `.cosheaf/campaigns/`, thin CLI surfaces,
+and tests that keep campaign output review-only.
+
 ## V15 Phase F.2 v0.10.0 publication closeout - 2026-06-18
 
 Issue #444 records the `v0.10.0` Cross-Check Evidence + Checker Registry

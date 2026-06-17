@@ -1,25 +1,32 @@
 # Roadmap
 
 TCS-Cosheaf has published the `v0.10.0` Cross-Check Evidence + Checker
-Registry release after the published `v0.9.0` Reviewable Research Workflow MVP
-release. Earlier published baselines include `v0.8.0` Deterministic
-Execution Kernel + Librarian + FSM, `v0.7.0` Bounded Research Loop + Attempt
-Memory, `v0.6.0` Operator Session + Review Handoff, `v0.5.0` Operator MCP +
-Codex Application Layer, `v0.4.0` Strategy Planner + Research Task Graph,
-`v0.3.0` Checked Evidence and Research Run Loop, the `v0.2.x` CLI/provider/
-evidence/failure-memory line, `v0.2.0` local-MVP, and the `v0.1.1` Formal Link
-Layer support baseline. The project is still not production-ready. This
-roadmap records durable direction and named milestones; live issue state
-belongs in GitHub issues.
+Registry release and is starting the V16 / `v0.11.0` External AI Operator
+Harness + Bounded Multi-Run Campaigns line. Earlier published baselines include
+`v0.9.0` Reviewable Research Workflow MVP, `v0.8.0` Deterministic Execution
+Kernel + Librarian + FSM, `v0.7.0` Bounded Research Loop + Attempt Memory,
+`v0.6.0` Operator Session + Review Handoff, `v0.5.0` Operator MCP + Codex
+Application Layer, `v0.4.0` Strategy Planner + Research Task Graph, `v0.3.0`
+Checked Evidence and Research Run Loop, the `v0.2.x` CLI/provider/evidence/
+failure-memory line, `v0.2.0` local-MVP, and the `v0.1.1` Formal Link Layer
+support baseline. The project is still not production-ready. This roadmap
+records durable direction and named milestones; live issue state belongs in
+GitHub issues.
 
-## Active Development Focus: V16 audit and plan landing
+## Active Development Focus: V16 campaign model and storage
 
 The public `v0.10.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
-`@v0.10.0`. The next line is V16 / `v0.11.0` External AI Operator Harness +
-Bounded Multi-Run Campaigns, starting with a docs-only post-`v0.10.0` audit,
-plan, and ADR. Do not start campaign runtime implementation before that audit
-lands.
+`@v0.10.0`. The V16 kickoff audit, development plan, and ADR are recorded in:
+
+- [`docs/POST_V0100_STATE_AUDIT.md`](POST_V0100_STATE_AUDIT.md);
+- [`docs/CODEX_DEVELOPMENT_PLAN_V16.md`](CODEX_DEVELOPMENT_PLAN_V16.md);
+- [`docs/ADR/0032-external-operator-campaign-harness.md`](ADR/0032-external-operator-campaign-harness.md).
+
+The next V16 implementation step is `campaign-model-core`: durable campaign
+models, ignored runtime storage under `.cosheaf/campaigns/`, and thin CLI
+surfaces for start/show/append-attempt/scorecard/finalize. That step must keep
+campaign outputs as review context only.
 
 The V15 implementation line has landed:
 
@@ -33,16 +40,39 @@ The V15 implementation line has landed:
 - workspace-template cross-check demo in downstream PR #85; and
 - public KB cross-check report policy guard in downstream PR #99.
 
-The V15 release is complete. The next active task is conservative V16 planning
-and state audit; it does not add new runtime behavior.
+The V15 release is complete. The V16 Phase A kickoff is documentation only and
+does not add runtime behavior. Campaign runtime begins only with the focused
+Phase B implementation task.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
-cross-check reports, and gap reports are review context only unless a real
+cross-check reports, gap reports, future campaign records, campaign attempts,
+scorecards, scans, and campaign handoffs are review context only unless a real
 checker result explicitly records verifier evidence. They do not write accepted
 knowledge, create human review, fabricate source metadata, mark gate pass,
 promote artifacts, call hosted providers by default, execute arbitrary shell
 through Cosheaf, or claim automatic theorem proving.
+
+## Planned Release Focus: v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns
+
+V16 adds a bounded campaign harness for many attempts against one issue. The
+operator remains external; Cosheaf controls context, budgets, output recording,
+scans, checks, and review handoff.
+
+The planned implementation phases are:
+
+- campaign model and runtime storage;
+- external operator task/result protocol v2;
+- campaign runner, pause/resume, scan, and budget controller;
+- campaign review handoff and deterministic eval;
+- workspace-template campaign demo and public KB campaign-output policy guard;
+- conservative `v0.11.0` release candidate and publication closeout.
+
+This line will not make campaign success proof, source metadata, human review,
+verifier/gate pass, accepted status, accepted theorem/refutation, or promotion
+authority. It will not add default hosted provider calls, API-key requirements,
+accepted writes, arbitrary shell execution, production SaaS, web UI, or
+automatic theorem proving.
 
 ## Completed Release Focus: v0.6.0 Operator Session + Review Handoff
 
