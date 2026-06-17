@@ -21,10 +21,11 @@ proof, review, gate, verifier, source metadata, accepted-status, or promotion
 authority.
 
 The current development line is V16 / `v0.11.0` External AI Operator Harness +
-Bounded Multi-Run Campaigns. The current branch adds the B.1 campaign model
-core: durable campaign records, attempt sidecars, scorecards, and
-`cosheaf campaign start/show/append-attempt/scorecard/finalize` CLI commands
-under ignored `.cosheaf/campaigns/` paths. Campaign output is review context
+Bounded Multi-Run Campaigns. The current branch adds the C.1 external operator
+protocol v2 surface on top of the B.1 campaign model core: bounded
+`operator_task_v2` exports, structured `operator_result_v2` imports, and
+`cosheaf campaign next/export-task/import-result` CLI commands under ignored
+`.cosheaf/campaigns/` paths. Campaign and operator output is review context
 only and does not create proof, source metadata, human review, verifier pass,
 gate pass, accepted status, accepted refutation, or promotion authority.
 
@@ -213,6 +214,14 @@ Implemented:
   start/show/append-attempt/scorecard/finalize` records and summarizes bounded
   attempts without accepted-write, human-review, verifier/gate, source-metadata,
   or promotion authority.
+- V16 external operator protocol v2 development surfaces:
+  `cosheaf campaign next <campaign-id> --json` previews the next bounded
+  operator task; `cosheaf campaign export-task <campaign-id> --out <path>
+  --json` writes an `operator_task_v2` JSON packet; and
+  `cosheaf campaign import-result <campaign-id> --input-json <path> --json`
+  validates `operator_result_v2`, rejects authority overclaims, unsafe paths,
+  accepted KB writes, and public-mode private leaks, then records a runtime
+  campaign attempt. These packets remain review context only.
 
 Planned or incomplete:
 
@@ -220,7 +229,6 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- V16 external operator task/result packet export and import.
 - V16 campaign runner, pause/resume, scanner, handoff, eval, downstream demo,
   public KB policy guard, and `v0.11.0` release closeout.
 - Hosted PR checklist source discovery beyond explicit local markdown files.

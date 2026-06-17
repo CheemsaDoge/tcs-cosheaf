@@ -4,7 +4,8 @@ Target: `v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns`
 
 Status: Phase A has landed after the published `v0.10.0` Cross-Check Evidence +
 Checker Registry release and downstream workspace/public-KB pin closeout. Phase
-B.1 `campaign-model-core` is the current implementation increment.
+B.1 `campaign-model-core` has landed. Phase C.1
+`external-operator-protocol-v2` is the current implementation increment.
 
 ## Goal
 
@@ -49,8 +50,10 @@ V16 should not embed a hosted LLM as an internal autonomous system owner.
 ## Phase Structure
 
 1. Phase A: post-`v0.10.0` audit and V16 landing. Landed in issue #446.
-2. Phase B: campaign model and storage. B.1 is `campaign-model-core`.
-3. Phase C: external operator task/result protocol v2.
+2. Phase B: campaign model and storage. B.1 `campaign-model-core` landed in
+   issue #448 / PR #449.
+3. Phase C: external operator task/result protocol v2. C.1 is
+   `external-operator-protocol-v2`.
 4. Phase D: campaign runner and budget controller.
 5. Phase E: campaign review/handoff and eval.
 6. Phase F: `v0.11.0` release candidate and publication closeout.

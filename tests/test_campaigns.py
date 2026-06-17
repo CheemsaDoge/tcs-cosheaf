@@ -17,6 +17,7 @@ from cosheaf.campaigns import (
     CampaignComparison,
     CampaignError,
     CampaignOperatorPolicy,
+    CampaignOperatorResult,
     CampaignRiskFinding,
     CampaignRiskSeverity,
     CampaignStatus,
@@ -27,8 +28,11 @@ from cosheaf.campaigns import (
     campaign_attempt_path,
     campaign_events_path,
     campaign_path,
+    export_campaign_operator_task,
     finalize_campaign,
+    import_campaign_operator_result,
     load_campaign,
+    next_campaign_operator_task,
     start_campaign,
 )
 from cosheaf.cli import app
@@ -243,6 +247,160 @@ def test_campaign_storage_writes_required_runtime_files(tmp_path: Path) -> None:
     assert loaded.campaign.attempts[0].attempt_id == "campaign.issue.fixture.attempt.1"
 
 
+def test_campaign_export_task_includes_bounded_context_and_previous_failures(
+    tmp_path: Path,
+) -> None:
+    context = RepoContext(tmp_path)
+    start_campaign(
+        context,
+        issue_id="issue.fixture",
+        campaign_id="campaign.issue.fixture.c20260618.t020000z",
+        budget=CampaignBudget(max_attempts=3),
+        now=STARTED_AT,
+    )
+    append_campaign_attempt(
+        context,
+        "campaign.issue.fixture.c20260618.t020000z",
+        CampaignAttempt(
+            attempt_id="campaign.issue.fixture.c20260618.t020000z.attempt.1",
+            campaign_id="campaign.issue.fixture.c20260618.t020000z",
+            attempt_number=1,
+            outcome=CampaignAttemptOutcome.FAILURE,
+            attempted_direction="Try direct induction",
+            completed_at=ENDED_AT,
+            failure_summary="The induction hypothesis is too weak",
+            proof_obligation_refs=("obligation.issue.fixture.weak-induction",),
+            check_report_refs=(".cosheaf/reports/checker.json",),
+        ),
+    )
+
+    relative_path = export_campaign_operator_task(
+        context,
+        "campaign.issue.fixture.c20260618.t020000z",
+        ".cosheaf/campaigns/campaign.issue.fixture.c20260618.t020000z/operator_task_v2.json",
+    )
+    payload = json.loads((tmp_path / relative_path).read_text(encoding="utf-8"))
+    next_result = next_campaign_operator_task(
+        context,
+        "campaign.issue.fixture.c20260618.t020000z",
+    )
+
+    assert payload["kind"] == "operator_task_v2"
+    assert payload["campaign_id"] == "campaign.issue.fixture.c20260618.t020000z"
+    assert payload["attempt_id"] == (
+        "campaign.issue.fixture.c20260618.t020000z.attempt.2"
+    )
+    assert payload["previous_failures_to_avoid"][0]["attempt_id"] == (
+        "campaign.issue.fixture.c20260618.t020000z.attempt.1"
+    )
+    assert payload["proof_obligations"] == [
+        "obligation.issue.fixture.weak-induction"
+    ]
+    assert "write kb/accepted" in payload["forbidden_actions"]
+    assert payload["output_contract"]["authority_claims_must_be_false"] is True
+    assert next_result.operator_task is not None
+    assert next_result.operator_task.attempt_id == payload["attempt_id"]
+
+
+def test_campaign_import_operator_result_writes_attempt(tmp_path: Path) -> None:
+    context = RepoContext(tmp_path)
+    start_campaign(
+        context,
+        issue_id="issue.fixture",
+        campaign_id="campaign.issue.fixture.c20260618.t020000z",
+        now=STARTED_AT,
+    )
+    payload = CampaignOperatorResult.model_validate(
+        {
+            "attempted_direction": "Try separator-based draft",
+            "actions_taken": ["cosheaf validate", "cosheaf gate run"],
+            "artifacts_read": ["definition.graph"],
+            "drafts_created": ["kb/private/draft/claims/claim.fixture.yaml"],
+            "claims_made": ["A draft route may work after strengthening."],
+            "checks_requested": ["cosheaf validate"],
+            "evidence_refs": ["reviews/runs/campaign-result.json"],
+            "authority_claims": {"accepted_status": False},
+        }
+    )
+
+    imported = import_campaign_operator_result(
+        context,
+        "campaign.issue.fixture.c20260618.t020000z",
+        payload,
+    )
+    loaded = load_campaign(context, "campaign.issue.fixture.c20260618.t020000z")
+
+    assert imported.attempt.outcome is CampaignAttemptOutcome.RESULT
+    assert imported.attempt.draft_proposal_refs == (
+        "kb/private/draft/claims/claim.fixture.yaml",
+    )
+    assert imported.operator_result_path.endswith(
+        "/operator-results/campaign.issue.fixture.c20260618.t020000z.attempt.1.json"
+    )
+    assert loaded.campaign.attempts[0].attempt_id == imported.attempt.attempt_id
+    assert loaded.campaign.accepted_write_performed is False
+
+
+def test_campaign_operator_result_rejects_authority_overclaims() -> None:
+    with pytest.raises(ValidationError, match="cannot claim"):
+        CampaignOperatorResult.model_validate(
+            {
+                "attempted_direction": "Try review spoof",
+                "drafts_created": ["kb/private/draft/claims/claim.fixture.yaml"],
+                "human_reviewed": True,
+            }
+        )
+    with pytest.raises(ValidationError, match="authority_claims"):
+        CampaignOperatorResult.model_validate(
+            {
+                "attempted_direction": "Try verifier spoof",
+                "drafts_created": ["kb/private/draft/claims/claim.fixture.yaml"],
+                "authority_claims": {"verifier_pass": True},
+            }
+        )
+
+
+def test_campaign_operator_result_rejects_private_leak_in_public_mode(
+    tmp_path: Path,
+) -> None:
+    context = RepoContext(tmp_path)
+    start_campaign(
+        context,
+        issue_id="issue.fixture",
+        campaign_id="campaign.issue.fixture.c20260618.t020000z",
+        operator_policy=CampaignOperatorPolicy(policy_mode="public_only"),
+        now=STARTED_AT,
+    )
+    payload = CampaignOperatorResult.model_validate(
+        {
+            "attempted_direction": "Try public-only draft",
+            "drafts_created": ["reviews/public/campaign-result.json"],
+            "artifacts_read": ["kb/private/draft/claims/claim.fixture.yaml"],
+        }
+    )
+
+    with pytest.raises(CampaignError, match="public_only"):
+        import_campaign_operator_result(
+            context,
+            "campaign.issue.fixture.c20260618.t020000z",
+            payload,
+        )
+
+
+def test_campaign_operator_result_requires_gap_or_failure_without_draft() -> None:
+    with pytest.raises(
+        ValidationError,
+        match="drafts_created, failures, or remaining_gaps",
+    ):
+        CampaignOperatorResult.model_validate(
+            {
+                "attempted_direction": "Try empty result",
+                "actions_taken": ["cosheaf validate"],
+                "evidence_refs": ["reviews/runs/empty.json"],
+            }
+        )
+
+
 def _json(output: str) -> dict[str, Any]:
     payload = json.loads(output)
     assert isinstance(payload, dict)
@@ -335,3 +493,86 @@ def test_campaign_cli_json_smoke(tmp_path: Path) -> None:
     )
     assert finalize.exit_code == 0, finalize.output
     assert _json(finalize.output)["campaign"]["status"] == "finalized"
+
+
+def test_campaign_cli_c1_json_smoke(tmp_path: Path) -> None:
+    campaign_id = "campaign.issue.fixture.c20260618.t020000z"
+    start = runner.invoke(
+        app,
+        [
+            "campaign",
+            "start",
+            "--issue",
+            "issue.fixture",
+            "--campaign-id",
+            campaign_id,
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert start.exit_code == 0, start.output
+
+    next_result = runner.invoke(
+        app,
+        [
+            "campaign",
+            "next",
+            campaign_id,
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert next_result.exit_code == 0, next_result.output
+    assert _json(next_result.output)["operator_task"]["kind"] == "operator_task_v2"
+
+    export = runner.invoke(
+        app,
+        [
+            "campaign",
+            "export-task",
+            campaign_id,
+            "--out",
+            ".cosheaf/campaigns/campaign.issue.fixture.c20260618.t020000z/operator_task_v2.json",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert export.exit_code == 0, export.output
+    assert _json(export.output)["writes_performed"] is True
+
+    input_path = tmp_path / "operator_result_v2.json"
+    input_path.write_text(
+        json.dumps(
+            {
+                "attempted_direction": "Try bounded draft",
+                "actions_taken": ["cosheaf validate"],
+                "artifacts_read": ["definition.graph"],
+                "drafts_created": ["kb/private/draft/claims/claim.fixture.yaml"],
+                "claims_made": ["Draft only; needs review."],
+                "checks_requested": ["cosheaf validate"],
+                "evidence_refs": ["reviews/runs/campaign-result.json"],
+                "authority_claims": {"accepted_status": False},
+            }
+        ),
+        encoding="utf-8",
+    )
+    imported = runner.invoke(
+        app,
+        [
+            "campaign",
+            "import-result",
+            campaign_id,
+            "--input-json",
+            str(input_path),
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert imported.exit_code == 0, imported.output
+    imported_payload = _json(imported.output)
+    assert imported_payload["attempt"]["outcome"] == "result"
+    assert imported_payload["accepted_write_performed"] is False

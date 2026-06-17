@@ -3,6 +3,44 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V16 Phase C.1 external operator protocol v2 - 2026-06-18
+
+Issue #450 adds the second implementation increment for
+`v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns` on branch
+`external-operator-protocol-v2`.
+
+The current surface extends the Phase B.1 campaign runtime with:
+
+- `CampaignOperatorTask`, `CampaignOutputContract`,
+  `CampaignPreviousFailure`, and `CampaignNextResult` DTOs for bounded
+  `operator_task_v2` packets;
+- `CampaignOperatorResult`, `CampaignOperatorFailure`,
+  `CampaignAuthorityClaims`, and `CampaignOperatorImportResult` DTOs for
+  structured `operator_result_v2` imports;
+- `cosheaf campaign next <campaign-id> --json`;
+- `cosheaf campaign export-task <campaign-id> --out <path> --json`; and
+- `cosheaf campaign import-result <campaign-id> --input-json <path> --json`.
+
+`campaign next` previews the deterministic next attempt, previous failed or
+blocked attempts to avoid, proof-obligation references, budget, stop
+conditions, and embedded operator task packet when another attempt is allowed.
+`campaign export-task` writes a bounded task packet to a repository-local JSON
+path. `campaign import-result` validates an operator result packet and records
+it as a runtime campaign attempt, writing the raw imported result under
+`.cosheaf/campaigns/<campaign-id>/operator-results/<attempt-id>.json`.
+
+Campaign operator packets are review context only. Result import rejects
+accepted KB writes, unsafe paths, hidden reasoning, public-only private
+references, human-review claims, source-metadata claims, verifier/gate pass
+claims, accepted-status or accepted-refutation claims, and promotion claims.
+If no reviewable draft is created, the result must include explicit failures
+or remaining gaps.
+
+This task does not implement campaign runner loops, pause/resume,
+scanner/handoff reports, `cosheaf eval campaign`, downstream campaign demos,
+public KB policy guards, hosted provider integration, arbitrary shell
+execution, accepted KB writes, human-review creation, or promotion semantics.
+
 ## V16 Phase B.1 campaign model core - 2026-06-18
 
 Issue #448 adds the first implementation increment for

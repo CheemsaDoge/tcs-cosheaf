@@ -191,25 +191,32 @@
   are implemented under `cosheaf.campaigns`. The Python surface defines
   `ResearchCampaign`, `CampaignAttempt`, `CampaignBudget`,
   `CampaignStopCondition`, `CampaignScorecard`, `CampaignOperatorPolicy`,
+  `CampaignOperatorTask`, `CampaignOutputContract`,
+  `CampaignPreviousFailure`, `CampaignNextResult`,
+  `CampaignOperatorResult`, `CampaignOperatorFailure`,
+  `CampaignAuthorityClaims`, `CampaignOperatorImportResult`,
   `CampaignRiskFinding`, `CampaignComparison`, `CampaignStatus`,
   `CampaignAttemptOutcome`, `CampaignRiskSeverity`, `CampaignError`,
   `CampaignWriteResult`, `CampaignAttemptWriteResult`,
-  `CampaignScorecardResult`, storage path helpers, `start_campaign`,
-  `write_campaign`, `load_campaign`, `append_campaign_attempt`,
-  `show_campaign_scorecard`, `finalize_campaign`,
+  `CampaignScorecardResult`, `CampaignOperatorTaskExportResult`, storage path
+  helpers, `start_campaign`, `write_campaign`, `load_campaign`,
+  `append_campaign_attempt`, `show_campaign_scorecard`,
+  `finalize_campaign`, `next_campaign_operator_task`,
+  `build_campaign_next_result`, `build_campaign_operator_task`,
+  `export_campaign_operator_task`, `import_campaign_operator_result`,
   `append_campaign_event`, and `build_campaign_scorecard`. Runtime records are
   JSON under `.cosheaf/campaigns/<campaign-id>/campaign.json`,
   `.cosheaf/campaigns/<campaign-id>/attempts/<attempt-id>.json`,
+  `.cosheaf/campaigns/<campaign-id>/operator-results/<attempt-id>.json`,
   `.cosheaf/campaigns/<campaign-id>/scorecard.json`, and
   `.cosheaf/campaigns/<campaign-id>/events.jsonl`. The CLI surface is
-  `cosheaf campaign start/show/append-attempt/scorecard/finalize`. Campaign
-  records, attempts, scorecards, and event logs are review context only. They
-  do not grant accepted writes, source metadata, human review,
-  verifier-result mutation, gate pass, accepted status, accepted
-  theorem/refutation status, or promotion authority. The current B.1 campaign
-  surface does not export operator task packets, import operator result
-  packets, run campaign loops, scan handoffs, run evals, call hosted providers,
-  or execute shell commands.
+  `cosheaf campaign start/show/append-attempt/scorecard/finalize/next/export-task/import-result`.
+  Campaign records, attempts, scorecards, task packets, imported results, and
+  event logs are review context only. They do not grant accepted writes,
+  source metadata, human review, verifier-result mutation, gate pass, accepted
+  status, accepted theorem/refutation status, or promotion authority. The
+  current campaign surface does not run campaign loops, scan handoffs, run
+  evals, call hosted providers, or execute shell commands.
 - Artifact failure-memory surfacing is implemented for read-only inspection,
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
   and controlled append, artifact cards, memory search, compact context card
@@ -456,6 +463,21 @@
   finalized|abandoned|failed`, `--reason <text>`, and `--repo-root <path>`.
   Finalization does not create human review, source metadata, accepted status,
   verifier pass, gate pass, or promotion authority.
+- `cosheaf campaign next <campaign-id> --json`: previews the deterministic
+  next bounded operator task for a campaign. It emits the next attempt ID,
+  previous failures to avoid, proof-obligation references, stop conditions, and
+  an embedded `operator_task_v2` packet when another attempt is allowed.
+- `cosheaf campaign export-task <campaign-id> --out <path> --json`: writes a
+  bounded `operator_task_v2` packet to a repository-local JSON path and records
+  an export event. It refuses accepted KB targets and unsafe paths.
+- `cosheaf campaign import-result <campaign-id> --input-json <path> --json`:
+  validates a structured `operator_result_v2` payload, rejects accepted writes,
+  unsafe paths, public-mode private leaks, hidden-reasoning fields, and
+  authority overclaims, writes the raw result under
+  `.cosheaf/campaigns/<campaign-id>/operator-results/`, and imports it as a
+  runtime campaign attempt. Imports do not create proof, source metadata,
+  human review, verifier/gate pass, accepted status, accepted refutation, or
+  promotion authority.
 - `cosheaf workspace info`: shows the active workspace name, configured/legacy
   mode, repository root, and KB roots.
 - `cosheaf workspace info --repo-root <path>`: shows workspace configuration for

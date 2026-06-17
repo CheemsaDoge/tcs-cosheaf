@@ -13,16 +13,24 @@ from pydantic import ValidationError
 from cosheaf.campaigns.models import (
     CAMPAIGN_AUTHORITY_NOTICE,
     CampaignAttempt,
+    CampaignAttemptOutcome,
     CampaignBudget,
     CampaignError,
+    CampaignNextResult,
+    CampaignOperatorImportResult,
     CampaignOperatorPolicy,
+    CampaignOperatorResult,
+    CampaignOperatorTask,
+    CampaignOutputContract,
+    CampaignPreviousFailure,
     CampaignScorecard,
     CampaignStatus,
+    CampaignStopCondition,
     ResearchCampaign,
     build_campaign_scorecard,
 )
 from cosheaf.core.ids import validate_artifact_id
-from cosheaf.core.paths import repo_relative_posix
+from cosheaf.core.paths import normalize_repo_path, repo_relative_posix
 from cosheaf.storage.repo import RepoContext
 
 CAMPAIGN_RUNTIME_ROOT = Path(".cosheaf") / "campaigns"
@@ -102,6 +110,29 @@ class CampaignScorecardResult:
             "accepted_write_performed": self.accepted_write_performed,
             "authority_notice": CAMPAIGN_AUTHORITY_NOTICE,
             "scorecard": self.scorecard.to_dict(),
+        }
+
+
+@dataclass(frozen=True)
+class CampaignOperatorTaskExportResult:
+    """Filesystem write result for one operator task packet."""
+
+    campaign: ResearchCampaign
+    task: CampaignOperatorTask
+    relative_path: Path
+    accepted_write_performed: Literal[False] = False
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": 1,
+            "kind": "campaign_operator_task_export",
+            "campaign_id": self.campaign.campaign_id,
+            "attempt_id": self.task.attempt_id,
+            "path": self.relative_path.as_posix(),
+            "writes_performed": True,
+            "accepted_write_performed": self.accepted_write_performed,
+            "authority_notice": CAMPAIGN_AUTHORITY_NOTICE,
+            "operator_task": self.task.to_dict(),
         }
 
 
@@ -287,6 +318,200 @@ def finalize_campaign(
     return result
 
 
+def next_campaign_operator_task(
+    context: RepoContext,
+    campaign_id: str,
+) -> CampaignNextResult:
+    """Return the deterministic next operator-task preview for one campaign."""
+    loaded = load_campaign(context, campaign_id)
+    return build_campaign_next_result(loaded.campaign)
+
+
+def build_campaign_next_result(campaign: ResearchCampaign) -> CampaignNextResult:
+    """Build a deterministic next-task preview without writing files."""
+    failures = _previous_failures(campaign)
+    proof_obligations = _proof_obligations(campaign)
+    stop_conditions = _next_stop_conditions(campaign)
+    exhausted = len(campaign.attempts) >= campaign.budget.max_attempts
+    terminal = campaign.status.value in {"finalized", "abandoned", "failed"}
+    if exhausted or terminal:
+        return CampaignNextResult(
+            campaign_id=campaign.campaign_id,
+            issue_id=campaign.issue_id,
+            next_action="finalize_campaign",
+            previous_failures_to_avoid=failures,
+            proof_obligations=proof_obligations,
+            stop_conditions=stop_conditions,
+            retry_requires_justification=bool(failures),
+        )
+    attempt_number = len(campaign.attempts) + 1
+    attempt_id = _campaign_attempt_id(campaign, attempt_number)
+    task = build_campaign_operator_task(
+        campaign,
+        attempt_id=attempt_id,
+        attempt_number=attempt_number,
+        previous_failures=failures,
+        proof_obligations=proof_obligations,
+        stop_conditions=stop_conditions,
+    )
+    return CampaignNextResult(
+        campaign_id=campaign.campaign_id,
+        issue_id=campaign.issue_id,
+        attempt_id=attempt_id,
+        attempt_number=attempt_number,
+        next_action="start_attempt",
+        operator_task=task,
+        previous_failures_to_avoid=failures,
+        proof_obligations=proof_obligations,
+        stop_conditions=stop_conditions,
+        retry_requires_justification=bool(failures),
+    )
+
+
+def build_campaign_operator_task(
+    campaign: ResearchCampaign,
+    *,
+    attempt_id: str | None = None,
+    attempt_number: int | None = None,
+    previous_failures: tuple[CampaignPreviousFailure, ...] | None = None,
+    proof_obligations: tuple[str, ...] | None = None,
+    stop_conditions: tuple[CampaignStopCondition, ...] | None = None,
+) -> CampaignOperatorTask:
+    """Build a bounded operator task packet for the next campaign attempt."""
+    resolved_number = attempt_number or (len(campaign.attempts) + 1)
+    resolved_attempt_id = attempt_id or _campaign_attempt_id(campaign, resolved_number)
+    failures = (
+        previous_failures
+        if previous_failures is not None
+        else _previous_failures(campaign)
+    )
+    obligations = (
+        proof_obligations
+        if proof_obligations is not None
+        else _proof_obligations(campaign)
+    )
+    stops = (
+        stop_conditions
+        if stop_conditions is not None
+        else _next_stop_conditions(campaign)
+    )
+    return CampaignOperatorTask(
+        campaign_id=campaign.campaign_id,
+        workflow_id=_campaign_workflow_id(campaign),
+        attempt_id=resolved_attempt_id,
+        issue_id=campaign.issue_id,
+        objective=(
+            f"Make bounded campaign attempt {resolved_number} for {campaign.issue_id}."
+        ),
+        context_refs=_context_refs(campaign),
+        hot_memory_cards=tuple(failure.summary for failure in failures),
+        previous_failures_to_avoid=failures,
+        proof_obligations=obligations,
+        checker_requirements=(
+            "run cosheaf validate when draft artifacts are touched",
+            "run cosheaf gate run before claiming readiness",
+            "record skipped checker rows as skipped, not pass",
+        ),
+        allowed_actions=(
+            "read repository files",
+            "run documented cosheaf CLI commands",
+            "write draft or review-context outputs only",
+            "return operator_result_v2.json",
+        ),
+        forbidden_actions=(
+            "write kb/accepted",
+            "create or mark human review",
+            "claim verifier pass without a verifier result",
+            "claim gate pass without running gate",
+            "promote artifacts",
+            "claim accepted status or accepted refutation",
+            "call hosted providers by default",
+            "run arbitrary shell through campaign runtime",
+        ),
+        budget=campaign.budget,
+        stop_conditions=stops,
+        output_contract=CampaignOutputContract(),
+    )
+
+
+def export_campaign_operator_task(
+    context: RepoContext,
+    campaign_id: str,
+    out: str | Path,
+) -> Path:
+    """Write a bounded operator task packet to a repository-local JSON path."""
+    loaded = load_campaign(context, campaign_id)
+    next_result = build_campaign_next_result(loaded.campaign)
+    if next_result.operator_task is None:
+        raise CampaignError(
+            "campaign has no exportable operator task",
+            code="campaign_no_operator_task",
+            remediation="Start a new campaign or inspect the terminal/budget state.",
+        )
+    relative_path = _validate_output_path(out)
+    target = context.resolve(relative_path)
+    _ensure_repo_local(context, target)
+    _write_json(target, next_result.operator_task)
+    append_campaign_event(
+        context,
+        campaign_id=loaded.campaign.campaign_id,
+        event_kind="operator_task_v2_exported",
+        payload={
+            "attempt_id": next_result.operator_task.attempt_id,
+            "path": relative_path.as_posix(),
+            "writes_performed": True,
+        },
+    )
+    return relative_path
+
+
+def import_campaign_operator_result(
+    context: RepoContext,
+    campaign_id: str,
+    payload: CampaignOperatorResult,
+) -> CampaignOperatorImportResult:
+    """Import one structured external-operator result as a campaign attempt."""
+    loaded = load_campaign(context, campaign_id)
+    campaign = loaded.campaign
+    if campaign.operator_policy.policy_mode == "public_only":
+        _ensure_public_result_payload(payload)
+    attempt_number = len(campaign.attempts) + 1
+    attempt_id = _campaign_attempt_id(campaign, attempt_number)
+    attempt = _attempt_from_operator_result(
+        campaign=campaign,
+        attempt_id=attempt_id,
+        attempt_number=attempt_number,
+        payload=payload,
+    )
+    appended = append_campaign_attempt(context, campaign.campaign_id, attempt)
+    operator_result_path = campaign_operator_result_path(
+        campaign.campaign_id,
+        attempt_id,
+    )
+    result_target = context.resolve(operator_result_path)
+    _ensure_repo_local(context, result_target)
+    _write_json(result_target, payload)
+    append_campaign_event(
+        context,
+        campaign_id=campaign.campaign_id,
+        event_kind="operator_result_v2_imported",
+        payload={
+            "attempt_id": attempt_id,
+            "path": operator_result_path.as_posix(),
+            "writes_performed": True,
+        },
+    )
+    return CampaignOperatorImportResult(
+        campaign_id=appended.campaign.campaign_id,
+        attempt_id=attempt.attempt_id,
+        attempt=attempt,
+        campaign=appended.campaign,
+        relative_path=appended.relative_path.as_posix(),
+        attempt_path=appended.attempt_path.as_posix(),
+        operator_result_path=operator_result_path.as_posix(),
+    )
+
+
 def append_campaign_event(
     context: RepoContext,
     *,
@@ -341,6 +566,18 @@ def campaign_events_path(campaign_id: str) -> Path:
     return CAMPAIGN_RUNTIME_ROOT / resolved / "events.jsonl"
 
 
+def campaign_operator_result_path(campaign_id: str, attempt_id: str) -> Path:
+    """Return runtime operator result packet path."""
+    resolved_campaign = validate_artifact_id(campaign_id.strip())
+    resolved_attempt = validate_artifact_id(attempt_id.strip())
+    return (
+        CAMPAIGN_RUNTIME_ROOT
+        / resolved_campaign
+        / "operator-results"
+        / f"{resolved_attempt}.json"
+    )
+
+
 def _write_scorecard(context: RepoContext, campaign: ResearchCampaign) -> Path:
     scorecard = build_campaign_scorecard(campaign)
     relative_path = campaign_scorecard_path(campaign.campaign_id)
@@ -352,7 +589,13 @@ def _write_scorecard(context: RepoContext, campaign: ResearchCampaign) -> Path:
 
 def _write_json(
     target: Path,
-    model: ResearchCampaign | CampaignAttempt | CampaignScorecard,
+    model: (
+        ResearchCampaign
+        | CampaignAttempt
+        | CampaignScorecard
+        | CampaignOperatorTask
+        | CampaignOperatorResult
+    ),
 ) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(model.to_json(), encoding="utf-8", newline="\n")
@@ -430,6 +673,209 @@ def _safe_text(value: str) -> str:
     return normalized
 
 
+def _campaign_attempt_id(campaign: ResearchCampaign, attempt_number: int) -> str:
+    return validate_artifact_id(f"{campaign.campaign_id}.attempt.{attempt_number}")
+
+
+def _campaign_workflow_id(campaign: ResearchCampaign) -> str:
+    for attempt in reversed(campaign.attempts):
+        for ref in attempt.workflow_refs:
+            if "/" not in ref and "\\" not in ref and not ref.startswith("."):
+                return validate_artifact_id(ref)
+    return validate_artifact_id(f"workflow.{campaign.issue_id}.campaign")
+
+
+def _previous_failures(
+    campaign: ResearchCampaign,
+) -> tuple[CampaignPreviousFailure, ...]:
+    failures: list[CampaignPreviousFailure] = []
+    for attempt in campaign.attempts:
+        summary = _attempt_failure_summary(attempt)
+        if summary is None:
+            continue
+        failures.append(
+            CampaignPreviousFailure(
+                attempt_id=attempt.attempt_id,
+                attempted_direction=attempt.attempted_direction,
+                outcome=attempt.outcome,
+                summary=summary,
+                evidence_refs=attempt.check_report_refs,
+            )
+        )
+    return tuple(failures)
+
+
+def _attempt_failure_summary(attempt: CampaignAttempt) -> str | None:
+    if attempt.outcome.value == "failure":
+        return attempt.failure_summary
+    if attempt.outcome.value == "inconclusive":
+        return attempt.inconclusive_reason
+    if attempt.outcome.value == "blocked":
+        return attempt.blocked_reason
+    return None
+
+
+def _proof_obligations(campaign: ResearchCampaign) -> tuple[str, ...]:
+    seen: set[str] = set()
+    obligations: list[str] = []
+    for attempt in campaign.attempts:
+        for ref in attempt.proof_obligation_refs:
+            if ref in seen:
+                continue
+            seen.add(ref)
+            obligations.append(ref)
+    return tuple(obligations)
+
+
+def _context_refs(campaign: ResearchCampaign) -> tuple[str, ...]:
+    seen: set[str] = set()
+    refs: list[str] = []
+    for attempt in campaign.attempts:
+        for ref in (
+            *attempt.workflow_refs,
+            *attempt.check_report_refs,
+            *attempt.handoff_refs,
+            *attempt.benchmark_report_refs,
+        ):
+            if ref in seen:
+                continue
+            seen.add(ref)
+            refs.append(ref)
+    return tuple(refs)
+
+
+def _next_stop_conditions(
+    campaign: ResearchCampaign,
+) -> tuple[CampaignStopCondition, ...]:
+    exhausted = len(campaign.attempts) >= campaign.budget.max_attempts
+    generated = CampaignStopCondition(
+        condition_id=f"stop.{campaign.campaign_id}.max-attempts",
+        kind="max_attempts",
+        description=(
+            f"Stop when {campaign.budget.max_attempts} attempts have been reached"
+        ),
+        triggered=exhausted,
+        triggered_at=_utc_now() if exhausted else None,
+    )
+    return (*campaign.stop_conditions, generated)
+
+
+def _attempt_from_operator_result(
+    *,
+    campaign: ResearchCampaign,
+    attempt_id: str,
+    attempt_number: int,
+    payload: CampaignOperatorResult,
+) -> CampaignAttempt:
+    if payload.drafts_created or payload.claims_made:
+        outcome = CampaignAttemptOutcome.RESULT
+        result_summary = _result_summary(payload)
+        failure_summary = None
+        inconclusive_reason = None
+    elif payload.failures:
+        outcome = CampaignAttemptOutcome.FAILURE
+        result_summary = None
+        failure_summary = "; ".join(
+            failure.why_it_failed for failure in payload.failures
+        )
+        inconclusive_reason = None
+    else:
+        outcome = CampaignAttemptOutcome.INCONCLUSIVE
+        result_summary = None
+        failure_summary = None
+        inconclusive_reason = "; ".join(payload.remaining_gaps)
+    return CampaignAttempt(
+        attempt_id=attempt_id,
+        campaign_id=campaign.campaign_id,
+        attempt_number=attempt_number,
+        outcome=outcome,
+        policy_mode=campaign.operator_policy.policy_mode,
+        attempted_direction=payload.attempted_direction,
+        completed_at=_utc_now(),
+        result_summary=result_summary,
+        failure_summary=failure_summary,
+        inconclusive_reason=inconclusive_reason,
+        actions_taken=payload.actions_taken,
+        workflow_refs=(_campaign_workflow_id(campaign),),
+        check_report_refs=payload.checks_requested,
+        proof_obligation_refs=campaign_proof_refs_from_result(payload),
+        draft_proposal_refs=payload.drafts_created,
+        benchmark_report_refs=payload.evidence_refs,
+    )
+
+
+def campaign_proof_refs_from_result(
+    payload: CampaignOperatorResult,
+) -> tuple[str, ...]:
+    return tuple(
+        ref
+        for ref in (*payload.claims_made, *payload.remaining_gaps)
+        if ref.startswith("obligation.") or ref.startswith("gap.")
+    )
+
+
+def _result_summary(payload: CampaignOperatorResult) -> str:
+    if payload.claims_made:
+        return "; ".join(payload.claims_made)
+    if payload.next_recommendation:
+        return payload.next_recommendation
+    return "Structured campaign operator result imported for review only"
+
+
+def _ensure_public_result_payload(payload: CampaignOperatorResult) -> None:
+    encoded = json.dumps(payload.to_dict(), ensure_ascii=True, sort_keys=True).lower()
+    private_markers = (
+        "kb/private",
+        "kb\\\\private",
+        "/private/",
+        "\\\\private\\\\",
+        "private.",
+        "private:",
+    )
+    if any(marker in encoded for marker in private_markers):
+        raise CampaignError(
+            "public_only campaign operator results cannot include private refs",
+            code="public_private_leak_forbidden",
+            remediation="Remove private references or use private_research mode.",
+        )
+
+
+def _validate_output_path(value: str | Path) -> Path:
+    normalized = normalize_repo_path(str(value))
+    if not normalized or normalized == ".":
+        raise CampaignError(
+            "operator task export path must be repository-local",
+            code="invalid_export_path",
+            remediation="Pass --out with a repository-local .json path.",
+        )
+    path = Path(normalized)
+    parts = Path(normalized).parts
+    if (
+        path.is_absolute()
+        or normalized.startswith("../")
+        or normalized == ".."
+        or ".." in parts
+    ):
+        raise CampaignError(
+            "operator task export path must be repository-local",
+            code="invalid_export_path",
+            remediation="Pass --out with a repository-local .json path.",
+        )
+    if path.suffix.lower() != ".json":
+        raise CampaignError(
+            "operator task export path must end in .json",
+            code="invalid_export_path",
+            remediation="Pass --out with a repository-local .json path.",
+        )
+    if normalized.startswith("kb/accepted/") or "/accepted/" in normalized:
+        raise CampaignError(
+            "operator task export path must not be an accepted KB path",
+            code="accepted_write_forbidden",
+            remediation="Use runtime storage or review-context export paths only.",
+        )
+    return path
+
+
 def _ensure_repo_local(context: RepoContext, target: Path) -> None:
     try:
         target.resolve().relative_to(context.repo_root.resolve())
@@ -451,16 +897,23 @@ def _ensure_repo_local(context: RepoContext, target: Path) -> None:
 __all__ = [
     "CAMPAIGN_RUNTIME_ROOT",
     "CampaignAttemptWriteResult",
+    "CampaignOperatorTaskExportResult",
     "CampaignScorecardResult",
     "CampaignWriteResult",
     "append_campaign_attempt",
     "append_campaign_event",
+    "build_campaign_next_result",
+    "build_campaign_operator_task",
     "campaign_attempt_path",
     "campaign_events_path",
+    "campaign_operator_result_path",
     "campaign_path",
     "campaign_scorecard_path",
+    "export_campaign_operator_task",
     "finalize_campaign",
+    "import_campaign_operator_result",
     "load_campaign",
+    "next_campaign_operator_task",
     "show_campaign_scorecard",
     "start_campaign",
     "write_campaign",

@@ -398,6 +398,311 @@ class CampaignScorecard(CampaignModel):
         return normalized
 
 
+class CampaignPreviousFailure(CampaignModel):
+    """A previous failed or blocked campaign attempt to avoid repeating."""
+
+    attempt_id: str
+    attempted_direction: str
+    outcome: CampaignAttemptOutcome
+    summary: str
+    evidence_refs: tuple[str, ...] = ()
+
+    @field_validator("attempt_id")
+    @classmethod
+    def _attempt_id(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("attempted_direction", "summary")
+    @classmethod
+    def _text(cls, value: str) -> str:
+        return _safe_text(value)
+
+    @field_validator("evidence_refs", mode="before")
+    @classmethod
+    def _refs(cls, value: Any) -> tuple[str, ...]:
+        return _dedupe(_validate_safe_reference(item) for item in _text_items(value))
+
+
+class CampaignOutputContract(CampaignModel):
+    """Required external-operator output contract for one campaign task."""
+
+    required_fields: tuple[str, ...] = (
+        "attempted_direction",
+        "actions_taken",
+        "artifacts_read",
+        "drafts_created or failures or remaining_gaps",
+        "evidence_refs",
+        "authority_claims all false",
+    )
+    authority_claims_must_be_false: Literal[True] = True
+    accepted_writes_allowed: Literal[False] = False
+    human_review_creation_allowed: Literal[False] = False
+    promotion_allowed: Literal[False] = False
+    hidden_reasoning_allowed: Literal[False] = False
+    authority_notice: str = CAMPAIGN_AUTHORITY_NOTICE
+
+    @field_validator("required_fields", mode="before")
+    @classmethod
+    def _required_fields(cls, value: Any) -> tuple[str, ...]:
+        return _dedupe(_safe_text(item) for item in _text_items(value))
+
+    @field_validator("authority_notice")
+    @classmethod
+    def _authority_notice(cls, value: str) -> str:
+        if value != CAMPAIGN_AUTHORITY_NOTICE:
+            raise ValueError("authority_notice must preserve campaign boundary")
+        return value
+
+
+class CampaignOperatorTask(CampaignModel):
+    """Bounded external-operator task packet for one campaign attempt."""
+
+    schema_version: Literal[2] = 2
+    kind: Literal["operator_task_v2"] = "operator_task_v2"
+    campaign_id: str
+    workflow_id: str
+    attempt_id: str
+    issue_id: str
+    objective: str
+    context_refs: tuple[str, ...] = ()
+    hot_memory_cards: tuple[str, ...] = ()
+    previous_failures_to_avoid: tuple[CampaignPreviousFailure, ...] = ()
+    proof_obligations: tuple[str, ...] = ()
+    checker_requirements: tuple[str, ...] = ()
+    allowed_actions: tuple[str, ...]
+    forbidden_actions: tuple[str, ...]
+    budget: CampaignBudget
+    stop_conditions: tuple[CampaignStopCondition, ...] = ()
+    output_contract: CampaignOutputContract = Field(
+        default_factory=CampaignOutputContract
+    )
+    authority_notice: str = CAMPAIGN_AUTHORITY_NOTICE
+
+    @field_validator("campaign_id", "workflow_id", "attempt_id", "issue_id")
+    @classmethod
+    def _ids(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("objective")
+    @classmethod
+    def _objective(cls, value: str) -> str:
+        return _safe_text(value)
+
+    @field_validator(
+        "context_refs",
+        "hot_memory_cards",
+        "proof_obligations",
+        "checker_requirements",
+        "allowed_actions",
+        "forbidden_actions",
+        mode="before",
+    )
+    @classmethod
+    def _text_tuple(cls, value: Any) -> tuple[str, ...]:
+        return _dedupe(_validate_safe_reference(item) for item in _text_items(value))
+
+    @field_validator("authority_notice")
+    @classmethod
+    def _authority_notice(cls, value: str) -> str:
+        if value != CAMPAIGN_AUTHORITY_NOTICE:
+            raise ValueError("authority_notice must preserve campaign boundary")
+        return value
+
+
+class CampaignNextResult(CampaignModel):
+    """Deterministic next external-operator task preview."""
+
+    schema_version: Literal[1] = 1
+    kind: Literal["campaign_next"] = "campaign_next"
+    campaign_id: str
+    issue_id: str
+    attempt_id: str | None = None
+    attempt_number: int | None = Field(default=None, ge=1)
+    next_action: Literal["start_attempt", "finalize_campaign"]
+    operator_task: CampaignOperatorTask | None = None
+    previous_failures_to_avoid: tuple[CampaignPreviousFailure, ...] = ()
+    proof_obligations: tuple[str, ...] = ()
+    stop_conditions: tuple[CampaignStopCondition, ...] = ()
+    retry_requires_justification: bool = False
+    authority_notice: str = CAMPAIGN_AUTHORITY_NOTICE
+
+    @field_validator("campaign_id", "issue_id")
+    @classmethod
+    def _ids(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("attempt_id")
+    @classmethod
+    def _attempt_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return validate_artifact_id(value.strip())
+
+    @field_validator("proof_obligations", mode="before")
+    @classmethod
+    def _proof_obligations(cls, value: Any) -> tuple[str, ...]:
+        return _dedupe(_validate_safe_reference(item) for item in _text_items(value))
+
+
+class CampaignAuthorityClaims(CampaignModel):
+    """All external-operator authority claims must stay false."""
+
+    accepted_status: Literal[False] = False
+    accepted_refutation: Literal[False] = False
+    accepted_write: Literal[False] = False
+    human_review: Literal[False] = False
+    source_metadata: Literal[False] = False
+    verifier_pass: Literal[False] = False
+    gate_pass: Literal[False] = False
+    promotion: Literal[False] = False
+
+
+class CampaignOperatorFailure(CampaignModel):
+    """Structured failure returned by an external operator."""
+
+    attempted_direction: str
+    why_it_failed: str
+    evidence_refs: tuple[str, ...]
+    avoid_in_future: str | None = None
+    related_artifacts: tuple[str, ...] = ()
+
+    @field_validator("attempted_direction", "why_it_failed")
+    @classmethod
+    def _text(cls, value: str) -> str:
+        return _safe_text(value)
+
+    @field_validator("avoid_in_future")
+    @classmethod
+    def _optional_text(cls, value: str | None) -> str | None:
+        return _safe_optional_text(value)
+
+    @field_validator("evidence_refs", "related_artifacts", mode="before")
+    @classmethod
+    def _refs(cls, value: Any) -> tuple[str, ...]:
+        return _dedupe(_validate_safe_reference(item) for item in _text_items(value))
+
+    @model_validator(mode="after")
+    def _failure_consistency(self) -> Self:
+        if not self.evidence_refs:
+            raise ValueError("campaign operator failures require evidence_refs")
+        return self
+
+
+class CampaignOperatorResult(CampaignModel):
+    """Structured result packet imported from an external operator."""
+
+    schema_version: Literal[2] = 2
+    kind: Literal["operator_result_v2"] = "operator_result_v2"
+    attempted_direction: str
+    actions_taken: tuple[str, ...] = ()
+    artifacts_read: tuple[str, ...] = ()
+    drafts_created: tuple[str, ...] = ()
+    claims_made: tuple[str, ...] = ()
+    checks_requested: tuple[str, ...] = ()
+    failures: tuple[CampaignOperatorFailure, ...] = ()
+    candidate_counterexamples: tuple[str, ...] = ()
+    evidence_refs: tuple[str, ...] = ()
+    remaining_gaps: tuple[str, ...] = ()
+    next_recommendation: str | None = None
+    authority_claims: CampaignAuthorityClaims = Field(
+        default_factory=CampaignAuthorityClaims
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _reject_top_level_overclaims(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        forbidden_names = _AUTHORITY_FIELD_NAMES.union(
+            {
+                "accepted_refutation",
+                "accepted_write",
+                "accepted_write_performed",
+                "checker_pass",
+                "gate_passed",
+                "human_review_state",
+                "promotion",
+                "source_metadata_created",
+            }
+        )
+        forbidden = sorted(forbidden_names.intersection(value))
+        hidden = sorted(_HIDDEN_REASONING_FIELD_NAMES.intersection(value))
+        if forbidden:
+            raise ValueError(
+                "campaign operator result cannot claim accepted, source, "
+                "verifier, gate, human-review, refutation, or promotion "
+                "authority: " + ", ".join(forbidden)
+            )
+        if hidden:
+            raise ValueError(
+                "campaign operator result cannot store hidden reasoning fields: "
+                + ", ".join(hidden)
+            )
+        return value
+
+    @field_validator("attempted_direction")
+    @classmethod
+    def _direction(cls, value: str) -> str:
+        return _safe_text(value)
+
+    @field_validator("next_recommendation")
+    @classmethod
+    def _optional_text(cls, value: str | None) -> str | None:
+        return _safe_optional_text(value)
+
+    @field_validator(
+        "actions_taken",
+        "artifacts_read",
+        "drafts_created",
+        "claims_made",
+        "checks_requested",
+        "candidate_counterexamples",
+        "evidence_refs",
+        "remaining_gaps",
+        mode="before",
+    )
+    @classmethod
+    def _refs(cls, value: Any) -> tuple[str, ...]:
+        return _dedupe(_validate_safe_reference(item) for item in _text_items(value))
+
+    @model_validator(mode="after")
+    def _result_consistency(self) -> Self:
+        if not self.drafts_created and not self.failures and not self.remaining_gaps:
+            raise ValueError(
+                "campaign operator result requires drafts_created, failures, "
+                "or remaining_gaps"
+            )
+        return self
+
+
+class CampaignOperatorImportResult(CampaignModel):
+    """Result of importing one external-operator result packet."""
+
+    schema_version: Literal[1] = 1
+    kind: Literal["campaign_operator_result_import"] = (
+        "campaign_operator_result_import"
+    )
+    campaign_id: str
+    attempt_id: str
+    attempt: CampaignAttempt
+    campaign: ResearchCampaign
+    relative_path: str
+    attempt_path: str
+    operator_result_path: str
+    accepted_write_performed: Literal[False] = False
+    authority_notice: str = CAMPAIGN_AUTHORITY_NOTICE
+
+    @field_validator("campaign_id", "attempt_id")
+    @classmethod
+    def _ids(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("relative_path", "attempt_path", "operator_result_path")
+    @classmethod
+    def _paths(cls, value: str) -> str:
+        return _validate_safe_reference(value)
+
+
 class ResearchCampaign(CampaignModel):
     """Top-level bounded multi-run campaign record."""
 
@@ -747,12 +1052,20 @@ __all__ = [
     "CAMPAIGN_AUTHORITY_NOTICE",
     "CampaignAttempt",
     "CampaignAttemptOutcome",
+    "CampaignAuthorityClaims",
     "CampaignBudget",
     "CampaignComparison",
     "CampaignError",
     "CampaignModel",
+    "CampaignNextResult",
+    "CampaignOperatorFailure",
+    "CampaignOperatorImportResult",
     "CampaignOperatorPolicy",
+    "CampaignOperatorResult",
+    "CampaignOperatorTask",
+    "CampaignOutputContract",
     "CampaignPolicyMode",
+    "CampaignPreviousFailure",
     "CampaignRiskFinding",
     "CampaignRiskSeverity",
     "CampaignScorecard",
