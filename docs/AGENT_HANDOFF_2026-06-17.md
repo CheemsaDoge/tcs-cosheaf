@@ -8,6 +8,30 @@
 | tcs-cosheaf-workspace-template | release-v090-pins | clean local branch, partial v0.9.0 pin updates |
 | tcs-kb-public | main | clean, still pinned to v0.7.0 in CI/docs |
 
+## Open coordination
+
+- Issue: <https://github.com/CheemsaDoge/tcs-cosheaf/issues/424>
+- Pull request: <https://github.com/CheemsaDoge/tcs-cosheaf/pull/425>
+- Branch: `docs-v090-handoff-closeout`
+- Base branch: `main`
+- Local commit: `c21cb1d Close out v0.9.0 docs and code audit`
+- Author/committer: `CheemsaDoge <cheemsadoge@gmail.com>`
+
+PR #425 is open and not draft, but it is blocked by required CI checks as of
+2026-06-18:
+
+| Check | Current result |
+|-------|----------------|
+| lint | failure |
+| typecheck | failure |
+| test | success |
+| validate | success |
+| gate | success |
+
+Do not merge PR #425 while lint/typecheck remain red. If the next agent fixes
+the Python lint/typecheck failures on this branch, update the PR description so
+it no longer presents the change as documentation-only.
+
 ## Framework release state
 
 - `pyproject.toml` records `version = "0.9.0"`.
@@ -41,6 +65,24 @@ The normal verification ladder is not green on this checkout:
   `git diff --check` passed for this documentation closeout.
 
 The lint/typecheck failures were not fixed in this docs-only handoff pass.
+
+## Next-agent checklist
+
+1. Re-check PR #425 status and CI before editing:
+
+   ```powershell
+   $env:HTTP_PROXY='http://127.0.0.1:3067'
+   $env:HTTPS_PROXY='http://127.0.0.1:3067'
+   gh pr view 425 --repo CheemsaDoge/tcs-cosheaf `
+     --json mergeStateStatus,statusCheckRollup,url
+   ```
+
+2. Decide whether PR #425 stays documentation-only or becomes a small
+   code-quality cleanup PR. Do not mix in new V14 runtime capability.
+3. If fixing CI, start with the reported lint/typecheck failures only, then
+   rerun the normal verification ladder.
+4. If keeping PR #425 documentation-only, leave lint/typecheck as explicitly
+   reported failures and do not claim a green baseline.
 
 ## Downstream drift to fix after this branch
 
