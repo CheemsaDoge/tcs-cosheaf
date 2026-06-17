@@ -1,10 +1,10 @@
 ﻿# Current Milestone
 
-Milestone: **v0.10.0 Cross-Check Evidence + Checker Registry**
+Milestone: **V16 / v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns**
 
-Status: **V15 published; V16 kickoff is next**
+Status: **V16 Phase A.1 kickoff landing**
 
-Plan: docs/CODEX_DEVELOPMENT_PLAN_V15.md
+Plan: docs/CODEX_DEVELOPMENT_PLAN_V16.md
 
 Current package version: `0.10.0`
 
@@ -13,18 +13,42 @@ Latest published release:
 
 `v0.10.0` publication closeout status: tag, GitHub release, post-tag release
 smoke, workspace-template pin update, and public KB CI pin update are complete.
-The next task is the V16 post-`v0.10.0` audit and plan landing; do not start
-campaign runtime implementation before that audit.
+The V16 post-`v0.10.0` audit, V16 development plan, and ADR 0032 are being
+landed as documentation-only repo memory. Campaign runtime implementation must
+start only after this kickoff PR merges.
 
 Current focus:
 
-- keep package metadata, release notes, roadmap, milestone, project state, and
-  release checklist aligned with the published `v0.10.0` state;
-- prepare the V16 audit/plan/ADR for external operator campaigns as a docs-only
-  kickoff task;
+- land V16 Phase A.1 documentation-only kickoff:
+  `docs/POST_V0100_STATE_AUDIT.md`,
+  `docs/CODEX_DEVELOPMENT_PLAN_V16.md`, and
+  `docs/ADR/0032-external-operator-campaign-harness.md`;
+- after Phase A.1 merges, start `campaign-model-core` as the next focused
+  issue/branch/PR;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
+
+Planned V16 surface:
+
+- durable campaign records and scorecards under ignored `.cosheaf/campaigns/`
+  runtime paths;
+- external operator task/result packet v2;
+- campaign budget and stop-condition controller;
+- campaign scanner and handoff reports;
+- deterministic `cosheaf eval campaign --json`; and
+- downstream workspace-template campaign demo plus public KB policy guard.
+
+V16 non-goals:
+
+- no internal autonomous hosted-provider runtime;
+- no default network, API-key, or model-call requirement;
+- no arbitrary shell execution;
+- no accepted KB write;
+- no human-review creation;
+- no source-metadata fabrication;
+- no accepted-status, accepted theorem/refutation, verifier/gate, or promotion
+  authority from campaign output.
 
 Current V15 surface on the development line:
 
