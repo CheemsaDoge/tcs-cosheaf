@@ -262,6 +262,7 @@ class WorkflowHandoffBundle(WorkflowHandoffModel):
     failures_and_avoided_directions: tuple[str, ...] = ()
     candidate_claims: tuple[WorkflowHandoffCandidateClaim, ...] = ()
     evidence_and_limitations: tuple[str, ...] = ()
+    review_gaps: tuple[dict[str, Any], ...] = ()
     scanner: WorkflowHandoffScannerSummary
     human_review_checklist: tuple[str, ...] = WORKFLOW_HANDOFF_REVIEW_CHECKLIST
     skipped_results_are_pass: Literal[False] = False
@@ -426,6 +427,7 @@ def build_workflow_handoff(
             for claim in proposal.claim_candidates
         ),
         evidence_and_limitations=_evidence_and_limitations(workflow),
+        review_gaps=_review_gaps(context, workflow.workflow_id),
         scanner=_scanner_summary(scan),
     )
     return write_workflow_handoff(context, handoff)
@@ -858,6 +860,20 @@ def _evidence_and_limitations(workflow: WorkflowRecord) -> tuple[str, ...]:
     ):
         limitations.append("Skipped verifier/tool results are not pass evidence.")
     return tuple(limitations)
+
+
+def _review_gaps(context: RepoContext, workflow_id: str) -> tuple[dict[str, Any], ...]:
+    from cosheaf.workflow.crosscheck import build_gap_report
+
+    report = build_gap_report(context, workflow_id)
+    return tuple(
+        {
+            "gap_id": gap.gap_id,
+            "kind": gap.kind.value,
+            "description": gap.description,
+        }
+        for gap in report.gaps
+    )
 
 
 def _scanner_summary(scan: WorkflowHandoffScanResult) -> WorkflowHandoffScannerSummary:

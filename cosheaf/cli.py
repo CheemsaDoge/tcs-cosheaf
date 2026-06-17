@@ -96,6 +96,7 @@ from cosheaf.evals import (
     run_reviewable_workflow_eval_suite,
     run_strategy_planner_eval_suite,
 )
+from cosheaf.gap_cli import gap_app
 from cosheaf.gates.gatekeeper import (
     GatekeeperRunResult,
     ValidationReport,
@@ -361,6 +362,7 @@ app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
 app.add_typer(gate_app, name="gate")
 app.add_typer(checker_app, name="checker")
+app.add_typer(gap_app, name="gap")
 app.add_typer(action_app, name="action")
 app.add_typer(librarian_app, name="librarian")
 app.add_typer(fsm_app, name="orchestrator-fsm")

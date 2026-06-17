@@ -23,6 +23,30 @@
   metadata, human review, verifier pass, gate pass, accepted status, accepted
   theorem/refutation, or promotion authority; skipped checker results are not
   passes.
+- Workflow cross-check DTOs, gap taxonomy, runtime storage, and CLI commands
+  are implemented under `cosheaf.workflow.crosscheck` and `cosheaf.gap_cli`.
+  The Python surface defines `CrossCheckClassification`, `GapKind`,
+  `CrossCheckItem`, `CrossCheckMatrix`, `CrossCheckReport`,
+  `WorkflowEvidenceReport`, `CrossCheckExportResult`, `UnverifiedClaim`,
+  `ProofObligation`, `FormalizationGap`, `SourceGap`, `ReviewRequiredItem`,
+  `WorkflowGap`, `WorkflowGapReport`, `GapExportResult`,
+  `build_crosscheck_report`, `build_workflow_evidence_report`,
+  `export_crosscheck_report`, `build_gap_report`, `export_gap_report`,
+  `render_crosscheck_markdown`, `scan_crosscheck_report_text`,
+  `workflow_crosscheck_path`, `workflow_crosscheck_markdown_path`, and
+  `workflow_gap_path`. Runtime records are JSON/Markdown under
+  `.cosheaf/workflows/<workflow-id>/crosscheck.json`,
+  `.cosheaf/workflows/<workflow-id>/crosscheck.md`, and
+  `.cosheaf/workflows/<workflow-id>/gaps.json`. Explicit exports are allowed
+  only under `reviews/workflow/`. The CLI surface is `cosheaf workflow
+  cross-check <workflow-id> --json`, `cosheaf workflow evidence-report
+  <workflow-id> --json`, `cosheaf workflow export-crosscheck <workflow-id>
+  --out <path> --json`, `cosheaf gap list <workflow-id> --json`, and
+  `cosheaf gap export <workflow-id> --out <path> --json`. Cross-check and gap
+  reports are review context only. They do not grant proof, source metadata,
+  human review, verifier pass, gate pass, accepted status, accepted
+  theorem/refutation, or promotion authority; skipped and inconclusive results
+  are not passes.
 - Reviewable-workflow DTOs and CLI metadata commands are implemented under
   `cosheaf.workflow`. The current Python surface defines `WorkflowStatus`,
   `ReadinessClass`, `WorkflowInput`, `WorkflowOutput`,
@@ -58,8 +82,10 @@
   in the caller repository. Runtime records are JSON under
   `.cosheaf/workflows/<workflow-id>/workflow.json`, `events.jsonl`,
   `librarian.json`, `fsm.json`, `loop.json`, `readiness.json`, and optional
-  review-context proposal JSON, plus workflow handoff JSON and handoff scan
-  JSON under the same runtime directory. The CLI surface is `cosheaf workflow start
+  review-context proposal JSON, plus workflow handoff JSON, handoff scan JSON,
+  cross-check JSON/Markdown, and gap JSON under the same runtime directory.
+  Workflow handoff bundles include `review_gaps` summaries derived from the
+  gap report. The CLI surface is `cosheaf workflow start
   --issue <issue-id> --query <query> --json`, `cosheaf workflow show
   <workflow-id> --json`, `cosheaf workflow step <workflow-id> --json`,
   `cosheaf workflow run <workflow-id> --max-steps <n>
@@ -70,11 +96,14 @@
   --artifact-id <artifact-id> --json`, `cosheaf workflow handoff build
   <workflow-id> --json`, `cosheaf workflow handoff show <handoff-id> --json`,
   `cosheaf workflow handoff scan <handoff-id> --json`, and `cosheaf workflow
-  handoff export <handoff-id> --dry-run --json`. Workflow output, draft
-  proposals, handoff scan reports, handoff bundles, and handoff exports are
-  review context or draft artifacts only and do not grant proof, source
-  metadata, human review, verifier pass, gate pass, accepted status, accepted
-  theorem/refutation, or promotion authority.
+  handoff export <handoff-id> --dry-run --json`, plus `cosheaf workflow
+  cross-check <workflow-id> --json`, `cosheaf workflow evidence-report
+  <workflow-id> --json`, and `cosheaf workflow export-crosscheck
+  <workflow-id> --out <path> --json`. Workflow output, draft proposals,
+  handoff scan reports, handoff bundles, handoff exports, cross-check reports,
+  and gap reports are review context or draft artifacts only and do not grant
+  proof, source metadata, human review, verifier pass, gate pass, accepted
+  status, accepted theorem/refutation, or promotion authority.
 - Operator session DTOs, runtime storage, and CLI metadata commands are
   implemented under
   `cosheaf.operator_session`. The current surface defines
@@ -244,6 +273,29 @@
   export writes only under `reviews/workflow/` after a clean scan and does not
   create human review, accepted status, verifier pass, gate pass, source
   metadata, or promotion authority.
+- `cosheaf workflow cross-check <workflow-id> --json`: builds a deterministic
+  review-context cross-check report for one persisted workflow, writes
+  `.cosheaf/workflows/<workflow-id>/crosscheck.json` and `crosscheck.md`, and
+  summarizes workflow steps, relevant checker-run sidecars, unverified claims,
+  proof obligations, source gaps, formalization gaps, and review-required
+  items. Checked-pass rows remain non-authoritative, and skipped/inconclusive
+  rows are not passes.
+- `cosheaf workflow evidence-report <workflow-id> --json`: builds a compact
+  review-context wrapper around the workflow cross-check report and generated
+  gap counts. It does not create human review, source metadata, accepted
+  status, verifier pass, gate pass, or promotion authority.
+- `cosheaf workflow export-crosscheck <workflow-id> --out <path> --json`:
+  exports a cross-check report as `.json` or `.md` only under
+  `reviews/workflow/` after authority scanning. Accepted KB targets,
+  repository-external paths, and unsupported suffixes are rejected.
+- `cosheaf gap list <workflow-id> --json`: builds and lists review-guidance
+  gaps for one workflow, writing
+  `.cosheaf/workflows/<workflow-id>/gaps.json`. Gaps are advisory review
+  guidance, not defects, proof, source metadata, human review, or promotion
+  authority.
+- `cosheaf gap export <workflow-id> --out <path> --json`: exports one workflow
+  gap report as JSON only under `reviews/workflow/`. Accepted KB targets,
+  repository-external paths, and non-JSON suffixes are rejected.
 - `cosheaf operator session start --issue <issue-id> --json`: creates a
   runtime operator-session metadata record under
   `.cosheaf/operator-sessions/<session-id>/session.json`, with matching

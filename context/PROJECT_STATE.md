@@ -3,6 +3,37 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V15 Phase C/D workflow cross-check and gap taxonomy - 2026-06-18
+
+Issue #438 adds workflow cross-check reports and a proof/source/formalization
+gap taxonomy for the V15 Cross-Check Evidence line. The current surface
+includes:
+
+- `cosheaf.workflow.crosscheck` DTOs and helpers for cross-check reports,
+  evidence reports, gap reports, export results, and authority scanning;
+- `cosheaf workflow cross-check <workflow-id> --json`;
+- `cosheaf workflow evidence-report <workflow-id> --json`;
+- `cosheaf workflow export-crosscheck <workflow-id> --out reviews/workflow/<name>.json --json`;
+- `cosheaf gap list <workflow-id> --json`;
+- `cosheaf gap export <workflow-id> --out reviews/workflow/<name>.json --json`;
+- runtime records under `.cosheaf/workflows/<workflow-id>/crosscheck.json`,
+  `crosscheck.md`, and `gaps.json`;
+- workflow handoff `review_gaps` summaries derived from the gap report.
+
+Cross-check reports summarize workflow steps, relevant checker-run sidecars,
+candidate claims, proof obligations, source gaps, formalization gaps, and
+human-review-required items. Gap kinds include `proof_gap`, `source_gap`,
+`formalization_gap`, `counterexample_gap`, `semantic_alignment_gap`,
+`dependency_gap`, `review_gap`, and `reproducibility_gap`.
+
+This phase does not change artifact schema, accepted promotion semantics,
+gatekeeper semantics, verifier adapter contracts, public KB content, or
+workspace-template behavior. Cross-check reports, gap reports, checker
+sidecars, and handoff `review_gaps` remain review context only. They are not
+proof, source metadata, human review, verifier pass, gate pass, accepted
+status, accepted theorem/refutation, or promotion authority. Skipped,
+inconclusive, and unsupported checker results are not passes.
+
 ## V15 Phase B checker registry core - 2026-06-18
 
 Issue #436 adds the typed checker registry core for the V15
@@ -55,10 +86,11 @@ pass, accepted status, accepted theorem/refutation, or promotion authority.
 
 V15 starts from `docs/POST_V090_STATE_AUDIT.md`,
 `docs/CODEX_DEVELOPMENT_PLAN_V15.md`, and
-`docs/ADR/0031-cross-check-evidence-checker-registry.md`. The next
-implementation line is typed checker registry plus cross-check evidence
-reports for review, without changing accepted-promotion, human-review, source
-metadata, verifier/gate, formal-link, or skipped-not-pass semantics.
+`docs/ADR/0031-cross-check-evidence-checker-registry.md`. At Phase A landing,
+the planned implementation line was typed checker registry plus cross-check
+evidence reports for review, without changing accepted-promotion,
+human-review, source metadata, verifier/gate, formal-link, or skipped-not-pass
+semantics. The newer sections above record the implemented V15 pieces.
 
 ## V14 E.1 reviewable workflow benchmark and ecosystem smoke - 2026-06-18
 

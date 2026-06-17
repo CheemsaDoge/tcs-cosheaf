@@ -25,17 +25,21 @@ for issue-to-reviewable-packet behavior. Downstream workspace-template and
 public KB closeout work for the reviewable-workflow demo and policy guard has
 landed.
 
-The next implementation work is V15:
+The V15 implementation line is in progress:
 
-- typed checker registry design and implementation;
-- cross-check evidence reports attached to reviewable workflow context;
-- proof-obligation and gap taxonomy;
-- deterministic eval and downstream policy smoke for cross-check reports;
-- conservative `v0.10.0` release packaging after implementation.
+- typed checker registry design and implementation has landed;
+- cross-check evidence reports attached to reviewable workflow context are now
+  implemented as runtime/review-context reports;
+- proof-obligation and gap taxonomy is implemented for workflow review
+  guidance;
+- remaining V15 work is deterministic eval and downstream policy smoke for
+  cross-check reports;
+- conservative `v0.10.0` release packaging follows after implementation and
+  downstream closeout.
 
 The authority boundary is unchanged: workflow records, loop records, task
-packets, operator results, handoffs, eval reports, future checker-registry
-records, and future cross-check reports are review context only unless a real
+packets, operator results, handoffs, eval reports, checker-registry records,
+cross-check reports, and gap reports are review context only unless a real
 checker result explicitly records verifier evidence. They do not write accepted
 knowledge, create human review, fabricate source metadata, mark gate pass,
 promote artifacts, call hosted providers by default, execute arbitrary shell

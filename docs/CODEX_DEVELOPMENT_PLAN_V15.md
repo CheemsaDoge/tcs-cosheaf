@@ -2,8 +2,10 @@
 
 Target: `v0.10.0 Cross-Check Evidence + Checker Registry`
 
-Status: planned. This plan starts after the V14 `v0.9.0` reviewable-workflow
-line and its downstream workspace/public-KB closeout are complete.
+Status: in progress. Phase A and Phase B have landed after the V14 `v0.9.0`
+reviewable-workflow line and downstream workspace/public-KB closeout. The
+current implementation line covers Phase C/D workflow cross-check reports and
+the proof-obligation/gap taxonomy.
 
 ## Goal
 
@@ -25,9 +27,9 @@ promotion authority.
 ## Phase Structure
 
 1. Phase A: post-v0.9.0 audit and V15 landing.
-2. Phase B: typed checker registry core.
-3. Phase C: cross-check evidence report in workflow output.
-4. Phase D: proof-obligation and gap taxonomy.
+2. Phase B: typed checker registry core. Landed in issue #436.
+3. Phase C: cross-check evidence report in workflow output. Current issue #438.
+4. Phase D: proof-obligation and gap taxonomy. Current issue #438.
 5. Phase E: eval plus workspace/public-KB policy smoke.
 6. Phase F: `v0.10.0` release candidate and publication closeout.
 
@@ -65,6 +67,14 @@ review-context output. Reports may summarize checker attempts, contradictions,
 gaps, and skipped checks. They must not update artifact status or write
 accepted KB paths.
 
+Current implementation surface:
+
+- `cosheaf workflow cross-check <workflow-id> --json`;
+- `cosheaf workflow evidence-report <workflow-id> --json`;
+- `cosheaf workflow export-crosscheck <workflow-id> --out reviews/workflow/<name>.json --json`;
+- runtime files under `.cosheaf/workflows/<workflow-id>/crosscheck.json` and
+  `crosscheck.md`.
+
 ## Phase D Outline
 
 Add a proof-obligation and gap taxonomy that distinguishes:
@@ -80,6 +90,13 @@ Add a proof-obligation and gap taxonomy that distinguishes:
 - accepted-promotion blocker.
 
 The taxonomy is advisory and review-oriented.
+
+Current implementation surface:
+
+- `cosheaf gap list <workflow-id> --json`;
+- `cosheaf gap export <workflow-id> --out reviews/workflow/<name>.json --json`;
+- runtime file `.cosheaf/workflows/<workflow-id>/gaps.json`;
+- workflow handoff `review_gaps` summary.
 
 ## Phase E Outline
 

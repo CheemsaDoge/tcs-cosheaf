@@ -392,6 +392,11 @@ cosheaf workflow handoff build <workflow-id> --json
 cosheaf workflow handoff show <handoff-id> --json
 cosheaf workflow handoff scan <handoff-id> --json
 cosheaf workflow handoff export <handoff-id> --dry-run --json
+cosheaf workflow cross-check <workflow-id> --json
+cosheaf workflow evidence-report <workflow-id> --json
+cosheaf workflow export-crosscheck <workflow-id> --out reviews/workflow/<name>.md --json
+cosheaf gap list <workflow-id> --json
+cosheaf gap export <workflow-id> --out reviews/workflow/<name>.json --json
 cosheaf eval reviewable-workflow --json
 ```
 
@@ -403,15 +408,19 @@ only whitelisted local actions through the existing action registry.
 `draft-proposal` builds review-only candidate material. `workflow handoff`
 build/show/scan/export creates compact review handoff packets, fails closed on
 blocking scanner findings, preserves skipped results as non-pass evidence, and
-can dry-run an export target under `reviews/workflow/`. `cosheaf eval
+can dry-run an export target under `reviews/workflow/`. `workflow cross-check`
+and `workflow evidence-report` summarize workflow steps, checker-run sidecars,
+candidate claims, and proof/source/formalization gaps as review context.
+`cosheaf gap list/export` exposes the gap taxonomy for reviewers. `cosheaf eval
 reviewable-workflow --json` runs deterministic temporary fixtures for the
 framework reviewable-workflow regression suite and writes no accepted knowledge
 in the caller repository.
 
 Agents must treat workflow output, draft proposals, handoff scan reports,
-handoff bundles, and handoff exports as review context only. They are not
-proof, source metadata, human review, verifier pass, gate pass, accepted
-status, accepted theorem/refutation, or promotion authority.
+handoff bundles, handoff exports, cross-check reports, gap reports, and
+checker sidecars as review context only. They are not proof, source metadata,
+human review, verifier pass, gate pass, accepted status, accepted
+theorem/refutation, or promotion authority.
 
 ### Artifact Failure Memory Surface
 

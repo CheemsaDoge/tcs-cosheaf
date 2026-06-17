@@ -38,6 +38,7 @@ checks:
 | Reviewable workflow output is mistaken for proof, review, or acceptance | Workflow records, draft proposals, scanner reports, and handoff packets carry authority notices and remain review context only; they do not create accepted knowledge, human review, verifier pass, gate pass, source metadata, accepted refutation, or promotion authority | `tests/test_workflow.py` and `tests/test_workflow_handoff.py` |
 | Workflow handoff hides leaks, source fabrication, authority claims, or skipped-result ambiguity | Workflow handoff build scans runtime inputs first, scan fails closed on blocking findings, export reruns the scanner, and skipped workflow results remain warning/non-pass evidence | `test_workflow_handoff_build_show_scan_and_export_dry_run`, `test_workflow_handoff_scan_blocks_private_leakage`, `test_workflow_handoff_scan_blocks_accepted_write_attempt`, `test_workflow_handoff_scan_blocks_human_review_overclaim`, `test_workflow_handoff_scan_blocks_source_metadata_fabrication`, and `test_workflow_handoff_preserves_skipped_not_pass_warning` |
 | Checker results are mistaken for proof, review, or acceptance | Checker run records carry authority notices, `skipped` remains non-pass, policy checkers block private leaks and overclaims, and `python_local_check` only runs explicit repository-local Python scripts | `tests/test_checker_registry.py` and `tests/test_checker_cli.py` |
+| Workflow cross-check or gap reports are mistaken for proof, review, source metadata, accepted status, or promotion | Cross-check reports carry explicit non-authority fields, authority-scanner guards block overclaims, exports stay under `reviews/workflow/`, handoff bundles include review gaps only, and gap reports mark gaps as advisory review guidance | `tests/test_workflow_crosscheck.py` |
 
 ## Hard Boundaries
 
@@ -106,6 +107,13 @@ checks:
   SMT, or Lean availability must report missing tools as `skipped`, not pass.
   `python_local_check` is limited to explicit repository-local Python scripts
   and is not an arbitrary shell surface.
+- Workflow cross-check reports and gap reports are review context only. They
+  are written under ignored `.cosheaf/workflows/<workflow-id>/` runtime paths
+  or explicit `reviews/workflow/` exports, and they must not create proof,
+  source metadata, human review, verifier pass, gate pass, accepted status,
+  accepted theorem/refutation status, or promotion authority. Checked-pass
+  rows are not acceptance, skipped/inconclusive rows are not passes, and
+  formalization or semantic-alignment gaps remain human-review questions.
 - Checked counterexample evidence is review evidence only. It must not claim
   human review, accepted refutation, accepted status, verifier pass, gate pass,
   or promotion authority, and public-only context must not expose private

@@ -28,6 +28,27 @@ Checker runs are written under:
 These are runtime sidecars and should remain ignored unless a later workflow
 explicitly exports them as review context.
 
+## Workflow Cross-Check Use
+
+Workflow cross-check reports can consume checker-run sidecars that reference a
+workflow ID, issue ID, or workflow runtime path. The related commands are:
+
+```bash
+cosheaf workflow cross-check <workflow-id> --json
+cosheaf workflow evidence-report <workflow-id> --json
+cosheaf workflow export-crosscheck <workflow-id> --out reviews/workflow/<name>.json --json
+cosheaf gap list <workflow-id> --json
+cosheaf gap export <workflow-id> --out reviews/workflow/<name>.json --json
+```
+
+The cross-check matrix is review context. It may classify rows as
+`checked-pass`, `checked-fail`, `unchecked`, `inconclusive`, or
+`review-needed`, but the classification does not create accepted status,
+human review, source metadata, verifier pass, gate pass, proof, or promotion
+authority. Skipped, inconclusive, and unsupported checker results are not
+passes. Formalization gaps remain open unless a real checker result exists and
+a human reviews informal/formal alignment separately.
+
 ## Input
 
 The shared input packet is intentionally small:
