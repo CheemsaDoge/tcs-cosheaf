@@ -2,7 +2,7 @@
 
 Milestone: **v0.10.0 Cross-Check Evidence + Checker Registry**
 
-Status: **V15 planning landed after V14 closeout**
+Status: **V15 Phase C/D workflow cross-check and gap taxonomy in progress**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V15.md
 
@@ -12,11 +12,20 @@ Current release: <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0
 
 Current focus:
 
-- design the typed checker registry and cross-check evidence report boundary;
-- keep cross-check output as review context only;
+- use the typed checker registry from Phase B;
+- attach workflow cross-check reports and gap reports as review context only;
 - preserve skipped-not-pass semantics for unavailable optional tools;
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
+
+Current V15 surface on the development line:
+
+- `cosheaf checker ...` typed checker sidecar commands;
+- `cosheaf workflow cross-check <workflow-id> --json`;
+- `cosheaf workflow evidence-report <workflow-id> --json`;
+- `cosheaf workflow export-crosscheck <workflow-id> --out reviews/workflow/<name>.json --json`;
+- `cosheaf gap list <workflow-id> --json`;
+- `cosheaf gap export <workflow-id> --out reviews/workflow/<name>.json --json`.
 
 Completed V14 closeout:
 
@@ -35,8 +44,8 @@ Completed V14 closeout:
   and human review misuse.
 
 Authority boundary: workflow output, draft proposals, handoff scan reports,
-handoff bundles, handoff exports, eval reports, future cross-check reports, and
-checker registry metadata remain review context or draft artifacts only. They
-are not proof, source metadata, human review, verifier pass without a real
-checker result, gate pass, accepted status, accepted theorem/refutation, or
-promotion authority.
+handoff bundles, handoff exports, eval reports, cross-check reports, gap
+reports, and checker registry metadata remain review context or draft
+artifacts only. They are not proof, source metadata, human review, verifier
+pass without a real checker result, gate pass, accepted status, accepted
+theorem/refutation, or promotion authority.

@@ -1,6 +1,6 @@
 # ADR 0031: Cross-Check Evidence And Checker Registry
 
-Status: proposed
+Status: accepted
 
 Date: 2026-06-18
 
@@ -18,7 +18,7 @@ results are not passes.
 
 ## Decision
 
-V15 will introduce a typed checker registry and cross-check evidence reports.
+V15 introduces a typed checker registry and cross-check evidence reports.
 
 The registry records checker identity, supported evidence kinds, command/log
 metadata expectations, timeout behavior, and result semantics. It is a dispatch
@@ -56,6 +56,13 @@ semantic alignment.
   proof, human review, verifier/gate pass, accepted status, accepted refutation,
   or promotion authority.
 - The registry should be deterministic and testable with fake backends in CI.
+
+## Implementation Status
+
+Phase B implemented the typed checker registry in issue #436. Phase C/D
+implements workflow cross-check reports and the proof/source/formalization gap
+taxonomy in issue #438. Remaining V15 work is deterministic eval/downstream
+policy smoke and conservative `v0.10.0` release closeout.
 
 ## Rejected Options
 

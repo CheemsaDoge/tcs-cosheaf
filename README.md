@@ -20,9 +20,11 @@ step`, bounded `workflow run`, persisted readiness reports, and
 `workflow handoff build/show/scan/export` for review-context handoff packets
 with fail-closed scanner guards, and `cosheaf eval reviewable-workflow --json`
 for deterministic issue-to-reviewable-packet regression coverage. The current
-V15 development line adds a typed local checker registry and `cosheaf checker`
-CLI surface for review-context check records without changing proof, review,
-gate, verifier, source metadata, accepted-status, or promotion authority.
+V15 development line adds a typed local checker registry, `cosheaf checker`
+CLI surface, workflow cross-check reports, proof/source/formalization gap
+reports, and `cosheaf gap` commands for review-context records without
+changing proof, review, gate, verifier, source metadata, accepted-status, or
+promotion authority.
 
 The `v0.9.0` line does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, Lean semantic alignment, human review, accepted
@@ -193,6 +195,14 @@ Implemented:
   packets with fail-closed scanner guards, and
   `cosheaf eval reviewable-workflow --json` for deterministic benchmark
   coverage.
+- V15 checker and cross-check development surfaces: `cosheaf checker ...`
+  commands record typed local checker sidecars, `cosheaf workflow cross-check`
+  writes workflow evidence matrices under `.cosheaf/workflows/<workflow-id>/`,
+  `cosheaf workflow evidence-report` wraps cross-check/gap counts,
+  `cosheaf workflow export-crosscheck` exports review context under
+  `reviews/workflow/`, and `cosheaf gap list/export` summarizes
+  proof/source/formalization/review gaps. These outputs remain review context
+  only.
 
 Planned or incomplete:
 
@@ -200,8 +210,8 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- V15 cross-check evidence and typed checker registry work, which will keep
-  checker reports as review context and preserve skipped-not-pass semantics.
+- V15 deterministic eval and downstream policy smoke for checker/cross-check
+  reports.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.

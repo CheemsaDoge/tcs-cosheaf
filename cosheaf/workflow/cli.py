@@ -10,6 +10,11 @@ import typer
 from rich.console import Console
 
 from cosheaf.storage.repo import RepoContext
+from cosheaf.workflow.crosscheck import (
+    build_crosscheck_report,
+    build_workflow_evidence_report,
+    export_crosscheck_report,
+)
 from cosheaf.workflow.engine import (
     WorkflowError,
     assess_readiness,
@@ -234,6 +239,63 @@ def wf_draft_proposal(
     if result.target_path:
         console.print(f"- target: {result.target_path}")
     console.print("- accepted_write: false")
+
+
+@workflow_app.command("cross-check")
+def wf_cross_check(
+    workflow_id: Annotated[str, typer.Argument()],
+    repo_root: Annotated[Path, typer.Option("--repo-root")] = Path("."),
+    json_output: Annotated[bool, typer.Option("--json", is_flag=True)] = False,
+) -> None:
+    """Build a workflow cross-check evidence report."""
+    try:
+        report = build_crosscheck_report(RepoContext(repo_root), workflow_id)
+    except Exception as exc:
+        _exit_with_error(exc, json_output=json_output)
+    if json_output:
+        _emit_json(report.to_dict())
+        return
+    console.print(f"Workflow cross-check: {report.workflow_id}")
+    console.print(f"- report: {report.runtime_json_path}")
+    console.print(f"- markdown: {report.runtime_markdown_path}")
+    console.print("- checked-pass is not accepted: true")
+
+
+@workflow_app.command("evidence-report")
+def wf_evidence_report(
+    workflow_id: Annotated[str, typer.Argument()],
+    repo_root: Annotated[Path, typer.Option("--repo-root")] = Path("."),
+    json_output: Annotated[bool, typer.Option("--json", is_flag=True)] = False,
+) -> None:
+    """Build a compact workflow evidence report."""
+    try:
+        report = build_workflow_evidence_report(RepoContext(repo_root), workflow_id)
+    except Exception as exc:
+        _exit_with_error(exc, json_output=json_output)
+    if json_output:
+        _emit_json(report.to_dict())
+        return
+    console.print(f"Workflow evidence report: {report.workflow_id}")
+    console.print("- checked-pass is not accepted: true")
+
+
+@workflow_app.command("export-crosscheck")
+def wf_export_crosscheck(
+    workflow_id: Annotated[str, typer.Argument()],
+    out: Annotated[Path, typer.Option("--out")],
+    repo_root: Annotated[Path, typer.Option("--repo-root")] = Path("."),
+    json_output: Annotated[bool, typer.Option("--json", is_flag=True)] = False,
+) -> None:
+    """Export a workflow cross-check report as review context."""
+    try:
+        result = export_crosscheck_report(RepoContext(repo_root), workflow_id, out)
+    except Exception as exc:
+        _exit_with_error(exc, json_output=json_output)
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Workflow cross-check exported: {result.workflow_id}")
+    console.print(f"- target: {result.target_path}")
 
 
 @handoff_app.command("build")

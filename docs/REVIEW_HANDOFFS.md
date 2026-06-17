@@ -32,7 +32,10 @@ handoff.<workflow-id>
 The packet includes issue summary, query/objective, librarian context summary,
 FSM trace, actions executed, failures and avoided directions, candidate claims,
 evidence and limitations, scanner findings, a human-review checklist, and an
-explicit non-authority notice.
+explicit non-authority notice. Current handoff bundles also include a compact
+`review_gaps` summary derived from the workflow gap report. The gap summary is
+review guidance only; it does not mark a defect, close a proof obligation, or
+create human review.
 
 `scan` fails closed on blocking findings after emitting JSON. It checks for
 accepted-write attempts, private path leakage, hidden reasoning markers, raw
@@ -81,3 +84,5 @@ Workflow and operator handoffs are review context only. They are not:
 
 Accepted knowledge still requires normal validation, gates, source metadata
 where policy requires it, explicit human review, and controlled promotion.
+Cross-check reports, gap reports, and handoff `review_gaps` fields do not
+change that lifecycle.
