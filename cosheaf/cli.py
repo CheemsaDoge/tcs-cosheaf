@@ -1,11 +1,11 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import os
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal, NoReturn, cast
+from typing import Annotated, Any, Literal, NoReturn, cast
 
 import typer
 from pydantic import ValidationError
@@ -5784,6 +5784,145 @@ def _format_report_failures(report: ValidationReport) -> str:
         f"{failure.artifact_id} | {failure.message}"
         for failure in report.failures
     )
+
+
+
+
+# Research loop commands
+
+
+@app.command()
+def research_loop_start(
+    issue_id: Annotated[str, typer.Argument(help="Issue ID this loop targets")],
+    max_attempts: Annotated[int, typer.Option(help="Maximum attempts")] = 10,
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+) -> None:
+    """Start a new research loop for an issue."""
+    from datetime import UTC, datetime
+
+    from cosheaf.research.loop import ResearchLoop, save_loop
+
+    context = RepoContext(repo_root)
+    loop_id = f"loop.{issue_id}.{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}"
+
+    loop = ResearchLoop(
+        loop_id=loop_id,
+        issue_id=issue_id,
+        max_attempts=max_attempts,
+    )
+
+    path = save_loop(context, loop)
+    typer.echo(f"Created research loop: {loop_id}")
+    typer.echo(f"Saved to: {path}")
+
+
+@app.command()
+def research_loop_show(
+    loop_id: Annotated[str, typer.Argument(help="Loop ID to show")],
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+) -> None:
+    """Show research loop details."""
+    import json
+
+    from cosheaf.research.loop import load_loop
+
+    context = RepoContext(repo_root)
+    loop = load_loop(context, loop_id)
+
+    typer.echo(json.dumps(loop.model_dump(mode="json"), indent=2, ensure_ascii=False))
+
+
+@app.command()
+def research_loop_list(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+) -> None:
+    """List all research loops."""
+    from cosheaf.research.loop import list_loops
+
+    context = RepoContext(repo_root)
+    loops = list_loops(context)
+
+    if not loops:
+        typer.echo("No research loops found.")
+        return
+
+    for loop_id in loops:
+        typer.echo(loop_id)
+
+
+@app.command()
+def research_loop_append_attempt(
+    loop_id: Annotated[str, typer.Argument(help="Loop ID")],
+    planned_direction: Annotated[str, typer.Argument(help="Planned direction")],
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+) -> None:
+    """Append a new attempt to a research loop."""
+    from cosheaf.research.loop import (
+        ResearchLoopAttempt,
+        ResearchLoopAttemptStatus,
+        load_loop,
+        save_attempt,
+        save_loop,
+    )
+
+    context = RepoContext(repo_root)
+    loop = load_loop(context, loop_id)
+
+    attempt_number = len(loop.attempts) + 1
+    attempt_id = f"{loop_id}.attempt.{attempt_number}"
+    attempt = ResearchLoopAttempt(
+        attempt_id=attempt_id,
+        loop_id=loop_id,
+        attempt_number=attempt_number,
+        status=ResearchLoopAttemptStatus.PLANNED,
+        planned_direction=planned_direction,
+    )
+
+    loop.add_attempt(attempt)
+    save_loop(context, loop)
+    save_attempt(context, attempt)
+
+    typer.echo(f"Added attempt: {attempt_id}")
+
+
+@app.command()
+def research_loop_finalize(
+    loop_id: Annotated[str, typer.Argument(help="Loop ID")],
+    reason: Annotated[str, typer.Option(help="Finalization reason")] = "",
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+) -> None:
+    """Finalize a research loop."""
+    from cosheaf.research.loop import load_loop, save_loop
+
+    context = RepoContext(repo_root)
+    loop = load_loop(context, loop_id)
+
+    loop.finalize(reason=reason)
+    save_loop(context, loop)
+
+    typer.echo(f"Finalized loop: {loop_id}")
+    if reason:
+        typer.echo(f"Reason: {reason}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,73 @@
+﻿{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_attempt.schema.json",
+  "title": "ResearchLoopAttempt",
+  "description": "One bounded attempt within a research loop.",
+  "type": "object",
+  "required": ["attempt_id", "loop_id", "status", "planned_direction", "authority_notice"],
+  "properties": {
+    "attempt_id": {
+      "type": "string",
+      "description": "Unique attempt identifier",
+      "minLength": 1
+    },
+    "loop_id": {
+      "type": "string",
+      "description": "Parent loop identifier",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["planned", "running", "completed", "failed", "abandoned"],
+      "description": "Lifecycle state for this attempt"
+    },
+    "planned_direction": {
+      "type": "string",
+      "description": "What this attempt intends to explore",
+      "minLength": 1
+    },
+    "started_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When execution started"
+    },
+    "completed_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "When execution finished"
+    },
+    "actions": {
+      "type": "array",
+      "description": "Actions executed during this attempt",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "failures": {
+      "type": "array",
+      "description": "Failures encountered",
+      "items": {
+        "$ref": "attempt_failure_record.schema.json"
+      },
+      "default": []
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Evidence artifact IDs or file paths",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "next_direction": {
+      "type": ["string", "null"],
+      "description": "Recommendation for next attempt if this fails"
+    },
+    "authority_notice": {
+      "type": "string",
+      "description": "Authority disclaimer"
+    }
+  },
+  "additionalProperties": false
+}
