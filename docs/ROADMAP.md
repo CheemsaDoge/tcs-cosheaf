@@ -17,21 +17,24 @@ Layer support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: v0.7.0 Bounded Research Loop + Attempt Memory
+## Active Development Focus: v0.7.0 RC preparation
 
-The active post-`v0.6.0` development line is `v0.7.0` Bounded Research Loop +
-Attempt Memory. Phase B has landed the core research-loop DTOs, runtime
-storage, CLI commands, schemas, tests, and docs for
-`start/show/list/append-attempt/finalize`. Phase C.1 has landed the
-deterministic runner and external operator task/result protocol:
-`next/step/run --dry-run/export-task/import-result`. Phase D.1 has landed the
-attempt-memory index, deterministic failure clustering, cross-loop
-repeat-failure surfacing, retry-justification guard, and loop scanner. Phase E
-has landed deterministic research-loop evals, framework ecosystem smoke rows,
-downstream workspace-template research-loop demo coverage, public-KB
-research-loop policy guard alignment, and a no-network three-repository matrix
-closeout. The next active work is the conservative v0.7.0 release-candidate
-metadata and publication closeout.
+The active post-`v0.6.0` development line is the `v0.7.0` Bounded Research
+Loop + Attempt Memory release candidate. Phases B through E have landed across
+all three repositories:
+
+- Phase B: core research-loop DTOs, runtime storage, CLI, schemas, tests, docs
+- Phase C.1: deterministic runner and operator task/result protocol
+- Phase D.1: attempt-memory index, failure clustering, retry-justification
+  guard, loop scanner
+- Phase E: deterministic research-loop eval, ecosystem smoke rows, downstream
+  workspace-template demo, public-KB policy guard, three-repository matrix
+  closeout
+
+Phase F.1 (`release-v070-readiness-and-rc`) is the active work. It bumps the
+package version to `0.7.0`, adds RC release notes, and aligns documentation.
+Phase F.2 will handle the public tag, GitHub release, post-tag release smoke,
+and downstream pin alignment.
 
 This line keeps the same authority boundary: loop records, task packets,
 operator results, and failure memory are review context only. They do not

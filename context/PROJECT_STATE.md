@@ -3,6 +3,35 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Task F.1: release-v070-readiness-and-rc - 2026-06-17
+
+Branch `release-v070-readiness-and-rc` prepares the conservative `v0.7.0`
+release candidate metadata. It bumps package version to `0.7.0`, adds
+`docs/releases/v0.7.0.md`, and aligns README, roadmap, milestone, and project
+state docs with the RC state.
+
+Changes:
+- `pyproject.toml`: version `0.7.0`
+- `cosheaf/__init__.py`: `__version__ = "0.7.0"`
+- `docs/releases/v0.7.0.md`: conservative RC release notes with explicit
+  limitations and authority boundaries
+- README, README.zh-CN.md, ROADMAP, CURRENT_MILESTONE, PROJECT_STATE updated
+
+The RC does not claim `v0.7.0` is published. The public tag, GitHub release,
+post-tag release smoke, and downstream pin alignment remain future Phase F.2
+steps. No accepted writes, human-review creation, verifier/gate authority,
+hosted-provider defaults, automatic theorem proving, or Lean semantic alignment
+are added.
+
+Local verification before PR:
+- `make lint`: passed
+- `make typecheck`: TBD
+- `make test`: TBD
+- `make validate`: TBD
+- `make gate`: TBD
+- `python scripts/ecosystem_smoke.py --matrix --framework-tag v0.7.0 ...`: TBD
+- `git diff --check`: TBD
+
 ## Phase E completed: research-loop eval, downstream demo, and public-KB policy - 2026-06-17
 
 The v0.7.0 Phase E ecosystem work has landed across the three repositories:

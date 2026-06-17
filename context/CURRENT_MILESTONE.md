@@ -1,8 +1,8 @@
 # Current Milestone
 
-Milestone: **v0.7.0 Bounded Research Loop + Attempt Memory**
+Milestone: **v0.7.0 Bounded Research Loop + Attempt Memory release candidate**
 
-Status: **in progress**
+Status: **release candidate prepared (Phase F.1)**
 
 Started: 2026-06-17
 
@@ -94,11 +94,12 @@ Current v0.7.0 status:
 - non-dry-run loop execution remains refused until a later explicit
   deterministic implementation.
 
-Next milestone work should start Task F.1
-`release-v070-readiness-and-rc`. Phase E did not include release metadata,
-hosted provider calls, automatic theorem proving, Lean semantic alignment,
-accepted writes, human-review creation, verifier/gate authority, or promotion
-authority.
+Task F.1 `release-v070-readiness-and-rc` is active on branch
+`release-v070-readiness-and-rc`. It bumps package version to `0.7.0`, adds
+`docs/releases/v0.7.0.md`, and aligns README/roadmap/milestone/project-state
+docs with the RC state. The RC does not claim `v0.7.0` is published. The
+public tag, GitHub release, post-tag release smoke, and downstream pin
+alignment remain future Phase F.2 steps.
 
 ## Non-negotiable invariants
 
