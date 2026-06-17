@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_operator_task.schema.json",
+  "title": "ResearchLoopOperatorTask",
+  "description": "External operator task packet for a bounded research-loop attempt.",
+  "type": "object",
+  "required": [
+    "loop_id",
+    "attempt_id",
+    "issue_id",
+    "objective",
+    "allowed_actions",
+    "forbidden_actions",
+    "required_outputs",
+    "budget",
+    "review_handoff_instructions",
+    "authority_notice"
+  ],
+  "properties": {
+    "loop_id": { "type": "string", "minLength": 1 },
+    "attempt_id": { "type": "string", "minLength": 1 },
+    "issue_id": { "type": "string", "minLength": 1 },
+    "objective": { "type": "string", "minLength": 1 },
+    "allowed_actions": { "type": "array", "items": { "type": "string" } },
+    "forbidden_actions": { "type": "array", "items": { "type": "string" } },
+    "context_refs": { "type": "array", "items": { "type": "string" } },
+    "relevant_artifact_cards": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "previous_failures_to_avoid": {
+      "type": "array",
+      "items": { "$ref": "previous_failure_summary.schema.json" }
+    },
+    "required_outputs": { "type": "array", "items": { "type": "string" } },
+    "budget": { "$ref": "research_loop_budget.schema.json" },
+    "stop_conditions": {
+      "type": "array",
+      "items": { "$ref": "research_loop_stop_condition.schema.json" }
+    },
+    "review_handoff_instructions": { "type": "string", "minLength": 1 },
+    "authority_notice": { "type": "string" }
+  },
+  "additionalProperties": false
+}

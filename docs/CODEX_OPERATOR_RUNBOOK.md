@@ -45,6 +45,11 @@ cosheaf research-loop start --issue <issue-id> --json
 cosheaf research-loop show <loop-id> --json
 cosheaf research-loop list --json
 cosheaf research-loop append-attempt <loop-id> --input-json attempt.json --json
+cosheaf research-loop next <loop-id> --json
+cosheaf research-loop step <loop-id> --json
+cosheaf research-loop run <loop-id> --max-attempts <n> --wallclock-minutes <n> --dry-run --json
+cosheaf research-loop export-task <loop-id> --out .cosheaf/research-loops/<loop-id>/operator_task.json --json
+cosheaf research-loop import-result <loop-id> --input-json operator_result.json --json
 cosheaf research-loop finalize <loop-id> --json
 ```
 
@@ -53,6 +58,16 @@ attempt records planned direction, actions taken, evidence refs, terminal
 result or structured failure records, and policy findings. Loop success never
 means accepted status. Attempts cannot write `kb/accepted/`, create human
 review, mutate verifier results, or claim promotion authority.
+
+The C.1 runner/operator protocol remains CLI-first and bounded. `next`
+previews the next deterministic action, `step` records one planning event,
+`run --dry-run` previews bounded actions without writing source-of-truth
+files, `export-task` writes an explicit repository-local operator task packet,
+and `import-result` imports a structured external result as runtime loop
+memory. The current `run` command refuses non-dry-run execution. These commands
+do not call hosted providers, execute arbitrary shell, run gates, create
+verifier results, create human review, write accepted knowledge, or promote
+artifacts.
 
 The runbook is documentation only. It does not embed an agent runtime, call
 hosted providers by default, require MCP, write accepted knowledge, create

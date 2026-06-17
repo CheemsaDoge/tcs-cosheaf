@@ -292,6 +292,22 @@ Handoff bundles remain review context only. They do not create human review,
 promote artifacts, mark accepted/refuted/proved status, mutate verifier
 results, or replace validation, gates, source metadata, or review.
 
+## Relationship To Research Loops
+
+Operator sessions record what an external operator did during one issue-focused
+session. Research loops record bounded multi-attempt memory for an issue,
+including failed directions and planned next actions. A research-loop task
+packet can instruct an external operator to work outside Cosheaf and return a
+structured `operator_result.json`; that result may become a runtime loop
+attempt under `.cosheaf/research-loops/`.
+
+These surfaces are complementary and non-authoritative:
+
+- operator sessions/handoffs summarize session metadata and review context;
+- research loops preserve attempt memory and next-action planning context;
+- neither surface writes accepted knowledge, creates human review, mutates
+  verifier results, marks gate pass, or promotes artifacts.
+
 ## Current Limitations
 
 Handoff export writes review-context YAML only. MCP session recording, leak

@@ -10,11 +10,12 @@ audit, not a release tag and not a claim that the project is production-ready.
 
 Supersession note: this document is a historical audit of the older
 `longplan_fixed.md` execution plan. Future task ordering is now governed by
-`docs/CODEX_DEVELOPMENT_PLAN_V4.md`; the CLI-first v3 plan remains historical
-evidence for the `v0.2.1` line. Hosted provider work remains explicit,
+`context/CURRENT_MILESTONE.md` and
+`docs/CODEX_DEVELOPMENT_PLAN_V11.md`; V3/V4 remain historical evidence for
+the older CLI/provider lines. Hosted provider work remains explicit,
 default-off, and fake/mocked in tests. The Phase 5 Task 5.3 gating language
 below records the old audit state and must not be used to defer or override
-the current post-`v0.2.1` hardening plan.
+the current bounded research-loop plan.
 
 ## Summary
 
@@ -22,9 +23,10 @@ All fixed-plan tasks through Phase 8 have merged evidence except Phase 5 Task
 5.3. Under the older `longplan_fixed.md` plan, Task 5.3 was not implemented
 because the task itself had an unmet precondition around provider-adapter
 approval. That historical gating language is superseded for future task
-ordering by the current v4 plan, which schedules provider transport hardening
-while preserving explicit configuration, default-off behavior, fake or mocked
-tests, and the ban on accepted writes or review/gate/promotion bypass.
+ordering by the current milestone and V11 plan. Provider and hosted-worker work
+that exists after this audit must still preserve explicit configuration,
+default-off behavior, fake or mocked tests, and the ban on accepted writes or
+review/gate/promotion bypass.
 
 Current ecosystem state at the audit point:
 
@@ -85,9 +87,10 @@ Current ecosystem state at the audit point:
 | 8.3 Understand-Anything onboarding note | Complete | `tcs-cosheaf` PR #142. |
 | 8.4 v0.2.0 milestone proposal | Complete | `tcs-cosheaf` PR #144, ADR 0014. |
 
-## Code-Surface Audit
+## Historical Code-Surface Audit
 
-The current framework code surface matches the conservative plan boundaries:
+At the 2026-06-08 audit point, the framework code surface matched the
+conservative plan boundaries:
 
 - Hosted model provider execution is not implemented as a runtime path.
 - `FakeModelProvider` is the only implemented provider.
@@ -106,10 +109,10 @@ The current framework code surface matches the conservative plan boundaries:
 
 ## Gated Follow-Up
 
-Future hosted provider work should follow `docs/CODEX_DEVELOPMENT_PLAN_V4.md`,
-not this historical audit's old task ordering. That work must stay explicit,
-opt-in, default-off, fake-transport-tested, network-free in tests, and unable
-to write accepted knowledge or bypass review/gate/promotion.
+Future hosted provider work should follow the current milestone and active
+development plan, not this historical audit's old task ordering. That work
+must stay explicit, opt-in, default-off, fake-transport-tested, network-free in
+tests, and unable to write accepted knowledge or bypass review/gate/promotion.
 
 ## Verification Expectation
 

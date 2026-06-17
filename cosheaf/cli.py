@@ -6024,6 +6024,227 @@ def research_loop_finalize(
     console.print(f"- authority: {result.loop.authority_notice}")
 
 
+@research_loop_app.command("next")
+def research_loop_next(
+    loop_id: str = typer.Argument(..., help="Loop ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Preview the deterministic next action for a research loop."""
+    from cosheaf.research.loop import ResearchLoopError, next_loop_action
+
+    console = Console(width=120, markup=False)
+    try:
+        result = next_loop_action(RepoContext(repo_root), loop_id)
+    except (ResearchLoopError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_loop_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Research loop next: {result.loop_id}")
+    console.print(f"- attempt: {result.attempt_id}")
+    console.print(f"- action: {result.next_action.kind}")
+    console.print(f"- previous failures: {len(result.previous_failures_to_avoid)}")
+
+
+@research_loop_app.command("step")
+def research_loop_step(
+    loop_id: str = typer.Argument(..., help="Loop ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Record one deterministic planning step for a research loop."""
+    from cosheaf.research.loop import ResearchLoopError, step_loop
+
+    console = Console(width=120, markup=False)
+    try:
+        result = step_loop(RepoContext(repo_root), loop_id)
+    except (ResearchLoopError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_loop_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Research loop step: {result.loop_id}")
+    console.print(f"- action: {result.next_result.next_action.kind}")
+    console.print(f"- event_written: {str(result.event_written).lower()}")
+
+
+@research_loop_app.command("run")
+def research_loop_run(
+    loop_id: str = typer.Argument(..., help="Loop ID."),
+    max_attempts: int = typer.Option(
+        ...,
+        "--max-attempts",
+        help="Maximum attempts to plan in this run.",
+    ),
+    wallclock_minutes: int = typer.Option(
+        ...,
+        "--wallclock-minutes",
+        help="Wallclock budget for this bounded run.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Plan next actions without writing runtime state.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Run or dry-run a bounded deterministic research loop."""
+    from cosheaf.research.loop import ResearchLoopError, run_loop
+
+    console = Console(width=120, markup=False)
+    try:
+        result = run_loop(
+            RepoContext(repo_root),
+            loop_id,
+            max_attempts=max_attempts,
+            wallclock_minutes=wallclock_minutes,
+            dry_run=dry_run,
+        )
+    except (ResearchLoopError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_loop_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Research loop run: {result.loop_id}")
+    console.print(f"- dry_run: {str(result.dry_run).lower()}")
+    console.print(f"- planned_actions: {len(result.planned_actions)}")
+    console.print(f"- writes_performed: {str(result.writes_performed).lower()}")
+
+
+@research_loop_app.command("export-task")
+def research_loop_export_task(
+    loop_id: str = typer.Argument(..., help="Loop ID."),
+    out: Path = typer.Option(
+        ...,
+        "--out",
+        help="Repository-local output JSON path.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Export a bounded external-operator task packet."""
+    from cosheaf.research.loop import ResearchLoopError, export_operator_task
+
+    console = Console(width=120, markup=False)
+    try:
+        relative_path = export_operator_task(RepoContext(repo_root), loop_id, out)
+    except (ResearchLoopError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_loop_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    payload = {
+        "loop_id": loop_id,
+        "path": relative_path.as_posix(),
+        "writes_performed": True,
+        "authority_notice": (
+            "Research loop task packets are review context only; they are not "
+            "accepted knowledge, human review, verifier pass, gate pass, or "
+            "promotion authority."
+        ),
+    }
+    if json_output:
+        _emit_json(payload)
+        return
+    console.print(f"Research loop task exported: {relative_path.as_posix()}")
+
+
+@research_loop_app.command("import-result")
+def research_loop_import_result(
+    loop_id: str = typer.Argument(..., help="Loop ID."),
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="Structured operator_result.json payload.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Import a structured external-operator result as a loop attempt."""
+    from cosheaf.research.loop import (
+        ResearchLoopError,
+        ResearchLoopOperatorResult,
+        import_operator_result,
+    )
+
+    console = Console(width=120, markup=False)
+    try:
+        raw = _read_input_json_or_exit(input_json, json_output=json_output)
+        result_payload = ResearchLoopOperatorResult.model_validate(raw)
+        result = import_operator_result(
+            RepoContext(repo_root),
+            loop_id,
+            result_payload,
+        )
+    except (ResearchLoopError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_loop_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Research loop result imported: {result.attempt_id}")
+    console.print(f"- status: {result.attempt.status.value}")
+    console.print(f"- path: {result.relative_path}")
+
+
 def _research_loop_error_result(exc: Exception) -> ErrorResult:
     if hasattr(exc, "code") and hasattr(exc, "remediation"):
         details = getattr(exc, "details", {})

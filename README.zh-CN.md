@@ -8,7 +8,11 @@ TCS-Cosheaf 是一个以 Git 为持久记忆层的、带类型约束的理论计
 > public KB downstream pin 已更新到 `@v0.6.0`。本版本加入 operator session、
 > 可选 MCP session recording、leak scanning、handoff bundle、
 > review-context handoff export、下游 demo/policy smoke 和 ecosystem matrix
-> 覆盖。它仍不是生产就绪软件，也不提供 Web UI、
+> 覆盖。当前未发布主线正在推进 `v0.7.0` Bounded Research Loop + Attempt Memory：
+> Phase B 已加入 `.cosheaf/research-loops/` 运行时记录，C.1 已加入
+> `next/step/run --dry-run/export-task/import-result` 的受限 CLI surface。
+> 这些内容尚未发布，也不授予 accepted 写入、人类评审、验证器通过、
+> gate 通过或 promotion 权限。它仍不是生产就绪软件，也不提供 Web UI、
 > 默认真实托管提供商路径、自动定理证明、完整 Lean 自动形式化、自动 accepted
 > 提升或多用户权限系统。
 

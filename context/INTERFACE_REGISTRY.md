@@ -2,7 +2,7 @@
 
 ## Current Public Python Interfaces
 
-### Planned Interfaces Not Yet Implemented
+### Active And Planned Interfaces
 
 - Operator session DTOs, runtime storage, and CLI metadata commands are
   implemented under
@@ -46,15 +46,25 @@
   `ResearchLoop`, `ResearchLoopAttempt`, `ResearchLoopBudget`,
   `ResearchLoopStopCondition`, `ResearchLoopDecision`,
   `AttemptFailureRecord`, `AttemptEvidenceSummary`, `AttemptPolicyFinding`,
-  `AttemptNextAction`, `LoopReviewSummary`, `ResearchLoopError`, storage path
-  helpers, `start_loop`, `write_loop`, `load_loop`, `append_attempt`,
-  `append_loop_event`, and `list_loops`. Runtime records are JSON under
+  `AttemptNextAction`, `LoopReviewSummary`, `PreviousFailureSummary`,
+  `ResearchLoopNextResult`, `ResearchLoopStepResult`,
+  `ResearchLoopRunResult`, `ResearchLoopOperatorTask`,
+  `OperatorResultFailure`, `ResearchLoopOperatorResult`,
+  `ResearchLoopImportResult`, `ResearchLoopError`, storage path helpers,
+  `start_loop`, `write_loop`, `load_loop`, `append_attempt`,
+  `append_loop_event`, `list_loops`, `next_loop_action`, `step_loop`,
+  `run_loop`, `build_operator_task`, `export_operator_task`, and
+  `import_operator_result`. Runtime records are JSON under
   `.cosheaf/research-loops/<loop-id>/loop.json`,
   `.cosheaf/research-loops/<loop-id>/attempts/<attempt-id>.json`, and
   `.cosheaf/research-loops/<loop-id>/events.jsonl`. The CLI surface is
-  `cosheaf research-loop start/show/list/append-attempt/finalize`. Loop
-  records are review context only and do not grant accepted writes, human
+  `cosheaf research-loop start/show/list/append-attempt/finalize` plus the
+  C.1 runner/operator commands
+  `next/step/run/export-task/import-result`. Loop records and operator task
+  packets are review context only and do not grant accepted writes, human
   review, verifier-result mutation, gate pass, or promotion authority.
+  `run` currently supports dry-run planning only and refuses non-dry-run
+  execution.
 - Artifact failure-memory surfacing is implemented for read-only inspection,
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
   and controlled append, artifact cards, memory search, compact context card
@@ -173,6 +183,28 @@
   `--reason <text>`, and `--repo-root <path>`. Finalization does not create
   human review, accepted status, verifier pass, gate pass, or promotion
   authority.
+- `cosheaf research-loop next <loop-id> --json`: previews the deterministic
+  next action for one runtime research loop without writing files. The result
+  includes the next attempt ID, action kind, previous failures to avoid,
+  stop conditions, and the research-loop authority notice.
+- `cosheaf research-loop step <loop-id> --json`: records one deterministic
+  planning-step event under the loop `events.jsonl` and returns the same
+  next-action payload. It does not execute an attempt, call providers, run
+  shell commands, run gates, or create verifier results.
+- `cosheaf research-loop run <loop-id> --max-attempts <n> --wallclock-minutes <n> --dry-run --json`:
+  previews bounded next actions without writing source-of-truth state.
+  Non-dry-run execution is refused in C.1 until a later explicit deterministic
+  local runner exists.
+- `cosheaf research-loop export-task <loop-id> --out <path> --json`: writes
+  one repository-local external-operator task packet and appends a bounded
+  export event to the loop. Output paths must be repository-local JSON paths.
+  Task packets are review context only and grant no accepted-write, review,
+  verifier, gate, or promotion authority.
+- `cosheaf research-loop import-result <loop-id> --input-json <path> --json`:
+  validates a structured external `operator_result.json` payload and imports
+  it as a runtime loop attempt. Imports reject accepted-write references,
+  hidden-reasoning fields, human-review claims, verifier-pass claims,
+  gate-pass claims, promotion claims, and any true claimed authority flag.
 - `cosheaf workspace info`: shows the active workspace name, configured/legacy
   mode, repository root, and KB roots.
 - `cosheaf workspace info --repo-root <path>`: shows workspace configuration for
@@ -2802,6 +2834,31 @@ working directory.
   and explicit false authority fields. It does not grant accepted writes, human
   review, promotion, verifier-result mutation, proof, gate pass, source
   metadata, or accepted status.
+- `schemas/research_loop.schema.json`,
+  `schemas/research_loop_attempt.schema.json`,
+  `schemas/research_loop_budget.schema.json`,
+  `schemas/research_loop_stop_condition.schema.json`,
+  `schemas/research_loop_decision.schema.json`,
+  `schemas/attempt_failure_record.schema.json`,
+  `schemas/attempt_evidence_summary.schema.json`,
+  `schemas/attempt_policy_finding.schema.json`,
+  `schemas/attempt_next_action.schema.json`, and
+  `schemas/loop_review_summary.schema.json`,
+  `schemas/previous_failure_summary.schema.json`,
+  `schemas/research_loop_next_result.schema.json`,
+  `schemas/research_loop_step_result.schema.json`,
+  `schemas/research_loop_run_result.schema.json`,
+  `schemas/research_loop_operator_task.schema.json`,
+  `schemas/operator_result_failure.schema.json`,
+  `schemas/research_loop_operator_result.schema.json`, and
+  `schemas/research_loop_import_result.schema.json`: bounded research-loop
+  schema family. These schemas cover loop runtime records, attempts, budgets,
+  stop conditions, decisions, structured failures, evidence summaries, policy
+  findings, next-action metadata, review summaries, previous-failure
+  summaries, deterministic next/step/run results, external-operator task
+  packets, operator result failures, operator result imports, and import
+  results. They do not authorize accepted writes, human review, verifier pass,
+  gate pass, or promotion.
 - `schemas/review.schema.json`: review YAML schema.
 - `schemas/verifier.schema.json`: verifier result schema.
 - `schemas/verifier_evidence.schema.json`: verifier evidence record v1 schema.

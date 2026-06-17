@@ -23,15 +23,21 @@ from cosheaf.research.loop import (
     ResearchLoopDecision,
     ResearchLoopError,
     ResearchLoopFailureTag,
+    ResearchLoopOperatorResult,
     ResearchLoopStatus,
     ResearchLoopStopCondition,
     append_attempt,
+    export_operator_task,
+    import_operator_result,
     list_loops,
     load_loop,
+    next_loop_action,
     research_loop_attempt_path,
     research_loop_events_path,
     research_loop_path,
+    run_loop,
     start_loop,
+    step_loop,
     write_loop,
 )
 from cosheaf.storage.repo import RepoContext
@@ -291,7 +297,7 @@ def test_list_loops(tmp_path: Path) -> None:
 
 
 def test_json_schema_files_cover_research_loop_models() -> None:
-    """Schema files for B.1 DTOs should exist and be valid JSON documents."""
+    """Schema files for research-loop DTOs should exist and be valid JSON."""
     schema_names = [
         "research_loop.schema.json",
         "research_loop_attempt.schema.json",
@@ -303,6 +309,14 @@ def test_json_schema_files_cover_research_loop_models() -> None:
         "attempt_policy_finding.schema.json",
         "attempt_next_action.schema.json",
         "loop_review_summary.schema.json",
+        "previous_failure_summary.schema.json",
+        "research_loop_next_result.schema.json",
+        "research_loop_step_result.schema.json",
+        "research_loop_run_result.schema.json",
+        "research_loop_operator_task.schema.json",
+        "operator_result_failure.schema.json",
+        "research_loop_operator_result.schema.json",
+        "research_loop_import_result.schema.json",
     ]
     root = Path(__file__).resolve().parents[1]
 
@@ -310,6 +324,328 @@ def test_json_schema_files_cover_research_loop_models() -> None:
         payload = json.loads((root / "schemas" / name).read_text(encoding="utf-8"))
         assert payload["$schema"] == "https://json-schema.org/draft/2020-12/schema"
         assert payload["title"]
+
+
+def test_next_action_is_deterministic_and_surfaces_previous_failures(
+    tmp_path: Path,
+) -> None:
+    """Next-action planning should be deterministic and failure-aware."""
+    context = RepoContext(tmp_path)
+    start_loop(
+        context,
+        issue_id="issue.test",
+        loop_id="loop.test",
+        budget=ResearchLoopBudget(max_attempts=3),
+    )
+    append_attempt(context, "loop.test", _failed_attempt())
+
+    first = next_loop_action(context, "loop.test")
+    second = next_loop_action(context, "loop.test")
+
+    assert first.to_dict() == second.to_dict()
+    assert first.attempt_id == "loop.test.attempt.2"
+    assert first.next_action.kind == "retry_with_justification"
+    assert first.next_action.retry_requires_justification is True
+    assert len(first.previous_failures_to_avoid) == 1
+    assert first.previous_failures_to_avoid[0].avoid_in_future.startswith(
+        "Do not retry"
+    )
+
+
+def test_run_dry_run_writes_no_source_of_truth_files(tmp_path: Path) -> None:
+    """Dry-run planning should not mutate loop runtime files."""
+    context = RepoContext(tmp_path)
+    start_loop(
+        context,
+        issue_id="issue.test",
+        loop_id="loop.test",
+        budget=ResearchLoopBudget(max_attempts=3),
+    )
+    root = tmp_path / ".cosheaf" / "research-loops"
+    before = {
+        path.relative_to(root).as_posix(): path.read_text(encoding="utf-8")
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+
+    result = run_loop(
+        context,
+        "loop.test",
+        max_attempts=2,
+        wallclock_minutes=5,
+        dry_run=True,
+    )
+
+    after = {
+        path.relative_to(root).as_posix(): path.read_text(encoding="utf-8")
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+    assert result.dry_run is True
+    assert result.writes_performed is False
+    assert len(result.planned_actions) == 2
+    assert before == after
+
+
+def test_step_loop_records_one_planning_event(tmp_path: Path) -> None:
+    """A single planning step writes only the bounded event log entry."""
+    context = RepoContext(tmp_path)
+    start_loop(context, issue_id="issue.test", loop_id="loop.test")
+
+    result = step_loop(context, "loop.test")
+    assert result.events_path is not None
+    events = (tmp_path / result.events_path).read_text(encoding="utf-8")
+
+    assert result.event_written is True
+    assert result.next_result.next_action.kind == "start_attempt"
+    assert "next_action_planned" in events
+
+
+def test_export_operator_task_writes_bounded_packet(tmp_path: Path) -> None:
+    """Operator task export should write a bounded review-context packet."""
+    context = RepoContext(tmp_path)
+    start_loop(context, issue_id="issue.test", loop_id="loop.test")
+    append_attempt(context, "loop.test", _failed_attempt())
+
+    relative_path = export_operator_task(
+        context,
+        "loop.test",
+        ".cosheaf/research-loops/loop.test/operator_task.json",
+    )
+    payload = json.loads((tmp_path / relative_path).read_text(encoding="utf-8"))
+    events = (tmp_path / research_loop_events_path("loop.test")).read_text(
+        encoding="utf-8"
+    )
+
+    assert payload["loop_id"] == "loop.test"
+    assert payload["attempt_id"] == "loop.test.attempt.2"
+    assert payload["previous_failures_to_avoid"][0]["attempt_id"] == (
+        "loop.test.attempt.1"
+    )
+    assert "write kb/accepted" in payload["forbidden_actions"]
+    assert "operator_task_exported" in events
+
+
+def test_import_operator_result_writes_attempt_and_updates_failure_memory(
+    tmp_path: Path,
+) -> None:
+    """Imported operator results should become runtime attempt memory."""
+    context = RepoContext(tmp_path)
+    start_loop(context, issue_id="issue.test", loop_id="loop.test")
+    payload = ResearchLoopOperatorResult.model_validate(
+        {
+            "attempted_direction": "Try direct induction",
+            "actions_taken": ["cosheaf validate"],
+            "artifacts_referenced": ["claim.example"],
+            "checks_run": ["cosheaf validate"],
+            "failures": [
+                {
+                    "attempted_direction": "Try direct induction",
+                    "why_it_failed": "The induction hypothesis is too weak",
+                    "evidence_for_failure": ["reviews/runs/failure.json"],
+                    "avoid_in_future": (
+                        "Do not retry direct induction without a stronger invariant"
+                    ),
+                    "tags": ["insufficient_evidence"],
+                }
+            ],
+            "evidence_refs": ["reviews/runs/failure.json"],
+            "claimed_authority_flags": {"human_reviewed": False},
+        }
+    )
+
+    imported = import_operator_result(context, "loop.test", payload)
+    next_result = next_loop_action(context, "loop.test")
+
+    assert imported.attempt.status == ResearchLoopAttemptStatus.FAILED
+    assert imported.attempt.failures[0].failure_id == (
+        "failure.loop.test.attempt.1.1"
+    )
+    assert next_result.previous_failures_to_avoid[0].attempt_id == (
+        "loop.test.attempt.1"
+    )
+
+
+def test_operator_result_rejects_accepted_write_references() -> None:
+    """Operator result imports must reject accepted KB references."""
+    with pytest.raises(ValueError, match="accepted KB paths"):
+        ResearchLoopOperatorResult.model_validate(
+            {
+                "attempted_direction": "Try accepted write",
+                "result_summary": "Unsafe",
+                "artifacts_referenced": ["kb/accepted/claims/claim.x.yaml"],
+            }
+        )
+
+
+def test_operator_result_rejects_authority_overclaims() -> None:
+    """Operator results cannot claim review, verifier, gate, or promotion."""
+    with pytest.raises(ValueError, match="cannot claim"):
+        ResearchLoopOperatorResult.model_validate(
+            {
+                "attempted_direction": "Try review spoof",
+                "result_summary": "Unsafe",
+                "human_reviewed": True,
+            }
+        )
+    with pytest.raises(ValueError, match="must all be false"):
+        ResearchLoopOperatorResult.model_validate(
+            {
+                "attempted_direction": "Try verifier spoof",
+                "result_summary": "Unsafe",
+                "claimed_authority_flags": {"verifier_pass": True},
+            }
+        )
+
+
+def test_operator_result_requires_failure_or_result_summary() -> None:
+    """Import payloads need either structured failure or result summary."""
+    with pytest.raises(ValueError, match="failures or result_summary"):
+        ResearchLoopOperatorResult.model_validate(
+            {
+                "attempted_direction": "Try empty result",
+                "actions_taken": ["cosheaf validate"],
+            }
+        )
+
+
+def test_budget_exhaustion_stops_next_action(tmp_path: Path) -> None:
+    """Attempt budget exhaustion should produce an explicit stop condition."""
+    context = RepoContext(tmp_path)
+    start_loop(
+        context,
+        issue_id="issue.test",
+        loop_id="loop.test",
+        budget=ResearchLoopBudget(max_attempts=1),
+    )
+    append_attempt(context, "loop.test", _failed_attempt())
+
+    result = next_loop_action(context, "loop.test")
+    dry_run = run_loop(
+        context,
+        "loop.test",
+        max_attempts=1,
+        wallclock_minutes=5,
+        dry_run=True,
+    )
+
+    assert result.next_action.kind == "finalize_loop"
+    assert result.stop_conditions[0].triggered is True
+    assert dry_run.planned_actions[0].next_action.kind == "finalize_loop"
+    assert dry_run.stop_conditions[0].triggered is True
+
+
+def test_cli_c1_json_smoke(tmp_path: Path) -> None:
+    """CLI supports C.1 next/step/run/export/import JSON commands."""
+    runner.invoke(
+        app,
+        [
+            "research-loop",
+            "start",
+            "--issue",
+            "issue.test",
+            "--loop-id",
+            "loop.test",
+            "--max-attempts",
+            "3",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    next_result = runner.invoke(
+        app,
+        [
+            "research-loop",
+            "next",
+            "loop.test",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert next_result.exit_code == 0, next_result.output
+    assert json.loads(next_result.output)["next_action"]["kind"] == "start_attempt"
+
+    step = runner.invoke(
+        app,
+        [
+            "research-loop",
+            "step",
+            "loop.test",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert step.exit_code == 0, step.output
+    assert json.loads(step.output)["event_written"] is True
+
+    run = runner.invoke(
+        app,
+        [
+            "research-loop",
+            "run",
+            "loop.test",
+            "--max-attempts",
+            "2",
+            "--wallclock-minutes",
+            "5",
+            "--dry-run",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert run.exit_code == 0, run.output
+    assert json.loads(run.output)["writes_performed"] is False
+
+    export = runner.invoke(
+        app,
+        [
+            "research-loop",
+            "export-task",
+            "loop.test",
+            "--out",
+            ".cosheaf/research-loops/loop.test/operator_task.json",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert export.exit_code == 0, export.output
+    assert json.loads(export.output)["writes_performed"] is True
+
+    input_path = tmp_path / "operator_result.json"
+    input_path.write_text(
+        json.dumps(
+            {
+                "attempted_direction": "Try construction",
+                "actions_taken": ["cosheaf validate"],
+                "checks_run": ["cosheaf validate"],
+                "result_summary": "No contradiction found",
+                "evidence_refs": ["reviews/runs/success.json"],
+                "claimed_authority_flags": {"accepted": False},
+            }
+        ),
+        encoding="utf-8",
+    )
+    imported = runner.invoke(
+        app,
+        [
+            "research-loop",
+            "import-result",
+            "loop.test",
+            "--input-json",
+            str(input_path),
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert imported.exit_code == 0, imported.output
+    assert json.loads(imported.output)["attempt"]["status"] == "succeeded"
 
 
 def test_cli_json_smoke(tmp_path: Path) -> None:

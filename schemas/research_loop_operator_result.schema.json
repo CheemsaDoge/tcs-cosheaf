@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_operator_result.schema.json",
+  "title": "ResearchLoopOperatorResult",
+  "description": "Structured external operator result import payload.",
+  "type": "object",
+  "required": ["attempted_direction"],
+  "properties": {
+    "attempted_direction": { "type": "string", "minLength": 1 },
+    "actions_taken": { "type": "array", "items": { "type": "string" } },
+    "artifacts_referenced": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "drafts_created": { "type": "array", "items": { "type": "string" } },
+    "checks_run": { "type": "array", "items": { "type": "string" } },
+    "failures": {
+      "type": "array",
+      "items": { "$ref": "operator_result_failure.schema.json" }
+    },
+    "candidate_counterexamples": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "checked_counterexamples": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "evidence_refs": { "type": "array", "items": { "type": "string" } },
+    "next_recommendation": { "type": ["string", "null"] },
+    "claimed_authority_flags": {
+      "type": "object",
+      "additionalProperties": { "type": "boolean" }
+    },
+    "result_summary": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}
