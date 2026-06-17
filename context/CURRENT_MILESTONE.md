@@ -44,22 +44,22 @@ Turn the v0.6.0 operator session and review handoff layer into a bounded multi-a
 1. Research loop model and storage (Phase B)
 2. Loop runner and operator protocol (Phase C)
 3. Attempt memory and scanner (Phase D)
-4. Ecosystem demos and eval (Phase E)
+4. Ecosystem demos and eval (Phase E complete)
 5. v0.7.0 release candidate and publication (Phase F)
 
 ## Current phase
 
-**Phase E: ecosystem demos and eval matrix**
+**Phase F: v0.7.0 release candidate and publication closeout**
 
 Task B.1: bounded-research-loop-core (completed)
 Task C.1: research-loop-runner-and-operator-protocol (completed on branch
 `research-loop-runner-and-operator-protocol`, issue #402)
 Task D.1: attempt-memory-failure-avoidance-scanner (completed on branch
 `attempt-memory-failure-avoidance-scanner`, issue #404)
-Task E.1: research-loop-eval-and-ecosystem-demo (in progress on branch
-`research-loop-eval-and-ecosystem-demo`, issue #406)
+Task E.1: research-loop-eval-and-ecosystem-demo (completed through framework
+PR #407, workspace-template PR #77, and public-KB PR #92)
 
-Current E.1 status:
+Current v0.7.0 status:
 
 - service and CLI implementation is present for `next`, `step`, `run
   --dry-run`, `export-task`, and `import-result`;
@@ -80,15 +80,25 @@ Current E.1 status:
   under `evals/research_loop/cases.yaml`, a research-loop workflow smoke row,
   a workspace-template `research-loop-demo` matrix row, and a public-KB
   research-loop policy-docs matrix row;
-- the downstream matrix rows are framework-side contracts only until separate
-  workspace-template and public-KB PRs add the matching demo target and policy
-  document;
+- workspace-template PR #77 adds `make research-loop-demo` and
+  `scripts/demo_research_loop.sh`, using a local or otherwise explicit
+  v0.7-capable framework source while preserving the published `v0.6.0`
+  install pin;
+- public-KB PR #92 adds `docs/RESEARCH_LOOP_POLICY.md` and policy guard
+  coverage rejecting research-loop output as source metadata, accepted proof,
+  human review, verifier/gate pass, accepted status, or promotion authority;
+- a no-network three-repository matrix run passed with 25 rows: 22 pass, 0
+  fail, and 3 expected skipped rows for optional verifier availability,
+  framework git-tag network release smoke, and workspace-template network
+  install demo;
 - non-dry-run loop execution remains refused until a later explicit
   deterministic implementation.
 
-Next milestone work should finish the downstream Phase E PRs. E.1 framework
-work does not include release metadata, hosted provider calls, automatic
-theorem proving, or Lean semantic alignment.
+Next milestone work should start Task F.1
+`release-v070-readiness-and-rc`. Phase E did not include release metadata,
+hosted provider calls, automatic theorem proving, Lean semantic alignment,
+accepted writes, human-review creation, verifier/gate authority, or promotion
+authority.
 
 ## Non-negotiable invariants
 

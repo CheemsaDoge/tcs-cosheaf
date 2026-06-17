@@ -27,9 +27,11 @@ deterministic runner and external operator task/result protocol:
 `next/step/run --dry-run/export-task/import-result`. Phase D.1 has landed the
 attempt-memory index, deterministic failure clustering, cross-loop
 repeat-failure surfacing, retry-justification guard, and loop scanner. Phase E
-has started by adding deterministic research-loop evals and framework ecosystem
-smoke rows; remaining Phase E work is downstream workspace-template demo and
-public-KB policy alignment.
+has landed deterministic research-loop evals, framework ecosystem smoke rows,
+downstream workspace-template research-loop demo coverage, public-KB
+research-loop policy guard alignment, and a no-network three-repository matrix
+closeout. The next active work is the conservative v0.7.0 release-candidate
+metadata and publication closeout.
 
 This line keeps the same authority boundary: loop records, task packets,
 operator results, and failure memory are review context only. They do not
