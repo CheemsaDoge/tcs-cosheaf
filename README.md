@@ -19,7 +19,10 @@ step`, bounded `workflow run`, persisted readiness reports, and
 `workflow draft-proposal` for review-only proposal output, plus
 `workflow handoff build/show/scan/export` for review-context handoff packets
 with fail-closed scanner guards, and `cosheaf eval reviewable-workflow --json`
-for deterministic issue-to-reviewable-packet regression coverage.
+for deterministic issue-to-reviewable-packet regression coverage. The current
+V15 development line adds a typed local checker registry and `cosheaf checker`
+CLI surface for review-context check records without changing proof, review,
+gate, verifier, source metadata, accepted-status, or promotion authority.
 
 The `v0.9.0` line does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, Lean semantic alignment, human review, accepted
@@ -393,6 +396,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Codex operator runbook](docs/CODEX_OPERATOR_RUNBOOK.md)
 - [Research loops](docs/RESEARCH_LOOPS.md)
 - [Reviewable workflows](docs/WORKFLOWS.md)
+- [Checker registry](docs/CHECKERS.md)
 - [Draft proposals](docs/DRAFT_PROPOSALS.md)
 - [Review handoffs](docs/REVIEW_HANDOFFS.md)
 - [External operator run loop](docs/EXTERNAL_OPERATOR_RUN_LOOP.md)
