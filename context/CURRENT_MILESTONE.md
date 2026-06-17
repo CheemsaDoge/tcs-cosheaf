@@ -1,10 +1,10 @@
 ﻿# Current Milestone
 
-Milestone: **v0.9.0 Reviewable Research Workflow MVP**
+Milestone: **v0.10.0 Cross-Check Evidence + Checker Registry**
 
-Status: **published release with V14 workflow follow-ups in progress**
+Status: **V15 planning landed after V14 closeout**
 
-Plan: docs/CODEX_DEVELOPMENT_PLAN_V14.md
+Plan: docs/CODEX_DEVELOPMENT_PLAN_V15.md
 
 Current package version: `0.9.0`
 
@@ -12,35 +12,31 @@ Current release: <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0
 
 Current focus:
 
-- extend the published initial `cosheaf workflow` surface into a persistent
-  runtime workflow core;
-- convert workflow output into reviewable draft proposals without entering
-  accepted knowledge;
-- produce workflow review handoff packets with fail-closed scanner guards;
-- add deterministic reviewable-workflow eval coverage for the framework
-  surface;
-- keep workflow records as review context only;
-- record downstream pin/policy drift separately instead of claiming ecosystem
-  closeout is complete.
+- design the typed checker registry and cross-check evidence report boundary;
+- keep cross-check output as review context only;
+- preserve skipped-not-pass semantics for unavailable optional tools;
+- keep accepted promotion, human review, source metadata, verifier, and gate
+  semantics unchanged.
 
-Completed after publication:
+Completed V14 closeout:
 
 - persistent workflow storage under `.cosheaf/workflows/`;
 - `workflow show`;
 - persisted `workflow step`;
 - bounded `workflow run`;
-- persisted workflow readiness reports.
+- persisted workflow readiness reports;
 - `workflow draft-proposal` dry-run, review-context output, and private draft
-  artifact output.
+  artifact output;
 - `workflow handoff build/show/scan/export` review-context packets and scanner
-  guards.
-- `cosheaf eval reviewable-workflow --json` framework benchmark coverage.
-
-Remaining V14 implementation gaps:
-
-- downstream workspace-template and public-KB v0.9 policy/pin closeout.
+  guards;
+- `cosheaf eval reviewable-workflow --json` framework benchmark coverage;
+- workspace-template `make reviewable-workflow-demo`;
+- public KB workflow packet policy guard for source metadata, accepted proof,
+  and human review misuse.
 
 Authority boundary: workflow output, draft proposals, handoff scan reports,
-handoff bundles, and handoff exports remain review context or draft artifacts
-only. They are not proof, source metadata, human review, verifier pass, gate
-pass, accepted status, accepted theorem/refutation, or promotion authority.
+handoff bundles, handoff exports, eval reports, future cross-check reports, and
+checker registry metadata remain review context or draft artifacts only. They
+are not proof, source metadata, human review, verifier pass without a real
+checker result, gate pass, accepted status, accepted theorem/refutation, or
+promotion authority.

@@ -197,8 +197,8 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- Downstream workspace-template reviewable-workflow demo and public-KB workflow
-  packet policy closeout.
+- V15 cross-check evidence and typed checker registry work, which will keep
+  checker reports as review context and preserve skipped-not-pass semantics.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
@@ -342,9 +342,10 @@ surfaces can pin to `v0.5.0`. Downstream repositories that need Operator
 Session + Review Handoff surfaces can pin to `v0.6.0`. Downstream
 repositories that need Bounded Research Loop + Attempt Memory surfaces can pin
 to `v0.7.0`; deterministic execution-kernel surfaces can pin to `v0.8.0`; and
-the initial reviewable-workflow release line can pin to `v0.9.0`. Check the
-downstream workspace-template and public-KB repositories before assuming their
-default pins have already moved to the latest framework release.
+the initial reviewable-workflow release line can pin to `v0.9.0`. The
+workspace-template and public KB active pins are aligned to `v0.9.0`; later
+post-tag workflow follow-ups that are not in the published tag should be tested
+from a local checkout or an explicit newer commit.
 
 ## Development Commands
 

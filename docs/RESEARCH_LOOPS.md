@@ -50,9 +50,9 @@ Implemented through the completed Phase E.1 slice:
 - framework-side matrix row definitions for downstream workspace-template
   `research-loop-demo` and public-KB `RESEARCH_LOOP_POLICY.md` checks;
 - downstream workspace-template `make research-loop-demo`, which uses a local
-  or otherwise explicit compatible framework source. At the v0.9.0 closeout,
-  workspace-template pin updates were partially present on a downstream branch
-  and still needed a dedicated drift cleanup before being treated as complete;
+  or otherwise explicit compatible framework source. The later v0.9.0
+  downstream closeout aligned the active workspace-template pins before V15
+  kickoff;
 - downstream public-KB `docs/RESEARCH_LOOP_POLICY.md` and policy guard checks
   that reject research-loop output used as source metadata, accepted proof,
   human review, verifier/gate pass, accepted status, or promotion authority;
@@ -395,4 +395,6 @@ ecosystem smoke rows, downstream workspace-template demo coverage, public-KB
 research-loop policy documentation, and a completed no-network
 three-repository matrix closeout. The `v0.7.0` publication closeout is
 historical and complete; current follow-up work belongs to the v0.9.0
-reviewable-workflow line and downstream pin/policy drift cleanup.
+reviewable-workflow line, which has since completed its downstream demo and
+public-KB policy closeout. Current follow-up work belongs to the V15
+cross-check evidence line.

@@ -318,7 +318,8 @@ is Verification Evidence Hardening, not provider/MCP expansion.
   changes.
 - [x] The `verifier_result` record v1 schema/model is implemented for
   serialized verifier evidence records; request and counterexample records
-  remain follow-up work.
+  were separate follow-up work in that line and are covered by later checklist
+  items.
 - [x] Promotion-readiness reporting is read-only, reports
   `accepted_write_performed: false`, distinguishes missing review, failed and
   skipped verifier results, missing source metadata, dependency risk, private

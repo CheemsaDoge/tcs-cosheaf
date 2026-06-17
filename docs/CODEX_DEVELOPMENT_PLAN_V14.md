@@ -5,13 +5,14 @@ Target: `v0.9.0 Reviewable Research Workflow MVP + Benchmark Harness`
 This is the accelerated post-`v0.8.0` plan.
 
 Current closeout note, 2026-06-18: the public `v0.9.0` tag and GitHub release
-are published. Later V14 B.1, C.1, and D.1 follow-ups add persistent workflow
-storage, `workflow show`, persisted `workflow step`, bounded `workflow run`,
-persisted readiness reports, draft proposal generation, and workflow handoff
-build/show/scan/export with scanner integration. `cosheaf eval
-reviewable-workflow --json` and downstream workspace-template/public-KB v0.9
-policy/pin closeout remain follow-up work. Do not treat this plan as proof
-that all listed phases are implemented.
+are published. Later V14 B.1, C.1, D.1, and E.1 follow-ups add persistent
+workflow storage, `workflow show`, persisted `workflow step`, bounded
+`workflow run`, persisted readiness reports, draft proposal generation,
+workflow handoff build/show/scan/export with scanner integration, and
+`cosheaf eval reviewable-workflow --json`. Downstream workspace-template PR
+#83 added `make reviewable-workflow-demo`; public KB PR #97 added workflow
+packet policy guard coverage. This V14 plan is closed. Current development
+continues in `docs/CODEX_DEVELOPMENT_PLAN_V15.md`.
 
 `v0.8.0` delivered the deterministic execution kernel: librarian v0, orchestrator FSM v1, whitelisted local action registry, non-dry-run local loop execution, worker profiles, and deterministic memory feedback. The next line should not add a new low-level subsystem. It should turn those capabilities into a single reviewable research workflow:
 
@@ -462,8 +463,9 @@ cosheaf eval reviewable-workflow --json
 ```
 
 Implementation status: the framework eval and ecosystem smoke matrix row are
-implemented by issue #432. The downstream workspace-template demo and public-KB
-workflow packet policy guard remain follow-up work.
+implemented by issue #432. The downstream workspace-template demo landed in
+workspace-template PR #83, and the public-KB workflow packet policy guard
+landed in public-KB PR #97.
 
 Default cases:
 
