@@ -37,8 +37,8 @@ Therefore, the current code does not yet satisfy the full V14 Phase B-F target.
 It is a published initial workflow surface, not a completed issue-to-handoff
 workflow engine.
 
-Local quality checks during this closeout also found that the current codebase
-does not pass the normal full verification ladder:
+Initial local quality checks during this closeout found that the documentation
+branch did not pass the normal full verification ladder:
 
 - `make lint` fails with ruff issues in existing Python code, including
   `cosheaf/actions/builtins.py`, `cosheaf/actions/cli.py`,
@@ -48,18 +48,26 @@ does not pass the normal full verification ladder:
 - `make typecheck` fails with mypy issues in `cosheaf/librarian/retrieval.py`,
   `cosheaf/actions/builtins.py`, `cosheaf/actions/workers.py`, and
   `cosheaf/research/loop_executor.py`.
-- These failures were observed on a documentation closeout branch and were not
-  fixed in this docs-only pass.
+- These failures were observed on the initial documentation closeout branch.
 
-Checks that did pass during this closeout:
+Follow-up code-quality commits in PR #425 repaired those lint/typecheck
+failures without adding new V14 runtime capability. The repair scope was
+limited to ruff formatting/import cleanup, existing-model type alignment, and
+current API compatibility in the action registry, librarian, FSM, workflow, and
+research-loop local-action surfaces.
+
+Checks that now pass locally on PR #425:
 
 - `python -m cosheaf.cli version --json`;
 - `python -m cosheaf.cli workflow --help`;
 - `python -m cosheaf.cli workflow start --issue issue.audit.v090 --query "documentation closeout" --json`;
+- `make lint`;
+- `make typecheck`;
+- `make test` with 753 tests;
 - `make validate`;
 - `make gate`;
-- `git diff --check` reported only expected CRLF working-copy warnings and no
-  whitespace errors.
+- `git diff --check` reported only expected LF/CRLF working-copy warnings and
+  no whitespace errors.
 
 ## V14 Items Still Missing
 
@@ -108,9 +116,10 @@ permission surface is established by `v0.9.0`.
 
 ## Recommended Next Work
 
-1. Finish this documentation closeout PR and merge it.
-2. Fix the current framework lint/typecheck failures before treating v0.9.0 as
-   a fully green baseline.
+1. Finish PR #425 by waiting for GitHub CI on the latest pushed commit and
+   merge only after required checks are green.
+2. Keep the v0.9.0 workflow surface described as initial/thin despite the
+   green quality ladder.
 3. Fix downstream workspace-template pin/script/doc drift in a separate PR.
 4. Fix public-KB framework pin and workflow-output policy drift in a separate
    PR.

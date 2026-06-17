@@ -1,10 +1,10 @@
-# Agent Handoff: v0.9.0 Documentation Closeout
+# Agent Handoff: v0.9.0 Documentation And CI Closeout
 
 ## Current state checked on 2026-06-18
 
 | Repo | Local branch | Local status |
 |------|--------------|--------------|
-| tcs-cosheaf | docs-v090-handoff-closeout | documentation closeout branch |
+| tcs-cosheaf | docs-v090-handoff-closeout | documentation and CI closeout branch |
 | tcs-cosheaf-workspace-template | release-v090-pins | clean local branch, partial v0.9.0 pin updates |
 | tcs-kb-public | main | clean, still pinned to v0.7.0 in CI/docs |
 
@@ -14,11 +14,11 @@
 - Pull request: <https://github.com/CheemsaDoge/tcs-cosheaf/pull/425>
 - Branch: `docs-v090-handoff-closeout`
 - Base branch: `main`
-- Local commit: `c21cb1d Close out v0.9.0 docs and code audit`
+- Initial closeout commit: `c21cb1d Close out v0.9.0 docs and code audit`
 - Author/committer: `CheemsaDoge <cheemsadoge@gmail.com>`
 
-PR #425 is open and not draft. The last completed CI run before the handoff
-metadata update had this result:
+PR #425 is open and not draft. The first CI run for the documentation-only
+closeout failed on lint/typecheck but passed test/validate/gate:
 
 | Check | Last completed result |
 |-------|----------------|
@@ -28,11 +28,9 @@ metadata update had this result:
 | validate | success |
 | gate | success |
 
-The follow-up handoff-document update may trigger a fresh CI run. Re-check PR
-#425 before acting on it; do not merge while lint/typecheck remain red or while
-required checks are still queued. If the next agent fixes the Python
-lint/typecheck failures on this branch, update the PR description so it no
-longer presents the change as documentation-only.
+Follow-up commits on this branch now repair those local lint/typecheck
+failures. Re-check PR #425 before acting on it; do not merge while any required
+check is red or queued.
 
 ## Framework release state
 
@@ -56,17 +54,23 @@ The current `cosheaf workflow` implementation is present but thin:
 Do not describe `v0.9.0` as a complete issue-to-handoff workflow engine. It is
 a published initial reviewable-workflow surface.
 
-The normal verification ladder is not green on this checkout:
+The normal verification ladder is green locally on this checkout after the
+code-quality closeout:
 
-- `make lint` fails with ruff issues across existing V13/V14 Python code,
-  including `cosheaf/actions/*`, `cosheaf/orchestrator_fsm/*`,
-  `cosheaf/workflow/*`, and `cosheaf/research/loop_executor.py`.
-- `make typecheck` fails with mypy issues in `cosheaf/librarian/retrieval.py`,
-  `cosheaf/actions/*`, and `cosheaf/research/loop_executor.py`.
-- `make validate`, `make gate`, workflow CLI smoke, version JSON, and
-  `git diff --check` passed for this documentation closeout.
+- `make lint`: passed.
+- `make typecheck`: passed for 201 source files.
+- `make test`: passed with 753 tests.
+- `make validate`: passed for 20 YAML records.
+- `make gate`: passed.
+- `git diff --check`: no whitespace errors; PowerShell reported only expected
+  LF/CRLF working-copy warnings.
 
-The lint/typecheck failures were not fixed in this docs-only handoff pass.
+The code-quality repair was deliberately narrow: it fixes ruff formatting,
+import order, mypy type mismatches, and current-model compatibility in the
+existing action/librarian/FSM/workflow/research-loop surfaces. It does not add
+persistent workflow storage, `workflow show/run`, draft proposals, handoff
+commands, eval workflow support, provider defaults, accepted writes, or theorem
+checking.
 
 ## Next-agent checklist
 
@@ -79,12 +83,10 @@ The lint/typecheck failures were not fixed in this docs-only handoff pass.
      --json mergeStateStatus,statusCheckRollup,url
    ```
 
-2. Decide whether PR #425 stays documentation-only or becomes a small
-   code-quality cleanup PR. Do not mix in new V14 runtime capability.
-3. If fixing CI, start with the reported lint/typecheck failures only, then
-   rerun the normal verification ladder.
-4. If keeping PR #425 documentation-only, leave lint/typecheck as explicitly
-   reported failures and do not claim a green baseline.
+2. Wait for the GitHub CI run for the latest pushed commit.
+3. If CI stays green, merge PR #425 normally. If CI fails, fix only the failing
+   check and rerun the normal verification ladder.
+4. After merge, continue downstream drift fixes in separate PRs.
 
 ## Downstream drift to fix after this branch
 

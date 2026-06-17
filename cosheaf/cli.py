@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import os
@@ -12,11 +12,7 @@ from pydantic import ValidationError
 from rich.console import Console
 
 from cosheaf import __version__
-from cosheaf.actions.builtins import build_default_registry
 from cosheaf.actions.cli import action_app
-from cosheaf.librarian.cli import librarian_app
-from cosheaf.orchestrator_fsm.cli import fsm_app
-from cosheaf.workflow.cli import workflow_app
 from cosheaf.agent.context_pack import (
     ContextPackError,
 )
@@ -105,6 +101,7 @@ from cosheaf.gates.promotion_readiness import build_promotion_readiness_report
 from cosheaf.gates.source_metadata_gate import missing_required_source_metadata
 from cosheaf.graph.claim_graph import DependencyGraph, build_dependency_graph
 from cosheaf.ingest import IngestError, MarkItDownIngestAdapter
+from cosheaf.librarian.cli import librarian_app
 from cosheaf.mcp import READ_ONLY_TOOL_NAMES, serve_stdio
 from cosheaf.memory import (
     MEMORY_GRAPH_SIDECAR,
@@ -139,6 +136,7 @@ from cosheaf.operator_session import (
     start_operator_session,
     write_operator_session,
 )
+from cosheaf.orchestrator_fsm.cli import fsm_app
 from cosheaf.research.run import (
     RESEARCH_RUN_AUTHORITY_NOTICE,
     ResearchRunError,
@@ -208,6 +206,7 @@ from cosheaf.verification.counterexample_evidence import (
     stage_checked_counterexample_evidence,
     validate_checked_counterexample_evidence_payload,
 )
+from cosheaf.workflow.cli import workflow_app
 
 app = typer.Typer(
     add_completion=False,
@@ -880,8 +879,7 @@ def counterexample_evidence_stage(
         return
     action = "would write" if result.dry_run else "wrote"
     console.print(
-        f"{result.to_dict()['kind']}: {action} "
-        f"{result.relative_path.as_posix()}"
+        f"{result.to_dict()['kind']}: {action} {result.relative_path.as_posix()}"
     )
     console.print("- accepted knowledge merge: not performed")
     console.print(f"- authority: {CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE}")
@@ -1686,8 +1684,7 @@ def research_run_export_review(
         return
     action = "would write" if result.dry_run else "wrote"
     console.print(
-        f"Research run review export: {action} "
-        f"{result.relative_path.as_posix()}"
+        f"Research run review export: {action} {result.relative_path.as_posix()}"
     )
 
 
@@ -2352,9 +2349,7 @@ def artifact_promote(
         console.print(f"Artifact promote failed: {exc}")
         raise typer.Exit(code=1) from None
 
-    console.print(
-        f"Artifact promoted: {artifact_id} | {old_status.value} -> accepted"
-    )
+    console.print(f"Artifact promoted: {artifact_id} | {old_status.value} -> accepted")
     console.print(f"- from: {old_path.as_posix()}")
     console.print(f"- to: {new_path.as_posix()}")
 
@@ -2776,8 +2771,7 @@ def memory_cards(
                     code="memory_cards_failed",
                     message=str(exc),
                     remediation=(
-                        "Check the issue ID, status filter, and repository "
-                        "records."
+                        "Check the issue ID, status filter, and repository records."
                     ),
                     blocking=True,
                     related_artifact=_valid_related_artifact(issue),
@@ -2876,8 +2870,7 @@ def memory_search(
                     code="memory_search_failed",
                     message=str(exc),
                     remediation=(
-                        "Check the query, issue ID, filters, and repository "
-                        "records."
+                        "Check the query, issue ID, filters, and repository records."
                     ),
                     blocking=True,
                     related_artifact=_valid_related_artifact(issue),
@@ -3138,13 +3131,11 @@ def eval_research_run_loop(
     console.print(f"Research-run loop eval verdict: {verdict}")
     console.print(f"- cases: {report.case_count}")
     console.print(
-        "- command_coverage_accuracy: "
-        f"{report.metrics.command_coverage_accuracy:.6f}"
+        f"- command_coverage_accuracy: {report.metrics.command_coverage_accuracy:.6f}"
     )
     console.print(f"- skipped_not_pass_count: {report.metrics.skipped_not_pass_count}")
     console.print(
-        "- authority_escalation_count: "
-        f"{report.metrics.authority_escalation_count}"
+        f"- authority_escalation_count: {report.metrics.authority_escalation_count}"
     )
     for case in report.cases:
         failures = ",".join(case.failures) if case.failures else "-"
@@ -3196,8 +3187,7 @@ def eval_research_loop(
         f"{report.metrics.repeat_failure_detection_rate:.6f}"
     )
     console.print(
-        "- scanner_blocker_accuracy: "
-        f"{report.metrics.scanner_blocker_accuracy:.6f}"
+        f"- scanner_blocker_accuracy: {report.metrics.scanner_blocker_accuracy:.6f}"
     )
     console.print(f"- skipped_not_pass_count: {report.metrics.skipped_not_pass_count}")
     for case in report.cases:
@@ -3250,8 +3240,7 @@ def eval_strategy_planner(
     )
     console.print(f"- skipped_not_pass_count: {report.metrics.skipped_not_pass_count}")
     console.print(
-        "- authority_escalation_count: "
-        f"{report.metrics.authority_escalation_count}"
+        f"- authority_escalation_count: {report.metrics.authority_escalation_count}"
     )
     for case in report.cases:
         failures = ",".join(case.failures) if case.failures else "-"
@@ -3733,9 +3722,7 @@ def provider_real_run(
     result = ModelCallService(context).call(
         request,
         config=config,
-        provider=OpenAICompatibleProvider(
-            transport=OpenAICompatibleHttpTransport()
-        ),
+        provider=OpenAICompatibleProvider(transport=OpenAICompatibleHttpTransport()),
     )
     if isinstance(result, ProviderError):
         _exit_with_error(
@@ -4545,8 +4532,7 @@ def _research_run_error_result(exc: Exception) -> ErrorResult:
         code="research_run_validation_failed",
         message=str(exc),
         remediation=(
-            "Fix the research-run payload and retry. "
-            "Research runs are provenance only."
+            "Fix the research-run payload and retry. Research runs are provenance only."
         ),
         blocking=True,
     )
@@ -4591,9 +4577,7 @@ def _emit_controlled_write(
                 "schema_version": 1,
                 "kind": result.kind,
                 "path": result.relative_path.as_posix(),
-                "written_paths": [
-                    path.as_posix() for path in result.written_paths
-                ],
+                "written_paths": [path.as_posix() for path in result.written_paths],
                 "dry_run": result.dry_run,
                 "accepted_write_performed": result.accepted_write_performed,
                 "record_id": result.record_id,
@@ -4880,9 +4864,7 @@ def _orchestrator_local_result_payload(
         "reducer_results": [
             reducer.to_dict() for reducer in result.run.reducer_results
         ],
-        "stop_conditions": [
-            stop.to_dict() for stop in result.run.stop_conditions
-        ],
+        "stop_conditions": [stop.to_dict() for stop in result.run.stop_conditions],
     }
 
 
@@ -4911,9 +4893,7 @@ def _orchestrator_hosted_result_payload(
         "reducer_results": [
             reducer.to_dict() for reducer in result.run.reducer_results
         ],
-        "stop_conditions": [
-            stop.to_dict() for stop in result.run.stop_conditions
-        ],
+        "stop_conditions": [stop.to_dict() for stop in result.run.stop_conditions],
     }
 
 
@@ -5048,10 +5028,7 @@ def _validation_report_to_result(report: ValidationReport) -> ValidateResult:
     return ValidateResult(
         ok=report.ok,
         checked_count=report.checked_count,
-        failures=[
-            _validation_failure_to_error(failure)
-            for failure in report.failures
-        ],
+        failures=[_validation_failure_to_error(failure) for failure in report.failures],
     )
 
 
@@ -5079,12 +5056,10 @@ def _gate_run_to_result(
             result.markdown_path,
         ),
         blocking_issues=[
-            _gate_issue_to_error(issue)
-            for issue in result.report.blocking_issues
+            _gate_issue_to_error(issue) for issue in result.report.blocking_issues
         ],
         nonblocking_issues=[
-            _gate_issue_to_error(issue)
-            for issue in result.report.nonblocking_issues
+            _gate_issue_to_error(issue) for issue in result.report.nonblocking_issues
         ],
     )
 
@@ -5115,10 +5090,7 @@ def _context_build_to_result(
     return ContextBuildResult(
         issue_id=result.issue_id,
         task_dir=repo_relative_posix(context.repo_root, result.task_dir),
-        files=[
-            repo_relative_posix(context.repo_root, path)
-            for path in result.files
-        ],
+        files=[repo_relative_posix(context.repo_root, path) for path in result.files],
         public_only=public_only,
         private_context_included=_context_private_included(result.task_dir),
         card_count=payload_counts["card_count"],
@@ -5176,8 +5148,7 @@ def _context_private_included(task_dir: Path) -> bool:
         return True
     pulls = payload.get("full_artifact_pulls", [])
     return any(
-        pull.get("root_scope") == MemoryRootScope.PRIVATE.value
-        for pull in pulls
+        pull.get("root_scope") == MemoryRootScope.PRIVATE.value for pull in pulls
     )
 
 
@@ -5519,8 +5490,7 @@ def _ensure_gatekeeper_allows_promotion(
     target_blockers = _target_verifier_blockers(result, artifact_id)
     if target_blockers:
         raise ArtifactLifecycleError(
-            "target verifier result blocks promotion: "
-            f"{'; '.join(target_blockers)}"
+            f"target verifier result blocks promotion: {'; '.join(target_blockers)}"
         )
     if result.report.blocking_issues:
         raise ArtifactLifecycleError(
@@ -5730,9 +5700,7 @@ def _load_records_for_lifecycle(context: RepoContext) -> tuple[LoadedRecord, ...
     try:
         return tuple(load_artifacts(context))
     except LoadError as exc:
-        raise ArtifactLifecycleError(
-            f"cannot load repository records: {exc}"
-        ) from exc
+        raise ArtifactLifecycleError(f"cannot load repository records: {exc}") from exc
 
 
 def _find_unique_base_artifact(
@@ -5808,9 +5776,7 @@ def _workspace_status_move_path(
 
 
 def _default_writable_kb_root(context: RepoContext) -> KbRootConfig:
-    writable_roots = [
-        root for root in context.workspace_config.kb if not root.readonly
-    ]
+    writable_roots = [root for root in context.workspace_config.kb if not root.readonly]
     if not writable_roots:
         raise ArtifactLifecycleError("no writable KB root is configured")
 
@@ -5858,8 +5824,6 @@ def _format_report_failures(report: ValidationReport) -> str:
         f"{failure.artifact_id} | {failure.message}"
         for failure in report.failures
     )
-
-
 
 
 # Research loop commands
@@ -6182,7 +6146,10 @@ def research_loop_run(
     execute_local_actions: bool = typer.Option(
         False,
         "--execute-local-actions",
-        help="Execute whitelisted local actions (non-dry-run). Only safe actions allowed.",
+        help=(
+            "Execute whitelisted local actions (non-dry-run). "
+            "Only safe actions allowed."
+        ),
     ),
     repo_root: Path = typer.Option(
         Path("."),
@@ -6204,6 +6171,7 @@ def research_loop_run(
         if execute_local_actions and not dry_run:
             from cosheaf.research.loop import load_loop
             from cosheaf.research.loop_executor import run_local_actions_step
+
             loop = load_loop(ctx, loop_id)
             result = run_local_actions_step(ctx, loop, dry_run=False)
         else:
@@ -6221,7 +6189,11 @@ def research_loop_run(
             console=console,
         )
     if json_output:
-        payload = result.to_dict() if hasattr(result, 'to_dict') else result.model_dump(mode="json")
+        payload = (
+            result.to_dict()
+            if hasattr(result, "to_dict")
+            else result.model_dump(mode="json")
+        )
         _emit_json(payload)
         return
     if execute_local_actions and not dry_run:
@@ -6386,7 +6358,6 @@ def _research_loop_error_result(exc: Exception) -> ErrorResult:
         exc,
         default_code="research_loop_validation_failed",
     )
-
 
 
 if __name__ == "__main__":

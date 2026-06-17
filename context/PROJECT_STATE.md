@@ -3,7 +3,7 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
-## v0.9.0 documentation closeout and code audit - 2026-06-18
+## v0.9.0 documentation closeout, code audit, and CI repair - 2026-06-18
 
 The `v0.9.0` tag and GitHub release are published:
 
@@ -36,7 +36,12 @@ The following V14 items remain incomplete and must not be claimed as complete:
 - workspace-template `reviewable-workflow-demo`;
 - public-KB workflow-output policy guard and framework pin closeout.
 
-Local verification during this documentation/code-audit closeout:
+Initial verification during this documentation/code-audit closeout found
+lint/typecheck failures in existing V13/V14 Python code. PR #425 now includes a
+narrow code-quality repair for those issues, without adding new workflow
+runtime capability or widening authority boundaries.
+
+Local verification after the repair:
 
 - `python -m cosheaf.cli version --json`: passed and reported `0.9.0`;
 - `python -m cosheaf.cli workflow --help`: passed and showed only
@@ -44,19 +49,16 @@ Local verification during this documentation/code-audit closeout:
 - `python -m cosheaf.cli workflow start --issue issue.audit.v090 --query
   "documentation closeout" --json`: passed and emitted a review-context
   authority notice;
+- `make lint`: passed;
+- `make typecheck`: passed for 201 source files;
+- `make test`: passed with 753 tests;
 - `make validate`: passed for 20 YAML records;
 - `make gate`: passed;
-- `git diff --check`: no whitespace errors, only CRLF working-copy warnings;
-- `make lint`: failed on existing Python lint issues across
-  `cosheaf/actions/*`, `cosheaf/orchestrator_fsm/*`, `cosheaf/workflow/*`,
-  `cosheaf/research/loop_executor.py`, and related imports/line lengths;
-- `make typecheck`: failed on existing mypy issues in
-  `cosheaf/librarian/retrieval.py`, `cosheaf/actions/*`, and
-  `cosheaf/research/loop_executor.py`.
+- `git diff --check`: no whitespace errors, only LF/CRLF working-copy warnings.
 
-The lint/typecheck failures were not fixed in this docs-only closeout branch.
-Do not claim the current framework baseline is fully green until those code
-issues are repaired and the full verification ladder passes.
+The quality ladder is green locally on PR #425. This does not change the audit
+finding that the `cosheaf workflow` surface is still thin and not the complete
+V14 issue-to-handoff workflow engine.
 
 Downstream state observed during closeout:
 

@@ -1,16 +1,14 @@
-﻿"""Deterministic local action registry and action execution models.
+"""Deterministic local action registry and action execution models.
 
 Local actions are whitelisted repository operations that the research loop can
 execute without arbitrary shell, network, hosted providers, or accepted-knowledge
 authority. Every action records input refs, output refs, status, timestamps,
 error code, scanner status, and an authority notice.
 """
+
 from __future__ import annotations
 
-import json
-import subprocess
-import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -26,12 +24,14 @@ LOCAL_ACTION_AUTHORITY_NOTICE = (
     "accepted knowledge."
 )
 
+
 class LocalActionStatus(StrEnum):
     SUCCESS = "success"
     FAILED = "failed"
     SKIPPED = "skipped"
     ERROR = "error"
     BLOCKED = "blocked"
+
 
 class LocalActionInputRefKind(StrEnum):
     ISSUE_ID = "issue_id"
@@ -43,6 +43,7 @@ class LocalActionInputRefKind(StrEnum):
     STRATEGY_ID = "strategy_id"
     RUN_ID = "run_id"
 
+
 class LocalActionOutputRefKind(StrEnum):
     RUNTIME_FILE = "runtime_file"
     REVIEW_FILE = "review_file"
@@ -50,8 +51,10 @@ class LocalActionOutputRefKind(StrEnum):
     CONTEXT_PACK = "context_pack"
     HANDOFF_BUNDLE = "handoff_bundle"
 
+
 class LocalActionSpec(BaseModel):
     """Serializable spec for one whitelisted local action."""
+
     model_config = ConfigDict(frozen=True)
 
     action_id: str = Field(..., description="Unique action identifier")
@@ -65,15 +68,19 @@ class LocalActionSpec(BaseModel):
     executes_shell: bool = Field(default=False)
     max_timeout_seconds: int = Field(default=120)
 
+
 class LocalActionError(BaseModel):
     """Structured error for a failed or blocked local action."""
+
     error_code: str = Field(default="UNKNOWN")
     message: str = Field(default="")
     details: dict[str, Any] = Field(default_factory=dict)
     scanner_blocker: bool = Field(default=False)
 
+
 class LocalActionResult(BaseModel):
     """Result of executing one local action."""
+
     action_id: str
     status: LocalActionStatus
     input_refs: dict[str, str] = Field(default_factory=dict)
@@ -82,19 +89,25 @@ class LocalActionResult(BaseModel):
     finished_at: datetime | None = Field(default=None)
     duration_seconds: float | None = Field(default=None)
     error: LocalActionError | None = Field(default=None)
-    scanner_status: Literal["clean", "blocked", "not_applicable"] = Field(default="not_applicable")
+    scanner_status: Literal["clean", "blocked", "not_applicable"] = Field(
+        default="not_applicable"
+    )
     authority_notice: str = Field(default=LOCAL_ACTION_AUTHORITY_NOTICE)
     stdout_snippet: str = Field(default="")
     stderr_snippet: str = Field(default="")
 
+
 class LocalActionRunRequest(BaseModel):
     """Request to run one local action."""
+
     action_id: str
     input_refs: dict[str, str] = Field(default_factory=dict)
     dry_run: bool = Field(default=False)
 
+
 class LocalActionPolicy(BaseModel):
     """Policy constraints evaluated before action execution."""
+
     model_config = ConfigDict(frozen=True)
 
     allow_accepted_writes: bool = Field(default=False)
@@ -104,9 +117,13 @@ class LocalActionPolicy(BaseModel):
     mode: Literal["public_only", "private_research"] = Field(default="private_research")
     max_timeout_seconds: int = Field(default=120)
 
+
 # Action execution function signature
-ActionFunc = Callable[[LocalActionRunRequest, LocalActionPolicy, Path], LocalActionResult]
+ActionFunc = Callable[
+    [LocalActionRunRequest, LocalActionPolicy, Path], LocalActionResult
+]
 """Action function: (request, policy, repo_root) -> result."""
+
 
 @dataclass(frozen=True)
 class _RegistryEntry:
@@ -159,7 +176,10 @@ class LocalActionRegistry:
                 status=LocalActionStatus.BLOCKED,
                 error=LocalActionError(
                     error_code="ACCEPTED_WRITE_BLOCKED",
-                    message=f"Action {request.action_id!r} requires accepted-write permission",
+                    message=(
+                        f"Action {request.action_id!r} requires "
+                        "accepted-write permission"
+                    ),
                 ),
             )
         if spec.requires_network and not policy.allow_network:
@@ -177,7 +197,9 @@ class LocalActionRegistry:
                 status=LocalActionStatus.BLOCKED,
                 error=LocalActionError(
                     error_code="PROVIDER_BLOCKED",
-                    message=f"Action {request.action_id!r} requires hosted provider access",
+                    message=(
+                        f"Action {request.action_id!r} requires hosted provider access"
+                    ),
                 ),
             )
         if spec.executes_shell and not policy.allow_shell:
@@ -186,7 +208,10 @@ class LocalActionRegistry:
                 status=LocalActionStatus.BLOCKED,
                 error=LocalActionError(
                     error_code="SHELL_BLOCKED",
-                    message=f"Action {request.action_id!r} requires shell execution permission",
+                    message=(
+                        f"Action {request.action_id!r} requires shell "
+                        "execution permission"
+                    ),
                 ),
             )
         if request.dry_run:
@@ -197,7 +222,8 @@ class LocalActionRegistry:
                 output_refs={},
                 scanner_status="not_applicable",
                 authority_notice=(
-                    "DRY RUN: No persistent output was written. " + spec.authority_notice
+                    "DRY RUN: No persistent output was written. "
+                    + spec.authority_notice
                 ),
             )
         if not request.input_refs and spec.allowed_input_refs:
@@ -217,7 +243,11 @@ class LocalActionRegistry:
                 result = result.model_copy(update={"started_at": started_at})
             if result.finished_at is None:
                 result = result.model_copy(update={"finished_at": datetime.now(UTC)})
-            if result.duration_seconds is None and result.started_at and result.finished_at:
+            if (
+                result.duration_seconds is None
+                and result.started_at
+                and result.finished_at
+            ):
                 result = result.model_copy(
                     update={
                         "duration_seconds": (

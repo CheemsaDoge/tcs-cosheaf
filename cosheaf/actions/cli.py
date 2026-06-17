@@ -1,4 +1,5 @@
-﻿"""Local action CLI commands for the deterministic action registry."""
+"""Local action CLI commands for the deterministic action registry."""
+
 from __future__ import annotations
 
 import json
@@ -65,7 +66,10 @@ def action_describe(
 
     console.print(f"[bold]{spec.action_id}[/bold]")
     console.print(f"  {spec.description}")
-    console.print(f"  Input refs: {', '.join(spec.allowed_input_refs) if spec.allowed_input_refs else 'none'}")
+    input_refs = (
+        ", ".join(spec.allowed_input_refs) if spec.allowed_input_refs else "none"
+    )
+    console.print(f"  Input refs: {input_refs}")
     console.print(f"  Max timeout: {spec.max_timeout_seconds}s")
     console.print(f"[dim]{spec.authority_notice}[/dim]")
 
@@ -77,7 +81,8 @@ def action_run(
         str | None, typer.Option("--input-json", help="Path to JSON input file")
     ] = None,
     dry_run: Annotated[
-        bool, typer.Option("--dry-run", is_flag=True, help="Preview only, do not execute")
+        bool,
+        typer.Option("--dry-run", is_flag=True, help="Preview only, do not execute"),
     ] = False,
     mode: Annotated[
         str, typer.Option("--mode", help="Policy mode: public_only or private_research")

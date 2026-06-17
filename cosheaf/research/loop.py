@@ -53,9 +53,7 @@ AttemptNextActionKind = Literal[
 ]
 ResearchLoopRunnerMode = Literal["dry_run", "local"]
 
-_TERMINAL_LOOP_STATUSES = frozenset(
-    {"finalized", "abandoned", "failed"}
-)
+_TERMINAL_LOOP_STATUSES = frozenset({"finalized", "abandoned", "failed"})
 _TERMINAL_ATTEMPT_STATUSES = frozenset(
     {"succeeded", "failed", "blocked", "inconclusive", "abandoned"}
 )
@@ -135,8 +133,7 @@ _LOOP_SCAN_FINDING_MESSAGES = {
         "research loop stores raw provider request or response payload data"
     ),
     "authority_claim": (
-        "research loop claims human-review, verifier, accepted, or promotion "
-        "authority"
+        "research loop claims human-review, verifier, accepted, or promotion authority"
     ),
     "loop_json_invalid": "research loop JSON could not be parsed",
     "attempt_json_invalid": "research loop attempt JSON could not be parsed",
@@ -501,7 +498,9 @@ class ResearchLoopAttempt(ResearchLoopModel):
     authority_notice: str = RESEARCH_LOOP_AUTHORITY_NOTICE
     action_results: list[dict[str, object]] | None = Field(
         default=None,
-        description="Optional local action results when run with --execute-local-actions",
+        description=(
+            "Optional local action results when run with --execute-local-actions"
+        ),
     )
 
     @field_validator("attempt_id", "loop_id")
@@ -561,11 +560,15 @@ class ResearchLoopAttempt(ResearchLoopModel):
                 raise ValueError(
                     "succeeded attempts require result_summary or evidence"
                 )
-        if self.status in {
-            ResearchLoopAttemptStatus.FAILED,
-            ResearchLoopAttemptStatus.INCONCLUSIVE,
-            ResearchLoopAttemptStatus.ABANDONED,
-        } and not self.failures:
+        if (
+            self.status
+            in {
+                ResearchLoopAttemptStatus.FAILED,
+                ResearchLoopAttemptStatus.INCONCLUSIVE,
+                ResearchLoopAttemptStatus.ABANDONED,
+            }
+            and not self.failures
+        ):
             raise ValueError(f"{self.status.value} attempts require failures")
         if self.status is ResearchLoopAttemptStatus.BLOCKED:
             if not self.blocked_reason and not self.failures:
@@ -1197,11 +1200,13 @@ class ResearchLoop(ResearchLoopModel):
             status=self.status,
             attempt_count=len(self.attempts),
             failed_attempt_count=sum(
-                1 for attempt in self.attempts
+                1
+                for attempt in self.attempts
                 if attempt.status is ResearchLoopAttemptStatus.FAILED
             ),
             succeeded_attempt_count=sum(
-                1 for attempt in self.attempts
+                1
+                for attempt in self.attempts
                 if attempt.status is ResearchLoopAttemptStatus.SUCCEEDED
             ),
             blocking_policy_findings=sum(
@@ -1593,8 +1598,7 @@ def build_operator_task(
         attempt_id=next_result.attempt_id,
         issue_id=loop.issue_id,
         objective=(
-            f"Make bounded attempt {next_result.attempt_number} "
-            f"for {loop.issue_id}"
+            f"Make bounded attempt {next_result.attempt_number} for {loop.issue_id}"
         ),
         allowed_actions=(
             "read repository files",
@@ -2005,17 +2009,12 @@ def _loop_metrics(
     )
     candidate_counterexample_count = sum(
         len(attempt.evidence.counterexample_candidate_ids)
-        + sum(
-            len(failure.counterexample_candidate_ids)
-            for failure in attempt.failures
-        )
+        + sum(len(failure.counterexample_candidate_ids) for failure in attempt.failures)
         for attempt in attempts
     )
     checked_counterexample_count = sum(
         len(attempt.evidence.checked_counterexample_ids)
-        + sum(
-            len(failure.checked_counterexample_ids) for failure in attempt.failures
-        )
+        + sum(len(failure.checked_counterexample_ids) for failure in attempt.failures)
         for attempt in attempts
     )
     return ResearchLoopMetrics(
@@ -2275,9 +2274,9 @@ def _validate_safe_reference(value: str) -> str:
     if _looks_like_path(normalized):
         repo_path = normalize_repo_path(normalized)
         parts = PurePosixPath(repo_path).parts
-        is_absolute = Path(normalized).is_absolute() or PureWindowsPath(
-            normalized
-        ).is_absolute()
+        is_absolute = (
+            Path(normalized).is_absolute() or PureWindowsPath(normalized).is_absolute()
+        )
         if (
             is_absolute
             or normalized.startswith("/")
@@ -2400,10 +2399,7 @@ class _ResearchLoopScanner:
                 source_path=source_path,
                 severity="blocker",
             )
-        if (
-            self.policy_mode == "public_only"
-            and _PRIVATE_PATH_PATTERN.search(text)
-        ):
+        if self.policy_mode == "public_only" and _PRIVATE_PATH_PATTERN.search(text):
             self._add(
                 "private_path_reference",
                 source_path=source_path,
@@ -2561,8 +2557,14 @@ def _is_accepted_path_scalar(value: object) -> bool:
 def _next_sequence(path: Path) -> int:
     if not path.exists():
         return 1
-    return sum(1 for line in path.read_text(encoding="utf-8-sig").splitlines()
-               if line.strip()) + 1
+    return (
+        sum(
+            1
+            for line in path.read_text(encoding="utf-8-sig").splitlines()
+            if line.strip()
+        )
+        + 1
+    )
 
 
 def _ensure_repo_local(context: RepoContext, target: Path) -> None:

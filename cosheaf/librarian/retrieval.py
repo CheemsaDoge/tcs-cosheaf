@@ -1,20 +1,18 @@
-﻿"""Deterministic librarian: policy-scored retrieval engine.
+"""Deterministic librarian: policy-scored retrieval engine.
 
 Provides deterministic artifact ranking, bounded context selection,
 and memory temperature partitioning for the orchestrator and research loop.
 Never creates claims, accepted knowledge, or truth judgments.
 """
+
 from __future__ import annotations
 
-import json
 import math
 from collections.abc import Sequence
-from dataclasses import dataclass
 from datetime import UTC, datetime
-from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 LIBRARIAN_AUTHORITY_NOTICE = (
     "Librarian results are retrieval context only; they are not proof, "
@@ -66,7 +64,9 @@ def _compute_text_score(artifact: dict, query: str) -> float:
         return 0.0
     query_lower = query.lower()
     fields = " ".join(
-        artifact.get(k, "") for k in ("title", "statement", "description") if isinstance(artifact.get(k), str)
+        artifact.get(k, "")
+        for k in ("title", "statement", "description")
+        if isinstance(artifact.get(k), str)
     ).lower()
     if not fields:
         return 0.0
@@ -77,19 +77,19 @@ def _compute_text_score(artifact: dict, query: str) -> float:
 
 def _compute_freshness(artifact: dict) -> float:
     """Score based on recency of updates."""
-    updated = artifact.get("updated_at", "")
-    if not updated:
+    updated_value = artifact.get("updated_at", "")
+    if not isinstance(updated_value, str) or not updated_value:
         return 0.0
     try:
-        dt = datetime.fromisoformat(updated.replace("Z", "+00:00"))
+        dt = datetime.fromisoformat(updated_value.replace("Z", "+00:00"))
         delta_days = (datetime.now(UTC) - dt).days
-        return 0.5 ** (max(delta_days, 0) / 30.0)
+        return math.pow(0.5, max(delta_days, 0) / 30.0)
     except (ValueError, TypeError):
         return 0.0
 
 
 def _quality_prior_for_status(status: str) -> float:
-    mapping = {
+    mapping: dict[str, float] = {
         "accepted": 1.0,
         "preaccepted": 0.6,
         "draft": 0.3,
@@ -160,7 +160,10 @@ def rank(
                 freshness=round(freshness, 4),
                 penalty=round(penalty, 4),
                 temperature=temperature,
-                explanation=f"text={text_score:.3f} qual={quality_prior:.3f} fresh={freshness:.3f} penalty={penalty:.3f}",
+                explanation=(
+                    f"text={text_score:.3f} qual={quality_prior:.3f} "
+                    f"fresh={freshness:.3f} penalty={penalty:.3f}"
+                ),
             )
         )
 
@@ -180,13 +183,15 @@ def rank(
 def compute_trace(result: LibrarianResult) -> LibrarianTrace:
     components = []
     for c in result.candidates:
-        components.append({
-            "artifact_id": c.artifact_id,
-            "score": c.score,
-            "text": c.text_retrieval_score,
-            "quality": c.quality_prior,
-            "freshness": c.freshness,
-            "penalty": c.penalty,
-            "temperature": c.temperature,
-        })
+        components.append(
+            {
+                "artifact_id": c.artifact_id,
+                "score": c.score,
+                "text": c.text_retrieval_score,
+                "quality": c.quality_prior,
+                "freshness": c.freshness,
+                "penalty": c.penalty,
+                "temperature": c.temperature,
+            }
+        )
     return LibrarianTrace(query_id=result.query_id, score_components=components)
