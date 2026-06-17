@@ -2,27 +2,26 @@
 
 Milestone: **v0.10.0 Cross-Check Evidence + Checker Registry**
 
-Status: **V15 Phase F.1 release candidate in progress**
+Status: **V15 published; V16 kickoff is next**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V15.md
 
 Current package version: `0.10.0`
 
 Latest published release:
-<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0>
+<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.10.0>
 
-`v0.10.0` tag and GitHub release status: **not published yet**. Publication,
-post-tag release smoke, and downstream pin updates are Phase F.2 work after
-the release-candidate PR merges.
+`v0.10.0` publication closeout status: tag, GitHub release, post-tag release
+smoke, workspace-template pin update, and public KB CI pin update are complete.
+The next task is the V16 post-`v0.10.0` audit and plan landing; do not start
+campaign runtime implementation before that audit.
 
 Current focus:
 
-- package the completed V15 implementation and downstream closeout as a
-  conservative `v0.10.0` release candidate;
 - keep package metadata, release notes, roadmap, milestone, project state, and
-  release checklist aligned;
-- verify the framework locally before opening or merging the release-candidate
-  PR;
+  release checklist aligned with the published `v0.10.0` state;
+- prepare the V16 audit/plan/ADR for external operator campaigns as a docs-only
+  kickoff task;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -37,11 +36,16 @@ Current V15 surface on the development line:
 - `cosheaf gap export <workflow-id> --out reviews/workflow/<name>.json --json`;
 - `cosheaf eval checker-crosscheck --json`.
 
-Completed V15 closeout before this RC:
+Completed V15 closeout:
 
 - framework checker/cross-check eval and ecosystem smoke landed in issue #440;
 - workspace-template cross-check demo landed in downstream PR #85;
-- public KB cross-check report policy guard landed in downstream PR #99.
+- public KB cross-check report policy guard landed in downstream PR #99;
+- `v0.10.0` release-candidate metadata landed in issue #442 / PR #443;
+- the annotated `v0.10.0` tag and GitHub release are published;
+- post-tag release smoke from `@v0.10.0` passed;
+- workspace-template active pins moved to `@v0.10.0` in PR #87;
+- public KB CI/docs pins moved to `@v0.10.0` in PR #101.
 
 Completed V14 closeout:
 

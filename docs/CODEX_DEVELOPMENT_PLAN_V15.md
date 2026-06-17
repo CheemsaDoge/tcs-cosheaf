@@ -2,10 +2,10 @@
 
 Target: `v0.10.0 Cross-Check Evidence + Checker Registry`
 
-Status: Phase A through Phase E have landed after the V14 `v0.9.0`
-reviewable-workflow line and downstream workspace/public-KB closeout. Phase
-F.1 is preparing the conservative `v0.10.0` release candidate. The public
-`v0.10.0` tag and GitHub release are not published yet.
+Status: completed and published as the conservative `v0.10.0` Cross-Check
+Evidence + Checker Registry release. Phase A through Phase F have landed after
+the V14 `v0.9.0` reviewable-workflow line and downstream workspace/public-KB
+closeout.
 
 ## Goal
 
@@ -32,9 +32,9 @@ promotion authority.
 4. Phase D: proof-obligation and gap taxonomy. Landed in issue #438.
 5. Phase E: eval plus workspace/public-KB policy smoke. Landed in framework
    issue #440, workspace-template PR #85, and public KB PR #99.
-6. Phase F: `v0.10.0` release candidate and publication closeout. Phase F.1
-   is current issue #442; Phase F.2 will publish the tag/release and align
-   downstream pins after this RC merges.
+6. Phase F: `v0.10.0` release candidate and publication closeout. F.1 landed
+   in issue #442 / PR #443; F.2 landed in issue #444 plus downstream
+   workspace-template PR #87 and public KB PR #101.
 
 ## Phase A Scope
 
@@ -129,9 +129,10 @@ Prepare and publish a conservative `v0.10.0` release only after framework
 verification, downstream pin/demo/policy alignment, post-tag smoke, and release
 documentation all pass.
 
-Phase F.1 prepares package metadata, release notes, and current-status docs for
-`0.10.0` without publishing the tag or changing downstream pins. Phase F.2 is
-the tag, GitHub release, post-tag release smoke, and downstream pin alignment.
+Phase F.1 prepared package metadata, release notes, and current-status docs for
+`0.10.0`. Phase F.2 published the annotated tag and GitHub release, ran
+post-tag release smoke, and aligned downstream workspace-template/public KB
+pins to `@v0.10.0`.
 
 ## Required Verification Pattern
 

@@ -2,16 +2,15 @@
 
 TCS-Cosheaf 是一个以 Git 为持久记忆层的、带类型约束的理论计算机科学研究知识库与智能体协作框架。它把定义、命题、证明、构造、算法、归约、反例、实验、评审、议题和验证器证据保存为可审查的仓库文件，而不是只保存在聊天记录中。
 
-> 当前状态：**v0.10.0 Cross-Check Evidence + Checker Registry release candidate**。
-> 包版本记录为 `0.10.0`；公开 `v0.10.0` tag 和 GitHub release 尚未发布。
-> 最新已发布版本仍是 `v0.9.0`：
-> <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0>。
-> `v0.10.0` RC 打包 V15 checker discipline：typed local checker registry、
+> 当前状态：**v0.10.0 Cross-Check Evidence + Checker Registry 已发布版本**。
+> 包版本记录为 `0.10.0`；公开 `v0.10.0` tag 和 GitHub release 已发布：
+> <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.10.0>。
+> `v0.10.0` 打包 V15 checker discipline：typed local checker registry、
 > checker-run sidecar、workflow cross-check/evidence/gap reports、`cosheaf gap`
 > 命令、deterministic checker/cross-check eval 覆盖，以及三仓 policy smoke。
 > 这些输出只是 review context 和 regression evidence，不改变 proof、人类评审、
 > gate、verifier、source metadata、accepted status 或 promotion 权限。
-> 本 RC 不新增生产自治、默认 hosted provider、自动定理证明、Lean 语义对齐、
+> 本版本不新增生产自治、默认 hosted provider、自动定理证明、Lean 语义对齐、
 > 人类评审、accepted 写入、无真实 checker 证据的 verifier pass、gate-pass 权限、
 > source metadata 权限、accepted theorem/refutation 权限或 promotion 权限。
 > workflow、loop、session、operator、handoff、checker、cross-check、gap 与 eval

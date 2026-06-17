@@ -13,7 +13,7 @@
 7. [Artifact lifecycle](ARTIFACT_LIFECYCLE.md)：理解 draft、locally tested、reviewed、accepted、refuted、obsolete 等生命周期状态。
 8. [Codex workflow](CODEX_WORKFLOW.md)：理解 issue 驱动开发、上下文包、分支、PR 和检查命令。
 9. [Agent access](AGENT_ACCESS.md)、[Codex operator runbook](CODEX_OPERATOR_RUNBOOK.md)、[Research loops](RESEARCH_LOOPS.md)、[Reviewable workflows](WORKFLOWS.md) 与 [Review handoffs](REVIEW_HANDOFFS.md)：理解 CLI-first 智能体接口、受限 operator 流程、bounded research-loop、v0.9.0 workflow 与 review handoff 边界。
-10. [Checkers](CHECKERS.md) 与 [Evaluation](EVALUATION.md)：理解 v0.10.0 RC 的 checker registry、cross-check/gap reports、deterministic eval，以及这些输出为什么只是 review context。
+10. [Checkers](CHECKERS.md) 与 [Evaluation](EVALUATION.md)：理解 v0.10.0 已发布 release 的 checker registry、cross-check/gap reports、deterministic eval，以及这些输出为什么只是 review context。
 11. [Agent providers](AGENT_PROVIDERS.md)：理解提供商边界、真实网络调用保护和日志策略。
 12. [Current milestone](../context/CURRENT_MILESTONE.md) 与 [Project state](../context/PROJECT_STATE.md)：查看当前里程碑和持久化项目状态。
 

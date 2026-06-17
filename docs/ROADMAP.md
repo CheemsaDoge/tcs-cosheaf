@@ -1,8 +1,8 @@
 # Roadmap
 
-TCS-Cosheaf is preparing the `v0.10.0` Cross-Check Evidence + Checker Registry
-release candidate after the published `v0.9.0` Reviewable Research Workflow
-MVP release. Earlier published baselines include `v0.8.0` Deterministic
+TCS-Cosheaf has published the `v0.10.0` Cross-Check Evidence + Checker
+Registry release after the published `v0.9.0` Reviewable Research Workflow MVP
+release. Earlier published baselines include `v0.8.0` Deterministic
 Execution Kernel + Librarian + FSM, `v0.7.0` Bounded Research Loop + Attempt
 Memory, `v0.6.0` Operator Session + Review Handoff, `v0.5.0` Operator MCP +
 Codex Application Layer, `v0.4.0` Strategy Planner + Research Task Graph,
@@ -12,14 +12,14 @@ Layer support baseline. The project is still not production-ready. This
 roadmap records durable direction and named milestones; live issue state
 belongs in GitHub issues.
 
-## Active Development Focus: v0.10.0 release candidate
+## Active Development Focus: V16 audit and plan landing
 
-The public `v0.9.0` tag and GitHub release are published, and the latest
-published baseline remains `v0.9.0`. Package metadata on the current
-release-candidate branch records `0.10.0`; the public `v0.10.0` tag and
-GitHub release are not published yet. Tag publication, GitHub release
-publication, post-tag smoke, and downstream workspace-template/public KB pin
-updates are Phase F.2 work after the release-candidate PR merges.
+The public `v0.10.0` tag and GitHub release are published, post-tag release
+smoke passed, and downstream workspace-template/public KB pins are aligned to
+`@v0.10.0`. The next line is V16 / `v0.11.0` External AI Operator Harness +
+Bounded Multi-Run Campaigns, starting with a docs-only post-`v0.10.0` audit,
+plan, and ADR. Do not start campaign runtime implementation before that audit
+lands.
 
 The V15 implementation line has landed:
 
@@ -33,8 +33,8 @@ The V15 implementation line has landed:
 - workspace-template cross-check demo in downstream PR #85; and
 - public KB cross-check report policy guard in downstream PR #99.
 
-The active task is conservative `v0.10.0` RC packaging and verification. It
-does not add new runtime behavior.
+The V15 release is complete. The next active task is conservative V16 planning
+and state audit; it does not add new runtime behavior.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
@@ -205,14 +205,13 @@ accepted status, or promotion authorization. Provider calls remain explicit,
 default-off, policy-scoped, previewed, consented, and excluded from CI/default
 tests. MCP remains optional and non-blocking.
 
-## Latest Release Candidate: v0.10.0
+## Latest Published Release: v0.10.0
 
-Package metadata and `cosheaf.__version__` on the release-candidate branch
-record `0.10.0`. `docs/releases/v0.10.0.md` records the conservative RC scope
-and limitations. The public `v0.10.0` tag and GitHub release are not published
-yet.
+Package metadata and `cosheaf.__version__` record `0.10.0`.
+`docs/releases/v0.10.0.md` records the conservative release scope and
+limitations. The public `v0.10.0` tag and GitHub release are published.
 
-The `v0.10.0` RC packages typed checker registry commands, checker-run
+The `v0.10.0` release packages typed checker registry commands, checker-run
 sidecars, workflow cross-check and evidence reports, proof/source/
 formalization gap reports, `cosheaf gap` commands, deterministic checker/
 cross-check eval coverage, downstream workspace-template cross-check demo
@@ -224,7 +223,7 @@ without a real checker result, gate pass, accepted status, accepted theorem/
 refutation, or promotion authority. Skipped, unsupported, unavailable, and
 inconclusive checker results are not passes.
 
-## Latest Published Release: v0.9.0
+## Previous Published Release: v0.9.0
 
 At publication time, package metadata and `cosheaf.__version__` recorded
 `0.9.0`. `docs/releases/v0.9.0.md` records the conservative release scope and

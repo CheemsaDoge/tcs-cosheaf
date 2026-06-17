@@ -4,12 +4,10 @@ This checklist records the current three-repository release state for the
 framework package, public KB, and workspace template. It is not a
 production-readiness claim.
 
-The latest published framework release is `v0.9.0` Reviewable Research
-Workflow MVP. The current release-candidate branch prepares `v0.10.0`
-Cross-Check Evidence + Checker Registry package metadata; the public
-`v0.10.0` tag and GitHub release are not published yet. Tag publication,
-post-tag release smoke, and downstream workspace-template/public KB pin updates
-remain Phase F.2 work after the release-candidate PR merges.
+The latest published framework release is `v0.10.0` Cross-Check Evidence +
+Checker Registry. The public `v0.10.0` tag and GitHub release are published,
+post-tag release smoke from `@v0.10.0` passed, and downstream
+workspace-template/public KB pins are aligned to `@v0.10.0`.
 
 Published baseline summary:
 
@@ -33,9 +31,9 @@ Published baseline summary:
 - `v0.8.0` packages Deterministic Execution Kernel + Librarian + FSM
   surfaces.
 - `v0.9.0` packages the Reviewable Research Workflow MVP baseline.
-- `v0.10.0` is a release candidate only in this PR; it packages checker
-  registry, checker sidecars, workflow cross-check/evidence/gap reports,
-  checker/cross-check eval coverage, and downstream policy/demo closeout.
+- `v0.10.0` packages checker registry, checker sidecars, workflow
+  cross-check/evidence/gap reports, checker/cross-check eval coverage, and
+  downstream policy/demo closeout.
 
 ## Scope
 
@@ -43,11 +41,11 @@ Published baseline summary:
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
 - Current framework package metadata version:
-  `0.10.0` on the release-candidate branch.
+  `0.10.0`.
 - Latest published framework release:
-  `v0.9.0`.
-- Current release-candidate tag:
-  `v0.10.0` is not published yet.
+  `v0.10.0`.
+- Current published tag:
+  `v0.10.0`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
@@ -80,16 +78,16 @@ Published baseline summary:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.8.0`.
 - Downstream dependency for Reviewable Research Workflow MVP:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.9.0`.
-- Intended downstream dependency for Cross-Check Evidence + Checker Registry
-  after Phase F.2 publication:
+- Downstream dependency for Cross-Check Evidence + Checker Registry:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.10.0`.
 
-## v0.10.0 Release Candidate Baseline
+## v0.10.0 Published Release Baseline
 
-`docs/releases/v0.10.0.md` is the release-candidate note for Cross-Check
-Evidence + Checker Registry. This F.1 task prepares package metadata and
-status docs only. The tag, GitHub release, post-tag release smoke, and
-downstream pins remain F.2 work.
+`docs/releases/v0.10.0.md` is the published release note for Cross-Check
+Evidence + Checker Registry. Phase F.1 prepared package metadata and status
+docs in issue #442 / PR #443. Phase F.2 published the tag and release, ran
+post-tag release smoke, and aligned downstream pins in issue #444 plus
+workspace-template PR #87 and public KB PR #101.
 
 - [x] Typed checker registry commands are present:
   `cosheaf checker list`, `describe`, `run`, and `run-suite`.
@@ -104,20 +102,19 @@ downstream pins remain F.2 work.
 - [x] Workspace-template cross-check demo landed in PR #85.
 - [x] Public KB policy guard for cross-check/evidence/gap/checker report
   non-authority landed in PR #99.
-- [x] Package metadata records `0.10.0` in the release-candidate branch.
-- [x] The release-candidate task leaves tag publication, GitHub release,
-  post-tag release smoke, and downstream `@v0.10.0` pins to F.2.
+- [x] Package metadata records `0.10.0`.
+- [x] Public `v0.10.0` tag and GitHub release are published.
+- [x] Post-tag release smoke from `@v0.10.0` passed and installed
+  `tcs-cosheaf==0.10.0`.
+- [x] Workspace-template pins moved to `@v0.10.0` in PR #87.
+- [x] Public KB CI/docs pins moved to `@v0.10.0` in PR #101.
 - [x] No production autonomy, hosted-provider default, automatic theorem
   proving, Lean semantic alignment, human-review creation, accepted-write,
   verifier-pass, gate-pass, source-metadata, accepted theorem/refutation, or
   promotion authority is introduced.
 - [x] The release-candidate PR local verification passes.
-- [ ] The release-candidate PR GitHub Actions checks pass before merge.
-- [ ] The public `v0.10.0` tag is published after this PR merges.
-- [ ] The GitHub release for `v0.10.0` is published after this PR merges.
-- [ ] Post-tag release smoke from `@v0.10.0` passes.
-- [ ] Workspace-template and public KB pins move to `@v0.10.0` only after
-  post-tag smoke passes.
+- [x] The release-candidate PR GitHub Actions checks passed before merge.
+- [x] Publication closeout records tag/release/smoke/downstream pin evidence.
 
 ## v0.9.0 Published Release Baseline
 
@@ -518,9 +515,8 @@ smoke, and downstream pin updates.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.10.0` on the
-  release-candidate branch.
-- [x] `cosheaf.__version__` records `0.10.0` on the release-candidate branch.
+- [x] `pyproject.toml` records package version `0.10.0`.
+- [x] `cosheaf.__version__` records `0.10.0`.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
@@ -544,8 +540,8 @@ smoke, and downstream pin updates.
   reviewed release-candidate main commit.
 - [x] Remote tag `v0.9.0` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
-- [ ] Remote tag `v0.10.0` exists. It must remain unchecked until Phase F.2
-  publishes the tag after this RC merges.
+- [x] Remote tag `v0.10.0` exists and points through the annotated tag to the
+  reviewed release-candidate main commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
 - [x] Historical workspace-template artifact-failure-memory verification remains
@@ -568,8 +564,8 @@ smoke, and downstream pin updates.
   after v0.8.0 tag publication and release smoke succeeded.
 - [x] Workspace-template and public KB active pins moved to `@v0.9.0` only
   after v0.9.0 tag publication and release smoke succeeded.
-- [ ] Workspace-template and public KB active pins moved to `@v0.10.0`. This
-  must remain unchecked until Phase F.2 post-tag smoke passes.
+- [x] Workspace-template and public KB active pins moved to `@v0.10.0` only
+  after v0.10.0 tag publication and release smoke succeeded.
 
 ### License
 
@@ -633,13 +629,15 @@ gate output and release notes.
   failure/counterexample, verifier-evidence, artifact failure-memory, and
   ecosystem readiness evals remain deterministic and do not require network
   access or API keys.
-- [x] The `v0.10.0` release-candidate ecosystem matrix runs locally with:
-  `python scripts/ecosystem_smoke.py --matrix --cosheaf "python -m cosheaf.cli" --framework-root . --workspace-template-root ../tcs-cosheaf-workspace-template --public-kb-root ../tcs-kb-public --json`.
+- [x] The `v0.10.0` publication-closeout ecosystem matrix runs locally with:
+  `python scripts/ecosystem_smoke.py --matrix --framework-tag v0.10.0 --cosheaf "python -m cosheaf.cli" --framework-root . --workspace-template-root ../tcs-cosheaf-workspace-template --public-kb-root ../tcs-kb-public --json`.
+  It reports 27 rows: 24 pass, 0 fail, and 3 skipped. Skipped rows are not
+  counted as pass.
 
 ## Agent Access And Provider Status
 
-Current agent/operator/checker surfaces through the `v0.10.0` release
-candidate:
+Current agent/operator/checker surfaces through the published `v0.10.0`
+release:
 
 - CLI-first operator workflow with stable JSON output for core read/check
   commands.
