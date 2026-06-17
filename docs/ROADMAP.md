@@ -24,9 +24,11 @@ Attempt Memory. Phase B has landed the core research-loop DTOs, runtime
 storage, CLI commands, schemas, tests, and docs for
 `start/show/list/append-attempt/finalize`. Phase C.1 has landed the
 deterministic runner and external operator task/result protocol:
-`next/step/run --dry-run/export-task/import-result`. The next development
-focus is Phase D: attempt-memory indexing, repeat-failure detection, and loop
-scanner/handoff hardening.
+`next/step/run --dry-run/export-task/import-result`. Phase D.1 has landed the
+attempt-memory index, deterministic failure clustering, cross-loop
+repeat-failure surfacing, retry-justification guard, and loop scanner. The next
+development focus is Phase E: deterministic research-loop evals, ecosystem
+smoke rows, and downstream demo/policy updates.
 
 This line keeps the same authority boundary: loop records, task packets,
 operator results, and failure memory are review context only. They do not

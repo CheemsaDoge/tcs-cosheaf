@@ -22,9 +22,9 @@ Turn the v0.6.0 operator session and review handoff layer into a bounded multi-a
 - Loop runner with deterministic next-action planning (Phase C.1 complete)
 - External operator task packet export and result import protocol (Phase C.1
   complete)
-- Attempt-memory index and repeat-failure detection
-- Failure-avoidance context injection into next attempts
-- Loop scanner extending session scanner coverage
+- Attempt-memory index and repeat-failure detection (Phase D.1 complete)
+- Failure-avoidance context injection into next attempts (Phase D.1 complete)
+- Loop scanner extending session scanner coverage (Phase D.1 complete)
 - Ecosystem demos and eval matrix for research-loop workflows
 - Conservative v0.7.0 RC and publication closeout
 
@@ -49,13 +49,15 @@ Turn the v0.6.0 operator session and review handoff layer into a bounded multi-a
 
 ## Current phase
 
-**Phase D: attempt memory, repeat-failure detection, and loop scanner**
+**Phase E: ecosystem demos and eval matrix**
 
 Task B.1: bounded-research-loop-core (completed)
 Task C.1: research-loop-runner-and-operator-protocol (completed on branch
 `research-loop-runner-and-operator-protocol`, issue #402)
+Task D.1: attempt-memory-failure-avoidance-scanner (completed on branch
+`attempt-memory-failure-avoidance-scanner`, issue #404)
 
-Current C.1 status:
+Current D.1 status:
 
 - service and CLI implementation is present for `next`, `step`, `run
   --dry-run`, `export-task`, and `import-result`;
@@ -64,12 +66,20 @@ Current C.1 status:
   dry-run write boundaries, operator task export, operator result import,
   authority rejection, missing result/failure rejection, previous-failure
   surfacing, and budget exhaustion;
+- D.1 adds `.cosheaf/research-loops/attempt-memory.json`, deterministic
+  failure clustering, cross-loop repeat-failure surfacing, required
+  `retry_justification` for repeated directions, `cosheaf research-loop scan`,
+  and runtime scanner metrics;
+- focused D.1 regression coverage is present for memory-index persistence,
+  repeat clustering, cross-loop failure surfacing, unjustified retry refusal,
+  justified retry recording, scanner blocking, scanner clean path, and schema
+  file presence;
 - non-dry-run loop execution remains refused until a later explicit
   deterministic implementation.
 
-Next milestone work should start from Phase D. C.1 does not include
-attempt-memory clustering, scanner CLI, loop handoff export, hosted provider
-calls, automatic theorem proving, or Lean semantic alignment.
+Next milestone work should start from Phase E. D.1 does not include ecosystem
+demo/eval rows, loop handoff export, hosted provider calls, automatic theorem
+proving, or Lean semantic alignment.
 
 ## Non-negotiable invariants
 

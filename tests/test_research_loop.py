@@ -32,10 +32,12 @@ from cosheaf.research.loop import (
     list_loops,
     load_loop,
     next_loop_action,
+    research_loop_attempt_memory_path,
     research_loop_attempt_path,
     research_loop_events_path,
     research_loop_path,
     run_loop,
+    scan_research_loop,
     start_loop,
     step_loop,
     write_loop,
@@ -301,10 +303,14 @@ def test_json_schema_files_cover_research_loop_models() -> None:
     schema_names = [
         "research_loop.schema.json",
         "research_loop_attempt.schema.json",
+        "research_loop_attempt_memory.schema.json",
+        "research_loop_attempt_memory_entry.schema.json",
         "attempt_failure_record.schema.json",
         "research_loop_budget.schema.json",
         "research_loop_stop_condition.schema.json",
         "research_loop_decision.schema.json",
+        "research_loop_failure_cluster.schema.json",
+        "research_loop_metrics.schema.json",
         "attempt_evidence_summary.schema.json",
         "attempt_policy_finding.schema.json",
         "attempt_next_action.schema.json",
@@ -317,6 +323,8 @@ def test_json_schema_files_cover_research_loop_models() -> None:
         "operator_result_failure.schema.json",
         "research_loop_operator_result.schema.json",
         "research_loop_import_result.schema.json",
+        "research_loop_scan.schema.json",
+        "research_loop_scan_finding.schema.json",
     ]
     root = Path(__file__).resolve().parents[1]
 
@@ -646,6 +654,181 @@ def test_cli_c1_json_smoke(tmp_path: Path) -> None:
     )
     assert imported.exit_code == 0, imported.output
     assert json.loads(imported.output)["attempt"]["status"] == "succeeded"
+
+
+def test_attempt_memory_index_clusters_repeat_failures(tmp_path: Path) -> None:
+    """Appending attempts should persist deterministic clustered failure memory."""
+    context = RepoContext(tmp_path)
+    start_loop(context, issue_id="issue.test", loop_id="loop.test")
+    first = _failed_attempt()
+    second = _failed_attempt().model_copy(
+        update={
+            "attempt_id": "loop.test.attempt.2",
+            "attempt_number": 2,
+            "failures": (
+                _failure("loop.test.attempt.2").model_copy(
+                    update={"failure_id": "failure.loop.test.attempt.2"}
+                ),
+            ),
+        }
+    )
+
+    append_attempt(context, "loop.test", first)
+    append_attempt(context, "loop.test", second)
+
+    payload = json.loads(
+        (tmp_path / research_loop_attempt_memory_path()).read_text(encoding="utf-8")
+    )
+    assert payload["kind"] == "research_loop_attempt_memory"
+    assert payload["entry_count"] == 2
+    assert payload["cluster_count"] == 1
+    assert payload["clusters"][0]["failure_count"] == 2
+    assert payload["metrics"]["attempt_count"] == 2
+    assert payload["metrics"]["unique_direction_count"] == 1
+    assert payload["metrics"]["repeat_failure_count"] == 1
+
+
+def test_next_action_uses_cross_loop_attempt_memory(tmp_path: Path) -> None:
+    """Next planning should surface similar failures from earlier loops."""
+    context = RepoContext(tmp_path)
+    start_loop(context, issue_id="issue.test", loop_id="loop.previous")
+    previous = _failed_attempt().model_copy(
+        update={
+            "loop_id": "loop.previous",
+            "attempt_id": "loop.previous.attempt.1",
+            "failures": (
+                _failure("loop.previous.attempt.1").model_copy(
+                    update={"failure_id": "failure.loop.previous.attempt.1"}
+                ),
+            ),
+        }
+    )
+    append_attempt(context, "loop.previous", previous)
+    start_loop(context, issue_id="issue.test", loop_id="loop.current")
+
+    result = next_loop_action(context, "loop.current")
+
+    assert result.next_action.kind == "retry_with_justification"
+    assert result.next_action.retry_requires_justification is True
+    assert result.previous_failures_to_avoid[0].attempt_id == (
+        "loop.previous.attempt.1"
+    )
+
+
+def test_repeat_retry_requires_explicit_justification(tmp_path: Path) -> None:
+    """Repeated failed directions require an explicit retry justification."""
+    context = RepoContext(tmp_path)
+    start_loop(context, issue_id="issue.test", loop_id="loop.test")
+    append_attempt(context, "loop.test", _failed_attempt())
+    repeated = ResearchLoopOperatorResult.model_validate(
+        {
+            "attempted_direction": "Try direct induction",
+            "actions_taken": ["cosheaf validate"],
+            "checks_run": ["cosheaf validate"],
+            "result_summary": "Retrying the same direction",
+            "evidence_refs": ["reviews/runs/retry.json"],
+            "claimed_authority_flags": {"accepted": False},
+        }
+    )
+
+    with pytest.raises(ResearchLoopError, match="repeat failure"):
+        import_operator_result(context, "loop.test", repeated)
+
+    justified = ResearchLoopOperatorResult.model_validate(
+        {
+            "attempted_direction": "Try direct induction",
+            "actions_taken": ["cosheaf validate"],
+            "checks_run": ["cosheaf validate"],
+            "result_summary": "Retrying with a strengthened invariant",
+            "retry_justification": "The invariant was strengthened first.",
+            "evidence_refs": ["reviews/runs/retry.json"],
+            "claimed_authority_flags": {"accepted": False},
+        }
+    )
+    imported = import_operator_result(context, "loop.test", justified)
+    assert imported.attempt.policy_findings[0].finding_type == "repeat_retry"
+    assert imported.attempt.policy_findings[0].blocking is False
+
+
+def test_research_loop_scan_blocks_leaks_and_reports_metrics(tmp_path: Path) -> None:
+    """Loop scanner should fail closed on unsafe runtime material."""
+    context = RepoContext(tmp_path)
+    start_loop(context, issue_id="issue.test", loop_id="loop.test")
+    append_attempt(
+        context,
+        "loop.test",
+        _failed_attempt().model_copy(update={"policy_mode": "public_only"}),
+    )
+    events_path = tmp_path / research_loop_events_path("loop.test")
+    events_path.write_text(
+        json.dumps(
+            {
+                "sequence": 999,
+                "event_kind": "unsafe_fixture",
+                "payload": {
+                    "provider_payload": {"messages": [{"content": "raw"}]},
+                    "hidden_reasoning": "BEGIN HIDDEN REASONING",
+                    "path": "kb/private/draft/claims/private.yaml",
+                    "accepted_target": "kb/accepted/claims/claim.bad.yaml",
+                    "env_dump": "OPENAI_API_KEY=sk-loopscansecret123456",
+                    "absolute_path": "C:\\Users\\ywjhn\\private\\claim.yaml",
+                    "private_context_sent": True,
+                    "policy_scope": "public_only",
+                    "consent_granted": False,
+                    "human_reviewed": True,
+                },
+            },
+            ensure_ascii=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "research-loop",
+            "scan",
+            "loop.test",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = json.loads(result.output)
+    assert payload["kind"] == "research_loop_scan"
+    assert payload["handoff_blocked"] is True
+    assert payload["metrics"]["attempt_count"] == 1
+    assert payload["metrics"]["scanner_blocker_count"] >= 1
+    codes = {finding["code"] for finding in payload["findings"]}
+    assert codes >= {
+        "secret_env_value",
+        "hidden_reasoning",
+        "private_path_reference",
+        "accepted_write_attempt",
+        "provider_payload",
+        "unapproved_private_context",
+        "authority_claim",
+    }
+    report_path = tmp_path / payload["report_path"]
+    assert report_path.is_file()
+    assert json.loads(report_path.read_text(encoding="utf-8")) == payload
+
+
+def test_research_loop_scan_service_clean_loop(tmp_path: Path) -> None:
+    """A clean loop scan should write a non-blocking report."""
+    context = RepoContext(tmp_path)
+    start_loop(context, issue_id="issue.test", loop_id="loop.test")
+    append_attempt(context, "loop.test", _failed_attempt())
+
+    result = scan_research_loop(context, "loop.test")
+
+    assert result.finding_count == 0
+    assert result.handoff_blocked is False
+    assert result.metrics.attempt_count == 1
+    assert (tmp_path / result.report_path).is_file()
 
 
 def test_cli_json_smoke(tmp_path: Path) -> None:

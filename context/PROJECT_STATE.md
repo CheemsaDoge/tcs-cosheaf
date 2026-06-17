@@ -3,6 +3,92 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Task D.1 completed: attempt memory, failure avoidance, and loop scanner - 2026-06-17
+
+Issue #404 / branch `attempt-memory-failure-avoidance-scanner` is the completed
+Phase D.1 work item for the v0.7.0 bounded research-loop line.
+
+Implementation state on this branch:
+
+- `cosheaf/research/loop.py` adds `ResearchLoopMetrics`,
+  `ResearchLoopAttemptMemoryEntry`, `ResearchLoopFailureCluster`,
+  `ResearchLoopAttemptMemoryIndex`, `ResearchLoopScanFinding`, and
+  `ResearchLoopScanResult`.
+- `append_attempt` and `import_operator_result` rebuild the deterministic
+  runtime index at `.cosheaf/research-loops/attempt-memory.json`.
+- `next_loop_action`, `run_loop --dry-run`, and `export_operator_task` load
+  attempt memory without writing source-of-truth files and surface cross-loop
+  previous failures for the same issue.
+- `import_operator_result` refuses repeated failed directions unless
+  `retry_justification` is present, and records a non-blocking repeat-retry
+  policy finding when the retry is justified.
+- `scan_research_loop` and `cosheaf research-loop scan <loop-id> --json` scan
+  loop runtime JSON, attempt JSON, and event logs for secrets, provider
+  payloads, hidden reasoning, public-only private paths, accepted-write
+  references, and authority claims.
+- D.1 schema files cover metrics, memory entries, failure clusters,
+  attempt-memory index, scan findings, and scan reports.
+
+Documentation aligned for closeout:
+
+- `README.md` and `README.zh-CN.md` distinguish the published `v0.6.0`
+  release from the unreleased `v0.7.0` line and mention D.1 attempt memory,
+  retry-justification checks, and loop scanning.
+- `docs/RESEARCH_LOOPS.md` documents D.1 attempt memory, scanner CLI,
+  `retry_justification`, runtime layout, and remaining Phase E/F work.
+- `docs/CODEX_OPERATOR_RUNBOOK.md` includes the scanner command and D.1
+  operator-loop boundary.
+- `docs/AGENT_ACCESS.md` includes the scanner command, attempt-memory runtime
+  writes, retry justification, and D.1 current status.
+- `docs/SECURITY.md` records the loop scanner threat boundary and keeps scan
+  reports review-context only.
+- `docs/EVALUATION.md` records D.1 memory/scanner metrics and notes that the
+  Phase E eval command remains future work.
+- `context/INTERFACE_REGISTRY.md` records the new Python, CLI, and schema
+  surfaces.
+- `context/CURRENT_MILESTONE.md` marks Phase D.1 complete and points next work
+  at Phase E.
+
+Verification during D.1 implementation:
+
+- `python -m pytest tests/test_research_loop.py -q`: passed with 29 tests.
+- `python -m pytest tests/test_research_loop.py tests/test_schema_files_exist.py -q`:
+  passed with 38 tests.
+- `make lint`: passed after formatting cleanup.
+- `make typecheck`: passed for 187 source files after narrowing scanner JSON
+  parsing.
+
+Documentation closeout verification:
+
+- `python -m pytest tests/test_research_loop.py tests/test_schema_files_exist.py -q`:
+  passed with 38 tests.
+- `make lint`: passed.
+- `make typecheck`: passed for 187 source files.
+- `make test`: passed with 748 tests.
+- `make validate`: passed for 20 YAML records.
+- `make gate`: passed and wrote reports under `.cosheaf/reports/`.
+- `git diff --check`: no whitespace errors; Git reported expected LF-to-CRLF
+  working-copy warnings.
+
+Code-audit note:
+
+- During closeout, a nested private-context scanner case was added so
+  `unapproved_private_context` findings are handled by the research-loop
+  scanner instead of relying on provider-log top-level JSON scanning.
+- Scanner metrics now compute `repeat_failure_count` for scanned loop material,
+  not only for the repository-level attempt-memory index.
+
+Remaining Phase E/F work, not part of D.1:
+
+- `cosheaf eval research-loop --json`;
+- ecosystem smoke rows for loop start/next/import/finalize/scan/handoff dry-run;
+- downstream workspace-template and public-KB demo/policy updates;
+- v0.7.0 release-candidate metadata and publication closeout.
+
+No accepted KB writes, human review creation, verifier-result mutation,
+gate-pass creation, hosted-provider call, arbitrary shell execution through
+Cosheaf, or promotion-policy change was added by D.1.
+
 ## Task C.1 completed: research-loop runner and operator protocol - 2026-06-17
 
 Issue #402 / branch `research-loop-runner-and-operator-protocol` is the
@@ -64,13 +150,16 @@ Verification during C.1 closeout:
 - Stale-status scan found no remaining current-doc matches for C.1
   in-progress/pending schema/test wording after closeout updates.
 
-Remaining Phase D work, not part of C.1:
+At C.1 closeout, the remaining Phase D work was:
 
 - attempt-memory indexing and repeat-failure detection;
 - loop scanner CLI;
 - loop handoff export beyond explicit operator task JSON packets;
 - ecosystem demo/eval rows for completed loop workflows;
 - conservative v0.7.0 release candidate closeout.
+
+The first two items were completed by the later D.1 section above. Loop handoff
+export, ecosystem demo/eval rows, and release closeout remain future work.
 
 No accepted KB writes, human review creation, verifier-result mutation,
 gate-pass creation, hosted-provider call, arbitrary shell execution through

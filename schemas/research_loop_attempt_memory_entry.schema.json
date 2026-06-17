@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_attempt_memory_entry.schema.json",
+  "title": "ResearchLoopAttemptMemoryEntry",
+  "description": "One indexed failure-memory entry from a research-loop attempt.",
+  "type": "object",
+  "required": [
+    "loop_id",
+    "issue_id",
+    "attempt_id",
+    "failure_id",
+    "cluster_id",
+    "signature",
+    "attempted_direction",
+    "why_it_failed",
+    "avoid_in_future",
+    "should_retry"
+  ],
+  "properties": {
+    "loop_id": { "type": "string", "minLength": 1 },
+    "issue_id": { "type": "string", "minLength": 1 },
+    "attempt_id": { "type": "string", "minLength": 1 },
+    "failure_id": { "type": "string", "minLength": 1 },
+    "cluster_id": { "type": "string", "minLength": 1 },
+    "signature": { "type": "string", "minLength": 1 },
+    "attempted_direction": { "type": "string", "minLength": 1 },
+    "why_it_failed": { "type": "string", "minLength": 1 },
+    "avoid_in_future": { "type": "string", "minLength": 1 },
+    "should_retry": { "type": "boolean" },
+    "retry_conditions": { "type": ["string", "null"] },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "related_artifacts": { "type": "array", "items": { "type": "string" } },
+    "related_previous_attempts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "counterexample_candidate_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "checked_counterexample_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

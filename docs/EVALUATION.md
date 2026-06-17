@@ -596,6 +596,33 @@ These metrics are regression signals only. They are not proof evidence, human
 review, source review, accepted status, accepted refutation, or promotion
 authority.
 
+## Research Loop Memory And Scanner Metrics
+
+The D.1 research-loop runtime surfaces report deterministic memory/scanner
+metrics in attempt-memory indexes and scan reports:
+
+- `attempt_count`: number of runtime attempts included in the measurement.
+- `unique_direction_count`: number of normalized attempted directions.
+- `repeat_failure_count`: number of failure clusters with more than one
+  failure.
+- `blocked_repeat_retry_count`: number of blocking repeat-retry policy
+  findings.
+- `candidate_counterexample_count`: candidate counterexample references in
+  attempt evidence and failure records.
+- `checked_counterexample_count`: checked counterexample references in attempt
+  evidence and failure records.
+- `draft_artifact_ref_count`: draft artifact references in attempt evidence.
+- `handoff_ref_count`: handoff-bundle references in attempt evidence.
+- `scanner_blocker_count`: blocking findings emitted by the loop scanner.
+
+These metrics are operational signals for reviewing a bounded research loop.
+They are not proof, source metadata, human review, verifier pass, gate pass,
+accepted status, accepted refutation, or promotion authority.
+
+The Phase E `cosheaf eval research-loop --json` command and ecosystem matrix
+rows remain future work. Until then, D.1 metrics are available through runtime
+attempt-memory and scan JSON only.
+
 ## Ecosystem Readiness Matrix
 
 The three-repository readiness matrix is exposed through:

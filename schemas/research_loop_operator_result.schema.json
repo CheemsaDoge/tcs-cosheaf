@@ -28,6 +28,7 @@
     },
     "evidence_refs": { "type": "array", "items": { "type": "string" } },
     "next_recommendation": { "type": ["string", "null"] },
+    "retry_justification": { "type": ["string", "null"] },
     "claimed_authority_flags": {
       "type": "object",
       "additionalProperties": { "type": "boolean" }
