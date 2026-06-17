@@ -7,25 +7,21 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.6.0 Operator Session + Review Handoff release**. Package
-metadata records `0.6.0`; the public `v0.6.0` tag and GitHub release are
-published; post-tag release smoke from `@v0.6.0` passed; and downstream
-workspace/public-KB pins have moved to `@v0.6.0`. The `v0.6.0` release adds
-bounded operator-session records, optional MCP session recording, leak
-scanning, runtime handoff bundles, explicit handoff export,
-workspace/public-KB downstream smoke, and release documentation.
-Active development after `v0.6.0` is the unreleased `v0.7.0` Bounded Research
-Loop + Attempt Memory line. Phase B added core research-loop runtime records
-under `.cosheaf/research-loops/`, Phase C.1 added deterministic next-action
-planning plus external operator task/result packet commands, and Phase D.1 adds
-runtime attempt memory, repeat-failure avoidance, retry-justification checks,
-and a loop scanner. Phase E has landed the deterministic research-loop eval,
-framework ecosystem smoke rows, downstream workspace-template
-`research-loop-demo`, and public-KB research-loop policy guard alignment. That
-line is not
-released yet and does not add production autonomy, hosted-provider defaults,
-automatic theorem proving, human review, accepted writes, verifier passes, gate
-passes, or promotion authority.
+Current status: **v0.7.0 Bounded Research Loop + Attempt Memory release
+candidate**. Package metadata records `0.7.0`; the public `v0.7.0` tag,
+GitHub release, post-tag release smoke, and downstream workspace/public-KB
+pin alignment remain future Phase F.2 steps. The `v0.7.0` RC packages
+bounded multi-attempt research loops with deterministic next-action planning,
+external operator task/result protocol, runtime attempt memory,
+repeat-failure avoidance, retry-justification enforcement, loop scanning,
+deterministic eval coverage, and three-repository ecosystem matrix closeout.
+The `v0.6.0` release remains the latest published release; the public
+`v0.6.0` tag and GitHub release are published and downstream pins use
+`@v0.6.0`.
+The `v0.7.0` line does not add production autonomy, hosted-provider defaults,
+automatic theorem proving, Lean semantic alignment, human review, accepted
+writes, verifier passes, gate passes, or promotion authority. Research-loop
+records remain review context only.
 Earlier published baselines include **v0.3.0 Checked Evidence + Research Run
 Loop** and **v0.4.0 Strategy Planner + Research Task Graph**. The `v0.1.1`
 tag remains the downstream Formal Link Layer support
@@ -185,14 +181,15 @@ Implemented:
   operator-session records, optional MCP session recording, leak scanning,
   runtime handoff bundles, review-context handoff export, downstream
   demo/policy smoke, and ecosystem matrix rows.
-- Unreleased `v0.7.0` research-loop surfaces: core loop/attempt runtime
-  records, structured failure memory, deterministic C.1 next/step/run
-  dry-run planning, external operator task/result packet commands, D.1
-  attempt-memory indexing, repeat-failure surfacing, retry-justification
-  enforcement, loop scanning, Phase E framework research-loop eval/smoke
-  rows, downstream workspace-template research-loop demo coverage, and
-  public-KB research-loop policy guard alignment. These records stay under
-  ignored `.cosheaf/` runtime paths and remain review context only.
+- `v0.7.0` RC research-loop surfaces: core loop/attempt runtime records,
+  structured failure memory, deterministic next/step/run dry-run planning,
+  external operator task/result packet commands, attempt-memory indexing,
+  repeat-failure surfacing, retry-justification enforcement, loop scanning,
+  research-loop eval/smoke rows, downstream workspace-template
+  research-loop demo coverage, and public-KB research-loop policy guard
+  alignment. The public tag/release/downstream pin alignment remain future
+  Phase F.2 steps. These records stay under ignored `.cosheaf/` runtime
+  paths and remain review context only.
 
 Planned or incomplete:
 
@@ -341,8 +338,11 @@ need Strategy Planner + Research Task Graph surfaces can pin to `v0.4.0`;
 downstream repositories that need Operator MCP + Codex Application Layer
 surfaces can pin to `v0.5.0`. Downstream repositories that need Operator
 Session + Review Handoff surfaces can pin to `v0.6.0`. Workspace-template and
-public KB active pins now use `v0.6.0` after tag publication, GitHub release,
-post-tag release smoke, and downstream pin PRs completed.
+public KB active pins use `v0.6.0` after tag publication, GitHub release,
+post-tag release smoke, and downstream pin PRs completed. Downstream
+repositories that need Bounded Research Loop + Attempt Memory surfaces will be
+able to pin to `v0.7.0` after the tag/release/downstream alignment are
+completed in Phase F.2.
 
 ## Development Commands
 

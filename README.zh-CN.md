@@ -2,23 +2,17 @@
 
 TCS-Cosheaf 是一个以 Git 为持久记忆层的、带类型约束的理论计算机科学研究知识库与智能体协作框架。它把定义、命题、证明、构造、算法、归约、反例、实验、评审、议题和验证器证据保存为可审查的仓库文件，而不是只保存在聊天记录中。
 
-> 当前状态：**v0.6.0 Operator Session + Review Handoff release**。
-> 包版本记录为 `0.6.0`；公开 `v0.6.0` tag 和 GitHub release 已发布；
-> 从 `@v0.6.0` 的 post-tag release smoke 已通过；workspace-template 与
-> public KB downstream pin 已更新到 `@v0.6.0`。本版本加入 operator session、
-> 可选 MCP session recording、leak scanning、handoff bundle、
-> review-context handoff export、下游 demo/policy smoke 和 ecosystem matrix
-> 覆盖。当前未发布主线正在推进 `v0.7.0` Bounded Research Loop + Attempt Memory：
-> Phase B 已加入 `.cosheaf/research-loops/` 运行时记录，C.1 已加入
-> `next/step/run --dry-run/export-task/import-result` 的受限 CLI surface，
-> D.1 已加入运行时 attempt memory、重复失败规避、`retry_justification`
-> 检查和 loop scanner。Phase E 已落地确定性的 research-loop eval、
-> framework ecosystem smoke rows、下游 workspace-template
-> `research-loop-demo`，以及 public-KB research-loop policy guard alignment。
-> 这些内容尚未发布，也不授予 accepted 写入、人类评审、验证器通过、
-> gate 通过或 promotion 权限。它仍不是生产就绪软件，也不提供 Web UI、
-> 默认真实托管提供商路径、自动定理证明、完整 Lean 自动形式化、自动 accepted
-> 提升或多用户权限系统。
+> 当前状态：**v0.7.0 Bounded Research Loop + Attempt Memory release
+> candidate**。包版本记录为 `0.7.0`；公开 `v0.7.0` tag、GitHub release、
+> post-tag release smoke 和下游 pin 对齐仍是后续 Phase F.2 步骤。本 RC 打包
+> bounded multi-attempt research loop（含确定性 next-action planning、operator
+> task/result protocol、runtime attempt memory、repeat-failure avoidance、
+> retry-justification guard、loop scanner、deterministic eval 和
+> three-repository ecosystem matrix closeout）。`v0.6.0` 仍是当前最新已发布
+> 版本。本 RC 不授予 accepted 写入、人类评审、验证器通过、gate 通过或 promotion
+> 权限；research-loop 记录始终仅为 review context。它仍不是生产就绪软件，也不
+> 提供 Web UI、默认真实托管提供商路径、自动定理证明、完整 Lean 自动形式化、
+> 自动 accepted 提升或多用户权限系统。
 
 ## 为什么需要它
 
