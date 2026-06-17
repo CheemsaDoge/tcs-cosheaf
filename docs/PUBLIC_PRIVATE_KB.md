@@ -61,6 +61,22 @@ Private KB rules:
   reviewed.
 - Do not promote private claims to accepted knowledge without review and gates.
 
+## Workflow And Handoff Review Context
+
+Reviewable workflow outputs, draft proposals, workflow handoff JSON, workflow
+handoff scan reports, and exported `reviews/workflow/` YAML are review context.
+They are useful for human review, but they are not public KB source metadata,
+human review records, verifier passes, gate passes, accepted status, accepted
+refutations, or promotion authority.
+
+Workflow handoff scanners may block private path leakage and source metadata
+fabrication, but a clean scan is still only a guard result. It does not make a
+candidate public, accepted, source-reviewed, or human-reviewed.
+
+Do not copy workflow handoff output into `kb/public/accepted/`. Public accepted
+artifacts still require complete source metadata, passing validation and gates,
+and explicit human review through the normal artifact lifecycle.
+
 ## Dependency Direction
 
 The valid dependency direction is:

@@ -387,19 +387,28 @@ cosheaf workflow show <workflow-id> --json
 cosheaf workflow step <workflow-id> --json
 cosheaf workflow run <workflow-id> --max-steps <n> --execute-local-actions --json
 cosheaf workflow readiness <workflow-id> --json
+cosheaf workflow draft-proposal <workflow-id> --dry-run --json
+cosheaf workflow handoff build <workflow-id> --json
+cosheaf workflow handoff show <handoff-id> --json
+cosheaf workflow handoff scan <handoff-id> --json
+cosheaf workflow handoff export <handoff-id> --dry-run --json
 ```
 
 The current implementation persists runtime review context under
 `.cosheaf/workflows/<workflow-id>/`. `start` writes `workflow.json`,
 `events.jsonl`, component review-context files, and a readiness report. `step`
 persists one planned step by default, and `run --execute-local-actions` executes
-only whitelisted local actions through the existing action registry. Draft
-proposals, workflow handoffs, workflow scanner integration, and `cosheaf eval
-reviewable-workflow --json` remain future work.
+only whitelisted local actions through the existing action registry.
+`draft-proposal` builds review-only candidate material. `workflow handoff`
+build/show/scan/export creates compact review handoff packets, fails closed on
+blocking scanner findings, preserves skipped results as non-pass evidence, and
+can dry-run an export target under `reviews/workflow/`. `cosheaf eval
+reviewable-workflow --json` remains future work.
 
-Agents must treat workflow output as review context only. It is not proof,
-source metadata, human review, verifier pass, gate pass, accepted status,
-accepted refutation, or promotion authority.
+Agents must treat workflow output, draft proposals, handoff scan reports,
+handoff bundles, and handoff exports as review context only. They are not
+proof, source metadata, human review, verifier pass, gate pass, accepted
+status, accepted theorem/refutation, or promotion authority.
 
 ### Artifact Failure Memory Surface
 

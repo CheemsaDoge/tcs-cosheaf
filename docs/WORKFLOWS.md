@@ -24,6 +24,10 @@ cosheaf workflow readiness <workflow-id> --json
 cosheaf workflow draft-proposal <workflow-id> --dry-run --json
 cosheaf workflow draft-proposal <workflow-id> --out <path> --json
 cosheaf workflow draft-proposal <workflow-id> --private-root <path> --artifact-id <artifact-id> --json
+cosheaf workflow handoff build <workflow-id> --json
+cosheaf workflow handoff show <handoff-id> --json
+cosheaf workflow handoff scan <handoff-id> --json
+cosheaf workflow handoff export <handoff-id> --dry-run --json
 ```
 
 Current behavior:
@@ -46,6 +50,23 @@ Current behavior:
   review-context JSON under a safe repository-local non-public path, and
   `--private-root ... --artifact-id ...` writes a draft claim YAML under a
   writable private draft root. It refuses accepted and public KB targets.
+- `workflow handoff build` converts persisted workflow and draft-proposal
+  output into a compact runtime human-review handoff. It scans workflow inputs
+  first, fails closed on blocking scanner findings, writes
+  `.cosheaf/workflows/<workflow-id>/handoff.json`, and records scanner status
+  in `.cosheaf/workflows/<workflow-id>/handoff-scan.json`.
+- `workflow handoff show` reads one persisted workflow handoff. The
+  deterministic handoff ID is `handoff.<workflow-id>`.
+- `workflow handoff scan` scans workflow runtime and handoff JSON for
+  accepted-write attempts, private leakage, hidden reasoning, provider payload
+  dumps, secrets/env dumps, human-review overclaims, verifier/gate pass
+  overclaims, source metadata fabrication, and accepted theorem/refutation
+  claims without promotion. Blocking findings make the command exit nonzero
+  after emitting JSON.
+- `workflow handoff export --dry-run` reports the deterministic
+  review-context target `reviews/workflow/<handoff-id>.yaml` without writing
+  files. Non-dry-run export writes only under `reviews/workflow/` after a clean
+  scan and still does not create human review.
 
 The current implementation lives under:
 
@@ -67,6 +88,8 @@ Workflow runtime records are written under ignored `.cosheaf/` paths:
 .cosheaf/workflows/<workflow-id>/loop.json
 .cosheaf/workflows/<workflow-id>/readiness.json
 .cosheaf/workflows/<workflow-id>/proposal.json
+.cosheaf/workflows/<workflow-id>/handoff.json
+.cosheaf/workflows/<workflow-id>/handoff-scan.json
 ```
 
 These files are runtime review context. They are not YAML source-of-truth
@@ -86,10 +109,6 @@ reviewed, accepted, or promoted by the proposal command.
 
 The following V14 targets are not complete in the current `v0.9.0` release:
 
-- workflow handoff build/show/scan/export commands;
-- workflow scanner integration for private leakage, accepted-write attempts,
-  hidden reasoning markers, provider payloads, source fabrication, and
-  authority overclaims;
 - `cosheaf eval reviewable-workflow --json`;
 - workspace-template `make reviewable-workflow-demo`;
 - public-KB policy guard for workflow packets as non-source metadata.

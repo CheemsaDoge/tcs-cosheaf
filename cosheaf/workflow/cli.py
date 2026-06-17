@@ -18,6 +18,13 @@ from cosheaf.workflow.engine import (
     start_workflow,
     step_workflow,
 )
+from cosheaf.workflow.handoff import (
+    WORKFLOW_HANDOFF_AUTHORITY_NOTICE,
+    build_workflow_handoff,
+    export_workflow_handoff,
+    load_workflow_handoff,
+    scan_workflow_handoff,
+)
 from cosheaf.workflow.proposal import write_draft_proposal
 
 console = Console()
@@ -26,6 +33,12 @@ workflow_app = typer.Typer(
     add_completion=False,
     short_help="Reviewable research workflow engine.",
 )
+handoff_app = typer.Typer(
+    no_args_is_help=True,
+    add_completion=False,
+    short_help="Build and scan workflow review handoffs.",
+)
+workflow_app.add_typer(handoff_app, name="handoff")
 
 
 def _emit_json(payload: dict) -> None:
@@ -221,3 +234,93 @@ def wf_draft_proposal(
     if result.target_path:
         console.print(f"- target: {result.target_path}")
     console.print("- accepted_write: false")
+
+
+@handoff_app.command("build")
+def wf_handoff_build(
+    workflow_id: Annotated[str, typer.Argument()],
+    repo_root: Annotated[Path, typer.Option("--repo-root")] = Path("."),
+    json_output: Annotated[bool, typer.Option("--json", is_flag=True)] = False,
+) -> None:
+    """Build a runtime review handoff packet from workflow output."""
+    try:
+        result = build_workflow_handoff(RepoContext(repo_root), workflow_id)
+    except Exception as exc:
+        _exit_with_error(exc, json_output=json_output)
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Workflow handoff built: {result.handoff.handoff_id}")
+    console.print(f"- workflow: {result.handoff.workflow_id}")
+    console.print(f"- path: {result.relative_path.as_posix()}")
+    console.print(f"- authority: {WORKFLOW_HANDOFF_AUTHORITY_NOTICE}")
+
+
+@handoff_app.command("show")
+def wf_handoff_show(
+    handoff_id: Annotated[str, typer.Argument()],
+    repo_root: Annotated[Path, typer.Option("--repo-root")] = Path("."),
+    json_output: Annotated[bool, typer.Option("--json", is_flag=True)] = False,
+) -> None:
+    """Show one runtime workflow handoff packet."""
+    try:
+        result = load_workflow_handoff(RepoContext(repo_root), handoff_id)
+    except Exception as exc:
+        _exit_with_error(exc, json_output=json_output)
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Workflow handoff: {result.handoff.handoff_id}")
+    console.print(f"- workflow: {result.handoff.workflow_id}")
+    console.print(f"- path: {result.relative_path.as_posix()}")
+    console.print(f"- authority: {WORKFLOW_HANDOFF_AUTHORITY_NOTICE}")
+
+
+@handoff_app.command("scan")
+def wf_handoff_scan(
+    handoff_id: Annotated[str, typer.Argument()],
+    repo_root: Annotated[Path, typer.Option("--repo-root")] = Path("."),
+    json_output: Annotated[bool, typer.Option("--json", is_flag=True)] = False,
+) -> None:
+    """Scan a workflow handoff packet and runtime inputs for blockers."""
+    try:
+        result = scan_workflow_handoff(RepoContext(repo_root), handoff_id)
+    except Exception as exc:
+        _exit_with_error(exc, json_output=json_output)
+    if json_output:
+        _emit_json(result.to_dict())
+        if result.handoff_blocked:
+            raise typer.Exit(1)
+        return
+    console.print(f"Workflow handoff scan: {result.handoff_id}")
+    console.print(f"- findings: {result.finding_count}")
+    console.print(f"- blockers: {result.blocking_finding_count}")
+    console.print(f"- report: {result.report_path}")
+    console.print(f"- authority: {WORKFLOW_HANDOFF_AUTHORITY_NOTICE}")
+    if result.handoff_blocked:
+        raise typer.Exit(1)
+
+
+@handoff_app.command("export")
+def wf_handoff_export(
+    handoff_id: Annotated[str, typer.Argument()],
+    dry_run: Annotated[bool, typer.Option("--dry-run", is_flag=True)] = False,
+    repo_root: Annotated[Path, typer.Option("--repo-root")] = Path("."),
+    json_output: Annotated[bool, typer.Option("--json", is_flag=True)] = False,
+) -> None:
+    """Export one workflow handoff as explicit review-context YAML."""
+    try:
+        result = export_workflow_handoff(
+            RepoContext(repo_root),
+            handoff_id,
+            dry_run=dry_run,
+        )
+    except Exception as exc:
+        _exit_with_error(exc, json_output=json_output)
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    action = "dry-run" if result.dry_run else "written"
+    console.print(f"Workflow handoff export {action}: {result.handoff_id}")
+    console.print(f"- target: {result.target_path}")
+    console.print(f"- authority: {WORKFLOW_HANDOFF_AUTHORITY_NOTICE}")
