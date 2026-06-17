@@ -461,6 +461,10 @@ Framework eval:
 cosheaf eval reviewable-workflow --json
 ```
 
+Implementation status: the framework eval and ecosystem smoke matrix row are
+implemented by issue #432. The downstream workspace-template demo and public-KB
+workflow packet policy guard remain follow-up work.
+
 Default cases:
 
 ```text

@@ -363,6 +363,21 @@ def build_ecosystem_smoke_matrix(
             ),
         ),
         EcosystemSmokeMatrixCase(
+            id="framework.reviewable-workflow-eval",
+            repo="tcs-cosheaf",
+            cwd=framework_root,
+            commands=(
+                MatrixCommand(
+                    (
+                        *shlex.split(cosheaf),
+                        "eval",
+                        "reviewable-workflow",
+                        "--json",
+                    )
+                ),
+            ),
+        ),
+        EcosystemSmokeMatrixCase(
             id="framework.research-loop-workflow-smoke",
             repo="tcs-cosheaf",
             cwd=framework_root,

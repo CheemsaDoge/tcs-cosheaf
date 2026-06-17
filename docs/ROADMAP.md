@@ -19,11 +19,12 @@ published thin surface by adding persistent workflow runtime records under
 `.cosheaf/workflows/<workflow-id>/`, `workflow show`, persisted `workflow
 step`, bounded `workflow run`, persisted readiness reports, draft proposal
 generation, and workflow handoff build/show/scan/export. These outputs remain
-runtime review context only.
+runtime review context only. The framework line now also includes
+`cosheaf eval reviewable-workflow --json` as a deterministic regression signal
+for issue-to-reviewable-packet behavior.
 
 The next implementation work should start from these remaining V14 gaps:
 
-- reviewable-workflow eval coverage;
 - downstream workspace-template/public-KB pin and policy closeout.
 
 The authority boundary is unchanged: workflow records, loop records, task
@@ -205,8 +206,8 @@ the workflow surface was not a complete issue-to-handoff engine. The current
 V14 follow-up line has since added persistent workflow storage, `workflow
 show`, persisted `workflow step`, bounded `workflow run`, and readiness
 reports, draft proposal generation, and workflow handoff build/show/scan/export
-with scanner integration. `cosheaf eval reviewable-workflow --json` remains
-future work.
+with scanner integration. The later V14 E.1 follow-up adds
+`cosheaf eval reviewable-workflow --json` framework benchmark coverage.
 
 This release does not make workflow, session, MCP, loop, scanner, handoff, or
 eval output proof, source metadata, checked evidence, verifier pass, gate pass,

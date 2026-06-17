@@ -36,11 +36,11 @@ implementation was present but thin:
 
 Therefore, the code audited here did not yet satisfy the full V14 Phase B-F
 target. It was a published initial workflow surface, not a completed
-issue-to-handoff workflow engine. A later V14 B.1 follow-up adds persistent
-workflow runtime storage, `workflow show`, persisted `workflow step`, bounded
-`workflow run`, and persisted readiness reports; draft proposals, workflow
-handoffs, scanner integration, and reviewable-workflow evals remain future
-work.
+issue-to-handoff workflow engine. Later V14 B.1, C.1, D.1, and E.1 follow-ups
+add persistent workflow runtime storage, `workflow show`, persisted `workflow
+step`, bounded `workflow run`, persisted readiness reports, draft proposals,
+workflow handoffs, scanner integration, and framework reviewable-workflow
+evals.
 
 Initial local quality checks during this closeout found that the documentation
 branch did not pass the normal full verification ladder:
@@ -88,6 +88,10 @@ Checks that now pass locally on PR #425:
 - public-KB policy guard that workflow packets cannot become source metadata,
   accepted proof, human review, verifier/gate pass, accepted status, accepted
   refutation, or promotion authority.
+
+The first seven items above were later addressed by V14 B.1 through E.1. The
+workspace-template reviewable-workflow demo target and public-KB policy guard
+remain downstream follow-up work.
 
 ## Downstream State Observed During Closeout
 

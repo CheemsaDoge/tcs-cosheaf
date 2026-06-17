@@ -3,6 +3,34 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V14 E.1 reviewable workflow benchmark and ecosystem smoke - 2026-06-18
+
+Issue #432 adds the framework-side deterministic reviewable-workflow eval and
+ecosystem smoke matrix row. The current eval surface now includes:
+
+- `cosheaf eval reviewable-workflow --json`;
+- default cases under `evals/reviewable_workflow/cases.yaml`;
+- Python APIs in `cosheaf.evals.reviewable_workflow`; and
+- ecosystem smoke row `framework.reviewable-workflow-eval`.
+
+The default suite builds temporary local fixtures for accepted public
+dependency plus private draft target, repeated failure memory, unchecked
+counterexample, private leakage risk, scanner blocker, and
+draft-proposal-ready cases. It reports workflow validity, librarian trace
+completeness, FSM replay validity, local-action whitelist, draft proposal,
+handoff scanner, authority-overclaim, private-leak, readiness-classification,
+skipped-not-pass, and accepted-write violation metrics.
+
+The eval writes only temporary fixture/runtime data and does not write
+accepted knowledge in the caller repository. It is a regression signal only,
+not proof, source metadata, human review, verifier pass, gate pass, accepted
+status, accepted theorem/refutation, or promotion authority.
+
+This task does not implement downstream workspace-template
+`reviewable-workflow-demo`, public-KB workflow packet policy guards,
+promotion changes, human-review creation, verifier mutation, accepted writes,
+or hosted-provider behavior.
+
 ## V14 D.1 workflow review handoff scanner - 2026-06-18
 
 Issue #430 implements workflow review handoff packets and a fail-closed
@@ -37,10 +65,11 @@ overclaims, verifier/gate pass overclaims, source metadata fabrication, and
 accepted theorem/refutation claims without promotion. Skipped workflow results
 remain warning/non-pass evidence.
 
-This task does not implement `cosheaf eval reviewable-workflow --json`,
+At D.1 closeout this task did not implement reviewable-workflow eval coverage,
 downstream workspace-template demos, public-KB workflow packet policy guards,
 promotion changes, human-review creation, verifier mutation, accepted writes,
-or hosted-provider behavior. Workflow handoff packets are review context only.
+or hosted-provider behavior. The later V14 E.1 section above addresses the
+framework eval portion only. Workflow handoff packets are review context only.
 They are not proof, source metadata, human review, verifier pass, gate pass,
 accepted status, accepted theorem/refutation, or promotion authority.
 
@@ -68,10 +97,11 @@ artifact output remains `status: draft` and does not create human review.
 This follow-up did not implement workflow handoff build/show/scan/export,
 workflow scanner integration, reviewable-workflow eval coverage, downstream
 workspace-template demo targets, or public-KB workflow packet policy guards.
-The later V14 D.1 section above addresses the workflow handoff/scanner items.
-Workflow output and draft proposals remain review context or draft artifacts
-only. They are not proof, source metadata, human review, verifier pass, gate
-pass, accepted status, accepted refutation, or promotion authority.
+The later V14 D.1 section above addresses the workflow handoff/scanner items,
+and V14 E.1 addresses the framework eval portion. Workflow output and draft
+proposals remain review context or draft artifacts only. They are not proof,
+source metadata, human review, verifier pass, gate pass, accepted status,
+accepted refutation, or promotion authority.
 
 ## V14 B.1 workflow core follow-up - 2026-06-18
 
@@ -139,7 +169,7 @@ not to be claimed as complete:
 - draft proposal generation from workflow output, later addressed by V14 C.1;
 - workflow handoff build/show/scan/export commands;
 - workflow scanner integration;
-- `cosheaf eval reviewable-workflow --json`;
+- `cosheaf eval reviewable-workflow --json`, later addressed by V14 E.1;
 - workspace-template `reviewable-workflow-demo`;
 - public-KB workflow-output policy guard and framework pin closeout.
 
@@ -165,10 +195,10 @@ Local verification after the repair:
 
 The quality ladder was green locally on PR #425. Later V14 B.1 follow-up work
 added persisted workflow runtime storage, `workflow show`, persisted `workflow
-step`, bounded `workflow run`, and persisted readiness reports. Later V14 C.1
-and D.1 follow-ups added draft proposal generation and workflow handoff/
-scanner coverage. Reviewable-workflow eval and downstream policy work remain
-incomplete.
+step`, bounded `workflow run`, and persisted readiness reports. Later V14 C.1,
+D.1, and E.1 follow-ups added draft proposal generation, workflow handoff/
+scanner coverage, and the framework reviewable-workflow eval. Downstream
+workspace-template demo and public-KB workflow policy work remain incomplete.
 
 Downstream state observed during closeout:
 

@@ -30,6 +30,9 @@ coverage, skipped-not-pass behavior, evidence separation, private-leak
 prevention, and authority escalation for external-operator run records. These
 harnesses reuse existing runtime surfaces; they do not introduce new
 retrieval, context-pack, provider, MCP, verifier, or orchestration algorithms.
+The reviewable-workflow eval harness checks issue-to-reviewable-packet
+workflow boundaries using temporary fixtures and existing workflow, draft
+proposal, and handoff scanner surfaces.
 
 ## Retrieval Eval Cases
 
@@ -532,6 +535,62 @@ evidence-separation count, private leak count, authority-escalation count, and
 accepted-write violation count. These metrics are regression signals only.
 Research runs are provenance, not proof, human review, verifier pass, gate
 pass, accepted status, or promotion authority.
+
+## Reviewable-Workflow Eval Cases
+
+Reviewable-workflow eval cases are YAML records under
+`evals/reviewable_workflow/`. The default case file is:
+
+```text
+evals/reviewable_workflow/cases.yaml
+```
+
+The harness is available both as a Python API in
+`cosheaf.evals.reviewable_workflow` and as a CLI command:
+
+```bash
+cosheaf eval reviewable-workflow --json
+```
+
+The suite builds temporary local fixtures for each case. The caller repository
+is used only to resolve the repository-local case file. The harness does not
+write accepted knowledge in the caller repository, create human review, mutate
+verifier results, call hosted providers, or require network access.
+
+Required case kinds for the default suite are:
+
+- `accepted_dependency_draft_target`: a private draft target depends on an
+  accepted public artifact while remaining review-only.
+- `repeated_failure_memory`: prior failed direction memory is preserved in the
+  draft proposal.
+- `unchecked_counterexample`: unchecked counterexample evidence remains
+  skipped/non-pass review context.
+- `private_leakage_risk`: workflow handoff scanning blocks private path
+  leakage.
+- `gate_scanner_blocker`: scanner findings reject accepted-write, human-review,
+  verifier/gate-pass, and source-metadata overclaims.
+- `draft_proposal_ready`: a clean workflow can reach draft-proposal-ready state
+  and build a review-only handoff.
+
+## Reviewable-Workflow Metrics
+
+`cosheaf eval reviewable-workflow` reports:
+
+- `workflow_validity_rate`
+- `librarian_trace_completeness_rate`
+- `fsm_replay_validity_rate`
+- `local_action_whitelist_rate`
+- `draft_proposal_validity_rate`
+- `handoff_scanner_block_rate`
+- `authority_overclaim_rejection_rate`
+- `private_leak_rejection_rate`
+- `review_readiness_classification_rate`
+- `skipped_not_pass_count`
+- `accepted_write_violation_count`
+
+These metrics are regression signals only. Workflow eval output is not proof,
+source metadata, human review, verifier pass, gate pass, accepted status,
+accepted theorem/refutation, or promotion authority.
 
 ## Verifier Evidence Eval Cases
 

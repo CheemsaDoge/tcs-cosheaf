@@ -9,7 +9,7 @@ TCS-Cosheaf 是一个以 Git 为持久记忆层的、带类型约束的理论计
 > `cosheaf workflow` CLI 表面。收尾审计确认：当前 workflow 表面仍较薄，
 > `start` 可以输出 workflow JSON record，但 `step` 和 `readiness` 仍是
 > ephemeral 输出，尚未读写计划中的 `.cosheaf/workflows/<workflow-id>/` 持久状态；
-> draft proposal、workflow handoff 和 `cosheaf eval reviewable-workflow` 仍是后续工作。
+> 后续 V14 工作已经补上 draft proposal、workflow handoff 和 `cosheaf eval reviewable-workflow --json` 的 framework 回归覆盖；这些输出仍只是 review context 或 regression signal，不是 accepted 权限。
 > 本版本不授予 accepted 写入、人类评审、验证器通过、gate 通过、source metadata、
 > accepted refutation 或 promotion 权限；workflow、loop、session、operator 与
 > handoff 记录始终仅为 review context。它仍不是生产就绪软件，也不提供 Web UI、
