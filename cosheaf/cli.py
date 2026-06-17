@@ -6248,6 +6248,147 @@ def campaign_finalize(
     console.print(f"- authority: {result.campaign.authority_notice}")
 
 
+@campaign_app.command("next")
+def campaign_next(
+    campaign_id: str = typer.Argument(..., help="Campaign ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Preview the next bounded external-operator task for a campaign."""
+    from cosheaf.campaigns import CampaignError, next_campaign_operator_task
+
+    console = Console(width=120, markup=False)
+    try:
+        result = next_campaign_operator_task(RepoContext(repo_root), campaign_id)
+    except (CampaignError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _campaign_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Campaign next: {result.campaign_id}")
+    console.print(f"- action: {result.next_action}")
+    console.print(f"- attempt: {result.attempt_id or 'none'}")
+    console.print(f"- previous failures: {len(result.previous_failures_to_avoid)}")
+    console.print(f"- authority: {result.authority_notice}")
+
+
+@campaign_app.command("export-task")
+def campaign_export_task(
+    campaign_id: str = typer.Argument(..., help="Campaign ID."),
+    out: Path = typer.Option(
+        ...,
+        "--out",
+        help="Repository-local operator_task_v2 JSON path.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Export a bounded external-operator task packet for a campaign."""
+    from cosheaf.campaigns import (
+        CAMPAIGN_AUTHORITY_NOTICE,
+        CampaignError,
+        export_campaign_operator_task,
+        next_campaign_operator_task,
+    )
+
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        relative_path = export_campaign_operator_task(context, campaign_id, out)
+        next_result = next_campaign_operator_task(context, campaign_id)
+    except (CampaignError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _campaign_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    payload = {
+        "schema_version": 1,
+        "kind": "campaign_operator_task_export",
+        "campaign_id": campaign_id,
+        "attempt_id": next_result.attempt_id,
+        "path": relative_path.as_posix(),
+        "writes_performed": True,
+        "accepted_write_performed": False,
+        "authority_notice": CAMPAIGN_AUTHORITY_NOTICE,
+    }
+    if json_output:
+        _emit_json(payload)
+        return
+    console.print(f"Campaign operator task exported: {relative_path.as_posix()}")
+    console.print("- accepted knowledge merge: not performed")
+
+
+@campaign_app.command("import-result")
+def campaign_import_result(
+    campaign_id: str = typer.Argument(..., help="Campaign ID."),
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="Structured operator_result_v2 JSON payload.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Import a structured external-operator result as a campaign attempt."""
+    from cosheaf.campaigns import (
+        CampaignError,
+        CampaignOperatorResult,
+        import_campaign_operator_result,
+    )
+
+    console = Console(width=120, markup=False)
+    try:
+        raw = _read_input_json_or_exit(input_json, json_output=json_output)
+        payload = CampaignOperatorResult.model_validate(raw)
+        result = import_campaign_operator_result(
+            RepoContext(repo_root),
+            campaign_id,
+            payload,
+        )
+    except (CampaignError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _campaign_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Campaign operator result imported: {result.attempt_id}")
+    console.print(f"- outcome: {result.attempt.outcome.value}")
+    console.print(f"- path: {result.attempt_path}")
+    console.print("- accepted knowledge merge: not performed")
+
+
 # Research loop commands
 
 

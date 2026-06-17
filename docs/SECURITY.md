@@ -35,7 +35,7 @@ checks:
 | Operator handoff export is mistaken for human review or writes outside review context | Export writes only `reviews/operator/` YAML, dry-run writes nothing, accepted targets are rejected, and blocked scanner status fails closed | `test_operator_handoff_export_dry_run_reports_target_without_writing`, `test_operator_handoff_export_writes_review_context_yaml`, `test_operator_handoff_export_rejects_accepted_write_target`, and `test_operator_handoff_export_fails_closed_when_handoff_scanner_blocked` |
 | Research loop claims accepted/promotion/human-review authority | Loop models carry authority notice; attempts reject accepted KB paths and authority-overclaim fields; loop statuses are runtime-only; no verifier/human-review/promotion authority is granted | `test_authority_overclaim_rejected`, `test_accepted_path_rejected`, and `test_invalid_status_transition_after_finalize` |
 | Research loop storage leaks private data or bypasses Git ignore | Loop/attempt storage and scan reports stay under ignored `.cosheaf/research-loops/`; public mode rejects private content; the loop scanner blocks secrets, private public-mode material, provider payloads, accepted-write attempts, hidden reasoning, and authority claims | `test_public_mode_rejects_private_refs`, `test_storage_paths_are_deterministic`, `test_research_loop_scan_blocks_leaks_and_reports_metrics`, and `test_research_loop_scan_service_clean_loop` |
-| Campaign output is mistaken for proof, review, or acceptance | Campaign models carry authority notices; attempts reject accepted KB paths, public-mode private references, hidden-reasoning fields, and authority-overclaim fields; runtime storage stays under ignored `.cosheaf/campaigns/` | `tests/test_campaigns.py` |
+| Campaign output is mistaken for proof, review, or acceptance | Campaign models carry authority notices; attempts and imported operator results reject accepted KB paths, public-mode private references, hidden-reasoning fields, and authority-overclaim fields; runtime storage stays under ignored `.cosheaf/campaigns/` | `tests/test_campaigns.py` |
 | Reviewable workflow output is mistaken for proof, review, or acceptance | Workflow records, draft proposals, scanner reports, and handoff packets carry authority notices and remain review context only; they do not create accepted knowledge, human review, verifier pass, gate pass, source metadata, accepted refutation, or promotion authority | `tests/test_workflow.py` and `tests/test_workflow_handoff.py` |
 | Workflow handoff hides leaks, source fabrication, authority claims, or skipped-result ambiguity | Workflow handoff build scans runtime inputs first, scan fails closed on blocking findings, export reruns the scanner, and skipped workflow results remain warning/non-pass evidence | `test_workflow_handoff_build_show_scan_and_export_dry_run`, `test_workflow_handoff_scan_blocks_private_leakage`, `test_workflow_handoff_scan_blocks_accepted_write_attempt`, `test_workflow_handoff_scan_blocks_human_review_overclaim`, `test_workflow_handoff_scan_blocks_source_metadata_fabrication`, and `test_workflow_handoff_preserves_skipped_not_pass_warning` |
 | Checker results are mistaken for proof, review, or acceptance | Checker run records carry authority notices, `skipped` remains non-pass, policy checkers block private leaks and overclaims, and `python_local_check` only runs explicit repository-local Python scripts | `tests/test_checker_registry.py` and `tests/test_checker_cli.py` |
@@ -88,9 +88,15 @@ checks:
   become proof, source metadata, human review, verifier pass, gate pass,
   accepted status, accepted theorem/refutation status, or promotion authority.
   Campaign attempts must reject accepted KB paths and public-only private
-  references. The B.1 campaign surface does not export operator task packets,
-  run provider calls, execute shell commands, scan handoffs, run evals, or write
-  accepted KB content.
+  references.
+- Campaign operator task packets and imported operator results are runtime
+  review context only. `operator_task_v2` packets are bounded instructions for
+  an external operator; `operator_result_v2` packets must keep authority claims
+  false and must reject accepted KB writes, unsafe paths, public-only private
+  references, hidden reasoning, human-review claims, verifier/gate pass claims,
+  accepted-status or accepted-refutation claims, and promotion claims. The
+  current campaign surface does not run provider calls, execute shell commands,
+  scan handoffs, run evals, or write accepted KB content.
 - Reviewable workflow records are review context only. Persistent workflow
   runtime storage, `workflow show`, persisted `workflow step`, bounded
   `workflow run`, readiness reports, draft proposals, workflow handoff packets,
@@ -180,9 +186,10 @@ Operator-session scanner tests use synthetic session/event fixtures only. The
 scanner is a fail-closed guard before handoff; it is not a substitute for
 validation, gates, source metadata, human review, or promotion checks.
 
-Campaign tests use synthetic runtime fixtures only. Campaign scorecards are
-deterministic review summaries, not proofs, source metadata, human review,
-verifier pass, gate pass, or accepted promotion evidence.
+Campaign tests use synthetic runtime fixtures only. Campaign scorecards,
+operator task packets, and imported operator results are deterministic review
+context, not proofs, source metadata, human review, verifier pass, gate pass,
+or accepted promotion evidence.
 
 Operator handoff tests use synthetic finalized-session fixtures only. Handoff
 bundles are compact review context and are not a substitute for raw check

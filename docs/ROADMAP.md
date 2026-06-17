@@ -13,7 +13,7 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V16 campaign model and storage
+## Active Development Focus: V16 external operator protocol v2
 
 The public `v0.10.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
@@ -23,11 +23,13 @@ smoke passed, and downstream workspace-template/public KB pins are aligned to
 - [`docs/CODEX_DEVELOPMENT_PLAN_V16.md`](CODEX_DEVELOPMENT_PLAN_V16.md);
 - [`docs/ADR/0032-external-operator-campaign-harness.md`](ADR/0032-external-operator-campaign-harness.md).
 
-The current V16 implementation step is `campaign-model-core`: durable campaign
-models, ignored runtime storage under `.cosheaf/campaigns/`, and thin CLI
-surfaces for start/show/append-attempt/scorecard/finalize. That step keeps
-campaign outputs as review context only. The next V16 implementation step after
-this PR is the external operator task/result protocol v2.
+The current V16 implementation step is `external-operator-protocol-v2`:
+bounded `operator_task_v2` packets, structured `operator_result_v2` imports,
+and thin CLI surfaces for `campaign next/export-task/import-result`. The
+earlier `campaign-model-core` step added durable campaign models, ignored
+runtime storage under `.cosheaf/campaigns/`, and
+start/show/append-attempt/scorecard/finalize commands. Both steps keep campaign
+and operator outputs as review context only.
 
 The V15 implementation line has landed:
 
@@ -42,8 +44,9 @@ The V15 implementation line has landed:
 - public KB cross-check report policy guard in downstream PR #99.
 
 The V15 release is complete. The V16 Phase A kickoff was documentation only.
-Campaign runtime begins with the focused Phase B implementation task and must
-remain bounded sidecar metadata rather than an autonomous agent runtime.
+Campaign runtime began with the focused Phase B implementation task and now
+continues with the Phase C packet protocol. It must remain bounded sidecar
+metadata rather than an autonomous agent runtime.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
@@ -62,8 +65,8 @@ scans, checks, and review handoff.
 
 The planned implementation phases are:
 
-- campaign model and runtime storage (B.1);
-- external operator task/result protocol v2;
+- campaign model and runtime storage (B.1, landed);
+- external operator task/result protocol v2 (C.1, current);
 - campaign runner, pause/resume, scan, and budget controller;
 - campaign review handoff and deterministic eval;
 - workspace-template campaign demo and public KB campaign-output policy guard;

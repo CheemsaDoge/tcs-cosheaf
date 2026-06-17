@@ -40,6 +40,9 @@ cosheaf campaign show <campaign-id> --json
 cosheaf campaign append-attempt <campaign-id> --input-json <path> --json
 cosheaf campaign scorecard <campaign-id> --json
 cosheaf campaign finalize <campaign-id> --json
+cosheaf campaign next <campaign-id> --json
+cosheaf campaign export-task <campaign-id> --out <path> --json
+cosheaf campaign import-result <campaign-id> --input-json <path> --json
 ```
 
 Current behavior:
@@ -110,6 +113,15 @@ Current behavior:
   Campaign scorecards are review context only and do not run checks, prove
   statements, create human review, write accepted KB content, or grant
   promotion authority.
+- `campaign next/export-task/import-result` defines the external operator
+  protocol v2 for campaigns. `next` previews a bounded `operator_task_v2`
+  packet; `export-task` writes that task packet to a safe repository-local
+  JSON path; and `import-result` validates `operator_result_v2`, rejects
+  accepted writes, unsafe paths, authority overclaims, hidden reasoning, and
+  public-mode private references, then records a runtime campaign attempt.
+  Imported operator results remain review context only and do not create
+  proof, source metadata, human review, verifier/gate pass, accepted status,
+  accepted refutation, or promotion authority.
 
 The current implementation lives under:
 
@@ -168,14 +180,14 @@ Campaign runtime records are also ignored sidecars:
 ```text
 .cosheaf/campaigns/<campaign-id>/campaign.json
 .cosheaf/campaigns/<campaign-id>/attempts/<attempt-id>.json
+.cosheaf/campaigns/<campaign-id>/operator-results/<attempt-id>.json
 .cosheaf/campaigns/<campaign-id>/scorecard.json
 .cosheaf/campaigns/<campaign-id>/events.jsonl
 ```
 
 Campaign records and scorecards are not source-of-truth YAML artifacts and are
-not accepted knowledge. The B.1 campaign surface does not yet include task
-packet export/import, campaign runner loops, scanner/handoff reports, or
-campaign evals.
+not accepted knowledge. The current campaign surface does not yet include
+campaign runner loops, scanner/handoff reports, or campaign evals.
 
 ## Downstream Status
 
