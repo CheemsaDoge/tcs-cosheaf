@@ -294,6 +294,11 @@ research_loop_app = typer.Typer(
     help="Bounded research-loop commands.",
     no_args_is_help=True,
 )
+campaign_app = typer.Typer(
+    add_completion=False,
+    help="Bounded research campaign commands.",
+    no_args_is_help=True,
+)
 orchestrator_app = typer.Typer(
     add_completion=False,
     help="Deterministic local orchestrator commands.",
@@ -379,6 +384,7 @@ app.add_typer(bundle_app, name="bundle")
 app.add_typer(review_app, name="review")
 app.add_typer(run_app, name="run")
 app.add_typer(research_loop_app, name="research-loop")
+app.add_typer(campaign_app, name="campaign")
 app.add_typer(orchestrator_app, name="orchestrator")
 app.add_typer(strategy_app, name="strategy")
 app.add_typer(workspace_app, name="workspace")
@@ -4682,6 +4688,39 @@ def _research_run_error_result(exc: Exception) -> ErrorResult:
     )
 
 
+def _campaign_error_result(exc: Exception) -> ErrorResult:
+    from cosheaf.campaigns import CampaignError
+
+    if isinstance(exc, CampaignError):
+        details = exc.details
+        return ErrorResult(
+            code=exc.code,
+            message=str(exc),
+            remediation=exc.remediation,
+            blocking=True,
+            details=details,
+        )
+    if isinstance(exc, ValidationError):
+        return ErrorResult(
+            code="campaign_validation_failed",
+            message=_format_pydantic_errors(exc),
+            remediation=(
+                "Fix the campaign payload and retry. Campaign records are "
+                "review context only."
+            ),
+            blocking=True,
+        )
+    return ErrorResult(
+        code="campaign_validation_failed",
+        message=str(exc),
+        remediation=(
+            "Fix the campaign request and retry. Campaign records are review "
+            "context only."
+        ),
+        blocking=True,
+    )
+
+
 def _strategy_error_result(exc: Exception) -> ErrorResult:
     if isinstance(exc, StrategyError):
         return ErrorResult(
@@ -5968,6 +6007,245 @@ def _format_report_failures(report: ValidationReport) -> str:
         f"{failure.artifact_id} | {failure.message}"
         for failure in report.failures
     )
+
+
+# Campaign commands
+
+
+@campaign_app.command("start")
+def campaign_start(
+    issue_id: str = typer.Option(
+        ...,
+        "--issue",
+        help="Issue ID this campaign targets.",
+    ),
+    max_attempts: int = typer.Option(
+        10,
+        "--max-attempts",
+        help="Maximum attempts for this campaign.",
+    ),
+    campaign_id: str | None = typer.Option(
+        None,
+        "--campaign-id",
+        help="Optional deterministic campaign ID.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Start a bounded multi-run research campaign."""
+    from cosheaf.campaigns import CampaignBudget, CampaignError, start_campaign
+
+    console = Console(width=120, markup=False)
+    try:
+        result = start_campaign(
+            RepoContext(repo_root),
+            issue_id=issue_id,
+            campaign_id=campaign_id,
+            budget=CampaignBudget(max_attempts=max_attempts),
+        )
+    except (CampaignError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _campaign_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Campaign started: {result.campaign.campaign_id}")
+    console.print(f"- path: {result.relative_path.as_posix()}")
+    console.print(f"- scorecard: {result.scorecard_path.as_posix()}")
+    console.print(f"- events: {result.events_path.as_posix()}")
+    console.print(f"- authority: {result.campaign.authority_notice}")
+
+
+@campaign_app.command("show")
+def campaign_show(
+    campaign_id: str = typer.Argument(..., help="Campaign ID to show."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Show one campaign runtime record."""
+    from cosheaf.campaigns import CampaignError, load_campaign
+
+    console = Console(width=120, markup=False)
+    try:
+        result = load_campaign(RepoContext(repo_root), campaign_id)
+    except (CampaignError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _campaign_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Campaign: {result.campaign.campaign_id}")
+    console.print(f"- issue: {result.campaign.issue_id}")
+    console.print(f"- status: {result.campaign.status.value}")
+    console.print(f"- attempts: {len(result.campaign.attempts)}")
+    console.print(f"- authority: {result.campaign.authority_notice}")
+
+
+@campaign_app.command("append-attempt")
+def campaign_append_attempt(
+    campaign_id: str = typer.Argument(..., help="Campaign ID."),
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="CampaignAttempt JSON payload.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Append a validated attempt record to a campaign."""
+    from cosheaf.campaigns import (
+        CampaignAttempt,
+        CampaignError,
+        append_campaign_attempt,
+        load_campaign,
+    )
+
+    console = Console(width=120, markup=False)
+    context = RepoContext(repo_root)
+    try:
+        loaded = load_campaign(context, campaign_id)
+        raw = _read_input_json_or_exit(input_json, json_output=json_output)
+        raw.setdefault("campaign_id", loaded.campaign.campaign_id)
+        raw.setdefault("attempt_number", len(loaded.campaign.attempts) + 1)
+        raw.setdefault(
+            "attempt_id",
+            f"{loaded.campaign.campaign_id}.attempt."
+            f"{len(loaded.campaign.attempts) + 1}",
+        )
+        attempt = CampaignAttempt.model_validate(raw)
+        result = append_campaign_attempt(
+            context,
+            loaded.campaign.campaign_id,
+            attempt,
+        )
+    except (CampaignError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _campaign_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Campaign attempt appended: {result.attempt.attempt_id}")
+    console.print(f"- outcome: {result.attempt.outcome.value}")
+    console.print(f"- path: {result.attempt_path.as_posix()}")
+    console.print(f"- authority: {result.attempt.authority_notice}")
+
+
+@campaign_app.command("scorecard")
+def campaign_scorecard(
+    campaign_id: str = typer.Argument(..., help="Campaign ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Show and refresh a deterministic campaign scorecard."""
+    from cosheaf.campaigns import CampaignError, show_campaign_scorecard
+
+    console = Console(width=120, markup=False)
+    try:
+        result = show_campaign_scorecard(RepoContext(repo_root), campaign_id)
+    except (CampaignError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _campaign_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Campaign scorecard: {result.campaign.campaign_id}")
+    console.print(f"- attempts: {result.scorecard.attempt_count}")
+    console.print(f"- results: {result.scorecard.result_count}")
+    console.print(f"- failures: {result.scorecard.failure_count}")
+    console.print(f"- authority: {result.scorecard.authority_notice}")
+
+
+@campaign_app.command("finalize")
+def campaign_finalize(
+    campaign_id: str = typer.Argument(..., help="Campaign ID."),
+    status: str = typer.Option(
+        "finalized",
+        "--status",
+        help="Terminal status: finalized, abandoned, or failed.",
+    ),
+    reason: str | None = typer.Option(
+        None,
+        "--reason",
+        help="Optional finalization reason.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Finalize a campaign without granting accepted authority."""
+    from cosheaf.campaigns import CampaignError, CampaignStatus, finalize_campaign
+
+    console = Console(width=120, markup=False)
+    try:
+        result = finalize_campaign(
+            RepoContext(repo_root),
+            campaign_id,
+            status=CampaignStatus(status),
+            reason=reason,
+        )
+    except (CampaignError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _campaign_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Campaign finalized: {result.campaign.campaign_id}")
+    console.print(f"- status: {result.campaign.status.value}")
+    console.print(f"- authority: {result.campaign.authority_notice}")
 
 
 # Research loop commands

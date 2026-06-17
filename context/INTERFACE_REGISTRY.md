@@ -187,6 +187,29 @@
   do not grant accepted writes, human review, verifier-result mutation, gate
   pass, or promotion authority. `run` currently supports dry-run planning only
   and refuses non-dry-run execution.
+- Bounded campaign DTOs, runtime storage, scorecards, and CLI metadata commands
+  are implemented under `cosheaf.campaigns`. The Python surface defines
+  `ResearchCampaign`, `CampaignAttempt`, `CampaignBudget`,
+  `CampaignStopCondition`, `CampaignScorecard`, `CampaignOperatorPolicy`,
+  `CampaignRiskFinding`, `CampaignComparison`, `CampaignStatus`,
+  `CampaignAttemptOutcome`, `CampaignRiskSeverity`, `CampaignError`,
+  `CampaignWriteResult`, `CampaignAttemptWriteResult`,
+  `CampaignScorecardResult`, storage path helpers, `start_campaign`,
+  `write_campaign`, `load_campaign`, `append_campaign_attempt`,
+  `show_campaign_scorecard`, `finalize_campaign`,
+  `append_campaign_event`, and `build_campaign_scorecard`. Runtime records are
+  JSON under `.cosheaf/campaigns/<campaign-id>/campaign.json`,
+  `.cosheaf/campaigns/<campaign-id>/attempts/<attempt-id>.json`,
+  `.cosheaf/campaigns/<campaign-id>/scorecard.json`, and
+  `.cosheaf/campaigns/<campaign-id>/events.jsonl`. The CLI surface is
+  `cosheaf campaign start/show/append-attempt/scorecard/finalize`. Campaign
+  records, attempts, scorecards, and event logs are review context only. They
+  do not grant accepted writes, source metadata, human review,
+  verifier-result mutation, gate pass, accepted status, accepted
+  theorem/refutation status, or promotion authority. The current B.1 campaign
+  surface does not export operator task packets, import operator result
+  packets, run campaign loops, scan handoffs, run evals, call hosted providers,
+  or execute shell commands.
 - Artifact failure-memory surfacing is implemented for read-only inspection,
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
   and controlled append, artifact cards, memory search, compact context card
@@ -409,6 +432,30 @@
   references, and authority claims. It writes
   `.cosheaf/research-loops/<loop-id>/scan.json`, emits deterministic JSON with
   metrics and findings, and exits nonzero when blocking findings exist.
+- `cosheaf campaign start --issue <issue-id> --json`: creates a bounded
+  runtime campaign record under `.cosheaf/campaigns/<campaign-id>/campaign.json`,
+  initializes `events.jsonl`, writes `scorecard.json`, records the campaign
+  authority notice, and emits deterministic JSON. Optional flags include
+  `--campaign-id <campaign-id>`, `--max-attempts <n>`, and `--repo-root <path>`.
+- `cosheaf campaign show <campaign-id> --json`: reads one campaign runtime
+  record without writing accepted knowledge.
+- `cosheaf campaign append-attempt <campaign-id> --input-json <path> --json`:
+  validates and appends one `CampaignAttempt` JSON payload, writes the attempt
+  JSON under `.cosheaf/campaigns/<campaign-id>/attempts/`, updates
+  `campaign.json`, refreshes `scorecard.json`, and appends a bounded event.
+  Attempt payloads require one of `result`, `failure`, `inconclusive`, or
+  `blocked` with matching summary/reason fields. They reject accepted KB paths,
+  authority-overclaim fields, hidden-reasoning fields, and public-only private
+  references.
+- `cosheaf campaign scorecard <campaign-id> --json`: rebuilds and emits the
+  deterministic campaign scorecard under `.cosheaf/campaigns/<campaign-id>/`.
+  Scorecards are review context only and do not run checks, prove statements,
+  create human review, write accepted KB content, or grant promotion authority.
+- `cosheaf campaign finalize <campaign-id> --json`: marks the campaign terminal
+  with `finalized` by default. Optional flags include `--status
+  finalized|abandoned|failed`, `--reason <text>`, and `--repo-root <path>`.
+  Finalization does not create human review, source metadata, accepted status,
+  verifier pass, gate pass, or promotion authority.
 - `cosheaf workspace info`: shows the active workspace name, configured/legacy
   mode, repository root, and KB roots.
 - `cosheaf workspace info --repo-root <path>`: shows workspace configuration for

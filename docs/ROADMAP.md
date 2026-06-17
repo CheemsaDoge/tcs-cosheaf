@@ -1,7 +1,7 @@
 # Roadmap
 
 TCS-Cosheaf has published the `v0.10.0` Cross-Check Evidence + Checker
-Registry release and is starting the V16 / `v0.11.0` External AI Operator
+Registry release and is implementing the V16 / `v0.11.0` External AI Operator
 Harness + Bounded Multi-Run Campaigns line. Earlier published baselines include
 `v0.9.0` Reviewable Research Workflow MVP, `v0.8.0` Deterministic Execution
 Kernel + Librarian + FSM, `v0.7.0` Bounded Research Loop + Attempt Memory,
@@ -23,10 +23,11 @@ smoke passed, and downstream workspace-template/public KB pins are aligned to
 - [`docs/CODEX_DEVELOPMENT_PLAN_V16.md`](CODEX_DEVELOPMENT_PLAN_V16.md);
 - [`docs/ADR/0032-external-operator-campaign-harness.md`](ADR/0032-external-operator-campaign-harness.md).
 
-The next V16 implementation step is `campaign-model-core`: durable campaign
+The current V16 implementation step is `campaign-model-core`: durable campaign
 models, ignored runtime storage under `.cosheaf/campaigns/`, and thin CLI
-surfaces for start/show/append-attempt/scorecard/finalize. That step must keep
-campaign outputs as review context only.
+surfaces for start/show/append-attempt/scorecard/finalize. That step keeps
+campaign outputs as review context only. The next V16 implementation step after
+this PR is the external operator task/result protocol v2.
 
 The V15 implementation line has landed:
 
@@ -40,16 +41,16 @@ The V15 implementation line has landed:
 - workspace-template cross-check demo in downstream PR #85; and
 - public KB cross-check report policy guard in downstream PR #99.
 
-The V15 release is complete. The V16 Phase A kickoff is documentation only and
-does not add runtime behavior. Campaign runtime begins only with the focused
-Phase B implementation task.
+The V15 release is complete. The V16 Phase A kickoff was documentation only.
+Campaign runtime begins with the focused Phase B implementation task and must
+remain bounded sidecar metadata rather than an autonomous agent runtime.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
-cross-check reports, gap reports, future campaign records, campaign attempts,
-scorecards, scans, and campaign handoffs are review context only unless a real
-checker result explicitly records verifier evidence. They do not write accepted
-knowledge, create human review, fabricate source metadata, mark gate pass,
+cross-check reports, gap reports, campaign records, campaign attempts,
+scorecards, future scans, and future campaign handoffs are review context only
+unless a real checker result explicitly records verifier evidence. They do not
+write accepted knowledge, create human review, fabricate source metadata, mark gate pass,
 promote artifacts, call hosted providers by default, execute arbitrary shell
 through Cosheaf, or claim automatic theorem proving.
 
@@ -61,7 +62,7 @@ scans, checks, and review handoff.
 
 The planned implementation phases are:
 
-- campaign model and runtime storage;
+- campaign model and runtime storage (B.1);
 - external operator task/result protocol v2;
 - campaign runner, pause/resume, scan, and budget controller;
 - campaign review handoff and deterministic eval;
