@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop.schema.json",
+  "title": "ResearchLoop",
+  "description": "Top-level bounded research loop runtime record.",
+  "type": "object",
+  "required": [
+    "loop_id",
+    "issue_id",
+    "status",
+    "budget",
+    "attempts",
+    "decisions",
+    "stop_conditions",
+    "created_at",
+    "updated_at",
+    "authority_notice"
+  ],
+  "properties": {
+    "loop_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "issue_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["created", "running", "blocked", "finalized", "abandoned", "failed"]
+    },
+    "budget": {
+      "$ref": "research_loop_budget.schema.json"
+    },
+    "attempts": {
+      "type": "array",
+      "items": {
+        "$ref": "research_loop_attempt.schema.json"
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "$ref": "research_loop_decision.schema.json"
+      }
+    },
+    "stop_conditions": {
+      "type": "array",
+      "items": {
+        "$ref": "research_loop_stop_condition.schema.json"
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finalized_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "notes": {
+      "type": ["string", "null"]
+    },
+    "authority_notice": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

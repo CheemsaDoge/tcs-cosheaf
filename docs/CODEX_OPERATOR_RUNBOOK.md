@@ -4,6 +4,7 @@ This is the stable entrypoint for Codex-style operator instructions.
 
 Use:
 
+- `docs/RESEARCH_LOOPS.md` for bounded multi-attempt research loops;
 - `docs/EXTERNAL_OPERATOR_RUN_LOOP.md` for the full CLI-first issue loop;
 - `docs/OPERATOR_SESSIONS.md` for bounded operator-session metadata records;
 - `docs/OPERATOR_HANDOFF.md` for compact runtime handoff bundles;
@@ -36,6 +37,22 @@ Handoff bundles are compact runtime review context under
 fails closed when the leak scanner reports blockers. Handoff export writes
 explicit review-context YAML under `reviews/operator/`; it is not human review,
 accepted knowledge, verifier evidence, gate pass, or promotion authority.
+
+Research loops support bounded multi-attempt exploration of a research issue:
+
+```bash
+cosheaf research-loop start --issue <issue-id> --json
+cosheaf research-loop show <loop-id> --json
+cosheaf research-loop list --json
+cosheaf research-loop append-attempt <loop-id> --input-json attempt.json --json
+cosheaf research-loop finalize <loop-id> --json
+```
+
+Loop records are review context only under `.cosheaf/research-loops/`. Each
+attempt records planned direction, actions taken, evidence refs, terminal
+result or structured failure records, and policy findings. Loop success never
+means accepted status. Attempts cannot write `kb/accepted/`, create human
+review, mutate verifier results, or claim promotion authority.
 
 The runbook is documentation only. It does not embed an agent runtime, call
 hosted providers by default, require MCP, write accepted knowledge, create

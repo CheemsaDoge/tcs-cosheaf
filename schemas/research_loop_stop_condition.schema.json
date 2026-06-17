@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_stop_condition.schema.json",
+  "title": "ResearchLoopStopCondition",
+  "type": "object",
+  "required": ["condition_id", "kind", "description", "triggered"],
+  "properties": {
+    "condition_id": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "triggered": { "type": "boolean" },
+    "triggered_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "additionalProperties": false
+}

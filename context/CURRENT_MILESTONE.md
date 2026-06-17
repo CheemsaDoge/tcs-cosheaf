@@ -16,7 +16,8 @@ Turn the v0.6.0 operator session and review handoff layer into a bounded multi-a
 
 ### In scope
 
-- Research loop data model, storage, CLI, schemas, tests, and docs
+- Research loop data model, storage, CLI, schemas, tests, and docs ?
+
 - Loop runner with deterministic next-action planning
 - External operator task packet export and result import protocol
 - Attempt-memory index and repeat-failure detection
@@ -46,9 +47,10 @@ Turn the v0.6.0 operator session and review handoff layer into a bounded multi-a
 
 ## Current phase
 
-**Phase A: post-v0.6.0 audit + V11 ADR**
+**Phase B: bounded research-loop core**
 
-Task A.1: post-v060-v070-kickoff (in progress)
+Task B.1: bounded-research-loop-core (completed)
+Next: Task C.1: research-loop-runner-and-operator-protocol
 
 ## Non-negotiable invariants
 

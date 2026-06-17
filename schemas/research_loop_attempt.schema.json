@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_attempt.schema.json",
+  "title": "ResearchLoopAttempt",
+  "description": "One bounded attempt within a research loop.",
+  "type": "object",
+  "required": [
+    "attempt_id",
+    "loop_id",
+    "attempt_number",
+    "status",
+    "planned_direction",
+    "policy_mode",
+    "actions_taken",
+    "failures",
+    "evidence",
+    "policy_findings",
+    "authority_notice"
+  ],
+  "properties": {
+    "attempt_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "loop_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "attempt_number": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "running",
+        "succeeded",
+        "failed",
+        "blocked",
+        "inconclusive",
+        "abandoned"
+      ]
+    },
+    "planned_direction": {
+      "type": "string",
+      "minLength": 1
+    },
+    "policy_mode": {
+      "type": "string",
+      "enum": ["public_only", "private_research"]
+    },
+    "started_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "result_summary": {
+      "type": ["string", "null"]
+    },
+    "blocked_reason": {
+      "type": ["string", "null"]
+    },
+    "actions_taken": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "$ref": "attempt_failure_record.schema.json"
+      }
+    },
+    "evidence": {
+      "$ref": "attempt_evidence_summary.schema.json"
+    },
+    "policy_findings": {
+      "type": "array",
+      "items": {
+        "$ref": "attempt_policy_finding.schema.json"
+      }
+    },
+    "next_action": {
+      "anyOf": [
+        {
+          "$ref": "attempt_next_action.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "authority_notice": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

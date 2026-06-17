@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/attempt_policy_finding.schema.json",
+  "title": "AttemptPolicyFinding",
+  "type": "object",
+  "required": ["finding_id", "severity", "finding_type", "summary", "blocking"],
+  "properties": {
+    "finding_id": { "type": "string", "minLength": 1 },
+    "severity": { "type": "string", "enum": ["info", "warning", "blocking"] },
+    "finding_type": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "minLength": 1 },
+    "blocking": { "type": "boolean" },
+    "evidence_refs": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

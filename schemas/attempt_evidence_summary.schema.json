@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/attempt_evidence_summary.schema.json",
+  "title": "AttemptEvidenceSummary",
+  "type": "object",
+  "properties": {
+    "evidence_refs": { "type": "array", "items": { "type": "string" } },
+    "related_artifacts": { "type": "array", "items": { "type": "string" } },
+    "operator_session_refs": { "type": "array", "items": { "type": "string" } },
+    "research_run_refs": { "type": "array", "items": { "type": "string" } },
+    "strategy_plan_refs": { "type": "array", "items": { "type": "string" } },
+    "checked_counterexample_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "counterexample_candidate_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "draft_artifact_refs": { "type": "array", "items": { "type": "string" } },
+    "handoff_bundle_refs": { "type": "array", "items": { "type": "string" } },
+    "summary": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

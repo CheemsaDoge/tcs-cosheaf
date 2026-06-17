@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/loop_review_summary.schema.json",
+  "title": "LoopReviewSummary",
+  "type": "object",
+  "required": [
+    "loop_id",
+    "issue_id",
+    "status",
+    "attempt_count",
+    "failed_attempt_count",
+    "succeeded_attempt_count",
+    "blocking_policy_findings",
+    "authority_notice"
+  ],
+  "properties": {
+    "loop_id": { "type": "string", "minLength": 1 },
+    "issue_id": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["created", "running", "blocked", "finalized", "abandoned", "failed"]
+    },
+    "attempt_count": { "type": "integer", "minimum": 0 },
+    "failed_attempt_count": { "type": "integer", "minimum": 0 },
+    "succeeded_attempt_count": { "type": "integer", "minimum": 0 },
+    "blocking_policy_findings": { "type": "integer", "minimum": 0 },
+    "authority_notice": { "type": "string" }
+  },
+  "additionalProperties": false
+}
