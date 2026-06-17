@@ -1,0 +1,13 @@
+cases:
+  - id: case.reviewable-workflow.accepted-dependency-draft-target
+    kind: accepted_dependency_draft_target
+  - id: case.reviewable-workflow.repeated-failure-memory
+    kind: repeated_failure_memory
+  - id: case.reviewable-workflow.unchecked-counterexample
+    kind: unchecked_counterexample
+  - id: case.reviewable-workflow.private-leakage-risk
+    kind: private_leakage_risk
+  - id: case.reviewable-workflow.gate-scanner-blocker
+    kind: gate_scanner_blocker
+  - id: case.reviewable-workflow.draft-proposal-ready
+    kind: draft_proposal_ready

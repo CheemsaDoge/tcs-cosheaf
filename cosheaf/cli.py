@@ -64,30 +64,35 @@ from cosheaf.evals import (
     DEFAULT_RESEARCH_LOOP_EVAL_CASES,
     DEFAULT_RESEARCH_RUN_LOOP_EVAL_CASES,
     DEFAULT_RETRIEVAL_EVAL_CASES,
+    DEFAULT_REVIEWABLE_WORKFLOW_EVAL_CASES,
     DEFAULT_STRATEGY_PLANNER_EVAL_CASES,
     CheckedEvidenceRunLoopEvalError,
     ContextEvalError,
     ResearchLoopEvalError,
     ResearchRunLoopEvalError,
     RetrievalEvalError,
+    ReviewableWorkflowEvalError,
     StrategyPlannerEvalError,
     load_checked_evidence_run_loop_eval_suite,
     load_context_eval_suite,
     load_research_loop_eval_suite,
     load_research_run_loop_eval_suite,
     load_retrieval_eval_suite,
+    load_reviewable_workflow_eval_suite,
     load_strategy_planner_eval_suite,
     resolve_checked_evidence_run_loop_eval_case_path,
     resolve_context_eval_case_path,
     resolve_research_loop_eval_case_path,
     resolve_research_run_loop_eval_case_path,
     resolve_retrieval_eval_case_path,
+    resolve_reviewable_workflow_eval_case_path,
     resolve_strategy_planner_eval_case_path,
     run_checked_evidence_run_loop_eval_suite,
     run_context_eval_suite,
     run_research_loop_eval_suite,
     run_research_run_loop_eval_suite,
     run_retrieval_eval_suite,
+    run_reviewable_workflow_eval_suite,
     run_strategy_planner_eval_suite,
 )
 from cosheaf.gates.gatekeeper import (
@@ -3188,6 +3193,67 @@ def eval_research_loop(
     )
     console.print(
         f"- scanner_blocker_accuracy: {report.metrics.scanner_blocker_accuracy:.6f}"
+    )
+    console.print(f"- skipped_not_pass_count: {report.metrics.skipped_not_pass_count}")
+    for case in report.cases:
+        failures = ",".join(case.failures) if case.failures else "-"
+        console.print(f"- {case.id}: passed={str(case.passed).lower()} {failures}")
+
+    if not report.passed:
+        raise typer.Exit(code=1)
+
+
+@eval_app.command("reviewable-workflow")
+def eval_reviewable_workflow(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    cases: Path = typer.Option(
+        DEFAULT_REVIEWABLE_WORKFLOW_EVAL_CASES,
+        "--cases",
+        help="Repository-local YAML reviewable-workflow eval case file.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text summary.",
+    ),
+) -> None:
+    """Run deterministic issue-to-reviewable-packet regression cases."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        case_path = resolve_reviewable_workflow_eval_case_path(context, cases)
+        suite = load_reviewable_workflow_eval_suite(case_path)
+        report = run_reviewable_workflow_eval_suite(context, suite)
+    except ReviewableWorkflowEvalError as exc:
+        console.print(f"Reviewable-workflow eval failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(report.to_json(), nl=False)
+        return
+
+    verdict = "pass" if report.passed else "fail"
+    console.print(f"Reviewable-workflow eval verdict: {verdict}")
+    console.print(f"- cases: {report.case_count}")
+    console.print(
+        "- workflow_validity_rate: "
+        f"{report.metrics.workflow_validity_rate:.6f}"
+    )
+    console.print(
+        "- draft_proposal_validity_rate: "
+        f"{report.metrics.draft_proposal_validity_rate:.6f}"
+    )
+    console.print(
+        "- handoff_scanner_block_rate: "
+        f"{report.metrics.handoff_scanner_block_rate:.6f}"
+    )
+    console.print(
+        "- review_readiness_classification_rate: "
+        f"{report.metrics.review_readiness_classification_rate:.6f}"
     )
     console.print(f"- skipped_not_pass_count: {report.metrics.skipped_not_pass_count}")
     for case in report.cases:

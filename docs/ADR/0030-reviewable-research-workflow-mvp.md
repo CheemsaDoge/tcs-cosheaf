@@ -21,9 +21,9 @@ architecture. It exposed `workflow start`, `workflow step`, and
 `workflow readiness`. A post-release V14 B.1 follow-up adds the persistent
 workflow core: `.cosheaf/workflows/<workflow-id>/` runtime records,
 `workflow show`, persisted `workflow step`, bounded `workflow run`, and
-persisted readiness reports. Draft-proposal commands, workflow-handoff
-commands, scanner integration, and reviewable-workflow evals remain follow-up
-work.
+persisted readiness reports. Later V14 C.1, D.1, and E.1 follow-ups add
+draft-proposal commands, workflow-handoff commands, scanner integration, and
+framework reviewable-workflow eval coverage.
 
 Workflow records, draft proposals, and review handoffs remain review context
 only. No accepted writes, human review creation, verifier/gate mutation, source

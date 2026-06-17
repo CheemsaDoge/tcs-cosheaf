@@ -392,6 +392,7 @@ cosheaf workflow handoff build <workflow-id> --json
 cosheaf workflow handoff show <handoff-id> --json
 cosheaf workflow handoff scan <handoff-id> --json
 cosheaf workflow handoff export <handoff-id> --dry-run --json
+cosheaf eval reviewable-workflow --json
 ```
 
 The current implementation persists runtime review context under
@@ -403,7 +404,9 @@ only whitelisted local actions through the existing action registry.
 build/show/scan/export creates compact review handoff packets, fails closed on
 blocking scanner findings, preserves skipped results as non-pass evidence, and
 can dry-run an export target under `reviews/workflow/`. `cosheaf eval
-reviewable-workflow --json` remains future work.
+reviewable-workflow --json` runs deterministic temporary fixtures for the
+framework reviewable-workflow regression suite and writes no accepted knowledge
+in the caller repository.
 
 Agents must treat workflow output, draft proposals, handoff scan reports,
 handoff bundles, and handoff exports as review context only. They are not

@@ -28,6 +28,7 @@ cosheaf workflow handoff build <workflow-id> --json
 cosheaf workflow handoff show <handoff-id> --json
 cosheaf workflow handoff scan <handoff-id> --json
 cosheaf workflow handoff export <handoff-id> --dry-run --json
+cosheaf eval reviewable-workflow --json
 ```
 
 Current behavior:
@@ -67,6 +68,11 @@ Current behavior:
   review-context target `reviews/workflow/<handoff-id>.yaml` without writing
   files. Non-dry-run export writes only under `reviews/workflow/` after a clean
   scan and still does not create human review.
+- `eval reviewable-workflow` runs deterministic temporary fixtures for
+  accepted dependency plus draft target, repeated failure memory, unchecked
+  counterexample, private leakage risk, scanner blocker, and
+  draft-proposal-ready cases. It reports benchmark metrics only and writes no
+  accepted knowledge in the caller repository.
 
 The current implementation lives under:
 
@@ -74,6 +80,8 @@ The current implementation lives under:
 cosheaf/workflow/engine.py
 cosheaf/workflow/cli.py
 cosheaf/workflow/proposal.py
+cosheaf/workflow/handoff.py
+cosheaf/evals/reviewable_workflow.py
 ```
 
 ## Runtime Layout
@@ -107,9 +115,9 @@ reviewed, accepted, or promoted by the proposal command.
 
 ## Not Implemented Yet
 
-The following V14 targets are not complete in the current `v0.9.0` release:
+The following V14 downstream targets are not complete in the current
+post-`v0.9.0` development line:
 
-- `cosheaf eval reviewable-workflow --json`;
 - workspace-template `make reviewable-workflow-demo`;
 - public-KB policy guard for workflow packets as non-source metadata.
 

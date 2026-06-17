@@ -17,6 +17,8 @@ Current focus:
 - convert workflow output into reviewable draft proposals without entering
   accepted knowledge;
 - produce workflow review handoff packets with fail-closed scanner guards;
+- add deterministic reviewable-workflow eval coverage for the framework
+  surface;
 - keep workflow records as review context only;
 - record downstream pin/policy drift separately instead of claiming ecosystem
   closeout is complete.
@@ -32,10 +34,10 @@ Completed after publication:
   artifact output.
 - `workflow handoff build/show/scan/export` review-context packets and scanner
   guards.
+- `cosheaf eval reviewable-workflow --json` framework benchmark coverage.
 
 Remaining V14 implementation gaps:
 
-- `cosheaf eval reviewable-workflow --json`;
 - downstream workspace-template and public-KB v0.9 policy/pin closeout.
 
 Authority boundary: workflow output, draft proposals, handoff scan reports,

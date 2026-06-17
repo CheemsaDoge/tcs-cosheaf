@@ -18,8 +18,8 @@ adds persistent workflow runtime records under
 step`, bounded `workflow run`, persisted readiness reports, and
 `workflow draft-proposal` for review-only proposal output, plus
 `workflow handoff build/show/scan/export` for review-context handoff packets
-with fail-closed scanner guards. `cosheaf eval reviewable-workflow` remains
-follow-up work.
+with fail-closed scanner guards, and `cosheaf eval reviewable-workflow --json`
+for deterministic issue-to-reviewable-packet regression coverage.
 
 The `v0.9.0` line does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, Lean semantic alignment, human review, accepted
@@ -187,8 +187,9 @@ Implemented:
   whitelisted local action registry, and `cosheaf workflow draft-proposal` for
   review-context JSON or writable private draft artifact output, plus
   `cosheaf workflow handoff build/show/scan/export` for review-context handoff
-  packets with fail-closed scanner guards. Reviewable-workflow eval coverage is
-  follow-up work.
+  packets with fail-closed scanner guards, and
+  `cosheaf eval reviewable-workflow --json` for deterministic benchmark
+  coverage.
 
 Planned or incomplete:
 
@@ -196,7 +197,8 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- `cosheaf eval reviewable-workflow --json` benchmark coverage.
+- Downstream workspace-template reviewable-workflow demo and public-KB workflow
+  packet policy closeout.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.

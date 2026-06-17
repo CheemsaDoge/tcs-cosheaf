@@ -33,7 +33,10 @@
   `export_workflow_handoff`, `workflow_handoff_id`,
   `workflow_id_from_handoff_id`, `workflow_handoff_path`,
   `workflow_handoff_scan_path`, `workflow_handoff_export_path`, and
-  `write_workflow_handoff`. Runtime records are JSON under
+  `write_workflow_handoff`. Framework reviewable-workflow eval coverage is
+  implemented in `cosheaf.evals.reviewable_workflow`; it builds temporary
+  fixtures and reports regression metrics without writing accepted knowledge
+  in the caller repository. Runtime records are JSON under
   `.cosheaf/workflows/<workflow-id>/workflow.json`, `events.jsonl`,
   `librarian.json`, `fsm.json`, `loop.json`, `readiness.json`, and optional
   review-context proposal JSON, plus workflow handoff JSON and handoff scan
@@ -519,6 +522,19 @@
   with loop validity, attempt schema, repeat-failure, retry-block,
   scanner-blocker, handoff-context, overclaim-rejection, budget-stop, and
   skipped-not-pass metrics.
+- `cosheaf eval reviewable-workflow`: runs the default deterministic
+  issue-to-reviewable-packet suite from
+  `evals/reviewable_workflow/cases.yaml`.
+- `cosheaf eval reviewable-workflow --repo-root <path>`: resolves the eval
+  case file against an explicit repository root while using temporary fixtures
+  for workflow runtime checks.
+- `cosheaf eval reviewable-workflow --cases <path>`: uses an explicit
+  repository-local YAML case file.
+- `cosheaf eval reviewable-workflow --json`: emits deterministic JSON report
+  output with workflow validity, librarian trace, FSM replay, local action
+  whitelist, draft proposal, handoff scanner, authority-overclaim,
+  private-leak, readiness-classification, skipped-not-pass, and accepted-write
+  violation metrics.
 - `cosheaf eval strategy-planner`: runs the default deterministic strategy
   planner boundary suite from `evals/strategy_planner/cases.yaml`.
 - `cosheaf eval strategy-planner --repo-root <path>`: runs strategy-planner
@@ -917,6 +933,14 @@
   The harness does not write accepted knowledge, create human review, mutate
   verifier results, call hosted providers, or require network, SAT, SMT, Lean,
   or lake.
+- `cosheaf.evals.reviewable_workflow`: deterministic reviewable-workflow eval
+  harness. Default cases live in `evals/reviewable_workflow/cases.yaml`; cases
+  build temporary fixtures with an issue, accepted public dependency, private
+  draft target, failure memory, skipped counterexample evidence, scanner
+  blockers, and draft-proposal-ready workflow state. The harness does not
+  write accepted knowledge in the caller repository, create human review,
+  mutate verifier results, call hosted providers, or require network, SAT,
+  SMT, Lean, or lake.
 - `cosheaf.services.models.ErrorResult`: public standard error DTO with code,
   message, remediation, blocking flag, optional repository-local
   `related_path`, optional `related_artifact`, and string-to-string details.
@@ -1589,6 +1613,36 @@ promotion semantics beyond ordinary gatekeeper blocking behavior.
   search surface, and returns an `ArtifactFailureMemoryEvalReport`.
 - `cosheaf.evals.artifact_failure_memory.run_artifact_failure_memory_eval_case(context, case)`:
   runs and scores one artifact failure-memory eval case.
+- `cosheaf.evals.reviewable_workflow.ReviewableWorkflowEvalKind`: enum for
+  `accepted_dependency_draft_target`, `repeated_failure_memory`,
+  `unchecked_counterexample`, `private_leakage_risk`,
+  `gate_scanner_blocker`, and `draft_proposal_ready` cases.
+- `cosheaf.evals.reviewable_workflow.ReviewableWorkflowEvalCase`: Pydantic v2
+  model for one deterministic reviewable-workflow eval case with optional
+  case ID and required kind.
+- `cosheaf.evals.reviewable_workflow.ReviewableWorkflowEvalSuite`: dataclass
+  wrapper for loaded reviewable-workflow eval cases.
+- `cosheaf.evals.reviewable_workflow.ReviewableWorkflowEvalMetrics`: Pydantic
+  v2 model with workflow validity, librarian trace, FSM replay, local action
+  whitelist, draft proposal, handoff scanner, authority-overclaim,
+  private-leak, readiness-classification, skipped-not-pass, and
+  accepted-write violation metrics.
+- `cosheaf.evals.reviewable_workflow.ReviewableWorkflowEvalCaseResult`:
+  Pydantic v2 model for one executed reviewable-workflow eval case, including
+  boundary booleans and failure messages.
+- `cosheaf.evals.reviewable_workflow.ReviewableWorkflowEvalReport`: Pydantic
+  v2 model for aggregate suite output with deterministic `to_json()`.
+- `cosheaf.evals.reviewable_workflow.ReviewableWorkflowEvalError`: expected
+  error for reviewable-workflow eval loading or execution failures.
+- `cosheaf.evals.reviewable_workflow.DEFAULT_REVIEWABLE_WORKFLOW_EVAL_CASES`:
+  default case path `evals/reviewable_workflow/cases.yaml`.
+- `cosheaf.evals.reviewable_workflow.load_reviewable_workflow_eval_suite(path)`:
+  loads a reviewable-workflow eval YAML suite.
+- `cosheaf.evals.reviewable_workflow.resolve_reviewable_workflow_eval_case_path(context, cases_path)`:
+  resolves and constrains an eval case path to the repository root.
+- `cosheaf.evals.reviewable_workflow.run_reviewable_workflow_eval_suite(context, suite)`:
+  builds temporary local workflow fixtures and returns a
+  `ReviewableWorkflowEvalReport`.
 - `cosheaf.evals.verifier_evidence.VerifierEvidenceEvalKind`: enum for
   `pass_evidence_policy_allowed`, `failed_evidence_blocks_readiness`,
   `skipped_checker_required`, `counterexample_remains_candidate`, and
@@ -2900,8 +2954,9 @@ working directory.
   three-repository compatibility matrix. Matrix rows cover framework local
   checkout, framework verifier-evidence eval smoke, framework
   checked-evidence run-loop eval, framework research-run loop eval, framework
-  research-loop eval, framework research-loop workflow smoke, framework
-  strategy-planner eval, framework operator-session CLI smoke, framework
+  research-loop eval, framework reviewable-workflow eval, framework
+  research-loop workflow smoke, framework strategy-planner eval, framework
+  operator-session CLI smoke, framework
   operator-handoff dry-run smoke, optional verifier availability, framework git
   tag release smoke, workspace-template demo, workspace-template CLI-agent
   demo, workspace-template research-run demo, workspace-template strategy demo,
@@ -2915,10 +2970,10 @@ working directory.
   returns a skipped matrix row when SAT/SMT/Lean/lake tools are unavailable;
   that skipped result is not counted as pass.
 - `python scripts/ecosystem_smoke.py --matrix --framework-tag <tag>`: selects
-  the framework tag used by the opt-in network release-smoke row. The default
-  is the current published release baseline `v0.6.0`; pass
-  `--framework-tag v0.7.0` when checking the v0.7.0 release candidate or
-  post-tag publication state.
+  the framework tag used by the opt-in network release-smoke row. The script
+  default is the configured compatibility baseline; pass the explicit current
+  release tag, such as `--framework-tag v0.9.0`, when checking a current
+  release candidate or post-tag publication state.
 - `python scripts/ecosystem_smoke.py --matrix --include-network`: also runs
   matrix rows that perform normal framework package install or git clone steps.
   This still does not run real hosted providers or require API keys.

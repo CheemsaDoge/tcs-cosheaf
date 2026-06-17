@@ -51,9 +51,10 @@ thin:
 - `workflow start` emits a workflow JSON record and authority notice.
 - `workflow step` printed an ephemeral step status and did not persist state.
 - `workflow readiness` reported that persisted readiness was not assessable yet.
-- Persistent `.cosheaf/workflows/<workflow-id>/` storage, `workflow show`,
-  bounded `workflow run`, draft proposals, workflow handoffs, scanner
-  integration, and `cosheaf eval reviewable-workflow --json` are not complete.
+- At this handoff point, persistent `.cosheaf/workflows/<workflow-id>/`
+  storage, `workflow show`, bounded `workflow run`, draft proposals, workflow
+  handoffs, scanner integration, and `cosheaf eval reviewable-workflow --json`
+  were not complete.
 
 Do not describe `v0.9.0` as a complete issue-to-handoff workflow engine. It is
 a published initial reviewable-workflow surface.
@@ -61,7 +62,10 @@ a published initial reviewable-workflow surface.
 Later V14 follow-up work adds persistent workflow storage, `workflow show`,
 persisted `workflow step`, bounded `workflow run`, persisted readiness reports,
 draft proposals, and workflow handoff build/show/scan/export with scanner
-integration. `cosheaf eval reviewable-workflow --json` remains incomplete.
+integration. Later V14 E.1 adds framework
+`cosheaf eval reviewable-workflow --json` coverage. Downstream
+workspace-template demo and public-KB policy closeout remain separate follow-up
+work.
 
 The normal verification ladder is green locally on this checkout after the
 code-quality closeout:
