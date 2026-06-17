@@ -592,6 +592,63 @@ These metrics are regression signals only. Workflow eval output is not proof,
 source metadata, human review, verifier pass, gate pass, accepted status,
 accepted theorem/refutation, or promotion authority.
 
+## Checker/Cross-Check Eval Cases
+
+Checker/cross-check eval cases are YAML records under
+`evals/checker_crosscheck/`. The default case file is:
+
+```text
+evals/checker_crosscheck/cases.yaml
+```
+
+The harness is available both as a Python API in
+`cosheaf.evals.checker_crosscheck` and as a CLI command:
+
+```bash
+cosheaf eval checker-crosscheck --json
+```
+
+The suite builds temporary local fixtures for each case. The caller repository
+is used only to resolve the repository-local case file. The harness writes no
+accepted knowledge in the caller repository, creates no human review, mutates
+no verifier results, calls no hosted providers, and requires no network.
+
+Required case kinds for the default suite are:
+
+- `valid_checked_local_claim`: checked local evidence appears in the matrix
+  while remaining non-accepted review context.
+- `failed_checker_claim`: failed checker evidence is surfaced as checked-fail.
+- `skipped_optional_checker`: skipped optional checker output remains
+  inconclusive/non-pass.
+- `overclaimed_accepted_proof`: accepted-proof, human-review, gate/verifier,
+  and source-metadata overclaims are rejected.
+- `private_leakage_in_crosscheck`: private markers in public-mode checker
+  material are rejected.
+- `source_gap`: missing source metadata is reported as a review gap.
+- `formalization_gap`: missing/failed formal checker evidence reports
+  formalization and semantic-alignment gaps.
+- `inconclusive_evidence`: inconclusive checker output remains non-pass.
+
+## Checker/Cross-Check Metrics
+
+`cosheaf eval checker-crosscheck` reports:
+
+- `case_pass_rate`
+- `checked_pass_boundary_rate`
+- `failed_checker_detection_rate`
+- `authority_overclaim_rejection_rate`
+- `private_leak_rejection_rate`
+- `source_gap_detection_rate`
+- `formalization_gap_detection_rate`
+- `skipped_not_pass_count`
+- `inconclusive_not_pass_count`
+- `accepted_write_violation_count`
+
+These metrics are regression signals only. Checker pass, workflow success,
+cross-check reports, and gap reports are not proof, source metadata, human
+review, verifier pass, gate pass, accepted status, accepted theorem/refutation,
+or promotion authority.
+
 ## Verifier Evidence Eval Cases
 
 Verifier evidence eval cases are YAML records under `evals/verifier_evidence/`.
@@ -796,18 +853,20 @@ context-pack writer.
 
 The agent workflow, provider workflow, failure/counterexample, artifact
 failure-memory, and verifier evidence evals currently have no direct `cosheaf
-eval ...` CLI commands. The checked-evidence, research-run loop,
-research-loop, and strategy-planner evals have CLI commands:
+eval ...` CLI commands. The checked-evidence, checker/cross-check,
+research-run loop, research-loop, and strategy-planner evals have CLI
+commands:
 
 ```bash
 cosheaf eval checked-evidence-run-loop --json
+cosheaf eval checker-crosscheck --json
 cosheaf eval research-run-loop --json
 cosheaf eval research-loop --json
 cosheaf eval strategy-planner --json
 ```
 
-The checked-evidence, research-run loop, research-loop, and strategy-planner
-evals use
+The checked-evidence, checker/cross-check, research-run loop, research-loop,
+and strategy-planner evals use
 deterministic local fixtures and do not require hosted providers, API keys,
 MCP, network, SAT, SMT, Lean, or lake. Other Python-level evals may refresh
 `context/TASKS/<issue-id>/` context packs, redacted provider logs under

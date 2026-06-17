@@ -1,0 +1,18 @@
+schema_version: 1
+cases:
+  - id: case.checker-crosscheck.valid-checked-local-claim
+    kind: valid_checked_local_claim
+  - id: case.checker-crosscheck.failed-checker-claim
+    kind: failed_checker_claim
+  - id: case.checker-crosscheck.skipped-optional-checker
+    kind: skipped_optional_checker
+  - id: case.checker-crosscheck.overclaimed-accepted-proof
+    kind: overclaimed_accepted_proof
+  - id: case.checker-crosscheck.private-leakage-in-crosscheck
+    kind: private_leakage_in_crosscheck
+  - id: case.checker-crosscheck.source-gap
+    kind: source_gap
+  - id: case.checker-crosscheck.formalization-gap
+    kind: formalization_gap
+  - id: case.checker-crosscheck.inconclusive-evidence
+    kind: inconclusive_evidence

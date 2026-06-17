@@ -2,10 +2,10 @@
 
 Target: `v0.10.0 Cross-Check Evidence + Checker Registry`
 
-Status: in progress. Phase A and Phase B have landed after the V14 `v0.9.0`
-reviewable-workflow line and downstream workspace/public-KB closeout. The
-current implementation line covers Phase C/D workflow cross-check reports and
-the proof-obligation/gap taxonomy.
+Status: in progress. Phase A through Phase D have landed after the V14
+`v0.9.0` reviewable-workflow line and downstream workspace/public-KB closeout.
+The current implementation line covers Phase E framework-side checker/
+cross-check eval and ecosystem smoke coverage.
 
 ## Goal
 
@@ -28,9 +28,9 @@ promotion authority.
 
 1. Phase A: post-v0.9.0 audit and V15 landing.
 2. Phase B: typed checker registry core. Landed in issue #436.
-3. Phase C: cross-check evidence report in workflow output. Current issue #438.
-4. Phase D: proof-obligation and gap taxonomy. Current issue #438.
-5. Phase E: eval plus workspace/public-KB policy smoke.
+3. Phase C: cross-check evidence report in workflow output. Landed in issue #438.
+4. Phase D: proof-obligation and gap taxonomy. Landed in issue #438.
+5. Phase E: eval plus workspace/public-KB policy smoke. Current issue #440.
 6. Phase F: `v0.10.0` release candidate and publication closeout.
 
 ## Phase A Scope
@@ -104,6 +104,16 @@ Add deterministic eval and three-repository smoke coverage for cross-check
 evidence. Workspace-template may get a demo target. Public KB policy must reject
 cross-check reports as source metadata, accepted proof, human review, verifier
 pass, gate pass, accepted status, accepted refutation, or promotion authority.
+
+Current framework-side implementation surface:
+
+- `cosheaf eval checker-crosscheck --json`;
+- default cases under `evals/checker_crosscheck/cases.yaml`;
+- Python APIs in `cosheaf.evals.checker_crosscheck`;
+- ecosystem smoke row `framework.checker-crosscheck-eval`.
+
+Downstream workspace-template demo and public-KB policy guard follow-ups remain
+separate PRs.
 
 ## Phase F Outline
 

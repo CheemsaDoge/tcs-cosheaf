@@ -93,6 +93,11 @@ Current behavior:
   counterexample, private leakage risk, scanner blocker, and
   draft-proposal-ready cases. It reports benchmark metrics only and writes no
   accepted knowledge in the caller repository.
+- `eval checker-crosscheck` runs deterministic temporary fixtures for checker
+  pass/fail, skipped optional checker, authority-overclaim rejection,
+  private-leak rejection, source/formalization gaps, and inconclusive evidence.
+  It is a regression signal only and does not create proof, source metadata,
+  human review, accepted status, or promotion authority.
 
 The current implementation lives under:
 
@@ -104,6 +109,7 @@ cosheaf/workflow/handoff.py
 cosheaf/workflow/crosscheck.py
 cosheaf/gap_cli.py
 cosheaf/evals/reviewable_workflow.py
+cosheaf/evals/checker_crosscheck.py
 ```
 
 ## Runtime Layout
