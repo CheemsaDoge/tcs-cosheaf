@@ -2,10 +2,10 @@
 
 Target: `v0.10.0 Cross-Check Evidence + Checker Registry`
 
-Status: in progress. Phase A through Phase D have landed after the V14
-`v0.9.0` reviewable-workflow line and downstream workspace/public-KB closeout.
-The current implementation line covers Phase E framework-side checker/
-cross-check eval and ecosystem smoke coverage.
+Status: Phase A through Phase E have landed after the V14 `v0.9.0`
+reviewable-workflow line and downstream workspace/public-KB closeout. Phase
+F.1 is preparing the conservative `v0.10.0` release candidate. The public
+`v0.10.0` tag and GitHub release are not published yet.
 
 ## Goal
 
@@ -30,8 +30,11 @@ promotion authority.
 2. Phase B: typed checker registry core. Landed in issue #436.
 3. Phase C: cross-check evidence report in workflow output. Landed in issue #438.
 4. Phase D: proof-obligation and gap taxonomy. Landed in issue #438.
-5. Phase E: eval plus workspace/public-KB policy smoke. Current issue #440.
-6. Phase F: `v0.10.0` release candidate and publication closeout.
+5. Phase E: eval plus workspace/public-KB policy smoke. Landed in framework
+   issue #440, workspace-template PR #85, and public KB PR #99.
+6. Phase F: `v0.10.0` release candidate and publication closeout. Phase F.1
+   is current issue #442; Phase F.2 will publish the tag/release and align
+   downstream pins after this RC merges.
 
 ## Phase A Scope
 
@@ -112,14 +115,23 @@ Current framework-side implementation surface:
 - Python APIs in `cosheaf.evals.checker_crosscheck`;
 - ecosystem smoke row `framework.checker-crosscheck-eval`.
 
-Downstream workspace-template demo and public-KB policy guard follow-ups remain
-separate PRs.
+Downstream closeout has landed:
+
+- workspace-template PR #85 adds the cross-check demo path;
+- public KB PR #99 updates the policy guard so cross-check reports, evidence
+  reports, gap reports, checker sidecars, and checker/cross-check eval reports
+  cannot become source metadata, human review, verifier pass, gate pass,
+  accepted status, accepted theorem/refutation, or promotion authority.
 
 ## Phase F Outline
 
 Prepare and publish a conservative `v0.10.0` release only after framework
 verification, downstream pin/demo/policy alignment, post-tag smoke, and release
 documentation all pass.
+
+Phase F.1 prepares package metadata, release notes, and current-status docs for
+`0.10.0` without publishing the tag or changing downstream pins. Phase F.2 is
+the tag, GitHub release, post-tag release smoke, and downstream pin alignment.
 
 ## Required Verification Pattern
 
