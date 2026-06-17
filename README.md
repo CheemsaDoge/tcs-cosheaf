@@ -20,6 +20,14 @@ These surfaces are review context and regression evidence; they do not change
 proof, review, gate, verifier, source metadata, accepted-status, or promotion
 authority.
 
+The current development line is V16 / `v0.11.0` External AI Operator Harness +
+Bounded Multi-Run Campaigns. The current branch adds the B.1 campaign model
+core: durable campaign records, attempt sidecars, scorecards, and
+`cosheaf campaign start/show/append-attempt/scorecard/finalize` CLI commands
+under ignored `.cosheaf/campaigns/` paths. Campaign output is review context
+only and does not create proof, source metadata, human review, verifier pass,
+gate pass, accepted status, accepted refutation, or promotion authority.
+
 The `v0.10.0` release does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, Lean semantic alignment, human review, accepted
 writes, verifier passes without real checker evidence, gate-pass authority,
@@ -198,6 +206,13 @@ Implemented:
   `reviews/workflow/`, and `cosheaf gap list/export` summarizes
   proof/source/formalization/review gaps. These outputs remain review context
   only.
+- V16 campaign model-core development surfaces: `cosheaf.campaigns` defines
+  campaign, attempt, budget, stop-condition, scorecard, operator-policy,
+  risk-finding, and comparison DTOs; runtime records are stored under
+  `.cosheaf/campaigns/<campaign-id>/`; and `cosheaf campaign
+  start/show/append-attempt/scorecard/finalize` records and summarizes bounded
+  attempts without accepted-write, human-review, verifier/gate, source-metadata,
+  or promotion authority.
 
 Planned or incomplete:
 
@@ -205,8 +220,9 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- `v0.10.0` tag publication, GitHub release publication, post-tag smoke, and
-  downstream workspace-template/public KB pin updates.
+- V16 external operator task/result packet export and import.
+- V16 campaign runner, pause/resume, scanner, handoff, eval, downstream demo,
+  public KB policy guard, and `v0.11.0` release closeout.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.

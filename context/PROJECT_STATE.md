@@ -3,6 +3,35 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V16 Phase B.1 campaign model core - 2026-06-18
+
+Issue #448 adds the first implementation increment for
+`v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns` on branch
+`campaign-model-core`.
+
+The current surface includes:
+
+- `cosheaf.campaigns` DTOs for `ResearchCampaign`, `CampaignAttempt`,
+  `CampaignBudget`, `CampaignStopCondition`, `CampaignScorecard`,
+  `CampaignOperatorPolicy`, `CampaignRiskFinding`, and `CampaignComparison`;
+- runtime JSON sidecars under `.cosheaf/campaigns/<campaign-id>/`;
+- `cosheaf campaign start --issue <issue-id> --json`;
+- `cosheaf campaign show <campaign-id> --json`;
+- `cosheaf campaign append-attempt <campaign-id> --input-json <path> --json`;
+- `cosheaf campaign scorecard <campaign-id> --json`; and
+- `cosheaf campaign finalize <campaign-id> --json`.
+
+Campaign records, attempts, scorecards, and event logs are review context only.
+They do not create proof, source metadata, human review, verifier pass, gate
+pass, accepted status, accepted theorem/refutation status, or promotion
+authority. Attempts reject accepted KB path references and public-only private
+references. Campaign output remains under ignored `.cosheaf/` runtime paths.
+
+This task does not implement external operator task/result packet export or
+import, campaign runner loops, campaign scanner/handoff reports,
+`cosheaf eval campaign`, hosted provider integration, arbitrary shell
+execution, accepted KB writes, human-review creation, or promotion semantics.
+
 ## V16 Phase A.1 post-v0.10.0 kickoff - 2026-06-18
 
 Issue #446 lands the V16 documentation-only kickoff for

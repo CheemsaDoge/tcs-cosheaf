@@ -35,6 +35,11 @@ cosheaf workflow export-crosscheck <workflow-id> --out reviews/workflow/<name>.m
 cosheaf gap list <workflow-id> --json
 cosheaf gap export <workflow-id> --out reviews/workflow/<name>.json --json
 cosheaf eval reviewable-workflow --json
+cosheaf campaign start --issue <issue-id> --json
+cosheaf campaign show <campaign-id> --json
+cosheaf campaign append-attempt <campaign-id> --input-json <path> --json
+cosheaf campaign scorecard <campaign-id> --json
+cosheaf campaign finalize <campaign-id> --json
 ```
 
 Current behavior:
@@ -98,10 +103,19 @@ Current behavior:
   private-leak rejection, source/formalization gaps, and inconclusive evidence.
   It is a regression signal only and does not create proof, source metadata,
   human review, accepted status, or promotion authority.
+- `campaign start/show/append-attempt/scorecard/finalize` records bounded
+  multi-run campaign sidecars under `.cosheaf/campaigns/`. Campaign attempts
+  can reference workflows, check reports, proof obligations, draft proposals,
+  handoffs, and benchmark reports by safe ID or repository-local path only.
+  Campaign scorecards are review context only and do not run checks, prove
+  statements, create human review, write accepted KB content, or grant
+  promotion authority.
 
 The current implementation lives under:
 
 ```text
+cosheaf/campaigns/models.py
+cosheaf/campaigns/storage.py
 cosheaf/workflow/engine.py
 cosheaf/workflow/cli.py
 cosheaf/workflow/proposal.py
@@ -148,6 +162,20 @@ Cross-check and gap reports may also be exported under `reviews/workflow/`.
 Those exports are explicit review context only. They are not public KB source
 metadata, verifier evidence, human review records, accepted proof, accepted
 refutation, gate pass, or promotion authority.
+
+Campaign runtime records are also ignored sidecars:
+
+```text
+.cosheaf/campaigns/<campaign-id>/campaign.json
+.cosheaf/campaigns/<campaign-id>/attempts/<attempt-id>.json
+.cosheaf/campaigns/<campaign-id>/scorecard.json
+.cosheaf/campaigns/<campaign-id>/events.jsonl
+```
+
+Campaign records and scorecards are not source-of-truth YAML artifacts and are
+not accepted knowledge. The B.1 campaign surface does not yet include task
+packet export/import, campaign runner loops, scanner/handoff reports, or
+campaign evals.
 
 ## Downstream Status
 
