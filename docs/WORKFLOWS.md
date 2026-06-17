@@ -21,6 +21,9 @@ cosheaf workflow show <workflow-id> --json
 cosheaf workflow step <workflow-id> --json
 cosheaf workflow run <workflow-id> --max-steps <n> --execute-local-actions --json
 cosheaf workflow readiness <workflow-id> --json
+cosheaf workflow draft-proposal <workflow-id> --dry-run --json
+cosheaf workflow draft-proposal <workflow-id> --out <path> --json
+cosheaf workflow draft-proposal <workflow-id> --private-root <path> --artifact-id <artifact-id> --json
 ```
 
 Current behavior:
@@ -38,12 +41,18 @@ Current behavior:
   shell.
 - `workflow readiness` loads persisted workflow state and classifies it as
   `ready_for_draft_proposal`, a specific blocker class, or `inconclusive`.
+- `workflow draft-proposal` converts persisted workflow output into a
+  review-only draft proposal. `--dry-run` writes nothing, `--out` writes
+  review-context JSON under a safe repository-local non-public path, and
+  `--private-root ... --artifact-id ...` writes a draft claim YAML under a
+  writable private draft root. It refuses accepted and public KB targets.
 
 The current implementation lives under:
 
 ```text
 cosheaf/workflow/engine.py
 cosheaf/workflow/cli.py
+cosheaf/workflow/proposal.py
 ```
 
 ## Runtime Layout
@@ -57,16 +66,26 @@ Workflow runtime records are written under ignored `.cosheaf/` paths:
 .cosheaf/workflows/<workflow-id>/fsm.json
 .cosheaf/workflows/<workflow-id>/loop.json
 .cosheaf/workflows/<workflow-id>/readiness.json
+.cosheaf/workflows/<workflow-id>/proposal.json
 ```
 
 These files are runtime review context. They are not YAML source-of-truth
 artifacts and must not be treated as accepted knowledge.
 
+Private draft artifact proposals may also be written under a writable private
+root, for example:
+
+```text
+kb/private/draft/claims/<artifact-id>.yaml
+```
+
+Those files are still draft artifacts. They are not source reviewed, human
+reviewed, accepted, or promoted by the proposal command.
+
 ## Not Implemented Yet
 
 The following V14 targets are not complete in the current `v0.9.0` release:
 
-- draft proposal generation from workflow output;
 - workflow handoff build/show/scan/export commands;
 - workflow scanner integration for private leakage, accepted-write attempts,
   hidden reasoning markers, provider payloads, source fabrication, and

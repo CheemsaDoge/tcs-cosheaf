@@ -15,9 +15,10 @@ The current line includes the deterministic execution-kernel baseline from
 `v0.8.0` plus reviewable-workflow CLI surfaces. The current development line
 adds persistent workflow runtime records under
 `.cosheaf/workflows/<workflow-id>/`, `workflow show`, persisted `workflow
-step`, bounded `workflow run`, and persisted readiness reports. Draft-proposal,
-workflow-handoff, scanner/export, and `cosheaf eval reviewable-workflow`
-commands remain follow-up work.
+step`, bounded `workflow run`, persisted readiness reports, and
+`workflow draft-proposal` for review-only proposal output. Workflow-handoff,
+scanner/export, and `cosheaf eval reviewable-workflow` commands remain
+follow-up work.
 
 The `v0.9.0` line does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, Lean semantic alignment, human review, accepted
@@ -181,9 +182,10 @@ Implemented:
   `cosheaf workflow start`, `cosheaf workflow step`, and
   `cosheaf workflow readiness`, with explicit authority notices. The current
   development line extends that surface with persisted workflow state,
-  `cosheaf workflow show`, and bounded `cosheaf workflow run` through the
-  whitelisted local action registry. Draft proposals, workflow handoffs, and
-  reviewable-workflow eval coverage are follow-up work.
+  `cosheaf workflow show`, bounded `cosheaf workflow run` through the
+  whitelisted local action registry, and `cosheaf workflow draft-proposal` for
+  review-context JSON or writable private draft artifact output. Workflow
+  handoffs and reviewable-workflow eval coverage are follow-up work.
 
 Planned or incomplete:
 
@@ -191,7 +193,7 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- Workflow draft-proposal and workflow handoff commands.
+- Workflow handoff commands.
 - `cosheaf eval reviewable-workflow --json` benchmark coverage.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
@@ -386,6 +388,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Codex operator runbook](docs/CODEX_OPERATOR_RUNBOOK.md)
 - [Research loops](docs/RESEARCH_LOOPS.md)
 - [Reviewable workflows](docs/WORKFLOWS.md)
+- [Draft proposals](docs/DRAFT_PROPOSALS.md)
 - [External operator run loop](docs/EXTERNAL_OPERATOR_RUN_LOOP.md)
 - [Operator workspace demo](docs/OPERATOR_WORKSPACE_DEMO.md)
 - [Operator Skill package](docs/OPERATOR_SKILL.md)

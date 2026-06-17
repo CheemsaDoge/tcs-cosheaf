@@ -51,6 +51,19 @@ KB roots, and writes deterministic YAML into the accepted area. Direct accepted
 creation and direct `cosheaf artifact move-status <artifact-id> accepted` are
 intentionally refused.
 
+## Draft Proposal Boundary
+
+`cosheaf workflow draft-proposal` may write review-context proposal JSON or a
+draft claim artifact under a writable private draft root. This command does not
+create source metadata, human review, verifier pass, gate pass, accepted
+status, accepted refutation, or promotion authority. It refuses accepted KB
+targets and public or readonly KB targets.
+
+Draft proposal output is an input to ordinary review. It must still go through
+source review, validation, gatekeeper checks, explicit human review, and
+`cosheaf artifact promote <artifact-id>` before it can become accepted
+knowledge.
+
 ## Public KB Boundary
 
 Public KB promotion is a repository workflow, not a new lifecycle status. A

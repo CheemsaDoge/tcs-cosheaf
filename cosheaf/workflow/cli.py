@@ -18,6 +18,7 @@ from cosheaf.workflow.engine import (
     start_workflow,
     step_workflow,
 )
+from cosheaf.workflow.proposal import write_draft_proposal
 
 console = Console()
 workflow_app = typer.Typer(
@@ -188,3 +189,35 @@ def wf_readiness(
         _emit_json(report.to_dict())
         return
     console.print(f"Readiness for {workflow_id}: {report.classification.value}")
+
+
+@workflow_app.command("draft-proposal")
+def wf_draft_proposal(
+    workflow_id: Annotated[str, typer.Argument()],
+    out: Annotated[Path | None, typer.Option("--out")] = None,
+    private_root: Annotated[Path | None, typer.Option("--private-root")] = None,
+    artifact_id: Annotated[str | None, typer.Option("--artifact-id")] = None,
+    dry_run: Annotated[bool, typer.Option("--dry-run", is_flag=True)] = False,
+    repo_root: Annotated[Path, typer.Option("--repo-root")] = Path("."),
+    json_output: Annotated[bool, typer.Option("--json", is_flag=True)] = False,
+) -> None:
+    """Build or write a review-only draft proposal from workflow output."""
+    try:
+        result = write_draft_proposal(
+            RepoContext(repo_root),
+            workflow_id,
+            out=out,
+            private_root=private_root,
+            artifact_id=artifact_id,
+            dry_run=dry_run,
+        )
+    except Exception as exc:
+        _exit_with_error(exc, json_output=json_output)
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    mode = "dry-run" if result.dry_run else "written"
+    console.print(f"Draft proposal {mode}: {workflow_id}")
+    if result.target_path:
+        console.print(f"- target: {result.target_path}")
+    console.print("- accepted_write: false")
