@@ -3,6 +3,51 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.7.0 Development Kickoff - 2026-06-17
+
+Started the 0.7.0 Bounded Research Loop + Attempt Memory development line
+after completing the published v0.6.0 Operator Session + Review Handoff
+release.
+
+Task A.1 (post-v060-v070-kickoff) landed the post-v0.6.0 state audit, V11
+development plan, ADR 0028, updated roadmap, and milestone/project-state
+records. This is a docs-only kickoff task; no runtime behavior, schemas,
+dependencies, CLI commands, or KB artifacts changed.
+
+The v0.6.0 completion audit verified:
+- Package version 0.6.0 ?
+- Published v0.6.0 tag and GitHub release ?
+- Downstream workspace-template pins @v0.6.0 ?
+- Downstream public KB CI installs @v0.6.0 ?
+- No open PRs/issues across three repos ?
+- Operator session and handoff CLI present ?
+- No accepted-write/promotion/human-review authority added ?
+- Leak scanner blocks unsafe exports ?
+- Public/private boundaries enforced ?
+- MCP remains optional adapter ?
+- No default hosted provider or CI network dependency ?
+- Ecosystem smoke coverage present ?
+- Limitations explicitly documented ?
+
+The v0.7.0 line will add bounded multi-attempt research loops with:
+- Research loop model, storage, CLI
+- Loop runner with deterministic next-action planning
+- External operator task export/result import protocol
+- Attempt-memory index and repeat-failure detection
+- Failure-avoidance context for next attempts
+- Loop scanner extending session scanner
+- Ecosystem demos and eval matrix
+- Conservative v0.7.0 RC and publication
+
+This line will NOT add production autonomy, automatic theorem proving, accepted
+promotion through loops, AI as human review, default hosted provider, or
+unrestricted shell execution. Loop success will never mean accepted status.
+
+Reference plan: docs/CODEX_DEVELOPMENT_PLAN_V11.md
+Reference ADR: docs/ADR/0028-bounded-research-loop-attempt-memory.md
+Reference audit: docs/POST_V060_STATE_AUDIT.md
+
+
 ## v0.6.0 Publication Closeout - 2026-06-17
 
 Issue 396 closes out the published `v0.6.0` Operator Session + Review Handoff
