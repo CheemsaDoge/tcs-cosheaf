@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_step_result.schema.json",
+  "title": "ResearchLoopStepResult",
+  "description": "Result of recording one deterministic research-loop planning step.",
+  "type": "object",
+  "required": [
+    "loop_id",
+    "next_result",
+    "event_written",
+    "authority_notice"
+  ],
+  "properties": {
+    "loop_id": { "type": "string", "minLength": 1 },
+    "next_result": { "$ref": "research_loop_next_result.schema.json" },
+    "event_written": { "type": "boolean" },
+    "events_path": { "type": ["string", "null"] },
+    "authority_notice": { "type": "string" }
+  },
+  "additionalProperties": false
+}

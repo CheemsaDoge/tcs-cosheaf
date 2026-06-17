@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_import_result.schema.json",
+  "title": "ResearchLoopImportResult",
+  "description": "Result of importing an external operator result into loop runtime memory.",
+  "type": "object",
+  "required": [
+    "loop_id",
+    "attempt_id",
+    "attempt",
+    "loop",
+    "relative_path",
+    "events_path",
+    "authority_notice"
+  ],
+  "properties": {
+    "loop_id": { "type": "string", "minLength": 1 },
+    "attempt_id": { "type": "string", "minLength": 1 },
+    "attempt": { "$ref": "research_loop_attempt.schema.json" },
+    "loop": { "$ref": "research_loop.schema.json" },
+    "relative_path": { "type": "string", "minLength": 1 },
+    "events_path": { "type": "string", "minLength": 1 },
+    "authority_notice": { "type": "string" }
+  },
+  "additionalProperties": false
+}

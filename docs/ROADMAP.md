@@ -17,6 +17,23 @@ Layer support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
+## Active Development Focus: v0.7.0 Bounded Research Loop + Attempt Memory
+
+The active post-`v0.6.0` development line is `v0.7.0` Bounded Research Loop +
+Attempt Memory. Phase B has landed the core research-loop DTOs, runtime
+storage, CLI commands, schemas, tests, and docs for
+`start/show/list/append-attempt/finalize`. Phase C.1 has landed the
+deterministic runner and external operator task/result protocol:
+`next/step/run --dry-run/export-task/import-result`. The next development
+focus is Phase D: attempt-memory indexing, repeat-failure detection, and loop
+scanner/handoff hardening.
+
+This line keeps the same authority boundary: loop records, task packets,
+operator results, and failure memory are review context only. They do not
+write accepted knowledge, create human review, mutate verifier results, mark
+gate pass, promote artifacts, call hosted providers by default, execute
+arbitrary shell through Cosheaf, or claim automatic theorem proving.
+
 ## Completed Release Focus: v0.6.0 Operator Session + Review Handoff
 
 The completed post-`v0.5.0` line is `v0.6.0` Operator Session + Review Handoff.

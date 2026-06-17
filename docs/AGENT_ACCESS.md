@@ -161,6 +161,12 @@ Agent-safe read/check commands include:
 - `cosheaf strategy next <plan-id> --json`
 - `cosheaf strategy update-from-run --plan <plan-id> --run <run-id> --json`
 - `cosheaf strategy export-review --plan <plan-id> --dry-run --json`
+- `cosheaf research-loop start --issue <issue-id> --json`
+- `cosheaf research-loop show <loop-id> --json`
+- `cosheaf research-loop list --json`
+- `cosheaf research-loop next <loop-id> --json`
+- `cosheaf research-loop run <loop-id> --max-attempts <n>
+  --wallclock-minutes <n> --dry-run --json`
 - `cosheaf orchestrator plan --issue <issue-id> --json`
 - `cosheaf orchestrator run --issue <issue-id> --provider fake --json`
 - `cosheaf orchestrator run --issue <issue-id> --provider openai-compatible
@@ -192,6 +198,11 @@ input:
   --target-artifact <artifact-id> --json`
 - `cosheaf bundle submit --input-json <path> --json`
 - `cosheaf counterexample evidence stage --input-json <path> --json`
+- `cosheaf research-loop append-attempt <loop-id> --input-json <path> --json`
+- `cosheaf research-loop step <loop-id> --json`
+- `cosheaf research-loop export-task <loop-id> --out <path> --json`
+- `cosheaf research-loop import-result <loop-id> --input-json <path> --json`
+- `cosheaf research-loop finalize <loop-id> --json`
 - `cosheaf review request --input-json <path> --json`
 - `cosheaf review request-from-bundle --bundle <path> --json`
 
@@ -200,6 +211,14 @@ paths without writing files. These commands refuse accepted paths, readonly KB
 roots, accepted artifact status, and review/verifier/accepted-status authority
 spoofing. They do not run promotion, do not create human review, do not call
 hosted providers, and do not change gate or verifier results.
+
+Research-loop runtime writes are narrower than draft/artifact writes:
+`append-attempt` and `import-result` write ignored loop runtime records under
+`.cosheaf/research-loops/`; `step` appends a planning event; `export-task`
+writes an explicit repository-local operator task packet; and `finalize`
+marks the runtime loop terminal. These records are review context only and
+must not be used as proof, source metadata, verifier pass, gate pass, human
+review, accepted status, accepted refutation, or promotion authority.
 
 `review request-from-bundle` derives a draft informational review request from
 a WorkerBundle v2. It preserves assumptions, uncertainty, failed attempts,
@@ -311,6 +330,37 @@ providers, require MCP, create verifier results, create human review, write
 accepted knowledge, mark accepted status, or authorize promotion. Candidate
 counterexamples remain candidate-only labels. Checked counterexample evidence
 remains review evidence only. Research-run records remain provenance only.
+
+### Research Loop Surface
+
+The `v0.7.0` research-loop line is a CLI-first runtime memory surface for
+bounded multi-attempt research. The Phase B core stores loops and attempts
+under `.cosheaf/research-loops/` and exposes:
+
+```bash
+cosheaf research-loop start --issue <issue-id> --json
+cosheaf research-loop show <loop-id> --json
+cosheaf research-loop list --json
+cosheaf research-loop append-attempt <loop-id> --input-json attempt.json --json
+cosheaf research-loop finalize <loop-id> --json
+```
+
+The C.1 runner/operator protocol adds:
+
+```bash
+cosheaf research-loop next <loop-id> --json
+cosheaf research-loop step <loop-id> --json
+cosheaf research-loop run <loop-id> --max-attempts <n> --wallclock-minutes <n> --dry-run --json
+cosheaf research-loop export-task <loop-id> --out <path> --json
+cosheaf research-loop import-result <loop-id> --input-json operator_result.json --json
+```
+
+`next` and `run --dry-run` are planning surfaces. `step`, `append-attempt`,
+`export-task`, `import-result`, and `finalize` write only runtime or explicit
+review-context files. Non-dry-run `run` is not implemented in C.1 and is
+refused. Research loops do not call hosted providers, execute arbitrary shell,
+write accepted knowledge, create human review, mutate verifier results, mark
+gate pass, or promote artifacts.
 
 ### Artifact Failure Memory Surface
 
@@ -677,7 +727,8 @@ private research disclosure.
 As of this document, the repository has a thin typed service layer, versioned
 agent-access DTO/JSON Schema contracts, a provider-send context preview policy
 service, deterministic JSON output for core read-only CLI commands, controlled
-CLI draft/staging write commands, provider CLI commands for config checks,
+CLI draft/staging write commands, research-loop runtime records with bounded
+C.1 runner/operator-protocol surfaces, provider CLI commands for config checks,
 context-send preview, and deterministic fake runs, a local stdio MCP surface
 with read-only and controlled draft/review/runtime tools as optional adapter
 code, and an optional documentation-only

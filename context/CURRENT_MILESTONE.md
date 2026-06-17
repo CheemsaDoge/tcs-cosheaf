@@ -16,10 +16,12 @@ Turn the v0.6.0 operator session and review handoff layer into a bounded multi-a
 
 ### In scope
 
-- Research loop data model, storage, CLI, schemas, tests, and docs ?
+- Research loop data model, storage, CLI, schemas, tests, and docs (Phase B
+  complete)
 
-- Loop runner with deterministic next-action planning
-- External operator task packet export and result import protocol
+- Loop runner with deterministic next-action planning (Phase C.1 complete)
+- External operator task packet export and result import protocol (Phase C.1
+  complete)
 - Attempt-memory index and repeat-failure detection
 - Failure-avoidance context injection into next attempts
 - Loop scanner extending session scanner coverage
@@ -47,10 +49,27 @@ Turn the v0.6.0 operator session and review handoff layer into a bounded multi-a
 
 ## Current phase
 
-**Phase B: bounded research-loop core**
+**Phase D: attempt memory, repeat-failure detection, and loop scanner**
 
 Task B.1: bounded-research-loop-core (completed)
-Next: Task C.1: research-loop-runner-and-operator-protocol
+Task C.1: research-loop-runner-and-operator-protocol (completed on branch
+`research-loop-runner-and-operator-protocol`, issue #402)
+
+Current C.1 status:
+
+- service and CLI implementation is present for `next`, `step`, `run
+  --dry-run`, `export-task`, and `import-result`;
+- C.1 DTO schemas are present under `schemas/`;
+- focused C.1 regression coverage is present for deterministic planning,
+  dry-run write boundaries, operator task export, operator result import,
+  authority rejection, missing result/failure rejection, previous-failure
+  surfacing, and budget exhaustion;
+- non-dry-run loop execution remains refused until a later explicit
+  deterministic implementation.
+
+Next milestone work should start from Phase D. C.1 does not include
+attempt-memory clustering, scanner CLI, loop handoff export, hosted provider
+calls, automatic theorem proving, or Lean semantic alignment.
 
 ## Non-negotiable invariants
 

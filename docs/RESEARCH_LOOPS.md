@@ -11,7 +11,7 @@ accepted knowledge, source metadata, or promotion authority.
 
 ## Scope
 
-Implemented in this slice:
+Implemented through Phase C.1:
 
 - core DTOs for loops, attempts, budgets, decisions, stop conditions, failure
   records, evidence summaries, policy findings, next actions, and review
@@ -23,13 +23,28 @@ Implemented in this slice:
 - safety checks for accepted KB paths, authority overclaims, hidden-reasoning
   fields, terminal attempt requirements, ordered attempts, and public-mode
   private references.
+- deterministic runner and external operator protocol surface:
 
-Not implemented in this slice:
+- `cosheaf research-loop next <loop-id> --json`;
+- `cosheaf research-loop step <loop-id> --json`;
+- `cosheaf research-loop run <loop-id> --max-attempts <n>
+  --wallclock-minutes <n> --dry-run --json`;
+- `cosheaf research-loop export-task <loop-id> --out <path> --json`;
+- `cosheaf research-loop import-result <loop-id> --input-json <path> --json`;
+- DTOs for previous-failure summaries, next/step/run results, operator task
+  packets, operator result imports, and imported operator failures.
 
-- deterministic `next`, `step`, or `run` runner commands;
+These C.1 commands are still review-context infrastructure. They do not call
+hosted providers, run arbitrary shell commands, mark review, create verifier
+passes, run gates, write accepted knowledge, or promote artifacts. `run`
+currently supports dry-run planning only; non-dry-run local execution remains
+explicitly refused until a later deterministic implementation.
+
+Not implemented yet:
+
 - attempt-memory clustering;
 - scanner CLI;
-- handoff export for loop packets;
+- loop handoff export beyond explicit operator task JSON packets;
 - hosted provider calls;
 - automatic theorem proving or Lean semantic alignment.
 
@@ -144,6 +159,89 @@ Terminal status can be changed explicitly:
 cosheaf research-loop finalize <loop-id> --status failed --json
 ```
 
+Preview the deterministic next action:
+
+```bash
+cosheaf research-loop next <loop-id> --json
+```
+
+Record one planning-step event:
+
+```bash
+cosheaf research-loop step <loop-id> --json
+```
+
+Dry-run bounded planning without writing source-of-truth state:
+
+```bash
+cosheaf research-loop run <loop-id> \
+  --max-attempts 5 \
+  --wallclock-minutes 30 \
+  --dry-run \
+  --json
+```
+
+Export a repository-local external-operator task packet:
+
+```bash
+cosheaf research-loop export-task <loop-id> \
+  --out .cosheaf/research-loops/<loop-id>/operator_task.json \
+  --json
+```
+
+Import a structured external-operator result as a loop attempt:
+
+```bash
+cosheaf research-loop import-result <loop-id> \
+  --input-json operator_result.json \
+  --json
+```
+
+`export-task` writes only the requested task packet plus a bounded loop event.
+`import-result` writes a runtime attempt under `.cosheaf/research-loops/`.
+Neither command writes `kb/accepted/`, creates human review, mutates verifier
+results, marks a gate pass, or promotes artifacts.
+
+## External Operator Packet
+
+An operator task packet contains:
+
+- `loop_id`
+- `attempt_id`
+- `issue_id`
+- `objective`
+- `allowed_actions`
+- `forbidden_actions`
+- `context_refs`
+- `relevant_artifact_cards`
+- `previous_failures_to_avoid`
+- `required_outputs`
+- `budget`
+- `stop_conditions`
+- `review_handoff_instructions`
+
+The packet is an instruction boundary for an external operator. It is not an
+agent runtime and does not grant new write authority.
+
+An operator result import expects structured JSON with:
+
+- `attempted_direction`
+- `actions_taken`
+- `artifacts_referenced`
+- `drafts_created`
+- `checks_run`
+- `failures`
+- `candidate_counterexamples`
+- `checked_counterexamples`
+- `evidence_refs`
+- `next_recommendation`
+- `claimed_authority_flags`
+- `result_summary`
+
+Every value in `claimed_authority_flags` must be false. The import rejects
+accepted-write references, human-review claims, promotion claims, verifier-pass
+claims, gate-pass claims, and hidden-reasoning fields.
+
 ## Attempt JSON Example
 
 ```json
@@ -208,10 +306,21 @@ private-scoped IDs. Private research mode is explicit and still non-authoritativ
 The regression suite covers:
 
 - model serialization;
-- schema file presence;
+- schema file presence for Phase B and C.1 DTO families;
 - invalid terminal transition;
 - accepted-path rejection;
 - missing result/failure rejection;
 - deterministic storage paths;
 - public-mode private-reference rejection;
 - CLI JSON smoke for start/show/append/finalize.
+- deterministic `next`;
+- `run --dry-run` writes no source-of-truth files;
+- `step` writes one planning event;
+- task-packet export with previous failures surfaced;
+- operator-result import and failure-memory update;
+- operator-result import rejection for accepted writes, authority overclaims,
+  and missing result/failure evidence;
+- budget exhaustion stop conditions.
+
+Phase D remains future work: attempt-memory indexing, repeat-failure detection,
+loop scanner CLI, and loop handoff export have not landed in C.1.

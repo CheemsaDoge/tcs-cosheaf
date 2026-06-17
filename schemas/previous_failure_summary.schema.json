@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/previous_failure_summary.schema.json",
+  "title": "PreviousFailureSummary",
+  "description": "Bounded prior failure summary surfaced before a research-loop attempt.",
+  "type": "object",
+  "required": [
+    "failure_id",
+    "attempt_id",
+    "attempted_direction",
+    "why_it_failed",
+    "avoid_in_future",
+    "should_retry",
+    "signature"
+  ],
+  "properties": {
+    "failure_id": { "type": "string", "minLength": 1 },
+    "attempt_id": { "type": "string", "minLength": 1 },
+    "attempted_direction": { "type": "string", "minLength": 1 },
+    "why_it_failed": { "type": "string", "minLength": 1 },
+    "avoid_in_future": { "type": "string", "minLength": 1 },
+    "should_retry": { "type": "boolean" },
+    "retry_conditions": { "type": ["string", "null"] },
+    "signature": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}

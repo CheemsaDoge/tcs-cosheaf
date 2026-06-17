@@ -1,15 +1,14 @@
 # Historical Codex Development Plan
 
 This document is historical project memory. It is superseded by
-[`CODEX_DEVELOPMENT_PLAN_V4.md`](CODEX_DEVELOPMENT_PLAN_V4.md), which records
-the current post-`v0.2.1` provider transport and agent workflow hardening
-plan. The earlier fixed CLI-first plan remains available in
-[`CODEX_DEVELOPMENT_PLAN_V3.md`](CODEX_DEVELOPMENT_PLAN_V3.md).
+[`CODEX_DEVELOPMENT_PLAN_V11.md`](CODEX_DEVELOPMENT_PLAN_V11.md), which
+records the current post-`v0.6.0` bounded research-loop and attempt-memory
+plan. Earlier plans remain available for traceability only.
 
 Do not use this file to select the next task. It remains in the repository for
 traceability only because it describes earlier local-MVP planning and fixed
-longplan work. If this file conflicts with `CODEX_DEVELOPMENT_PLAN_V4.md`, the
-V4 plan controls.
+longplan work. If this file conflicts with `CODEX_DEVELOPMENT_PLAN_V11.md`,
+the V11 plan controls.
 
 Codex conversations are not project memory. If a decision, workflow
 constraint, known limitation, or operator pitfall matters after context
@@ -43,5 +42,5 @@ The durable CLI-first direction remains:
   write accepted knowledge or bypass validation, gates, human review, and
   promotion.
 
-Use [`CODEX_DEVELOPMENT_PLAN_V4.md`](CODEX_DEVELOPMENT_PLAN_V4.md) for current
-task order and PR scope.
+Use [`CODEX_DEVELOPMENT_PLAN_V11.md`](CODEX_DEVELOPMENT_PLAN_V11.md) for
+current task order and PR scope.

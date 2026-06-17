@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/operator_result_failure.schema.json",
+  "title": "OperatorResultFailure",
+  "description": "Structured failure imported from an external operator result.",
+  "type": "object",
+  "required": [
+    "attempted_direction",
+    "why_it_failed",
+    "evidence_for_failure",
+    "avoid_in_future"
+  ],
+  "properties": {
+    "attempted_direction": { "type": "string", "minLength": 1 },
+    "why_it_failed": { "type": "string", "minLength": 1 },
+    "evidence_for_failure": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "invalid_approach",
+          "missing_dependency",
+          "insufficient_evidence",
+          "formal_mismatch",
+          "counterexample_found",
+          "timeout",
+          "resource_exhausted",
+          "tooling_unavailable",
+          "blocked_by_policy",
+          "unknown"
+        ]
+      }
+    },
+    "avoid_in_future": { "type": "string", "minLength": 1 },
+    "should_retry": { "type": "boolean" },
+    "retry_conditions": { "type": ["string", "null"] },
+    "related_artifacts": { "type": "array", "items": { "type": "string" } },
+    "related_previous_attempts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "counterexample_candidate_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "checked_counterexample_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "verifier_or_gate_errors": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "signature": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

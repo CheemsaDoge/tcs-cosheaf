@@ -14,6 +14,13 @@ workspace/public-KB pins have moved to `@v0.6.0`. The `v0.6.0` release adds
 bounded operator-session records, optional MCP session recording, leak
 scanning, runtime handoff bundles, explicit handoff export,
 workspace/public-KB downstream smoke, and release documentation.
+Active development after `v0.6.0` is the unreleased `v0.7.0` Bounded Research
+Loop + Attempt Memory line. Phase B added core research-loop runtime records
+under `.cosheaf/research-loops/`, and Phase C.1 adds deterministic
+next-action planning plus external operator task/result packet commands. That
+line is not released yet and does not add production autonomy, hosted-provider
+defaults, automatic theorem proving, human review, accepted writes, verifier
+passes, gate passes, or promotion authority.
 Earlier published baselines include **v0.3.0 Checked Evidence + Research Run
 Loop** and **v0.4.0 Strategy Planner + Research Task Graph**. The `v0.1.1`
 tag remains the downstream Formal Link Layer support
@@ -173,6 +180,11 @@ Implemented:
   operator-session records, optional MCP session recording, leak scanning,
   runtime handoff bundles, review-context handoff export, downstream
   demo/policy smoke, and ecosystem matrix rows.
+- Unreleased `v0.7.0` research-loop surfaces: core loop/attempt runtime
+  records, structured failure memory, deterministic C.1 next/step/run
+  dry-run planning, and external operator task/result packet commands. These
+  records stay under ignored `.cosheaf/` runtime paths and remain review
+  context only.
 
 Planned or incomplete:
 

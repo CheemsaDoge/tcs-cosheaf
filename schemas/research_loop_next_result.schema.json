@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_next_result.schema.json",
+  "title": "ResearchLoopNextResult",
+  "description": "Deterministic next-action preview for a bounded research loop.",
+  "type": "object",
+  "required": [
+    "loop_id",
+    "attempt_id",
+    "attempt_number",
+    "next_action",
+    "previous_failures_to_avoid",
+    "stop_conditions",
+    "authority_notice"
+  ],
+  "properties": {
+    "loop_id": { "type": "string", "minLength": 1 },
+    "attempt_id": { "type": "string", "minLength": 1 },
+    "attempt_number": { "type": "integer", "minimum": 1 },
+    "next_action": { "$ref": "attempt_next_action.schema.json" },
+    "previous_failures_to_avoid": {
+      "type": "array",
+      "items": { "$ref": "previous_failure_summary.schema.json" }
+    },
+    "stop_conditions": {
+      "type": "array",
+      "items": { "$ref": "research_loop_stop_condition.schema.json" }
+    },
+    "authority_notice": { "type": "string" }
+  },
+  "additionalProperties": false
+}

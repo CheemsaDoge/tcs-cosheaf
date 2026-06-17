@@ -62,11 +62,17 @@ checks:
   shell, environment dumps, arbitrary filesystem access, direct promotion,
   human-review marking, or accepted-path writes.
 - Research loop records are review context only. Loop attempts must not write
-  `kb/accepted/`, create human review, or claim promotion authority. Structured
-  failure memory is research memory, not proof or accepted evidence.
-  verifier pass, checked counterexample evidence, human review, gate success,
-  accepted status, or promotion evidence, and public-only context must not
-  expose private failure-log text.
+  `kb/accepted/`, create human review, mutate verifier results, mark gate
+  pass, or claim promotion authority. Structured failure memory is research
+  memory, not proof, accepted evidence, verifier pass, checked counterexample
+  evidence, human review, gate success, accepted status, or promotion evidence.
+  Public-only loop attempts must not expose private references.
+- Research-loop operator task packets and imported operator results are
+  review context only. They must reject accepted-write references,
+  hidden-reasoning fields, true claimed authority flags, human-review claims,
+  verifier-pass claims, gate-pass claims, and promotion claims. `run --dry-run`
+  must not write source-of-truth files, and non-dry-run loop execution remains
+  refused until an explicit deterministic implementation exists.
 - Checked counterexample evidence is review evidence only. It must not claim
   human review, accepted refutation, accepted status, verifier pass, gate pass,
   or promotion authority, and public-only context must not expose private

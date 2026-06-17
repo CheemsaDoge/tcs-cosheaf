@@ -3,6 +3,79 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Task C.1 completed: research-loop runner and operator protocol - 2026-06-17
+
+Issue #402 / branch `research-loop-runner-and-operator-protocol` is the
+completed Phase C.1 work item for the v0.7.0 bounded research-loop line.
+
+Implementation state on this branch:
+
+- `cosheaf/research/loop.py` adds DTOs for previous-failure summaries,
+  deterministic next/step/run results, external operator task packets,
+  operator result failures, operator results, and import results.
+- `cosheaf/research/loop.py` adds service functions for `next_loop_action`,
+  `step_loop`, `run_loop`, `build_operator_task`, `export_operator_task`, and
+  `import_operator_result`.
+- `cosheaf/cli.py` adds `cosheaf research-loop
+  next/step/run/export-task/import-result`.
+- `run_loop` currently supports dry-run planning only and explicitly refuses
+  non-dry-run execution.
+- C.1 JSON schemas are present for previous-failure summaries, next/step/run
+  results, external-operator task packets, operator result failures, operator
+  results, and import results.
+- Focused regression coverage covers deterministic `next`, dry-run
+  source-of-truth boundaries, `step` event writes, task-packet export,
+  previous-failure surfacing, operator-result import, accepted-write
+  rejection, authority-overclaim rejection, required result/failure evidence,
+  budget exhaustion, and CLI JSON smoke.
+
+Documentation aligned for closeout:
+
+- `README.md` and `README.zh-CN.md` distinguish the published `v0.6.0` release
+  from the active unreleased `v0.7.0` research-loop line.
+- `docs/RESEARCH_LOOPS.md`, `docs/CODEX_OPERATOR_RUNBOOK.md`,
+  `docs/AGENT_ACCESS.md`, `docs/OPERATOR_SESSIONS.md`, `docs/ROADMAP.md`, and
+  `docs/SECURITY.md` describe the C.1 runner/operator-protocol boundary without
+  granting accepted-write, review, verifier, gate, hosted-provider, shell, or
+  promotion authority.
+- `context/INTERFACE_REGISTRY.md` records the new Python, CLI, and schema
+  surfaces.
+- `context/CURRENT_MILESTONE.md` marks Phase C.1 complete and points next work
+  at Phase D.
+- `docs/CODEX_DEVELOPMENT_PLAN.md` now points readers to the current V11 plan
+  instead of the historical V4 plan.
+- `docs/LONGPLAN_COMPLETION_AUDIT.md` is explicitly historical and no longer
+  claims the old V4/provider-hardening plan is current.
+
+Verification during C.1 closeout:
+
+- `python -m pytest tests/test_research_loop.py tests/test_schema_files_exist.py -q`:
+  passed with 33 tests.
+- `make lint`: passed after import-order and line-length cleanup.
+- `make typecheck`: passed after narrowing optional event-path typing.
+- Full closeout verification also passed:
+  - `make lint`: all ruff checks passed.
+  - `make typecheck`: mypy passed for 187 source files.
+  - `make test`: 743 passed.
+  - `make validate`: validation passed for 20 YAML records.
+  - `make gate`: gate verdict passed.
+  - `git diff --check`: no whitespace errors; Git reported expected LF-to-CRLF
+    working-copy warnings on modified files.
+- Stale-status scan found no remaining current-doc matches for C.1
+  in-progress/pending schema/test wording after closeout updates.
+
+Remaining Phase D work, not part of C.1:
+
+- attempt-memory indexing and repeat-failure detection;
+- loop scanner CLI;
+- loop handoff export beyond explicit operator task JSON packets;
+- ecosystem demo/eval rows for completed loop workflows;
+- conservative v0.7.0 release candidate closeout.
+
+No accepted KB writes, human review creation, verifier-result mutation,
+gate-pass creation, hosted-provider call, arbitrary shell execution through
+Cosheaf, or promotion-policy change was added by C.1.
+
 ## Task B.1: bounded-research-loop-core completed - 2026-06-17
 
 Landed the core research-loop data model, storage, CLI, schemas, tests, and docs
