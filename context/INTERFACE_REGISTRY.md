@@ -4,6 +4,25 @@
 
 ### Active And Planned Interfaces
 
+- Checker registry DTOs, runtime storage, and CLI commands are implemented
+  under `cosheaf.checkers`. The Python surface defines
+  `CheckerRegistry`, `CheckerSpec`, `CheckerInput`, `CheckerResult`,
+  `CheckerRunRecord`, `CheckerCapability`, `CheckerAuthorityNotice`,
+  `CheckerStatus`, `CheckerType`, `CheckerExecution`, `CheckerHandler`,
+  `CheckerRegistryError`, and `default_checker_registry`. Built-in checker IDs
+  are `schema_check`, `artifact_path_policy_check`, `gate_check`,
+  `python_local_check`, `sat_optional_check`, `smt_optional_check`,
+  `lean_optional_check`, `source_metadata_check`, `private_leak_check`, and
+  `authority_overclaim_check`. Runtime records are JSON under
+  `.cosheaf/checker-runs/<run-id>/result.json` with bounded
+  `.cosheaf/checker-runs/<run-id>/stdout.txt` and `stderr.txt` sidecars. The
+  CLI surface is `cosheaf checker list --json`, `cosheaf checker describe
+  <checker-id> --json`, `cosheaf checker run <checker-id> --input-json <path>
+  --json`, and `cosheaf checker run-suite --input-json <path> --json`.
+  Checker output is review context only. It does not grant proof, source
+  metadata, human review, verifier pass, gate pass, accepted status, accepted
+  theorem/refutation, or promotion authority; skipped checker results are not
+  passes.
 - Reviewable-workflow DTOs and CLI metadata commands are implemented under
   `cosheaf.workflow`. The current Python surface defines `WorkflowStatus`,
   `ReadinessClass`, `WorkflowInput`, `WorkflowOutput`,

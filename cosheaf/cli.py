@@ -44,6 +44,7 @@ from cosheaf.agent.providers import (
     ProviderMode,
 )
 from cosheaf.agent.task import WorkerType
+from cosheaf.checkers.cli import checker_app
 from cosheaf.config.workspace import KbRootConfig, WorkspaceConfigError
 from cosheaf.core.artifact import BaseArtifact, is_external_dependency_ref
 from cosheaf.core.ids import validate_artifact_id
@@ -359,6 +360,7 @@ counterexample_app.add_typer(counterexample_evidence_app, name="evidence")
 app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
 app.add_typer(gate_app, name="gate")
+app.add_typer(checker_app, name="checker")
 app.add_typer(action_app, name="action")
 app.add_typer(librarian_app, name="librarian")
 app.add_typer(fsm_app, name="orchestrator-fsm")

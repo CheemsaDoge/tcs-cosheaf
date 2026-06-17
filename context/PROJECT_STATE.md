@@ -3,6 +3,35 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V15 Phase B checker registry core - 2026-06-18
+
+Issue #436 adds the typed checker registry core for the V15
+Cross-Check Evidence line. The current checker surface includes:
+
+- `cosheaf.checkers` models and registry helpers;
+- built-in checker IDs `schema_check`, `artifact_path_policy_check`,
+  `gate_check`, `python_local_check`, `sat_optional_check`,
+  `smt_optional_check`, `lean_optional_check`, `source_metadata_check`,
+  `private_leak_check`, and `authority_overclaim_check`;
+- normalized checker statuses `pass`, `fail`, `error`, `skipped`,
+  `inconclusive`, `unsupported`, and `blocked_by_policy`;
+- `cosheaf checker list --json`;
+- `cosheaf checker describe <checker-id> --json`;
+- `cosheaf checker run <checker-id> --input-json <path> --json`;
+- `cosheaf checker run-suite --input-json <path> --json`;
+- runtime records under `.cosheaf/checker-runs/<run-id>/result.json`,
+  `stdout.txt`, and `stderr.txt`.
+
+Checker output remains review context only. It is not proof, source metadata,
+human review, verifier pass, gate pass, accepted status, accepted theorem or
+refutation, or promotion authority. Missing optional SAT, SMT, or Lean tools
+are `skipped`, not pass. `python_local_check` runs only an explicit
+repository-local Python script and is not an arbitrary shell surface.
+
+This phase does not change artifact schema, accepted promotion semantics,
+gatekeeper semantics, verifier adapter contracts, public KB content, or
+workspace-template behavior.
+
 ## V15 Phase A kickoff after V14 closeout - 2026-06-18
 
 V14 is closed for the reviewable-workflow MVP line. The public `v0.9.0` tag
