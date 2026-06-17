@@ -12,7 +12,9 @@ TCS-Cosheaf 是一个以 Git 为持久记忆层的、带类型约束的理论计
 > Phase B 已加入 `.cosheaf/research-loops/` 运行时记录，C.1 已加入
 > `next/step/run --dry-run/export-task/import-result` 的受限 CLI surface，
 > D.1 已加入运行时 attempt memory、重复失败规避、`retry_justification`
-> 检查和 loop scanner。
+> 检查和 loop scanner。Phase E 已开始加入确定性的 research-loop eval 与
+> framework ecosystem smoke rows；workspace-template demo 与 public-KB policy
+> alignment 仍是后续单独 PR。
 > 这些内容尚未发布，也不授予 accepted 写入、人类评审、验证器通过、
 > gate 通过或 promotion 权限。它仍不是生产就绪软件，也不提供 Web UI、
 > 默认真实托管提供商路径、自动定理证明、完整 Lean 自动形式化、自动 accepted

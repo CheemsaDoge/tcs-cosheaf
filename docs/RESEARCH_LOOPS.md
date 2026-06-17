@@ -11,7 +11,7 @@ accepted knowledge, source metadata, or promotion authority.
 
 ## Scope
 
-Implemented through Phase D.1:
+Implemented through the current framework Phase E.1 slice:
 
 - core DTOs for loops, attempts, budgets, decisions, stop conditions, failure
   records, evidence summaries, policy findings, next actions, and review
@@ -42,7 +42,13 @@ Implemented through Phase D.1:
   authority-boundary scanning;
 - deterministic metrics for attempt counts, unique directions, repeat
   failures, retry blockers, counterexamples, draft refs, handoff refs, and
-  scanner blockers.
+  scanner blockers;
+- `cosheaf eval research-loop --json` for deterministic bounded-loop
+  regression metrics;
+- framework ecosystem smoke rows for the research-loop eval and local
+  start/append-attempt/next/export-task/import-result/scan/finalize workflow;
+- framework-side matrix row definitions for downstream workspace-template
+  `research-loop-demo` and public-KB `RESEARCH_LOOP_POLICY.md` checks.
 
 These commands are still review-context infrastructure. They do not call
 hosted providers, run arbitrary shell commands, mark review, create verifier
@@ -50,10 +56,13 @@ passes, run gates, write accepted knowledge, or promote artifacts. `run`
 currently supports dry-run planning only; non-dry-run local execution remains
 explicitly refused until a later deterministic implementation.
 
-Not implemented yet:
+Not complete yet:
 
 - loop handoff export beyond explicit operator task JSON packets;
-- ecosystem demos and eval matrix rows for completed loop workflows;
+- downstream workspace-template `make research-loop-demo`;
+- downstream public-KB research-loop policy docs and guard alignment;
+- full three-repository Phase E matrix completion after the downstream PRs
+  land;
 - v0.7.0 release-candidate metadata and publication;
 - hosted provider calls;
 - automatic theorem proving or Lean semantic alignment.
@@ -376,6 +385,7 @@ The regression suite covers:
 - unjustified repeat retry rejection and justified retry recording;
 - loop scanner clean and blocking paths with deterministic metrics.
 
-Phase E/F remain future work: ecosystem demos/evals, loop handoff dry-run rows,
-v0.7.0 release-candidate metadata, and publication closeout have not landed in
-D.1.
+Framework Phase E.1 adds `cosheaf eval research-loop --json` and local
+research-loop ecosystem smoke rows. The downstream workspace-template demo,
+public-KB policy documentation, full three-repository Phase E matrix closeout,
+v0.7.0 release-candidate metadata, and publication closeout remain future work.

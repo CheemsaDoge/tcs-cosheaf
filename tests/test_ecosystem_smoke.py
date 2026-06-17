@@ -12,9 +12,11 @@ from scripts.ecosystem_smoke import (
     ISSUE_ID,
     PUBLIC_ARTIFACT_ID,
     _public_kb_operator_handoff_policy_command,
+    _public_kb_research_loop_policy_command,
     _public_kb_strategy_plan_policy_command,
     _run_operator_handoff_dry_run_smoke,
     _run_operator_session_cli_smoke,
+    _run_research_loop_workflow_smoke,
     _run_verifier_evidence_eval_smoke,
     build_ecosystem_smoke_matrix,
     build_ecosystem_smoke_plan,
@@ -197,6 +199,8 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
         "framework.verifier-evidence-eval",
         "framework.checked-evidence-run-loop-eval",
         "framework.research-run-loop-eval",
+        "framework.research-loop-eval",
+        "framework.research-loop-workflow-smoke",
         "framework.strategy-planner-eval",
         "framework.operator-session-cli-smoke",
         "framework.operator-handoff-dry-run-smoke",
@@ -206,6 +210,7 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
         "workspace-template.cli-agent-demo",
         "workspace-template.research-run-demo",
         "workspace-template.strategy-demo",
+        "workspace-template.research-loop-demo",
         "workspace-template.operator-session-demo",
         "workspace-template.provider-fake-smoke",
         "workspace-template.verifier-evidence-demo",
@@ -213,6 +218,7 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
         "public-kb.checked-evidence-policy-docs",
         "public-kb.strategy-plan-policy-docs",
         "public-kb.operator-handoff-policy-docs",
+        "public-kb.research-loop-policy-docs",
         "public-kb.verifier-policy-self-test",
     }
     assert cases["framework.local-checkout"].repo == "tcs-cosheaf"
@@ -225,6 +231,11 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
         "research-run-loop",
         "--json",
     )
+    assert cases["framework.research-loop-eval"].argv[-2:] == (
+        "research-loop",
+        "--json",
+    )
+    assert cases["framework.research-loop-workflow-smoke"].repo == "tcs-cosheaf"
     assert cases["framework.strategy-planner-eval"].argv[-2:] == (
         "strategy-planner",
         "--json",
@@ -240,6 +251,9 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
         "research-run-demo"
     )
     assert cases["workspace-template.strategy-demo"].argv[-1] == "strategy-demo"
+    assert cases["workspace-template.research-loop-demo"].argv[-1] == (
+        "research-loop-demo"
+    )
     assert cases["workspace-template.operator-session-demo"].argv[-1] == (
         "operator-session-demo"
     )
@@ -253,6 +267,7 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
     assert cases["public-kb.checked-evidence-policy-docs"].repo == "tcs-kb-public"
     assert cases["public-kb.strategy-plan-policy-docs"].repo == "tcs-kb-public"
     assert cases["public-kb.operator-handoff-policy-docs"].repo == "tcs-kb-public"
+    assert cases["public-kb.research-loop-policy-docs"].repo == "tcs-kb-public"
     assert cases["public-kb.verifier-policy-self-test"].repo == "tcs-kb-public"
 
 
@@ -265,7 +280,7 @@ def test_ecosystem_smoke_matrix_defaults_to_current_release_tag(
         public_kb_root=tmp_path / "tcs-kb-public",
     )
 
-    assert matrix.framework_tag == "v0.5.0"
+    assert matrix.framework_tag == "v0.6.0"
 
 
 def test_operator_session_cli_smoke_uses_temp_workspace() -> None:
@@ -274,6 +289,10 @@ def test_operator_session_cli_smoke_uses_temp_workspace() -> None:
 
 def test_operator_handoff_dry_run_smoke_uses_temp_workspace() -> None:
     assert _run_operator_handoff_dry_run_smoke(Path.cwd()) == 0
+
+
+def test_research_loop_workflow_smoke_uses_temp_workspace() -> None:
+    assert _run_research_loop_workflow_smoke(Path.cwd()) == 0
 
 
 def test_public_kb_strategy_plan_policy_docs_smoke_normalizes_wrapped_text(
@@ -352,6 +371,35 @@ def test_public_kb_operator_handoff_policy_docs_smoke(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr or result.stdout
 
 
+def test_public_kb_research_loop_policy_docs_smoke(tmp_path: Path) -> None:
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "RESEARCH_LOOP_POLICY.md").write_text(
+        "\n".join(
+            [
+                "# Research Loop Policy",
+                "",
+                "Research loop outputs are public review context only.",
+                "They are not source metadata and not accepted proof.",
+                "Accepted public artifacts still require complete source metadata.",
+                "Validation and gate success are not human review.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        _public_kb_research_loop_policy_command(),
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr or result.stdout
+
+
 def test_ecosystem_smoke_matrix_report_is_structured_and_identifies_failures(
     tmp_path: Path,
 ) -> None:
@@ -379,8 +427,8 @@ def test_ecosystem_smoke_matrix_report_is_structured_and_identifies_failures(
     report = run_ecosystem_smoke_matrix(matrix, command_runner=fake_runner)
 
     assert report.passed is False
-    assert report.case_count == 21
-    assert report.pass_count == 17
+    assert report.case_count == 25
+    assert report.pass_count == 21
     assert report.fail_count == 1
     assert report.skip_count == 3
     skipped = [result for result in report.results if result.status == "skipped"]

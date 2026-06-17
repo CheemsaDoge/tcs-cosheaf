@@ -56,8 +56,10 @@ Task C.1: research-loop-runner-and-operator-protocol (completed on branch
 `research-loop-runner-and-operator-protocol`, issue #402)
 Task D.1: attempt-memory-failure-avoidance-scanner (completed on branch
 `attempt-memory-failure-avoidance-scanner`, issue #404)
+Task E.1: research-loop-eval-and-ecosystem-demo (in progress on branch
+`research-loop-eval-and-ecosystem-demo`, issue #406)
 
-Current D.1 status:
+Current E.1 status:
 
 - service and CLI implementation is present for `next`, `step`, `run
   --dry-run`, `export-task`, and `import-result`;
@@ -74,12 +76,19 @@ Current D.1 status:
   repeat clustering, cross-loop failure surfacing, unjustified retry refusal,
   justified retry recording, scanner blocking, scanner clean path, and schema
   file presence;
+- framework E.1 work adds `cosheaf eval research-loop --json`, default cases
+  under `evals/research_loop/cases.yaml`, a research-loop workflow smoke row,
+  a workspace-template `research-loop-demo` matrix row, and a public-KB
+  research-loop policy-docs matrix row;
+- the downstream matrix rows are framework-side contracts only until separate
+  workspace-template and public-KB PRs add the matching demo target and policy
+  document;
 - non-dry-run loop execution remains refused until a later explicit
   deterministic implementation.
 
-Next milestone work should start from Phase E. D.1 does not include ecosystem
-demo/eval rows, loop handoff export, hosted provider calls, automatic theorem
-proving, or Lean semantic alignment.
+Next milestone work should finish the downstream Phase E PRs. E.1 framework
+work does not include release metadata, hosted provider calls, automatic
+theorem proving, or Lean semantic alignment.
 
 ## Non-negotiable invariants
 

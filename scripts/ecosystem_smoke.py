@@ -17,7 +17,7 @@ from typing import Any
 ISSUE_ID = "issue.ecosystem-smoke.private-context"
 PUBLIC_ARTIFACT_ID = "definition.ecosystem.graph"
 PRIVATE_ARTIFACT_ID = "claim.ecosystem.private"
-DEFAULT_FRAMEWORK_TAG = "v0.5.0"
+DEFAULT_FRAMEWORK_TAG = "v0.6.0"
 
 
 @dataclass(frozen=True)
@@ -348,6 +348,35 @@ def build_ecosystem_smoke_matrix(
             ),
         ),
         EcosystemSmokeMatrixCase(
+            id="framework.research-loop-eval",
+            repo="tcs-cosheaf",
+            cwd=framework_root,
+            commands=(
+                MatrixCommand(
+                    (
+                        *shlex.split(cosheaf),
+                        "eval",
+                        "research-loop",
+                        "--json",
+                    )
+                ),
+            ),
+        ),
+        EcosystemSmokeMatrixCase(
+            id="framework.research-loop-workflow-smoke",
+            repo="tcs-cosheaf",
+            cwd=framework_root,
+            commands=(
+                MatrixCommand(
+                    (
+                        sys.executable,
+                        "scripts/ecosystem_smoke.py",
+                        "--research-loop-workflow-smoke",
+                    )
+                ),
+            ),
+        ),
+        EcosystemSmokeMatrixCase(
             id="framework.strategy-planner-eval",
             repo="tcs-cosheaf",
             cwd=framework_root,
@@ -459,6 +488,13 @@ def build_ecosystem_smoke_matrix(
             env=local_env,
         ),
         EcosystemSmokeMatrixCase(
+            id="workspace-template.research-loop-demo",
+            repo="tcs-cosheaf-workspace-template",
+            cwd=workspace_template_root,
+            commands=(MatrixCommand((make_executable, "research-loop-demo")),),
+            env=local_env,
+        ),
+        EcosystemSmokeMatrixCase(
             id="workspace-template.operator-session-demo",
             repo="tcs-cosheaf-workspace-template",
             cwd=workspace_template_root,
@@ -524,6 +560,15 @@ def build_ecosystem_smoke_matrix(
             cwd=public_kb_root,
             commands=(
                 MatrixCommand(_public_kb_operator_handoff_policy_command()),
+            ),
+            env=public_kb_env,
+        ),
+        EcosystemSmokeMatrixCase(
+            id="public-kb.research-loop-policy-docs",
+            repo="tcs-kb-public",
+            cwd=public_kb_root,
+            commands=(
+                MatrixCommand(_public_kb_research_loop_policy_command()),
             ),
             env=public_kb_env,
         ),
@@ -627,6 +672,30 @@ def _public_kb_operator_handoff_policy_command() -> tuple[str, ...]:
             "missing = [phrase for phrase in required if phrase not in normalized]",
             "raise SystemExit(",
             "    'missing operator-handoff policy text: ' + ', '.join(missing)",
+            "    if missing else 0",
+            ")",
+        ]
+    )
+    return (sys.executable, "-c", code)
+
+
+def _public_kb_research_loop_policy_command() -> tuple[str, ...]:
+    code = "\n".join(
+        [
+            "from pathlib import Path",
+            "path = Path('docs/RESEARCH_LOOP_POLICY.md')",
+            "text = path.read_text(encoding='utf-8').lower()",
+            "normalized = ' '.join(text.split())",
+            "required = (",
+            "    'research loop outputs are public review context only',",
+            "    'not source metadata',",
+            "    'not accepted proof',",
+            "    'accepted public artifacts still require complete source metadata',",
+            "    'validation and gate success are not human review',",
+            ")",
+            "missing = [phrase for phrase in required if phrase not in normalized]",
+            "raise SystemExit(",
+            "    'missing research-loop policy text: ' + ', '.join(missing)",
             "    if missing else 0",
             ")",
         ]
@@ -961,6 +1030,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             "against a temp workspace."
         ),
     )
+    parser.add_argument(
+        "--research-loop-workflow-smoke",
+        action="store_true",
+        help=(
+            "Run a local research-loop start/next/import/finalize/scan/"
+            "export-task smoke against a temp workspace."
+        ),
+    )
     args = parser.parse_args(argv)
 
     if args.verifier_evidence_eval:
@@ -974,6 +1051,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.operator_handoff_dry_run_smoke:
         return _run_operator_handoff_dry_run_smoke(Path.cwd())
+
+    if args.research_loop_workflow_smoke:
+        return _run_research_loop_workflow_smoke(Path.cwd())
 
     if args.matrix:
         matrix = build_ecosystem_smoke_matrix(
@@ -1045,6 +1125,227 @@ def _run_with_workdir(
 
 def _network_skip_reason(include_network: bool, reason: str) -> str | None:
     return None if include_network else reason
+
+
+def _run_research_loop_workflow_smoke(repo_root: Path) -> int:
+    repo_root = repo_root.resolve()
+    with tempfile.TemporaryDirectory(
+        prefix="cosheaf-research-loop-smoke-"
+    ) as temp_dir:
+        workspace = Path(temp_dir) / "workspace"
+        write_ecosystem_smoke_workspace(workspace)
+        loop_id = "loop.ecosystem.research"
+        _run_json_cli(
+            repo_root,
+            (
+                "research-loop",
+                "start",
+                "--issue",
+                ISSUE_ID,
+                "--loop-id",
+                loop_id,
+                "--max-attempts",
+                "3",
+                "--repo-root",
+                str(workspace),
+                "--json",
+            ),
+        )
+        runtime_root = workspace / ".cosheaf" / "research-loops" / loop_id
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        attempt_path = runtime_root / "attempt_fixture.json"
+        attempt_path.write_text(
+            json.dumps(
+                _research_loop_failed_attempt_payload(loop_id),
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        _run_json_cli(
+            repo_root,
+            (
+                "research-loop",
+                "append-attempt",
+                loop_id,
+                "--input-json",
+                str(attempt_path),
+                "--repo-root",
+                str(workspace),
+                "--json",
+            ),
+        )
+        next_result = _run_json_cli(
+            repo_root,
+            (
+                "research-loop",
+                "next",
+                loop_id,
+                "--repo-root",
+                str(workspace),
+                "--json",
+            ),
+        )
+        if not next_result["next_action"]["retry_requires_justification"]:
+            print("research-loop smoke did not surface retry guard", file=sys.stderr)
+            return 1
+        task_path = runtime_root / "operator_task.json"
+        exported = _run_json_cli(
+            repo_root,
+            (
+                "research-loop",
+                "export-task",
+                loop_id,
+                "--out",
+                str(task_path.relative_to(workspace)),
+                "--repo-root",
+                str(workspace),
+                "--json",
+            ),
+        )
+        if not task_path.is_file() or not str(exported["path"]).startswith(
+            ".cosheaf/research-loops/"
+        ):
+            print("research-loop smoke did not export task packet", file=sys.stderr)
+            return 1
+        result_path = runtime_root / "operator_result.json"
+        result_path.write_text(
+            json.dumps(
+                _research_loop_operator_result_payload(),
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        imported = _run_json_cli(
+            repo_root,
+            (
+                "research-loop",
+                "import-result",
+                loop_id,
+                "--input-json",
+                str(result_path),
+                "--repo-root",
+                str(workspace),
+                "--json",
+            ),
+        )
+        if imported["attempt"]["status"] != "succeeded":
+            print(
+                "research-loop smoke import did not create succeeded attempt",
+                file=sys.stderr,
+            )
+            return 1
+        scan = _run_json_cli(
+            repo_root,
+            (
+                "research-loop",
+                "scan",
+                loop_id,
+                "--repo-root",
+                str(workspace),
+                "--json",
+            ),
+        )
+        if scan["handoff_blocked"] or scan["accepted_write_performed"]:
+            print(
+                "research-loop smoke scan was blocked or authoritative",
+                file=sys.stderr,
+            )
+            return 1
+        finalized = _run_json_cli(
+            repo_root,
+            (
+                "research-loop",
+                "finalize",
+                loop_id,
+                "--reason",
+                "ecosystem research-loop smoke completed",
+                "--repo-root",
+                str(workspace),
+                "--json",
+            ),
+        )
+        if finalized["loop"]["status"] != "finalized":
+            print("research-loop smoke did not finalize loop", file=sys.stderr)
+            return 1
+        print(
+            json.dumps(
+                {
+                    "kind": "research_loop_workflow_smoke",
+                    "loop_id": loop_id,
+                    "attempt_count": finalized["loop"]["attempts"].__len__(),
+                    "task_path": exported["path"],
+                    "scan_report": scan["report_path"],
+                    "status": "pass",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+        )
+        return 0
+
+
+def _research_loop_failed_attempt_payload(loop_id: str) -> dict[str, Any]:
+    attempt_id = f"{loop_id}.attempt.1"
+    return {
+        "attempt_id": attempt_id,
+        "loop_id": loop_id,
+        "attempt_number": 1,
+        "status": "failed",
+        "planned_direction": "Try direct induction",
+        "started_at": "2026-06-17T00:00:00+00:00",
+        "completed_at": "2026-06-17T00:01:00+00:00",
+        "result_summary": "Direct induction failed on the smoke fixture.",
+        "actions_taken": ["inspect public graph definition"],
+        "failures": [
+            {
+                "failure_id": f"failure.{attempt_id}",
+                "attempt_id": attempt_id,
+                "attempted_direction": "Try direct induction",
+                "why_it_failed": "The induction step needs a missing invariant.",
+                "evidence_for_failure": [
+                    ".cosheaf/research-loops/"
+                    f"{loop_id}/operator_task.json"
+                ],
+                "related_artifacts": (PUBLIC_ARTIFACT_ID, PRIVATE_ARTIFACT_ID),
+                "should_retry": False,
+                "avoid_in_future": (
+                    "Do not retry direct induction without a stronger invariant."
+                ),
+                "tags": ["insufficient_evidence"],
+                "signature": "direct-induction-missing-invariant",
+            }
+        ],
+        "evidence": {
+            "related_artifacts": (PUBLIC_ARTIFACT_ID, PRIVATE_ARTIFACT_ID),
+            "draft_artifact_refs": (PRIVATE_ARTIFACT_ID,),
+            "summary": "Smoke fixture evidence is review context only.",
+        },
+    }
+
+
+def _research_loop_operator_result_payload() -> dict[str, Any]:
+    return {
+        "attempted_direction": "Try direct induction",
+        "actions_taken": ["retry with an explicit invariant"],
+        "checks_run": ["cosheaf validate"],
+        "result_summary": "Retry completed as review-context smoke output.",
+        "retry_justification": "The invariant was made explicit before retry.",
+        "evidence_refs": [
+            ".cosheaf/research-loops/loop.ecosystem.research/operator_task.json"
+        ],
+        "artifacts_referenced": (PUBLIC_ARTIFACT_ID, PRIVATE_ARTIFACT_ID),
+        "claimed_authority_flags": {
+            "accepted": False,
+            "human_review": False,
+            "verifier_pass": False,
+            "gate_pass": False,
+            "promotion": False,
+        },
+    }
 
 
 def _run_operator_session_cli_smoke(repo_root: Path) -> int:

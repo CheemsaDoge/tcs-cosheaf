@@ -60,26 +60,31 @@ from cosheaf.core.status import (
 from cosheaf.evals import (
     DEFAULT_CHECKED_EVIDENCE_RUN_LOOP_EVAL_CASES,
     DEFAULT_CONTEXT_EVAL_CASES,
+    DEFAULT_RESEARCH_LOOP_EVAL_CASES,
     DEFAULT_RESEARCH_RUN_LOOP_EVAL_CASES,
     DEFAULT_RETRIEVAL_EVAL_CASES,
     DEFAULT_STRATEGY_PLANNER_EVAL_CASES,
     CheckedEvidenceRunLoopEvalError,
     ContextEvalError,
+    ResearchLoopEvalError,
     ResearchRunLoopEvalError,
     RetrievalEvalError,
     StrategyPlannerEvalError,
     load_checked_evidence_run_loop_eval_suite,
     load_context_eval_suite,
+    load_research_loop_eval_suite,
     load_research_run_loop_eval_suite,
     load_retrieval_eval_suite,
     load_strategy_planner_eval_suite,
     resolve_checked_evidence_run_loop_eval_case_path,
     resolve_context_eval_case_path,
+    resolve_research_loop_eval_case_path,
     resolve_research_run_loop_eval_case_path,
     resolve_retrieval_eval_case_path,
     resolve_strategy_planner_eval_case_path,
     run_checked_evidence_run_loop_eval_suite,
     run_context_eval_suite,
+    run_research_loop_eval_suite,
     run_research_run_loop_eval_suite,
     run_retrieval_eval_suite,
     run_strategy_planner_eval_suite,
@@ -3132,6 +3137,60 @@ def eval_research_run_loop(
         "- authority_escalation_count: "
         f"{report.metrics.authority_escalation_count}"
     )
+    for case in report.cases:
+        failures = ",".join(case.failures) if case.failures else "-"
+        console.print(f"- {case.id}: passed={str(case.passed).lower()} {failures}")
+
+    if not report.passed:
+        raise typer.Exit(code=1)
+
+
+@eval_app.command("research-loop")
+def eval_research_loop(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    cases: Path = typer.Option(
+        DEFAULT_RESEARCH_LOOP_EVAL_CASES,
+        "--cases",
+        help="Repository-local YAML research-loop eval case file.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text summary.",
+    ),
+) -> None:
+    """Run deterministic bounded research-loop regression cases."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        case_path = resolve_research_loop_eval_case_path(context, cases)
+        suite = load_research_loop_eval_suite(case_path)
+        report = run_research_loop_eval_suite(context, suite)
+    except ResearchLoopEvalError as exc:
+        console.print(f"Research-loop eval failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(report.to_json(), nl=False)
+        return
+
+    verdict = "pass" if report.passed else "fail"
+    console.print(f"Research-loop eval verdict: {verdict}")
+    console.print(f"- cases: {report.case_count}")
+    console.print(f"- loop_validity_rate: {report.metrics.loop_validity_rate:.6f}")
+    console.print(
+        "- repeat_failure_detection_rate: "
+        f"{report.metrics.repeat_failure_detection_rate:.6f}"
+    )
+    console.print(
+        "- scanner_blocker_accuracy: "
+        f"{report.metrics.scanner_blocker_accuracy:.6f}"
+    )
+    console.print(f"- skipped_not_pass_count: {report.metrics.skipped_not_pass_count}")
     for case in report.cases:
         failures = ",".join(case.failures) if case.failures else "-"
         console.print(f"- {case.id}: passed={str(case.passed).lower()} {failures}")
