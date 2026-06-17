@@ -3,6 +3,41 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V14 B.1 workflow core follow-up - 2026-06-18
+
+Issue #426 implements the persistent reviewable-workflow core after the
+published `v0.9.0` release. The current workflow surface now includes:
+
+- `cosheaf workflow start --issue <issue-id> --query <query> --json`;
+- `cosheaf workflow show <workflow-id> --json`;
+- `cosheaf workflow step <workflow-id> --json`;
+- `cosheaf workflow run <workflow-id> --max-steps <n>
+  --execute-local-actions --json`;
+- `cosheaf workflow readiness <workflow-id> --json`.
+
+Workflow runtime records are written under
+`.cosheaf/workflows/<workflow-id>/`:
+
+- `workflow.json`;
+- `events.jsonl`;
+- `librarian.json`;
+- `fsm.json`;
+- `loop.json`;
+- `readiness.json`.
+
+The local execution path remains bounded by the existing whitelisted local
+action registry. Accepted writes, network access, hosted providers, and
+arbitrary shell execution remain disallowed through the workflow runner.
+Unknown actions and accepted-write actions are blocked and recorded as review
+context, not hidden or treated as pass.
+
+This follow-up does not implement draft proposal generation, workflow handoff
+build/show/scan/export, workflow scanner integration, reviewable-workflow eval
+coverage, downstream workspace-template demo targets, or public-KB workflow
+packet policy guards. Workflow output remains review context only. It is not
+proof, source metadata, human review, verifier pass, gate pass, accepted
+status, accepted refutation, or promotion authority.
+
 ## v0.9.0 documentation closeout, code audit, and CI repair - 2026-06-18
 
 The `v0.9.0` tag and GitHub release are published:
@@ -12,20 +47,22 @@ The `v0.9.0` tag and GitHub release are published:
 - `python -m cosheaf.cli version --json` reports `0.9.0`;
 - GitHub release: https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0
 
-This documentation closeout corrects stale current-state docs that still
+This historical documentation closeout corrected stale current-state docs that still
 described `v0.7.0` or `v0.7.0` release-candidate status as active. The current
 release line is `v0.9.0 Reviewable Research Workflow MVP`, but the code audit
-found that the workflow implementation is still a thin first surface:
+at PR #425 closeout found that the workflow implementation was still a thin
+first surface:
 
 - `cosheaf/workflow/engine.py` defines workflow DTOs, authority notices,
   `start_workflow`, `append_step`, and `assess_readiness`;
 - `cosheaf/workflow/cli.py` registers `workflow start`, `workflow step`, and
   `workflow readiness`;
-- `workflow start` emits a workflow JSON record;
-- `workflow step` and `workflow readiness` are ephemeral and do not yet load or
+- `workflow start` emitted a workflow JSON record;
+- `workflow step` and `workflow readiness` were ephemeral and did not yet load or
   persist `.cosheaf/workflows/<workflow-id>/` state.
 
-The following V14 items remain incomplete and must not be claimed as complete:
+At that closeout point, the following V14 items remained incomplete and were
+not to be claimed as complete:
 
 - persisted workflow runtime storage and replay;
 - `workflow show` and bounded `workflow run`;
@@ -56,9 +93,11 @@ Local verification after the repair:
 - `make gate`: passed;
 - `git diff --check`: no whitespace errors, only LF/CRLF working-copy warnings.
 
-The quality ladder is green locally on PR #425. This does not change the audit
-finding that the `cosheaf workflow` surface is still thin and not the complete
-V14 issue-to-handoff workflow engine.
+The quality ladder was green locally on PR #425. Later V14 B.1 follow-up work
+adds persisted workflow runtime storage, `workflow show`, persisted `workflow
+step`, bounded `workflow run`, and persisted readiness reports. This still does
+not make the V14 issue-to-handoff workflow engine complete; draft proposal,
+workflow handoff, scanner, eval, and downstream policy work remain incomplete.
 
 Downstream state observed during closeout:
 

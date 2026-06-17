@@ -16,13 +16,14 @@ workflow record that can eventually connect librarian context, orchestrator FSM,
 whitelisted local actions, research-loop evidence, draft proposal generation,
 and review handoff packets.
 
-The published `v0.9.0` implementation is the first slice, not the complete
-architecture. It exposes `workflow start`, `workflow step`, and
-`workflow readiness`; `start` emits a workflow JSON record, while `step` and
-`readiness` are currently ephemeral and do not yet read or write the planned
-`.cosheaf/workflows/<workflow-id>/` runtime state. Draft-proposal commands,
-workflow-handoff commands, scanner integration, and reviewable-workflow evals
-remain follow-up work.
+The published `v0.9.0` implementation was the first slice, not the complete
+architecture. It exposed `workflow start`, `workflow step`, and
+`workflow readiness`. A post-release V14 B.1 follow-up adds the persistent
+workflow core: `.cosheaf/workflows/<workflow-id>/` runtime records,
+`workflow show`, persisted `workflow step`, bounded `workflow run`, and
+persisted readiness reports. Draft-proposal commands, workflow-handoff
+commands, scanner integration, and reviewable-workflow evals remain follow-up
+work.
 
 Workflow records, draft proposals, and review handoffs remain review context
 only. No accepted writes, human review creation, verifier/gate mutation, source

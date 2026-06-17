@@ -14,6 +14,22 @@ Use:
 - `docs/OPERATOR_SKILL.md` for the portable Skill-like instruction package;
 - `docs/CODEX_WORKFLOW.md` for repository workflow and PR expectations.
 
+Reviewable workflows are the issue-to-review-context entry point:
+
+```bash
+cosheaf workflow start --issue <issue-id> --query "<research query>" --json
+cosheaf workflow show <workflow-id> --json
+cosheaf workflow step <workflow-id> --json
+cosheaf workflow run <workflow-id> --max-steps <n> --execute-local-actions --json
+cosheaf workflow readiness <workflow-id> --json
+```
+
+Workflow runtime files live under `.cosheaf/workflows/<workflow-id>/`. They are
+review context only. `run --execute-local-actions` is bounded and uses only the
+whitelisted local action registry; it does not grant accepted writes, human
+review, verifier or gate authority, hosted-provider access, network access, or
+arbitrary shell access.
+
 Operator sessions can now wrap an issue-focused work session without executing
 commands themselves:
 

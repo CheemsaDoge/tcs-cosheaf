@@ -1,6 +1,9 @@
 # Agent Handoff: v0.9.0 Documentation And CI Closeout
 
-## Current state checked on 2026-06-18
+This file is a historical handoff snapshot for PR #425. It does not describe
+the current head after later V14 follow-up work.
+
+## State checked on 2026-06-18
 
 | Repo | Local branch | Local status |
 |------|--------------|--------------|
@@ -40,19 +43,25 @@ check is red or queued.
 - GitHub release `v0.9.0` is published:
   <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0>.
 
-## Code audit result
+## Code audit result at PR #425 closeout
 
-The current `cosheaf workflow` implementation is present but thin:
+At PR #425 closeout, the `cosheaf workflow` implementation was present but
+thin:
 
 - `workflow start` emits a workflow JSON record and authority notice.
-- `workflow step` prints an ephemeral step status and does not persist state.
-- `workflow readiness` reports that persisted readiness is not assessable yet.
+- `workflow step` printed an ephemeral step status and did not persist state.
+- `workflow readiness` reported that persisted readiness was not assessable yet.
 - Persistent `.cosheaf/workflows/<workflow-id>/` storage, `workflow show`,
   bounded `workflow run`, draft proposals, workflow handoffs, scanner
   integration, and `cosheaf eval reviewable-workflow --json` are not complete.
 
 Do not describe `v0.9.0` as a complete issue-to-handoff workflow engine. It is
 a published initial reviewable-workflow surface.
+
+Later V14 follow-up work adds persistent workflow storage, `workflow show`,
+persisted `workflow step`, bounded `workflow run`, and persisted readiness
+reports. Draft proposals, workflow handoffs, scanner integration, and
+`cosheaf eval reviewable-workflow --json` remain incomplete.
 
 The normal verification ladder is green locally on this checkout after the
 code-quality closeout:
