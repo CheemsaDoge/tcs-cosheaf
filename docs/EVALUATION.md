@@ -676,20 +676,22 @@ demo, workspace-template fake-provider smoke, workspace-template
 verifier-evidence demo, public KB policy guard, public KB checked-evidence
 policy docs, public KB strategy-plan policy docs, public KB operator-handoff
 policy docs, public KB research-loop policy docs, and public KB
-verifier-policy self-test coverage. The default git-tag release-smoke row uses
-the latest published release target `v0.6.0`. Release-candidate checks for
-`v0.7.0` should pass `--framework-tag v0.7.0` explicitly until publication
-closeout updates the published baseline. The git-tag release-smoke row remains
-an opt-in network row and is skipped unless `--include-network` is explicitly
-supplied.
+verifier-policy self-test coverage. The git-tag release-smoke row should use
+the currently selected published baseline, and release closeout checks should
+pass that tag explicitly with `--framework-tag <tag>`. At the v0.9.0 closeout,
+the published framework tag exists, but downstream workspace-template and
+public-KB pin drift still needed separate cleanup before claiming full
+ecosystem alignment. The git-tag release-smoke row remains an opt-in network
+row and is skipped unless `--include-network` is explicitly supplied.
 
 The research-loop downstream matrix rows are framework-side compatibility
 checks. The matching downstream surfaces have landed in
 `tcs-cosheaf-workspace-template` and `tcs-kb-public`, so the no-network Phase E
 matrix can exercise the full three-repository research-loop demo and policy
-coverage. The workspace-template research-loop demo still requires a local or
-otherwise explicit v0.7-capable framework source because the published
-workspace install pin remains `v0.6.0` until v0.7.0 publication.
+coverage. Downstream demos may still require a local or explicit framework
+source when their default install pins lag the latest framework release; check
+the downstream repository scripts and docs before treating the matrix as a
+published-pin closeout.
 
 Network rows remain opt-in through `--include-network`. When optional external
 SAT/SMT/Lean/lake tools are unavailable, the optional verifier availability

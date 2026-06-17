@@ -3,6 +3,76 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## v0.9.0 documentation closeout, code audit, and CI repair - 2026-06-18
+
+The `v0.9.0` tag and GitHub release are published:
+
+- package metadata records `0.9.0`;
+- `cosheaf.__version__` records `0.9.0`;
+- `python -m cosheaf.cli version --json` reports `0.9.0`;
+- GitHub release: https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0
+
+This documentation closeout corrects stale current-state docs that still
+described `v0.7.0` or `v0.7.0` release-candidate status as active. The current
+release line is `v0.9.0 Reviewable Research Workflow MVP`, but the code audit
+found that the workflow implementation is still a thin first surface:
+
+- `cosheaf/workflow/engine.py` defines workflow DTOs, authority notices,
+  `start_workflow`, `append_step`, and `assess_readiness`;
+- `cosheaf/workflow/cli.py` registers `workflow start`, `workflow step`, and
+  `workflow readiness`;
+- `workflow start` emits a workflow JSON record;
+- `workflow step` and `workflow readiness` are ephemeral and do not yet load or
+  persist `.cosheaf/workflows/<workflow-id>/` state.
+
+The following V14 items remain incomplete and must not be claimed as complete:
+
+- persisted workflow runtime storage and replay;
+- `workflow show` and bounded `workflow run`;
+- draft proposal generation from workflow output;
+- workflow handoff build/show/scan/export commands;
+- workflow scanner integration;
+- `cosheaf eval reviewable-workflow --json`;
+- workspace-template `reviewable-workflow-demo`;
+- public-KB workflow-output policy guard and framework pin closeout.
+
+Initial verification during this documentation/code-audit closeout found
+lint/typecheck failures in existing V13/V14 Python code. PR #425 now includes a
+narrow code-quality repair for those issues, without adding new workflow
+runtime capability or widening authority boundaries.
+
+Local verification after the repair:
+
+- `python -m cosheaf.cli version --json`: passed and reported `0.9.0`;
+- `python -m cosheaf.cli workflow --help`: passed and showed only
+  `start`, `step`, and `readiness`;
+- `python -m cosheaf.cli workflow start --issue issue.audit.v090 --query
+  "documentation closeout" --json`: passed and emitted a review-context
+  authority notice;
+- `make lint`: passed;
+- `make typecheck`: passed for 201 source files;
+- `make test`: passed with 753 tests;
+- `make validate`: passed for 20 YAML records;
+- `make gate`: passed;
+- `git diff --check`: no whitespace errors, only LF/CRLF working-copy warnings.
+
+The quality ladder is green locally on PR #425. This does not change the audit
+finding that the `cosheaf workflow` surface is still thin and not the complete
+V14 issue-to-handoff workflow engine.
+
+Downstream state observed during closeout:
+
+- local workspace-template checkout was on `release-v090-pins`; README and
+  Makefile referenced `v0.9.0`, but several scripts still defaulted to
+  `v0.8.0` and some docs still mentioned `v0.7.0`;
+- local public-KB `main` still installed `tcs-cosheaf` from `v0.7.0` in CI and
+  README text.
+
+No authority boundary changed. Workflow, loop, operator-session, provider,
+MCP, eval, and handoff outputs remain review context only. They are not proof,
+source metadata, human review, verifier pass, gate pass, accepted status,
+accepted refutation, or promotion authority.
+
 ## Phase F completed: v0.7.0 published - 2026-06-17
 
 v0.7.0 Bounded Research Loop + Attempt Memory is published:

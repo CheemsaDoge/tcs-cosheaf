@@ -7,46 +7,33 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.7.0 Bounded Research Loop + Attempt Memory release
-candidate**. Package metadata records `0.7.0`; the public `v0.7.0` tag,
-GitHub release, post-tag release smoke, and downstream workspace/public-KB
-pin alignment remain future Phase F.2 steps. The `v0.7.0` RC packages
-bounded multi-attempt research loops with deterministic next-action planning,
-external operator task/result protocol, runtime attempt memory,
-repeat-failure avoidance, retry-justification enforcement, loop scanning,
-deterministic eval coverage, and three-repository ecosystem matrix closeout.
-The `v0.6.0` release remains the latest published release; the public
-`v0.6.0` tag and GitHub release are published and downstream pins use
-`@v0.6.0`.
-The `v0.7.0` line does not add production autonomy, hosted-provider defaults,
+Current status: **v0.9.0 Reviewable Research Workflow MVP published release**.
+Package metadata records `0.9.0`; the public `v0.9.0` tag and GitHub release
+are published at
+<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0>.
+The current line includes the deterministic execution-kernel baseline from
+`v0.8.0` plus an initial reviewable-workflow CLI surface. A documentation
+closeout audit found that the `cosheaf workflow` surface is still thin:
+`start` emits a workflow JSON record, while `step` and `readiness` are
+ephemeral and do not yet read or write the planned persisted
+`.cosheaf/workflows/<workflow-id>/` state. Draft-proposal, workflow-handoff,
+and `cosheaf eval reviewable-workflow` commands remain follow-up work.
+
+The `v0.9.0` line does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, Lean semantic alignment, human review, accepted
-writes, verifier passes, gate passes, or promotion authority. Research-loop
-records remain review context only.
-Earlier published baselines include **v0.3.0 Checked Evidence + Research Run
-Loop** and **v0.4.0 Strategy Planner + Research Task Graph**. The `v0.1.1`
-tag remains the downstream Formal Link Layer support
-baseline; the `v0.2.0` tag packages the deterministic local-MVP workflow; the
-`v0.2.1` tag packages the CLI-first agent and hosted-provider gateway surfaces
-as a pin-able framework prerelease; `v0.2.2` packages the explicit default-off
-provider transport and agent workflow hardening surfaces; `v0.2.3` packages
-verifier evidence records, promotion-readiness reporting, optional
-SAT/SMT/Lean result-depth fixtures, failure/counterexample evidence workflow
-hardening, verifier-evidence evals, and the expanded three-repository
-readiness matrix; `v0.2.4` packages optional artifact-level failure memory,
-failure-log CLI inspection and controlled draft writes, WorkerBundle
-failure-log bridges, retrieval/context/promotion-readiness surfacing,
-workspace/public-KB policy updates, and security/eval regression coverage;
-and `v0.3.0` packages checked counterexample evidence, research-run
-provenance, external-operator run-loop docs, downstream demo and policy
-surfaces, and integration/eval smoke coverage. The `v0.4.0` release packages
-strategy/task-graph planning, run-loop integration, strategy review export,
-context/readiness surfacing, eval/security coverage, and downstream strategy
-demo/policy smoke rows. The `v0.5.0` release packages optional operator MCP
-tools, controlled draft/review/runtime MCP writes, operator runbook/demo docs,
-public KB operator policy smoke, and an optional documentation-only operator
-Skill package. The `v0.6.0` release packages operator-session and
-review-handoff surfaces; downstream repositories that need those surfaces can
-pin to `@v0.6.0`. The repository has working
+writes, verifier passes, gate passes, source metadata authority, accepted
+refutation authority, or promotion authority. Workflow, loop, session,
+operator, and handoff records remain review context only.
+
+Earlier published baselines include `v0.1.1` Formal Link Layer support,
+`v0.2.0` deterministic local-MVP workflow, `v0.2.1` CLI-first agent and
+hosted-provider gateway surfaces, `v0.2.2` provider transport hardening,
+`v0.2.3` verification evidence hardening, `v0.2.4` artifact failure memory,
+`v0.3.0` Checked Evidence + Research Run Loop, `v0.4.0` Strategy Planner +
+Research Task Graph, `v0.5.0` Operator MCP + Codex Application Layer,
+`v0.6.0` Operator Session + Review Handoff, `v0.7.0` Bounded Research Loop +
+Attempt Memory, and `v0.8.0` Deterministic Execution Kernel + Librarian + FSM.
+The repository has working
 Python scaffolding, typed artifact models, filesystem loading, validation,
 dependency graph indexing, workspace-aware KB root loading, artifact lifecycle
 CLI
@@ -181,15 +168,21 @@ Implemented:
   operator-session records, optional MCP session recording, leak scanning,
   runtime handoff bundles, review-context handoff export, downstream
   demo/policy smoke, and ecosystem matrix rows.
-- `v0.7.0` RC research-loop surfaces: core loop/attempt runtime records,
+- Published `v0.7.0` research-loop surfaces: core loop/attempt runtime records,
   structured failure memory, deterministic next/step/run dry-run planning,
   external operator task/result packet commands, attempt-memory indexing,
   repeat-failure surfacing, retry-justification enforcement, loop scanning,
   research-loop eval/smoke rows, downstream workspace-template
-  research-loop demo coverage, and public-KB research-loop policy guard
-  alignment. The public tag/release/downstream pin alignment remain future
-  Phase F.2 steps. These records stay under ignored `.cosheaf/` runtime
-  paths and remain review context only.
+  research-loop demo coverage, and public-KB research-loop policy guard.
+- Published `v0.8.0` deterministic execution-kernel surfaces: librarian v0,
+  orchestrator FSM v1, whitelisted local action registry, bounded local action
+  execution, worker profiles, and deterministic memory feedback.
+- Published `v0.9.0` initial reviewable-workflow surfaces:
+  `cosheaf workflow start`, `cosheaf workflow step`, and
+  `cosheaf workflow readiness`, with explicit authority notices. The current
+  workflow CLI remains a thin initial surface; persistent workflow state,
+  draft proposals, workflow handoffs, and reviewable-workflow eval coverage are
+  follow-up work.
 
 Planned or incomplete:
 
@@ -197,6 +190,10 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
+- Persistent reviewable-workflow storage and replay under
+  `.cosheaf/workflows/<workflow-id>/`.
+- Workflow draft-proposal and workflow handoff commands.
+- `cosheaf eval reviewable-workflow --json` benchmark coverage.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
@@ -337,12 +334,12 @@ and research-run provenance can pin to `v0.3.0`. Downstream repositories that
 need Strategy Planner + Research Task Graph surfaces can pin to `v0.4.0`;
 downstream repositories that need Operator MCP + Codex Application Layer
 surfaces can pin to `v0.5.0`. Downstream repositories that need Operator
-Session + Review Handoff surfaces can pin to `v0.6.0`. Workspace-template and
-public KB active pins use `v0.6.0` after tag publication, GitHub release,
-post-tag release smoke, and downstream pin PRs completed. Downstream
-repositories that need Bounded Research Loop + Attempt Memory surfaces will be
-able to pin to `v0.7.0` after the tag/release/downstream alignment are
-completed in Phase F.2.
+Session + Review Handoff surfaces can pin to `v0.6.0`. Downstream
+repositories that need Bounded Research Loop + Attempt Memory surfaces can pin
+to `v0.7.0`; deterministic execution-kernel surfaces can pin to `v0.8.0`; and
+the initial reviewable-workflow release line can pin to `v0.9.0`. Check the
+downstream workspace-template and public-KB repositories before assuming their
+default pins have already moved to the latest framework release.
 
 ## Development Commands
 
@@ -389,6 +386,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Agent access](docs/AGENT_ACCESS.md)
 - [Codex operator runbook](docs/CODEX_OPERATOR_RUNBOOK.md)
 - [Research loops](docs/RESEARCH_LOOPS.md)
+- [Reviewable workflows](docs/WORKFLOWS.md)
 - [External operator run loop](docs/EXTERNAL_OPERATOR_RUN_LOOP.md)
 - [Operator workspace demo](docs/OPERATOR_WORKSPACE_DEMO.md)
 - [Operator Skill package](docs/OPERATOR_SKILL.md)

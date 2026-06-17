@@ -376,6 +376,27 @@ refused. Research loops do not call hosted providers, execute arbitrary shell,
 write accepted knowledge, create human review, mutate verifier results, mark
 gate pass, or promote artifacts.
 
+### Reviewable Workflow Surface
+
+The `v0.9.0` reviewable-workflow line starts a CLI surface for issue-scoped
+workflow records:
+
+```bash
+cosheaf workflow start --issue <issue-id> --query <query> --json
+cosheaf workflow step <workflow-id> --json
+cosheaf workflow readiness <workflow-id> --json
+```
+
+The current implementation is an initial surface. `start` emits a workflow JSON
+record with an authority notice, while `step` and `readiness` are still
+ephemeral and do not yet persist or load `.cosheaf/workflows/<workflow-id>/`
+runtime state. Draft proposals, workflow handoffs, workflow scanner
+integration, and `cosheaf eval reviewable-workflow --json` remain future work.
+
+Agents must treat workflow output as review context only. It is not proof,
+source metadata, human review, verifier pass, gate pass, accepted status,
+accepted refutation, or promotion authority.
+
 ### Artifact Failure Memory Surface
 
 Artifact-level `failure_log` is implemented for `v0.2.4` as durable

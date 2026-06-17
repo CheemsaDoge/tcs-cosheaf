@@ -4,6 +4,14 @@ Target: `v0.9.0 Reviewable Research Workflow MVP + Benchmark Harness`
 
 This is the accelerated post-`v0.8.0` plan.
 
+Current closeout note, 2026-06-18: the public `v0.9.0` tag and GitHub release
+are published, but a code audit found that only the initial `cosheaf workflow`
+CLI surface is implemented. Persistent workflow storage, `workflow show/run`,
+draft proposal generation, workflow handoff commands, workflow scanner
+integration, `cosheaf eval reviewable-workflow --json`, and downstream
+workspace-template/public-KB v0.9 policy/pin closeout remain follow-up work.
+Do not treat this plan as proof that all listed phases are implemented.
+
 `v0.8.0` delivered the deterministic execution kernel: librarian v0, orchestrator FSM v1, whitelisted local action registry, non-dry-run local loop execution, worker profiles, and deterministic memory feedback. The next line should not add a new low-level subsystem. It should turn those capabilities into a single reviewable research workflow:
 
 ```text
