@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_attempt_memory.schema.json",
+  "title": "ResearchLoopAttemptMemoryIndex",
+  "description": "Runtime index of research-loop failure memory.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "kind",
+    "generated_at",
+    "entry_count",
+    "cluster_count",
+    "metrics",
+    "entries",
+    "clusters",
+    "authority_notice"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "kind": { "const": "research_loop_attempt_memory" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "entry_count": { "type": "integer", "minimum": 0 },
+    "cluster_count": { "type": "integer", "minimum": 0 },
+    "metrics": { "$ref": "research_loop_metrics.schema.json" },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "research_loop_attempt_memory_entry.schema.json" }
+    },
+    "clusters": {
+      "type": "array",
+      "items": { "$ref": "research_loop_failure_cluster.schema.json" }
+    },
+    "authority_notice": { "type": "string" }
+  },
+  "additionalProperties": false
+}

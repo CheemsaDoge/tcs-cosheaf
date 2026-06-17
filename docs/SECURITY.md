@@ -34,7 +34,7 @@ checks:
 | Operator handoff hides scanner blockers, skipped checks, or missing checks | Handoff build runs the scanner first, fails closed on blockers, preserves skipped as skipped, and records missing check kinds | `test_operator_handoff_builds_review_context_bundle`, `test_operator_handoff_fails_closed_when_scan_has_blockers`, and `test_operator_handoff_requires_finalized_session` |
 | Operator handoff export is mistaken for human review or writes outside review context | Export writes only `reviews/operator/` YAML, dry-run writes nothing, accepted targets are rejected, and blocked scanner status fails closed | `test_operator_handoff_export_dry_run_reports_target_without_writing`, `test_operator_handoff_export_writes_review_context_yaml`, `test_operator_handoff_export_rejects_accepted_write_target`, and `test_operator_handoff_export_fails_closed_when_handoff_scanner_blocked` |
 | Research loop claims accepted/promotion/human-review authority | Loop models carry authority notice; attempts reject accepted KB paths and authority-overclaim fields; loop statuses are runtime-only; no verifier/human-review/promotion authority is granted | `test_authority_overclaim_rejected`, `test_accepted_path_rejected`, and `test_invalid_status_transition_after_finalize` |
-| Research loop storage leaks private data or bypasses Git ignore | Loop/attempt storage under `.cosheaf/research-loops/` is ignored by Git; public mode rejects private content; loop scanner/export hardening remains a later phase | `test_public_mode_rejects_private_refs`, `test_storage_paths_are_deterministic`, and `test_cli_json_smoke` |
+| Research loop storage leaks private data or bypasses Git ignore | Loop/attempt storage and scan reports stay under ignored `.cosheaf/research-loops/`; public mode rejects private content; the loop scanner blocks secrets, private public-mode material, provider payloads, accepted-write attempts, hidden reasoning, and authority claims | `test_public_mode_rejects_private_refs`, `test_storage_paths_are_deterministic`, `test_research_loop_scan_blocks_leaks_and_reports_metrics`, and `test_research_loop_scan_service_clean_loop` |
 
 ## Hard Boundaries
 
@@ -73,6 +73,11 @@ checks:
   verifier-pass claims, gate-pass claims, and promotion claims. `run --dry-run`
   must not write source-of-truth files, and non-dry-run loop execution remains
   refused until an explicit deterministic implementation exists.
+- Research-loop attempt memory and scan reports are runtime review context
+  only. Attempt-memory indexes must stay under ignored `.cosheaf/` paths and
+  cannot become proof, source metadata, human review, verifier pass, gate pass,
+  accepted status, accepted refutation, or promotion authority. Loop scans must
+  fail closed on blocking findings before any future handoff export path.
 - Checked counterexample evidence is review evidence only. It must not claim
   human review, accepted refutation, accepted status, verifier pass, gate pass,
   or promotion authority, and public-only context must not expose private

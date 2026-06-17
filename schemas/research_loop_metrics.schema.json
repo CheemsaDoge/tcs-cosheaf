@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_metrics.schema.json",
+  "title": "ResearchLoopMetrics",
+  "description": "Deterministic metrics for research-loop memory and scan reports.",
+  "type": "object",
+  "required": [
+    "attempt_count",
+    "unique_direction_count",
+    "repeat_failure_count",
+    "blocked_repeat_retry_count",
+    "candidate_counterexample_count",
+    "checked_counterexample_count",
+    "draft_artifact_ref_count",
+    "handoff_ref_count",
+    "scanner_blocker_count"
+  ],
+  "properties": {
+    "attempt_count": { "type": "integer", "minimum": 0 },
+    "unique_direction_count": { "type": "integer", "minimum": 0 },
+    "repeat_failure_count": { "type": "integer", "minimum": 0 },
+    "blocked_repeat_retry_count": { "type": "integer", "minimum": 0 },
+    "candidate_counterexample_count": { "type": "integer", "minimum": 0 },
+    "checked_counterexample_count": { "type": "integer", "minimum": 0 },
+    "draft_artifact_ref_count": { "type": "integer", "minimum": 0 },
+    "handoff_ref_count": { "type": "integer", "minimum": 0 },
+    "scanner_blocker_count": { "type": "integer", "minimum": 0 }
+  },
+  "additionalProperties": false
+}

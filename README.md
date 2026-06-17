@@ -16,11 +16,12 @@ scanning, runtime handoff bundles, explicit handoff export,
 workspace/public-KB downstream smoke, and release documentation.
 Active development after `v0.6.0` is the unreleased `v0.7.0` Bounded Research
 Loop + Attempt Memory line. Phase B added core research-loop runtime records
-under `.cosheaf/research-loops/`, and Phase C.1 adds deterministic
-next-action planning plus external operator task/result packet commands. That
-line is not released yet and does not add production autonomy, hosted-provider
-defaults, automatic theorem proving, human review, accepted writes, verifier
-passes, gate passes, or promotion authority.
+under `.cosheaf/research-loops/`, Phase C.1 added deterministic next-action
+planning plus external operator task/result packet commands, and Phase D.1 adds
+runtime attempt memory, repeat-failure avoidance, retry-justification checks,
+and a loop scanner. That line is not released yet and does not add production
+autonomy, hosted-provider defaults, automatic theorem proving, human review,
+accepted writes, verifier passes, gate passes, or promotion authority.
 Earlier published baselines include **v0.3.0 Checked Evidence + Research Run
 Loop** and **v0.4.0 Strategy Planner + Research Task Graph**. The `v0.1.1`
 tag remains the downstream Formal Link Layer support
@@ -182,9 +183,10 @@ Implemented:
   demo/policy smoke, and ecosystem matrix rows.
 - Unreleased `v0.7.0` research-loop surfaces: core loop/attempt runtime
   records, structured failure memory, deterministic C.1 next/step/run
-  dry-run planning, and external operator task/result packet commands. These
-  records stay under ignored `.cosheaf/` runtime paths and remain review
-  context only.
+  dry-run planning, external operator task/result packet commands, D.1
+  attempt-memory indexing, repeat-failure surfacing, retry-justification
+  enforcement, and loop scanning. These records stay under ignored `.cosheaf/`
+  runtime paths and remain review context only.
 
 Planned or incomplete:
 
@@ -380,6 +382,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Gatekeeper and validation gates](docs/GATES.md)
 - [Agent access](docs/AGENT_ACCESS.md)
 - [Codex operator runbook](docs/CODEX_OPERATOR_RUNBOOK.md)
+- [Research loops](docs/RESEARCH_LOOPS.md)
 - [External operator run loop](docs/EXTERNAL_OPERATOR_RUN_LOOP.md)
 - [Operator workspace demo](docs/OPERATOR_WORKSPACE_DEMO.md)
 - [Operator Skill package](docs/OPERATOR_SKILL.md)

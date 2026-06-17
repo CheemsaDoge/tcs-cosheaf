@@ -50,21 +50,27 @@
   `ResearchLoopNextResult`, `ResearchLoopStepResult`,
   `ResearchLoopRunResult`, `ResearchLoopOperatorTask`,
   `OperatorResultFailure`, `ResearchLoopOperatorResult`,
-  `ResearchLoopImportResult`, `ResearchLoopError`, storage path helpers,
+  `ResearchLoopImportResult`, `ResearchLoopMetrics`,
+  `ResearchLoopAttemptMemoryEntry`, `ResearchLoopFailureCluster`,
+  `ResearchLoopAttemptMemoryIndex`, `ResearchLoopScanFinding`,
+  `ResearchLoopScanResult`, `ResearchLoopError`, storage path helpers,
   `start_loop`, `write_loop`, `load_loop`, `append_attempt`,
   `append_loop_event`, `list_loops`, `next_loop_action`, `step_loop`,
-  `run_loop`, `build_operator_task`, `export_operator_task`, and
-  `import_operator_result`. Runtime records are JSON under
+  `run_loop`, `build_operator_task`, `export_operator_task`,
+  `import_operator_result`, `update_attempt_memory_index`,
+  `load_attempt_memory_index`, and `scan_research_loop`. Runtime records are JSON under
   `.cosheaf/research-loops/<loop-id>/loop.json`,
   `.cosheaf/research-loops/<loop-id>/attempts/<attempt-id>.json`, and
-  `.cosheaf/research-loops/<loop-id>/events.jsonl`. The CLI surface is
+  `.cosheaf/research-loops/<loop-id>/events.jsonl`; attempt memory is indexed at
+  `.cosheaf/research-loops/attempt-memory.json`; loop scan reports are written to
+  `.cosheaf/research-loops/<loop-id>/scan.json`. The CLI surface is
   `cosheaf research-loop start/show/list/append-attempt/finalize` plus the
-  C.1 runner/operator commands
-  `next/step/run/export-task/import-result`. Loop records and operator task
-  packets are review context only and do not grant accepted writes, human
-  review, verifier-result mutation, gate pass, or promotion authority.
-  `run` currently supports dry-run planning only and refuses non-dry-run
-  execution.
+  runner/operator/memory/scanner commands
+  `next/step/run/export-task/import-result/scan`. Loop records, operator task
+  packets, attempt-memory indexes, and scan reports are review context only and
+  do not grant accepted writes, human review, verifier-result mutation, gate
+  pass, or promotion authority. `run` currently supports dry-run planning only
+  and refuses non-dry-run execution.
 - Artifact failure-memory surfacing is implemented for read-only inspection,
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
   and controlled append, artifact cards, memory search, compact context card
@@ -205,6 +211,12 @@
   it as a runtime loop attempt. Imports reject accepted-write references,
   hidden-reasoning fields, human-review claims, verifier-pass claims,
   gate-pass claims, promotion claims, and any true claimed authority flag.
+- `cosheaf research-loop scan <loop-id> --json`: scans one loop runtime record,
+  attempt JSON files, and event log for secrets, provider payloads,
+  hidden-reasoning markers, public-only private material, accepted-write
+  references, and authority claims. It writes
+  `.cosheaf/research-loops/<loop-id>/scan.json`, emits deterministic JSON with
+  metrics and findings, and exits nonzero when blocking findings exist.
 - `cosheaf workspace info`: shows the active workspace name, configured/legacy
   mode, repository root, and KB roots.
 - `cosheaf workspace info --repo-root <path>`: shows workspace configuration for
@@ -2850,15 +2862,22 @@ working directory.
   `schemas/research_loop_run_result.schema.json`,
   `schemas/research_loop_operator_task.schema.json`,
   `schemas/operator_result_failure.schema.json`,
-  `schemas/research_loop_operator_result.schema.json`, and
-  `schemas/research_loop_import_result.schema.json`: bounded research-loop
+  `schemas/research_loop_operator_result.schema.json`,
+  `schemas/research_loop_import_result.schema.json`,
+  `schemas/research_loop_metrics.schema.json`,
+  `schemas/research_loop_attempt_memory_entry.schema.json`,
+  `schemas/research_loop_failure_cluster.schema.json`,
+  `schemas/research_loop_attempt_memory.schema.json`,
+  `schemas/research_loop_scan_finding.schema.json`, and
+  `schemas/research_loop_scan.schema.json`: bounded research-loop
   schema family. These schemas cover loop runtime records, attempts, budgets,
   stop conditions, decisions, structured failures, evidence summaries, policy
   findings, next-action metadata, review summaries, previous-failure
   summaries, deterministic next/step/run results, external-operator task
-  packets, operator result failures, operator result imports, and import
-  results. They do not authorize accepted writes, human review, verifier pass,
-  gate pass, or promotion.
+  packets, operator result failures, operator result imports, import results,
+  metrics, attempt-memory entries, failure clusters, attempt-memory indexes,
+  scanner findings, and scan reports. They do not authorize accepted writes,
+  human review, verifier pass, gate pass, or promotion.
 - `schemas/review.schema.json`: review YAML schema.
 - `schemas/verifier.schema.json`: verifier result schema.
 - `schemas/verifier_evidence.schema.json`: verifier evidence record v1 schema.

@@ -12,8 +12,9 @@
 6. [Gates](GATES.md)：理解验证和门禁语义，尤其是 `skipped` 不是 `pass`。
 7. [Artifact lifecycle](ARTIFACT_LIFECYCLE.md)：理解 draft、locally tested、reviewed、accepted、refuted、obsolete 等生命周期状态。
 8. [Codex workflow](CODEX_WORKFLOW.md)：理解 issue 驱动开发、上下文包、分支、PR 和检查命令。
-9. [Agent access](AGENT_ACCESS.md) 与 [Agent providers](AGENT_PROVIDERS.md)：理解 CLI-first 智能体接口、提供商边界、真实网络调用保护和日志策略。
-10. [Current milestone](../context/CURRENT_MILESTONE.md) 与 [Project state](../context/PROJECT_STATE.md)：查看当前里程碑和持久化项目状态。
+9. [Agent access](AGENT_ACCESS.md)、[Codex operator runbook](CODEX_OPERATOR_RUNBOOK.md) 与 [Research loops](RESEARCH_LOOPS.md)：理解 CLI-first 智能体接口、受限 operator 流程和 bounded research-loop 运行时边界。
+10. [Agent providers](AGENT_PROVIDERS.md)：理解提供商边界、真实网络调用保护和日志策略。
+11. [Current milestone](../context/CURRENT_MILESTONE.md) 与 [Project state](../context/PROJECT_STATE.md)：查看当前里程碑和持久化项目状态。
 
 ## 核心概念速查
 
@@ -76,6 +77,8 @@ cosheaf graph show
 
 - [Codex workflow](CODEX_WORKFLOW.md)：Codex 开发流程。
 - [Agent access](AGENT_ACCESS.md)：CLI-first 智能体访问接口。
+- [Codex operator runbook](CODEX_OPERATOR_RUNBOOK.md)：operator 命令入口和安全边界。
+- [Research loops](RESEARCH_LOOPS.md)：bounded multi-attempt research-loop 运行时、attempt memory 和 scanner。
 - [Agent providers](AGENT_PROVIDERS.md)：提供商配置、fake provider 和真实网络边界。
 - [Agent roles](AGENT_ROLES.md)：智能体角色合同。
 - [MCP server](MCP_SERVER.md)：MCP 接口。

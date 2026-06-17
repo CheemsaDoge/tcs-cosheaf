@@ -50,6 +50,7 @@ cosheaf research-loop step <loop-id> --json
 cosheaf research-loop run <loop-id> --max-attempts <n> --wallclock-minutes <n> --dry-run --json
 cosheaf research-loop export-task <loop-id> --out .cosheaf/research-loops/<loop-id>/operator_task.json --json
 cosheaf research-loop import-result <loop-id> --input-json operator_result.json --json
+cosheaf research-loop scan <loop-id> --json
 cosheaf research-loop finalize <loop-id> --json
 ```
 
@@ -59,15 +60,18 @@ result or structured failure records, and policy findings. Loop success never
 means accepted status. Attempts cannot write `kb/accepted/`, create human
 review, mutate verifier results, or claim promotion authority.
 
-The C.1 runner/operator protocol remains CLI-first and bounded. `next`
+The current D.1 research-loop surface remains CLI-first and bounded. `next`
 previews the next deterministic action, `step` records one planning event,
-`run --dry-run` previews bounded actions without writing source-of-truth
-files, `export-task` writes an explicit repository-local operator task packet,
-and `import-result` imports a structured external result as runtime loop
-memory. The current `run` command refuses non-dry-run execution. These commands
-do not call hosted providers, execute arbitrary shell, run gates, create
-verifier results, create human review, write accepted knowledge, or promote
-artifacts.
+`run --dry-run` previews bounded actions without writing source-of-truth files,
+`export-task` writes an explicit repository-local operator task packet, and
+`import-result` imports a structured external result as runtime loop memory.
+Attempt imports rebuild `.cosheaf/research-loops/attempt-memory.json` and
+refuse repeated failed directions unless `retry_justification` is present.
+`scan` writes a runtime report under `.cosheaf/research-loops/<loop-id>/` and
+fails closed on blocking leak or authority findings. The current `run` command
+refuses non-dry-run execution. These commands do not call hosted providers,
+execute arbitrary shell, run gates, create verifier results, create human
+review, write accepted knowledge, or promote artifacts.
 
 The runbook is documentation only. It does not embed an agent runtime, call
 hosted providers by default, require MCP, write accepted knowledge, create

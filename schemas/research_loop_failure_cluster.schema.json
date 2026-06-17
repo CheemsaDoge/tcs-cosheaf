@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_failure_cluster.schema.json",
+  "title": "ResearchLoopFailureCluster",
+  "description": "Deterministic lexical cluster of similar research-loop failures.",
+  "type": "object",
+  "required": [
+    "cluster_id",
+    "issue_id",
+    "signature",
+    "representative_direction",
+    "failure_count",
+    "attempt_ids",
+    "failure_ids"
+  ],
+  "properties": {
+    "cluster_id": { "type": "string", "minLength": 1 },
+    "issue_id": { "type": "string", "minLength": 1 },
+    "signature": { "type": "string", "minLength": 1 },
+    "representative_direction": { "type": "string", "minLength": 1 },
+    "failure_count": { "type": "integer", "minimum": 1 },
+    "attempt_ids": { "type": "array", "items": { "type": "string" } },
+    "failure_ids": { "type": "array", "items": { "type": "string" } },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "related_artifacts": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

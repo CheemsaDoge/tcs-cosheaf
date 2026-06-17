@@ -6245,6 +6245,46 @@ def research_loop_import_result(
     console.print(f"- path: {result.relative_path}")
 
 
+@research_loop_app.command("scan")
+def research_loop_scan(
+    loop_id: str = typer.Argument(..., help="Loop ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Scan one research loop for unsafe runtime material."""
+    from cosheaf.research.loop import ResearchLoopError, scan_research_loop
+
+    console = Console(width=120, markup=False)
+    try:
+        result = scan_research_loop(RepoContext(repo_root), loop_id)
+    except (ResearchLoopError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_loop_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        if result.handoff_blocked:
+            raise typer.Exit(1)
+        return
+    console.print(f"Research loop scan: {result.loop_id}")
+    console.print(f"- findings: {result.finding_count}")
+    console.print(f"- blockers: {result.blocking_finding_count}")
+    console.print(f"- report: {result.report_path}")
+    console.print(f"- authority: {result.authority_notice}")
+    if result.handoff_blocked:
+        raise typer.Exit(1)
+
+
 def _research_loop_error_result(exc: Exception) -> ErrorResult:
     if hasattr(exc, "code") and hasattr(exc, "remediation"):
         details = getattr(exc, "details", {})

@@ -9,11 +9,13 @@ passes, gate passes, or promotion authority.
 from __future__ import annotations
 
 import json
+import re
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path, PurePosixPath, PureWindowsPath
-from typing import Any, Literal, Self
+from typing import Any, Literal, Self, cast
 
 from pydantic import (
     BaseModel,
@@ -26,6 +28,7 @@ from pydantic import (
 
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.paths import normalize_repo_path
+from cosheaf.security.provider_logs import scan_provider_log_text
 from cosheaf.storage.repo import RepoContext
 
 RESEARCH_LOOP_AUTHORITY_NOTICE = (
@@ -36,6 +39,8 @@ RESEARCH_LOOP_AUTHORITY_NOTICE = (
 
 RESEARCH_LOOP_RUNTIME_ROOT = Path(".cosheaf") / "research-loops"
 RESEARCH_LOOP_REVIEW_ROOT = Path("reviews") / "research-loops"
+RESEARCH_LOOP_ATTEMPT_MEMORY_KIND = "research_loop_attempt_memory"
+RESEARCH_LOOP_SCAN_KIND = "research_loop_scan"
 
 ResearchLoopPolicyMode = Literal["public_only", "private_research"]
 AttemptPolicySeverity = Literal["info", "warning", "blocking"]
@@ -71,6 +76,72 @@ _AUTHORITY_FIELD_NAMES = frozenset(
 _HIDDEN_REASONING_FIELD_NAMES = frozenset(
     {"chain_of_thought", "hidden_reasoning", "reasoning_trace"}
 )
+_PRIVATE_PATH_PATTERN = re.compile(
+    r"(?i)(?:^|[/\\])kb[/\\]private[/\\]|(?:^|[/\\])private[/\\]"
+)
+_ACCEPTED_PATH_PATTERN = re.compile(r"(?i)(?:^|[/\\])kb[/\\][^\"'\s,}]*accepted[/\\]")
+_PROVIDER_PAYLOAD_KEYS = frozenset(
+    {
+        "provider_payload",
+        "provider_request",
+        "provider_response",
+        "raw_provider_payload",
+        "raw_provider_request",
+        "raw_provider_response",
+        "raw_request",
+        "raw_response",
+    }
+)
+_AUTHORITY_BOOLEAN_KEYS = frozenset(
+    {
+        "accepted",
+        "accepted_write_performed",
+        "accepted_status",
+        "gate_pass",
+        "human_review",
+        "human_review_created",
+        "human_reviewed",
+        "promote",
+        "promotion_authority",
+        "promotion_performed",
+        "review_state",
+        "verifier_pass",
+        "verifier_result_mutated",
+    }
+)
+_AUTHORITY_TEXT_PATTERN = re.compile(
+    r"(?i)(human_reviewed|mark\s+human\s+review|mark\s+.*reviewed|"
+    r"promote\s+this|promotion_authority|"
+    r"verifier_pass\s*[:=]\s*true|accepted_status\s*[:=]\s*accepted)"
+)
+_ENVIRONMENT_DUMP_KEYS = frozenset({"env", "environ", "environment", "env_dump"})
+_LOOP_SCAN_FINDING_MESSAGES = {
+    "api_key": "research loop contains an API-key-shaped value",
+    "bearer_token": "research loop contains an unredacted bearer token",
+    "environment_dump": "research loop contains an environment-like dump",
+    "secret_env_value": "research loop contains a secret-looking key with a value",
+    "hidden_reasoning": "research loop contains hidden-reasoning marker text",
+    "unapproved_private_context": (
+        "research loop contains private context without matching policy and consent"
+    ),
+    "absolute_private_path": (
+        "research loop contains an absolute user or private filesystem path"
+    ),
+    "private_path_reference": (
+        "public-only research loop references a private path or scope"
+    ),
+    "accepted_write_attempt": "research loop references an accepted KB write target",
+    "provider_payload": (
+        "research loop stores raw provider request or response payload data"
+    ),
+    "authority_claim": (
+        "research loop claims human-review, verifier, accepted, or promotion "
+        "authority"
+    ),
+    "loop_json_invalid": "research loop JSON could not be parsed",
+    "attempt_json_invalid": "research loop attempt JSON could not be parsed",
+    "events_json_invalid": "research loop event JSON could not be parsed",
+}
 
 
 def _utc_now() -> datetime:
@@ -556,6 +627,142 @@ class PreviousFailureSummary(ResearchLoopModel):
         return _safe_optional_text(value)
 
 
+class ResearchLoopMetrics(ResearchLoopModel):
+    """Deterministic metrics for loop memory and scanner reports."""
+
+    attempt_count: int = Field(default=0, ge=0)
+    unique_direction_count: int = Field(default=0, ge=0)
+    repeat_failure_count: int = Field(default=0, ge=0)
+    blocked_repeat_retry_count: int = Field(default=0, ge=0)
+    candidate_counterexample_count: int = Field(default=0, ge=0)
+    checked_counterexample_count: int = Field(default=0, ge=0)
+    draft_artifact_ref_count: int = Field(default=0, ge=0)
+    handoff_ref_count: int = Field(default=0, ge=0)
+    scanner_blocker_count: int = Field(default=0, ge=0)
+
+
+class ResearchLoopAttemptMemoryEntry(ResearchLoopModel):
+    """One failure-memory entry indexed from runtime attempts."""
+
+    loop_id: str
+    issue_id: str
+    attempt_id: str
+    failure_id: str
+    cluster_id: str
+    signature: str
+    attempted_direction: str
+    why_it_failed: str
+    avoid_in_future: str
+    should_retry: bool
+    retry_conditions: str | None = None
+    tags: tuple[ResearchLoopFailureTag, ...] = ()
+    related_artifacts: tuple[str, ...] = ()
+    related_previous_attempts: tuple[str, ...] = ()
+    counterexample_candidate_ids: tuple[str, ...] = ()
+    checked_counterexample_ids: tuple[str, ...] = ()
+
+    @field_validator("loop_id", "issue_id", "attempt_id", "failure_id", "cluster_id")
+    @classmethod
+    def _ids(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator(
+        "signature",
+        "attempted_direction",
+        "why_it_failed",
+        "avoid_in_future",
+    )
+    @classmethod
+    def _text(cls, value: str) -> str:
+        return _safe_text(value)
+
+    @field_validator("retry_conditions")
+    @classmethod
+    def _optional_text(cls, value: str | None) -> str | None:
+        return _safe_optional_text(value)
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def _tags(cls, value: Any) -> tuple[ResearchLoopFailureTag, ...]:
+        return tuple(ResearchLoopFailureTag(item) for item in _text_items(value))
+
+    @field_validator(
+        "related_artifacts",
+        "related_previous_attempts",
+        "counterexample_candidate_ids",
+        "checked_counterexample_ids",
+        mode="before",
+    )
+    @classmethod
+    def _refs(cls, value: Any) -> tuple[str, ...]:
+        return tuple(_validate_safe_reference(item) for item in _text_items(value))
+
+
+class ResearchLoopFailureCluster(ResearchLoopModel):
+    """Deterministic lexical grouping for repeated failures."""
+
+    cluster_id: str
+    issue_id: str
+    signature: str
+    representative_direction: str
+    failure_count: int = Field(ge=1)
+    attempt_ids: tuple[str, ...]
+    failure_ids: tuple[str, ...]
+    tags: tuple[ResearchLoopFailureTag, ...] = ()
+    related_artifacts: tuple[str, ...] = ()
+
+    @field_validator("cluster_id", "issue_id")
+    @classmethod
+    def _ids(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("attempt_ids", "failure_ids", mode="before")
+    @classmethod
+    def _id_tuple(cls, value: Any) -> tuple[str, ...]:
+        return tuple(validate_artifact_id(item) for item in _text_items(value))
+
+    @field_validator("signature", "representative_direction")
+    @classmethod
+    def _text(cls, value: str) -> str:
+        return _safe_text(value)
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def _tags(cls, value: Any) -> tuple[ResearchLoopFailureTag, ...]:
+        return tuple(ResearchLoopFailureTag(item) for item in _text_items(value))
+
+    @field_validator("related_artifacts", mode="before")
+    @classmethod
+    def _refs(cls, value: Any) -> tuple[str, ...]:
+        return tuple(_validate_safe_reference(item) for item in _text_items(value))
+
+
+class ResearchLoopAttemptMemoryIndex(ResearchLoopModel):
+    """Repository-level runtime index of loop failure memory."""
+
+    schema_version: int = 1
+    kind: str = RESEARCH_LOOP_ATTEMPT_MEMORY_KIND
+    generated_at: datetime = Field(default_factory=lambda: _utc_now())
+    entry_count: int = Field(ge=0)
+    cluster_count: int = Field(ge=0)
+    metrics: ResearchLoopMetrics
+    entries: tuple[ResearchLoopAttemptMemoryEntry, ...] = ()
+    clusters: tuple[ResearchLoopFailureCluster, ...] = ()
+    authority_notice: str = RESEARCH_LOOP_AUTHORITY_NOTICE
+
+    @field_validator("kind")
+    @classmethod
+    def _kind(cls, value: str) -> str:
+        if value != RESEARCH_LOOP_ATTEMPT_MEMORY_KIND:
+            raise ValueError("invalid research-loop attempt-memory kind")
+        return value
+
+    @field_validator("generated_at")
+    @classmethod
+    def _timestamp(cls, value: datetime) -> datetime:
+        return _normalize_required_timestamp(value)
+
+
 class ResearchLoopNextResult(ResearchLoopModel):
     """Deterministic next-action preview for a loop."""
 
@@ -721,6 +928,7 @@ class ResearchLoopOperatorResult(ResearchLoopModel):
     checked_counterexamples: tuple[str, ...] = ()
     evidence_refs: tuple[str, ...] = ()
     next_recommendation: str | None = None
+    retry_justification: str | None = None
     claimed_authority_flags: dict[str, bool] = Field(default_factory=dict)
     result_summary: str | None = None
 
@@ -748,7 +956,7 @@ class ResearchLoopOperatorResult(ResearchLoopModel):
     def _direction(cls, value: str) -> str:
         return _safe_text(value)
 
-    @field_validator("next_recommendation", "result_summary")
+    @field_validator("next_recommendation", "retry_justification", "result_summary")
     @classmethod
     def _optional_text(cls, value: str | None) -> str | None:
         return _safe_optional_text(value)
@@ -804,6 +1012,61 @@ class ResearchLoopImportResult(ResearchLoopModel):
     @field_validator("relative_path", "events_path")
     @classmethod
     def _paths(cls, value: str) -> str:
+        return _validate_safe_reference(value)
+
+
+class ResearchLoopScanFinding(ResearchLoopModel):
+    """One deterministic research-loop scanner finding."""
+
+    code: str
+    severity: Literal["warning", "blocker"]
+    message: str
+    source_path: str
+    line: int | None = None
+    field_path: str | None = None
+
+    @field_validator("code", "message", "source_path")
+    @classmethod
+    def _text(cls, value: str) -> str:
+        return _safe_text(value)
+
+    @field_validator("field_path")
+    @classmethod
+    def _optional_text(cls, value: str | None) -> str | None:
+        return _safe_optional_text(value)
+
+
+class ResearchLoopScanResult(ResearchLoopModel):
+    """One research-loop scan report."""
+
+    schema_version: int = 1
+    kind: str = RESEARCH_LOOP_SCAN_KIND
+    loop_id: str
+    policy_mode: ResearchLoopPolicyMode
+    metrics: ResearchLoopMetrics
+    finding_count: int = Field(ge=0)
+    blocking_finding_count: int = Field(ge=0)
+    handoff_blocked: bool
+    report_path: str
+    accepted_write_performed: Literal[False] = False
+    authority_notice: str = RESEARCH_LOOP_AUTHORITY_NOTICE
+    findings: tuple[ResearchLoopScanFinding, ...] = ()
+
+    @field_validator("kind")
+    @classmethod
+    def _kind(cls, value: str) -> str:
+        if value != RESEARCH_LOOP_SCAN_KIND:
+            raise ValueError("invalid research-loop scan kind")
+        return value
+
+    @field_validator("loop_id")
+    @classmethod
+    def _loop_id(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("report_path")
+    @classmethod
+    def _path(cls, value: str) -> str:
         return _validate_safe_reference(value)
 
 
@@ -1085,6 +1348,7 @@ def append_attempt(
         },
         recorded_at=attempt.completed_at or _utc_now(),
     )
+    update_attempt_memory_index(context)
     return ResearchLoopAttemptWriteResult(
         loop=updated,
         attempt=attempt,
@@ -1142,10 +1406,85 @@ def list_loops(context: RepoContext) -> list[str]:
     )
 
 
+def update_attempt_memory_index(context: RepoContext) -> ResearchLoopAttemptMemoryIndex:
+    """Rebuild and persist the repository-level attempt-memory index."""
+    index = _build_attempt_memory_index(context)
+    target = context.resolve(research_loop_attempt_memory_path())
+    _ensure_repo_local(context, target)
+    _write_json(target, index)
+    return index
+
+
+def load_attempt_memory_index(context: RepoContext) -> ResearchLoopAttemptMemoryIndex:
+    """Load the attempt-memory index, rebuilding in memory if missing or invalid."""
+    relative_path = research_loop_attempt_memory_path()
+    target = context.resolve(relative_path)
+    if not target.is_file():
+        return _build_attempt_memory_index(context)
+    try:
+        raw = json.loads(target.read_text(encoding="utf-8-sig"))
+        return ResearchLoopAttemptMemoryIndex.model_validate(raw)
+    except (OSError, json.JSONDecodeError, ValidationError, ValueError):
+        return _build_attempt_memory_index(context)
+
+
+def scan_research_loop(
+    context: RepoContext,
+    loop_id: str,
+    *,
+    write_report: bool = True,
+) -> ResearchLoopScanResult:
+    """Scan one research-loop runtime record and optionally persist a report."""
+    loop = load_loop(context, loop_id)
+    scanner = _ResearchLoopScanner(context=context, loop=loop)
+    loop_path = research_loop_path(loop.loop_id)
+    loop_target = context.resolve(loop_path)
+    scanner.scan_json_file(
+        loop_target.read_text(encoding="utf-8-sig"),
+        source_path=loop_path.as_posix(),
+        invalid_code="loop_json_invalid",
+    )
+    for attempt in loop.attempts:
+        attempt_path = research_loop_attempt_path(loop.loop_id, attempt.attempt_id)
+        attempt_target = context.resolve(attempt_path)
+        if attempt_target.is_file():
+            scanner.scan_json_file(
+                attempt_target.read_text(encoding="utf-8-sig"),
+                source_path=attempt_path.as_posix(),
+                invalid_code="attempt_json_invalid",
+            )
+    events_path = research_loop_events_path(loop.loop_id)
+    events_target = context.resolve(events_path)
+    if events_target.exists():
+        scanner.scan_events_jsonl(
+            events_target.read_text(encoding="utf-8-sig"),
+            source_path=events_path.as_posix(),
+        )
+    findings = tuple(scanner.findings)
+    blocker_count = sum(1 for finding in findings if finding.severity == "blocker")
+    result = ResearchLoopScanResult(
+        loop_id=loop.loop_id,
+        policy_mode=scanner.policy_mode,
+        metrics=_loop_metrics([loop], scanner_blocker_count=blocker_count),
+        finding_count=len(findings),
+        blocking_finding_count=blocker_count,
+        handoff_blocked=blocker_count > 0,
+        report_path=research_loop_scan_path(loop.loop_id).as_posix(),
+        findings=findings,
+    )
+    if write_report:
+        target = context.resolve(Path(result.report_path))
+        _ensure_repo_local(context, target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(result.to_json(), encoding="utf-8", newline="\n")
+    return result
+
+
 def next_loop_action(context: RepoContext, loop_id: str) -> ResearchLoopNextResult:
     """Return the deterministic next-action preview for one loop."""
     loop = load_loop(context, loop_id)
-    return _next_result_for_loop(loop)
+    memory = load_attempt_memory_index(context)
+    return _next_result_for_loop(loop, memory_index=memory)
 
 
 def step_loop(context: RepoContext, loop_id: str) -> ResearchLoopStepResult:
@@ -1201,7 +1540,8 @@ def run_loop(
             ),
         )
     loop = load_loop(context, loop_id)
-    planned = _planned_actions(loop, max_attempts=max_attempts)
+    memory = load_attempt_memory_index(context)
+    planned = _planned_actions(loop, max_attempts=max_attempts, memory_index=memory)
     return ResearchLoopRunResult(
         loop_id=loop.loop_id,
         mode="dry_run",
@@ -1219,7 +1559,7 @@ def export_operator_task(
 ) -> Path:
     """Write an external operator task packet to a repository-local path."""
     loop = load_loop(context, loop_id)
-    task = build_operator_task(loop)
+    task = build_operator_task(loop, memory_index=load_attempt_memory_index(context))
     relative_path = _validate_output_path(out)
     target = context.resolve(relative_path)
     _ensure_repo_local(context, target)
@@ -1237,9 +1577,13 @@ def export_operator_task(
     return relative_path
 
 
-def build_operator_task(loop: ResearchLoop) -> ResearchLoopOperatorTask:
+def build_operator_task(
+    loop: ResearchLoop,
+    *,
+    memory_index: ResearchLoopAttemptMemoryIndex | None = None,
+) -> ResearchLoopOperatorTask:
     """Build an external operator task packet without writing files."""
-    next_result = _next_result_for_loop(loop)
+    next_result = _next_result_for_loop(loop, memory_index=memory_index)
     return ResearchLoopOperatorTask(
         loop_id=loop.loop_id,
         attempt_id=next_result.attempt_id,
@@ -1290,6 +1634,23 @@ def import_operator_result(
 ) -> ResearchLoopImportResult:
     """Import one structured external operator result as a loop attempt."""
     loop = load_loop(context, loop_id)
+    memory = load_attempt_memory_index(context)
+    repeat_failures = _matching_failure_memory(
+        loop,
+        payload.attempted_direction,
+        payload.artifacts_referenced,
+        memory,
+    )
+    if repeat_failures and payload.retry_justification is None:
+        raise ResearchLoopError(
+            "repeat failure direction requires retry_justification",
+            code="repeat_retry_requires_justification",
+            remediation=(
+                "Explain why retrying this failed direction is justified, or "
+                "choose a different direction."
+            ),
+            details={"failure_count": str(len(repeat_failures))},
+        )
     attempt_number = len(loop.attempts) + 1
     attempt_id = f"{loop.loop_id}.attempt.{attempt_number}"
     attempt = _attempt_from_operator_result(
@@ -1297,6 +1658,7 @@ def import_operator_result(
         attempt_id=attempt_id,
         attempt_number=attempt_number,
         payload=payload,
+        repeat_failures=repeat_failures,
     )
     result = append_attempt(context, loop.loop_id, attempt)
     return ResearchLoopImportResult(
@@ -1329,10 +1691,29 @@ def research_loop_events_path(loop_id: str) -> Path:
     return RESEARCH_LOOP_RUNTIME_ROOT / validate_artifact_id(loop_id) / "events.jsonl"
 
 
-def _next_result_for_loop(loop: ResearchLoop) -> ResearchLoopNextResult:
+def research_loop_attempt_memory_path() -> Path:
+    """Return repository-relative attempt-memory index path."""
+    return RESEARCH_LOOP_RUNTIME_ROOT / "attempt-memory.json"
+
+
+def research_loop_scan_path(loop_id: str) -> Path:
+    """Return repository-relative loop scan report path."""
+    return RESEARCH_LOOP_RUNTIME_ROOT / validate_artifact_id(loop_id) / "scan.json"
+
+
+def _next_result_for_loop(
+    loop: ResearchLoop,
+    *,
+    memory_index: ResearchLoopAttemptMemoryIndex | None = None,
+) -> ResearchLoopNextResult:
     attempt_number = len(loop.attempts) + 1
     attempt_id = f"{loop.loop_id}.attempt.{attempt_number}"
     failures = _previous_failures(loop)
+    if memory_index is not None:
+        failures = _merge_previous_failures(
+            failures,
+            _previous_failures_from_memory(loop, memory_index),
+        )
     stop_conditions = _budget_stop_conditions(
         loop,
         max_attempts=loop.budget.max_attempts,
@@ -1382,16 +1763,17 @@ def _planned_actions(
     loop: ResearchLoop,
     *,
     max_attempts: int,
+    memory_index: ResearchLoopAttemptMemoryIndex | None = None,
 ) -> tuple[ResearchLoopNextResult, ...]:
     if loop.status.value in _TERMINAL_LOOP_STATUSES:
-        return (_next_result_for_loop(loop),)
+        return (_next_result_for_loop(loop, memory_index=memory_index),)
     remaining = max(0, min(max_attempts, loop.budget.max_attempts - len(loop.attempts)))
     if remaining <= 0:
-        return (_next_result_for_loop(loop),)
+        return (_next_result_for_loop(loop, memory_index=memory_index),)
     simulated = loop
     planned: list[ResearchLoopNextResult] = []
     for _ in range(remaining):
-        preview = _next_result_for_loop(simulated)
+        preview = _next_result_for_loop(simulated, memory_index=memory_index)
         planned.append(preview)
         simulated_attempt = ResearchLoopAttempt(
             attempt_id=preview.attempt_id,
@@ -1425,6 +1807,230 @@ def _previous_failures(loop: ResearchLoop) -> tuple[PreviousFailureSummary, ...]
     return tuple(failures)
 
 
+def _previous_failures_from_memory(
+    loop: ResearchLoop,
+    memory_index: ResearchLoopAttemptMemoryIndex,
+) -> tuple[PreviousFailureSummary, ...]:
+    summaries: list[PreviousFailureSummary] = []
+    for entry in memory_index.entries:
+        if entry.issue_id != loop.issue_id:
+            continue
+        summaries.append(_summary_from_memory_entry(entry))
+    return tuple(summaries)
+
+
+def _merge_previous_failures(
+    current: tuple[PreviousFailureSummary, ...],
+    indexed: tuple[PreviousFailureSummary, ...],
+) -> tuple[PreviousFailureSummary, ...]:
+    seen: set[str] = set()
+    merged: list[PreviousFailureSummary] = []
+    for failure in (*current, *indexed):
+        if failure.failure_id in seen:
+            continue
+        seen.add(failure.failure_id)
+        merged.append(failure)
+    return tuple(merged[:25])
+
+
+def _matching_failure_memory(
+    loop: ResearchLoop,
+    attempted_direction: str,
+    artifact_refs: tuple[str, ...],
+    memory_index: ResearchLoopAttemptMemoryIndex,
+) -> tuple[PreviousFailureSummary, ...]:
+    cluster_id = _failure_cluster_id(
+        issue_id=loop.issue_id,
+        direction=attempted_direction,
+        related_artifacts=artifact_refs,
+    )
+    direction_key = _direction_key(attempted_direction)
+    matches = [
+        _summary_from_memory_entry(entry)
+        for entry in memory_index.entries
+        if entry.issue_id == loop.issue_id
+        and (
+            entry.cluster_id == cluster_id
+            or _direction_key(entry.attempted_direction) == direction_key
+        )
+    ]
+    return tuple(matches[:25])
+
+
+def _summary_from_memory_entry(
+    entry: ResearchLoopAttemptMemoryEntry,
+) -> PreviousFailureSummary:
+    return PreviousFailureSummary(
+        failure_id=entry.failure_id,
+        attempt_id=entry.attempt_id,
+        attempted_direction=entry.attempted_direction,
+        why_it_failed=entry.why_it_failed,
+        avoid_in_future=entry.avoid_in_future,
+        should_retry=entry.should_retry,
+        retry_conditions=entry.retry_conditions,
+        signature=entry.signature,
+    )
+
+
+def _build_attempt_memory_index(context: RepoContext) -> ResearchLoopAttemptMemoryIndex:
+    loops = [load_loop(context, loop_id) for loop_id in list_loops(context)]
+    entries = tuple(
+        entry
+        for loop in loops
+        for attempt in loop.attempts
+        for entry in _attempt_memory_entries(loop, attempt)
+    )
+    clusters = _failure_clusters(entries)
+    metrics = _loop_metrics(loops, scanner_blocker_count=0)
+    return ResearchLoopAttemptMemoryIndex(
+        entry_count=len(entries),
+        cluster_count=len(clusters),
+        metrics=metrics.model_copy(
+            update={
+                "repeat_failure_count": sum(
+                    1 for cluster in clusters if cluster.failure_count > 1
+                )
+            }
+        ),
+        entries=entries,
+        clusters=clusters,
+    )
+
+
+def _attempt_memory_entries(
+    loop: ResearchLoop,
+    attempt: ResearchLoopAttempt,
+) -> tuple[ResearchLoopAttemptMemoryEntry, ...]:
+    entries: list[ResearchLoopAttemptMemoryEntry] = []
+    for failure in attempt.failures:
+        cluster_id = _failure_cluster_id(
+            issue_id=loop.issue_id,
+            direction=failure.attempted_direction,
+            related_artifacts=failure.related_artifacts,
+        )
+        entries.append(
+            ResearchLoopAttemptMemoryEntry(
+                loop_id=loop.loop_id,
+                issue_id=loop.issue_id,
+                attempt_id=attempt.attempt_id,
+                failure_id=failure.failure_id,
+                cluster_id=cluster_id,
+                signature=_failure_cluster_signature(
+                    issue_id=loop.issue_id,
+                    direction=failure.attempted_direction,
+                    related_artifacts=failure.related_artifacts,
+                    tags=failure.tags,
+                ),
+                attempted_direction=failure.attempted_direction,
+                why_it_failed=failure.why_it_failed,
+                avoid_in_future=failure.avoid_in_future,
+                should_retry=failure.should_retry,
+                retry_conditions=failure.retry_conditions,
+                tags=failure.tags,
+                related_artifacts=failure.related_artifacts,
+                related_previous_attempts=failure.related_previous_attempts,
+                counterexample_candidate_ids=failure.counterexample_candidate_ids,
+                checked_counterexample_ids=failure.checked_counterexample_ids,
+            )
+        )
+    return tuple(entries)
+
+
+def _failure_clusters(
+    entries: tuple[ResearchLoopAttemptMemoryEntry, ...],
+) -> tuple[ResearchLoopFailureCluster, ...]:
+    grouped: dict[str, list[ResearchLoopAttemptMemoryEntry]] = {}
+    for entry in entries:
+        grouped.setdefault(entry.cluster_id, []).append(entry)
+    clusters: list[ResearchLoopFailureCluster] = []
+    for cluster_id in sorted(grouped):
+        group = sorted(grouped[cluster_id], key=lambda item: item.failure_id)
+        tags = tuple(
+            sorted(
+                {tag for entry in group for tag in entry.tags},
+                key=lambda tag: tag.value,
+            )
+        )
+        related_artifacts = tuple(
+            sorted({ref for entry in group for ref in entry.related_artifacts})
+        )
+        clusters.append(
+            ResearchLoopFailureCluster(
+                cluster_id=cluster_id,
+                issue_id=group[0].issue_id,
+                signature=group[0].signature,
+                representative_direction=group[0].attempted_direction,
+                failure_count=len(group),
+                attempt_ids=tuple(sorted({entry.attempt_id for entry in group})),
+                failure_ids=tuple(entry.failure_id for entry in group),
+                tags=tags,
+                related_artifacts=related_artifacts,
+            )
+        )
+    return tuple(clusters)
+
+
+def _loop_metrics(
+    loops: list[ResearchLoop],
+    *,
+    scanner_blocker_count: int,
+) -> ResearchLoopMetrics:
+    attempts = [attempt for loop in loops for attempt in loop.attempts]
+    memory_entries = tuple(
+        entry
+        for loop in loops
+        for attempt in loop.attempts
+        for entry in _attempt_memory_entries(loop, attempt)
+    )
+    repeat_failure_count = sum(
+        1 for cluster in _failure_clusters(memory_entries) if cluster.failure_count > 1
+    )
+    directions = {
+        _direction_key(attempt.planned_direction)
+        for attempt in attempts
+        if attempt.planned_direction
+    }
+    repeat_findings = [
+        finding
+        for attempt in attempts
+        for finding in attempt.policy_findings
+        if finding.finding_type == "repeat_retry"
+    ]
+    blocked_repeat_retry_count = sum(
+        1 for finding in repeat_findings if finding.blocking
+    )
+    candidate_counterexample_count = sum(
+        len(attempt.evidence.counterexample_candidate_ids)
+        + sum(
+            len(failure.counterexample_candidate_ids)
+            for failure in attempt.failures
+        )
+        for attempt in attempts
+    )
+    checked_counterexample_count = sum(
+        len(attempt.evidence.checked_counterexample_ids)
+        + sum(
+            len(failure.checked_counterexample_ids) for failure in attempt.failures
+        )
+        for attempt in attempts
+    )
+    return ResearchLoopMetrics(
+        attempt_count=len(attempts),
+        unique_direction_count=len(directions),
+        repeat_failure_count=repeat_failure_count,
+        blocked_repeat_retry_count=blocked_repeat_retry_count,
+        candidate_counterexample_count=candidate_counterexample_count,
+        checked_counterexample_count=checked_counterexample_count,
+        draft_artifact_ref_count=sum(
+            len(attempt.evidence.draft_artifact_refs) for attempt in attempts
+        ),
+        handoff_ref_count=sum(
+            len(attempt.evidence.handoff_bundle_refs) for attempt in attempts
+        ),
+        scanner_blocker_count=scanner_blocker_count,
+    )
+
+
 def _budget_stop_conditions(
     loop: ResearchLoop,
     *,
@@ -1448,6 +2054,7 @@ def _attempt_from_operator_result(
     attempt_id: str,
     attempt_number: int,
     payload: ResearchLoopOperatorResult,
+    repeat_failures: tuple[PreviousFailureSummary, ...] = (),
 ) -> ResearchLoopAttempt:
     failures = tuple(
         _failure_from_operator_result(
@@ -1474,6 +2081,23 @@ def _attempt_from_operator_result(
     result_summary = payload.result_summary
     if status is ResearchLoopAttemptStatus.SUCCEEDED and result_summary is None:
         result_summary = "Structured operator result imported"
+    policy_findings: tuple[AttemptPolicyFinding, ...] = ()
+    if repeat_failures and payload.retry_justification is not None:
+        policy_findings = (
+            AttemptPolicyFinding(
+                finding_id=f"finding.{attempt_id}.repeat-retry",
+                severity="warning",
+                finding_type="repeat_retry",
+                summary=(
+                    "Repeated a known failed direction with explicit retry "
+                    "justification."
+                ),
+                blocking=False,
+                evidence_refs=tuple(
+                    failure.failure_id for failure in repeat_failures[:5]
+                ),
+            ),
+        )
     return ResearchLoopAttempt(
         attempt_id=attempt_id,
         loop_id=loop.loop_id,
@@ -1485,6 +2109,7 @@ def _attempt_from_operator_result(
         actions_taken=payload.actions_taken,
         failures=failures,
         evidence=evidence,
+        policy_findings=policy_findings,
         next_action=AttemptNextAction(
             action_id=f"action.{attempt_id}.next",
             kind="start_attempt" if payload.next_recommendation else "finalize_loop",
@@ -1533,6 +2158,45 @@ def _failure_signature(
     )
     tag_text = "-".join(tag.value for tag in tags) or "unknown"
     return f"{slug}:{tag_text}"
+
+
+def _failure_cluster_id(
+    *,
+    issue_id: str,
+    direction: str,
+    related_artifacts: tuple[str, ...],
+) -> str:
+    signature = _failure_cluster_signature(
+        issue_id=issue_id,
+        direction=direction,
+        related_artifacts=related_artifacts,
+        tags=(),
+    )
+    return validate_artifact_id(f"cluster.{signature}")
+
+
+def _failure_cluster_signature(
+    *,
+    issue_id: str,
+    direction: str,
+    related_artifacts: tuple[str, ...],
+    tags: tuple[ResearchLoopFailureTag, ...],
+) -> str:
+    artifact_text = ".".join(sorted(_direction_key(ref) for ref in related_artifacts))
+    tag_text = ".".join(sorted(tag.value for tag in tags))
+    parts = [
+        _direction_key(issue_id),
+        _direction_key(direction),
+        artifact_text or "no-artifact",
+        tag_text or "no-tag",
+    ]
+    return ".".join(part for part in parts if part)
+
+
+def _direction_key(value: str) -> str:
+    normalized = normalize_repo_path(value.lower())
+    pieces = re.findall(r"[a-z0-9]+", normalized)
+    return "-".join(pieces) or "unknown"
 
 
 def _validate_output_path(value: str | Path) -> Path:
@@ -1671,6 +2335,225 @@ def _reject_forbidden_payload(payload: dict[str, Any]) -> dict[str, Any]:
     return dict(payload)
 
 
+class _ResearchLoopScanner:
+    def __init__(self, *, context: RepoContext, loop: ResearchLoop) -> None:
+        self.context = context
+        self.loop = loop
+        self.policy_mode = _loop_policy_mode(loop)
+        self.findings: list[ResearchLoopScanFinding] = []
+        self._seen: set[tuple[str, str, int | None, str | None]] = set()
+
+    def scan_json_file(
+        self,
+        text: str,
+        *,
+        source_path: str,
+        invalid_code: str,
+    ) -> object | None:
+        self.scan_text(text, source_path=source_path)
+        try:
+            parsed = cast(object, json.loads(text))
+        except json.JSONDecodeError as exc:
+            self._add(
+                invalid_code,
+                source_path=source_path,
+                line=exc.lineno,
+                severity="blocker",
+            )
+            return None
+        self.scan_json(parsed, source_path=source_path)
+        return parsed
+
+    def scan_events_jsonl(self, text: str, *, source_path: str) -> None:
+        self.scan_text(text, source_path=source_path)
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            if not line.strip():
+                continue
+            try:
+                parsed = json.loads(line)
+            except json.JSONDecodeError:
+                self._add(
+                    "events_json_invalid",
+                    source_path=source_path,
+                    line=line_number,
+                    severity="blocker",
+                )
+                continue
+            self.scan_json(parsed, source_path=source_path)
+
+    def scan_text(self, text: str, *, source_path: str) -> None:
+        for finding in scan_provider_log_text(text, path=source_path):
+            self._add(
+                finding.kind,
+                source_path=source_path,
+                line=finding.line,
+                field_path=finding.key,
+                severity="blocker",
+            )
+        if _ACCEPTED_PATH_PATTERN.search(text):
+            self._add(
+                "accepted_write_attempt",
+                source_path=source_path,
+                severity="blocker",
+            )
+        if (
+            self.policy_mode == "public_only"
+            and _PRIVATE_PATH_PATTERN.search(text)
+        ):
+            self._add(
+                "private_path_reference",
+                source_path=source_path,
+                severity="blocker",
+            )
+
+    def scan_json(self, value: object, *, source_path: str) -> None:
+        for field_path, mapping in _walk_mappings(value):
+            if _has_unapproved_private_context(mapping):
+                self._add(
+                    "unapproved_private_context",
+                    source_path=source_path,
+                    field_path=".".join(field_path) if field_path else None,
+                    severity="blocker",
+                )
+        for field_path, scalar in _walk_json(value):
+            key = field_path[-1] if field_path else ""
+            normalized_key = _normalize_key(key)
+            path_text = ".".join(field_path)
+            if normalized_key in _PROVIDER_PAYLOAD_KEYS:
+                self._add(
+                    "provider_payload",
+                    source_path=source_path,
+                    field_path=path_text,
+                    severity="blocker",
+                )
+            if normalized_key in _ENVIRONMENT_DUMP_KEYS:
+                self._add(
+                    "environment_dump",
+                    source_path=source_path,
+                    field_path=path_text,
+                    severity="blocker",
+                )
+            if normalized_key in _AUTHORITY_BOOLEAN_KEYS and _truthy_authority(scalar):
+                self._add(
+                    "authority_claim",
+                    source_path=source_path,
+                    field_path=path_text,
+                    severity="blocker",
+                )
+            if isinstance(scalar, str) and _AUTHORITY_TEXT_PATTERN.search(scalar):
+                self._add(
+                    "authority_claim",
+                    source_path=source_path,
+                    field_path=path_text,
+                    severity="blocker",
+                )
+            if _is_accepted_path_scalar(scalar):
+                self._add(
+                    "accepted_write_attempt",
+                    source_path=source_path,
+                    field_path=path_text,
+                    severity="blocker",
+                )
+
+    def _add(
+        self,
+        code: str,
+        *,
+        source_path: str,
+        severity: Literal["warning", "blocker"],
+        line: int | None = None,
+        field_path: str | None = None,
+    ) -> None:
+        marker = (code, source_path, line, field_path)
+        if marker in self._seen:
+            return
+        self._seen.add(marker)
+        self.findings.append(
+            ResearchLoopScanFinding(
+                code=code,
+                severity=severity,
+                message=_LOOP_SCAN_FINDING_MESSAGES[code],
+                source_path=source_path,
+                line=line,
+                field_path=field_path,
+            )
+        )
+
+
+def _loop_policy_mode(loop: ResearchLoop) -> ResearchLoopPolicyMode:
+    if any(attempt.policy_mode == "public_only" for attempt in loop.attempts):
+        return "public_only"
+    return "private_research"
+
+
+def _walk_json(
+    value: object,
+    path: tuple[str, ...] = (),
+) -> Iterator[tuple[tuple[str, ...], object]]:
+    yield path, value
+    if isinstance(value, Mapping):
+        for raw_key, child in value.items():
+            yield from _walk_json(child, (*path, str(raw_key)))
+        return
+    if isinstance(value, list):
+        for index, child in enumerate(value):
+            yield from _walk_json(child, (*path, str(index)))
+
+
+def _walk_mappings(
+    value: object,
+    path: tuple[str, ...] = (),
+) -> Iterator[tuple[tuple[str, ...], Mapping[object, object]]]:
+    if isinstance(value, Mapping):
+        yield path, value
+        for raw_key, child in value.items():
+            yield from _walk_mappings(child, (*path, str(raw_key)))
+        return
+    if isinstance(value, list):
+        for index, child in enumerate(value):
+            yield from _walk_mappings(child, (*path, str(index)))
+
+
+def _normalize_key(key: str) -> str:
+    return key.strip().lower().replace("-", "_").replace(".", "_")
+
+
+def _has_unapproved_private_context(mapping: Mapping[object, object]) -> bool:
+    private_context_sent = mapping.get("private_context_sent")
+    root_scopes = mapping.get("root_scopes")
+    has_private_scope = private_context_sent is True or (
+        isinstance(root_scopes, Sequence)
+        and not isinstance(root_scopes, str)
+        and "private" in root_scopes
+    )
+    if not has_private_scope:
+        return False
+    return (
+        mapping.get("policy_scope") != "private_research"
+        or mapping.get("consent_granted") is not True
+    )
+
+
+def _truthy_authority(value: object) -> bool:
+    if value is True:
+        return True
+    if not isinstance(value, str):
+        return False
+    return value.strip().lower() in {
+        "true",
+        "accepted",
+        "approved",
+        "human_reviewed",
+        "promote",
+        "promotion_performed",
+        "verifier_pass",
+    }
+
+
+def _is_accepted_path_scalar(value: object) -> bool:
+    return isinstance(value, str) and bool(_ACCEPTED_PATH_PATTERN.search(value))
+
+
 def _next_sequence(path: Path) -> int:
     if not path.exists():
         return 1
@@ -1697,21 +2580,29 @@ __all__ = [
     "LoopReviewSummary",
     "OperatorResultFailure",
     "PreviousFailureSummary",
+    "RESEARCH_LOOP_ATTEMPT_MEMORY_KIND",
     "RESEARCH_LOOP_AUTHORITY_NOTICE",
     "RESEARCH_LOOP_REVIEW_ROOT",
+    "RESEARCH_LOOP_SCAN_KIND",
     "RESEARCH_LOOP_RUNTIME_ROOT",
     "ResearchLoop",
     "ResearchLoopAttempt",
+    "ResearchLoopAttemptMemoryEntry",
+    "ResearchLoopAttemptMemoryIndex",
     "ResearchLoopAttemptStatus",
     "ResearchLoopBudget",
     "ResearchLoopDecision",
     "ResearchLoopError",
     "ResearchLoopFailureTag",
+    "ResearchLoopFailureCluster",
     "ResearchLoopImportResult",
+    "ResearchLoopMetrics",
     "ResearchLoopNextResult",
     "ResearchLoopOperatorResult",
     "ResearchLoopOperatorTask",
     "ResearchLoopRunResult",
+    "ResearchLoopScanFinding",
+    "ResearchLoopScanResult",
     "ResearchLoopStepResult",
     "ResearchLoopStatus",
     "ResearchLoopStopCondition",
@@ -1722,15 +2613,20 @@ __all__ = [
     "export_operator_task",
     "import_operator_result",
     "list_loops",
+    "load_attempt_memory_index",
     "load_loop",
     "next_loop_action",
+    "research_loop_attempt_memory_path",
     "research_loop_attempt_path",
     "research_loop_events_path",
     "research_loop_path",
+    "research_loop_scan_path",
     "run_loop",
     "save_attempt",
     "save_loop",
+    "scan_research_loop",
     "start_loop",
     "step_loop",
+    "update_attempt_memory_index",
     "write_loop",
 ]

@@ -11,7 +11,7 @@ accepted knowledge, source metadata, or promotion authority.
 
 ## Scope
 
-Implemented through Phase C.1:
+Implemented through Phase D.1:
 
 - core DTOs for loops, attempts, budgets, decisions, stop conditions, failure
   records, evidence summaries, policy findings, next actions, and review
@@ -22,19 +22,29 @@ Implemented through Phase C.1:
   `finalize`;
 - safety checks for accepted KB paths, authority overclaims, hidden-reasoning
   fields, terminal attempt requirements, ordered attempts, and public-mode
-  private references.
+  private references;
 - deterministic runner and external operator protocol surface:
-
-- `cosheaf research-loop next <loop-id> --json`;
-- `cosheaf research-loop step <loop-id> --json`;
-- `cosheaf research-loop run <loop-id> --max-attempts <n>
-  --wallclock-minutes <n> --dry-run --json`;
-- `cosheaf research-loop export-task <loop-id> --out <path> --json`;
-- `cosheaf research-loop import-result <loop-id> --input-json <path> --json`;
+  - `cosheaf research-loop next <loop-id> --json`;
+  - `cosheaf research-loop step <loop-id> --json`;
+  - `cosheaf research-loop run <loop-id> --max-attempts <n>
+    --wallclock-minutes <n> --dry-run --json`;
+  - `cosheaf research-loop export-task <loop-id> --out <path> --json`;
+  - `cosheaf research-loop import-result <loop-id> --input-json <path> --json`;
 - DTOs for previous-failure summaries, next/step/run results, operator task
-  packets, operator result imports, and imported operator failures.
+  packets, operator result imports, and imported operator failures;
+- runtime attempt-memory index at
+  `.cosheaf/research-loops/attempt-memory.json`;
+- deterministic failure clustering and repeat-failure warnings for `next` and
+  task packets;
+- explicit retry-justification requirement when importing a result that
+  repeats a known failed direction;
+- `cosheaf research-loop scan <loop-id> --json` for loop runtime leak and
+  authority-boundary scanning;
+- deterministic metrics for attempt counts, unique directions, repeat
+  failures, retry blockers, counterexamples, draft refs, handoff refs, and
+  scanner blockers.
 
-These C.1 commands are still review-context infrastructure. They do not call
+These commands are still review-context infrastructure. They do not call
 hosted providers, run arbitrary shell commands, mark review, create verifier
 passes, run gates, write accepted knowledge, or promote artifacts. `run`
 currently supports dry-run planning only; non-dry-run local execution remains
@@ -42,9 +52,9 @@ explicitly refused until a later deterministic implementation.
 
 Not implemented yet:
 
-- attempt-memory clustering;
-- scanner CLI;
 - loop handoff export beyond explicit operator task JSON packets;
+- ecosystem demos and eval matrix rows for completed loop workflows;
+- v0.7.0 release-candidate metadata and publication;
 - hosted provider calls;
 - automatic theorem proving or Lean semantic alignment.
 
@@ -54,9 +64,11 @@ Research loops write ignored runtime files only:
 
 ```text
 .cosheaf/research-loops/
+  attempt-memory.json
   <loop-id>/
     loop.json
     events.jsonl
+    scan.json
     attempts/
       <attempt-id>.json
 ```
@@ -197,10 +209,17 @@ cosheaf research-loop import-result <loop-id> \
   --json
 ```
 
+Scan a loop before review handoff:
+
+```bash
+cosheaf research-loop scan <loop-id> --json
+```
+
 `export-task` writes only the requested task packet plus a bounded loop event.
 `import-result` writes a runtime attempt under `.cosheaf/research-loops/`.
-Neither command writes `kb/accepted/`, creates human review, mutates verifier
-results, marks a gate pass, or promotes artifacts.
+`scan` writes a runtime scan report under `.cosheaf/research-loops/<loop-id>/`.
+None of these commands writes `kb/accepted/`, creates human review, mutates
+verifier results, marks a gate pass, or promotes artifacts.
 
 ## External Operator Packet
 
@@ -235,12 +254,43 @@ An operator result import expects structured JSON with:
 - `checked_counterexamples`
 - `evidence_refs`
 - `next_recommendation`
+- `retry_justification`
 - `claimed_authority_flags`
 - `result_summary`
 
 Every value in `claimed_authority_flags` must be false. The import rejects
 accepted-write references, human-review claims, promotion claims, verifier-pass
-claims, gate-pass claims, and hidden-reasoning fields.
+claims, gate-pass claims, and hidden-reasoning fields. If the result repeats a
+known failed direction for the same issue, it must include
+`retry_justification`; otherwise import is refused.
+
+## Attempt Memory And Scanner
+
+`append-attempt` and `import-result` rebuild the runtime attempt-memory index:
+
+```text
+.cosheaf/research-loops/attempt-memory.json
+```
+
+The index is deterministic and review-context only. It contains bounded failure
+entries, lexical clusters, and metrics. Clustering is based on normalized issue
+ID, attempted direction, related artifacts, and failure tags. `next` and
+`export-task` use this memory to surface previous failures to avoid before the
+next attempt.
+
+The loop scanner checks loop runtime JSON, attempt JSON, and event logs for:
+
+- secrets or secret-looking environment values;
+- raw provider payloads;
+- hidden-reasoning markers;
+- private paths in public-only loop material;
+- accepted-write references;
+- human-review, verifier-pass, gate-pass, accepted-status, or promotion claims.
+
+Blocking findings make `cosheaf research-loop scan --json` exit nonzero after
+emitting a machine-readable report. Scanner reports are review context only;
+they are not human review, proof, verifier pass, gate pass, source metadata, or
+promotion authority.
 
 ## Attempt JSON Example
 
@@ -306,13 +356,13 @@ private-scoped IDs. Private research mode is explicit and still non-authoritativ
 The regression suite covers:
 
 - model serialization;
-- schema file presence for Phase B and C.1 DTO families;
+- schema file presence for Phase B, C.1, and D.1 DTO families;
 - invalid terminal transition;
 - accepted-path rejection;
 - missing result/failure rejection;
 - deterministic storage paths;
 - public-mode private-reference rejection;
-- CLI JSON smoke for start/show/append/finalize.
+- CLI JSON smoke for start/show/append/finalize;
 - deterministic `next`;
 - `run --dry-run` writes no source-of-truth files;
 - `step` writes one planning event;
@@ -320,7 +370,12 @@ The regression suite covers:
 - operator-result import and failure-memory update;
 - operator-result import rejection for accepted writes, authority overclaims,
   and missing result/failure evidence;
-- budget exhaustion stop conditions.
+- budget exhaustion stop conditions;
+- attempt-memory index persistence and deterministic clustering;
+- cross-loop repeat-failure surfacing in `next`;
+- unjustified repeat retry rejection and justified retry recording;
+- loop scanner clean and blocking paths with deterministic metrics.
 
-Phase D remains future work: attempt-memory indexing, repeat-failure detection,
-loop scanner CLI, and loop handoff export have not landed in C.1.
+Phase E/F remain future work: ecosystem demos/evals, loop handoff dry-run rows,
+v0.7.0 release-candidate metadata, and publication closeout have not landed in
+D.1.

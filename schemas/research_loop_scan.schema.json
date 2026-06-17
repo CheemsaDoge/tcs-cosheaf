@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_scan.schema.json",
+  "title": "ResearchLoopScanResult",
+  "description": "Research-loop runtime scanner report.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "kind",
+    "loop_id",
+    "policy_mode",
+    "metrics",
+    "finding_count",
+    "blocking_finding_count",
+    "handoff_blocked",
+    "report_path",
+    "accepted_write_performed",
+    "authority_notice",
+    "findings"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "kind": { "const": "research_loop_scan" },
+    "loop_id": { "type": "string", "minLength": 1 },
+    "policy_mode": { "enum": ["public_only", "private_research"] },
+    "metrics": { "$ref": "research_loop_metrics.schema.json" },
+    "finding_count": { "type": "integer", "minimum": 0 },
+    "blocking_finding_count": { "type": "integer", "minimum": 0 },
+    "handoff_blocked": { "type": "boolean" },
+    "report_path": { "type": "string", "minLength": 1 },
+    "accepted_write_performed": { "const": false },
+    "authority_notice": { "type": "string" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "research_loop_scan_finding.schema.json" }
+    }
+  },
+  "additionalProperties": false
+}

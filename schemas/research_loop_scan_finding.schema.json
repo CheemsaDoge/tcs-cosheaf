@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_scan_finding.schema.json",
+  "title": "ResearchLoopScanFinding",
+  "description": "One deterministic research-loop scanner finding.",
+  "type": "object",
+  "required": ["code", "severity", "message", "source_path"],
+  "properties": {
+    "code": { "type": "string", "minLength": 1 },
+    "severity": { "enum": ["warning", "blocker"] },
+    "message": { "type": "string", "minLength": 1 },
+    "source_path": { "type": "string", "minLength": 1 },
+    "line": { "type": ["integer", "null"], "minimum": 1 },
+    "field_path": { "type": ["string", "null"] }
+  },
+  "additionalProperties": false
+}

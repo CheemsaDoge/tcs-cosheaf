@@ -167,6 +167,7 @@ Agent-safe read/check commands include:
 - `cosheaf research-loop next <loop-id> --json`
 - `cosheaf research-loop run <loop-id> --max-attempts <n>
   --wallclock-minutes <n> --dry-run --json`
+- `cosheaf research-loop scan <loop-id> --json`
 - `cosheaf orchestrator plan --issue <issue-id> --json`
 - `cosheaf orchestrator run --issue <issue-id> --provider fake --json`
 - `cosheaf orchestrator run --issue <issue-id> --provider openai-compatible
@@ -215,10 +216,12 @@ hosted providers, and do not change gate or verifier results.
 Research-loop runtime writes are narrower than draft/artifact writes:
 `append-attempt` and `import-result` write ignored loop runtime records under
 `.cosheaf/research-loops/`; `step` appends a planning event; `export-task`
-writes an explicit repository-local operator task packet; and `finalize`
-marks the runtime loop terminal. These records are review context only and
-must not be used as proof, source metadata, verifier pass, gate pass, human
-review, accepted status, accepted refutation, or promotion authority.
+writes an explicit repository-local operator task packet; `scan` writes an
+ignored runtime scanner report; `append-attempt` and `import-result` rebuild
+the ignored attempt-memory index; and `finalize` marks the runtime loop
+terminal. These records are review context only and must not be used as proof,
+source metadata, verifier pass, gate pass, human review, accepted status,
+accepted refutation, or promotion authority.
 
 `review request-from-bundle` derives a draft informational review request from
 a WorkerBundle v2. It preserves assumptions, uncertainty, failed attempts,
@@ -355,9 +358,20 @@ cosheaf research-loop export-task <loop-id> --out <path> --json
 cosheaf research-loop import-result <loop-id> --input-json operator_result.json --json
 ```
 
+The D.1 memory/scanner surface adds:
+
+```bash
+cosheaf research-loop scan <loop-id> --json
+```
+
+D.1 also rebuilds `.cosheaf/research-loops/attempt-memory.json` after loop
+attempt imports, surfaces previous failed directions in `next`, `run --dry-run`,
+and `export-task`, and requires `retry_justification` before importing a result
+that repeats a known failed direction for the same issue.
+
 `next` and `run --dry-run` are planning surfaces. `step`, `append-attempt`,
-`export-task`, `import-result`, and `finalize` write only runtime or explicit
-review-context files. Non-dry-run `run` is not implemented in C.1 and is
+`export-task`, `import-result`, `scan`, and `finalize` write only runtime or
+explicit review-context files. Non-dry-run `run` is not implemented and is
 refused. Research loops do not call hosted providers, execute arbitrary shell,
 write accepted knowledge, create human review, mutate verifier results, mark
 gate pass, or promote artifacts.
@@ -728,10 +742,11 @@ As of this document, the repository has a thin typed service layer, versioned
 agent-access DTO/JSON Schema contracts, a provider-send context preview policy
 service, deterministic JSON output for core read-only CLI commands, controlled
 CLI draft/staging write commands, research-loop runtime records with bounded
-C.1 runner/operator-protocol surfaces, provider CLI commands for config checks,
-context-send preview, and deterministic fake runs, a local stdio MCP surface
-with read-only and controlled draft/review/runtime tools as optional adapter
-code, and an optional documentation-only
+C.1 runner/operator-protocol surfaces plus D.1 attempt-memory and scanner
+surfaces, provider CLI commands for config checks, context-send preview, and
+deterministic fake runs, a local stdio MCP surface with read-only and
+controlled draft/review/runtime tools as optional adapter code, and an optional
+documentation-only
 `docs/skills/cosheaf-operator/SKILL.md` Skill package that documents the
 CLI-first operator workflow. It also has `HostedWorkerService` for role-specific
 fake or mocked provider worker calls whose outputs validate as WorkerBundle v2 or typed
