@@ -3,6 +3,69 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Task E.1 framework work in progress: research-loop eval and ecosystem rows - 2026-06-17
+
+Issue #406 / branch `research-loop-eval-and-ecosystem-demo` is the active Phase
+E.1 work item for the v0.7.0 bounded research-loop line.
+
+Framework implementation state on this branch:
+
+- `cosheaf.evals.research_loop` adds a deterministic eval harness with
+  temporary fixtures containing an issue, public artifact marker, private draft
+  artifact marker, prior failed loop memory, loop attempts, scanner checks, and
+  budget-stop checks.
+- `cosheaf eval research-loop --json` emits a deterministic
+  `research_loop_eval` report with the Phase E metrics:
+  `loop_validity_rate`, `attempt_schema_validity_rate`,
+  `repeat_failure_detection_rate`, `unjustified_retry_block_rate`,
+  `public_private_leak_count`, `scanner_blocker_accuracy`,
+  `handoff_review_context_validity_rate`, `policy_overclaim_rejection_rate`,
+  `budget_stop_accuracy`, `skipped_not_pass_count`, and
+  `accepted_write_violation_count`.
+- `scripts/ecosystem_smoke.py --matrix` now includes framework research-loop
+  eval and workflow smoke rows, workspace-template `research-loop-demo`, and
+  public-KB research-loop policy docs rows.
+- `scripts/ecosystem_smoke.py --research-loop-workflow-smoke` runs a temporary
+  local smoke for start, append-attempt, next, export-task, import-result with
+  retry justification, scan, and finalize.
+- The ecosystem matrix default framework tag is now `v0.6.0`, matching the
+  current published release baseline.
+- `README.md`, `README.zh-CN.md`, `docs/EVALUATION.md`,
+  `docs/RESEARCH_LOOPS.md`, `docs/ROADMAP.md`,
+  `context/CURRENT_MILESTONE.md`, and `context/INTERFACE_REGISTRY.md` describe
+  the Phase E framework surfaces and the remaining downstream PR boundary.
+
+Local verification during framework E.1 closeout:
+
+- `python -m pytest tests/evals/test_research_loop_eval.py -q`: passed with
+  3 tests after type and CLI fixes.
+- `python -m pytest tests/evals/test_research_loop_eval.py tests/test_ecosystem_smoke.py -q`:
+  passed with 18 tests.
+- `python -m cosheaf.cli eval research-loop --json`: passed with 10 cases,
+  `skipped_not_pass_count: 1`, and `accepted_write_violation_count: 0`.
+- `python scripts/ecosystem_smoke.py --research-loop-workflow-smoke`: passed
+  with start, append-attempt, next, export-task, import-result, scan, and
+  finalize against a temporary workspace.
+- `make lint`: passed after line-length and import-order cleanup.
+- `make typecheck`: passed for 189 source files.
+- `make test`: passed with 753 tests.
+- `make validate`: passed for 20 YAML records.
+- `make gate`: passed and wrote ignored reports under `.cosheaf/reports/`.
+- Documentation closeout also removed stale wording that said the Phase E eval
+  command remained future work after the framework eval command was added.
+
+Remaining E.1 work:
+
+- run final `git diff --check` after any further edits before PR;
+- open and merge the framework PR for issue #406 if CI passes;
+- add downstream workspace-template `research-loop-demo` in a separate PR;
+- add public-KB research-loop policy/guard docs in a separate PR;
+- rerun the ecosystem matrix after downstream PRs land.
+
+No accepted KB writes, source-metadata semantics, human-review semantics,
+verifier/gate authority, hosted provider calls, arbitrary shell execution, or
+promotion-policy changes are added by the framework E.1 work.
+
 ## Task D.1 completed: attempt memory, failure avoidance, and loop scanner - 2026-06-17
 
 Issue #404 / branch `attempt-memory-failure-avoidance-scanner` is the completed
@@ -42,8 +105,9 @@ Documentation aligned for closeout:
   writes, retry justification, and D.1 current status.
 - `docs/SECURITY.md` records the loop scanner threat boundary and keeps scan
   reports review-context only.
-- `docs/EVALUATION.md` records D.1 memory/scanner metrics and notes that the
-  Phase E eval command remains future work.
+- `docs/EVALUATION.md` records D.1 memory/scanner metrics. The earlier D.1
+  closeout left Phase E eval as future work; the active E.1 framework section
+  above supersedes that for `cosheaf eval research-loop --json`.
 - `context/INTERFACE_REGISTRY.md` records the new Python, CLI, and schema
   surfaces.
 - `context/CURRENT_MILESTONE.md` marks Phase D.1 complete and points next work

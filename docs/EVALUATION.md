@@ -619,9 +619,41 @@ These metrics are operational signals for reviewing a bounded research loop.
 They are not proof, source metadata, human review, verifier pass, gate pass,
 accepted status, accepted refutation, or promotion authority.
 
-The Phase E `cosheaf eval research-loop --json` command and ecosystem matrix
-rows remain future work. Until then, D.1 metrics are available through runtime
-attempt-memory and scan JSON only.
+Phase E adds the deterministic research-loop eval command:
+
+```bash
+cosheaf eval research-loop --json
+```
+
+Default cases live under:
+
+```text
+evals/research_loop/cases.yaml
+```
+
+The eval builds temporary fixtures with an issue, a public accepted artifact
+marker, a private draft artifact marker, prior failed loop memory, and loop
+attempts. It does not write accepted knowledge in the caller repository, create
+human review, mutate verifier results, call hosted providers, or require
+network access.
+
+`cosheaf eval research-loop` reports:
+
+- `loop_validity_rate`
+- `attempt_schema_validity_rate`
+- `repeat_failure_detection_rate`
+- `unjustified_retry_block_rate`
+- `public_private_leak_count`
+- `scanner_blocker_accuracy`
+- `handoff_review_context_validity_rate`
+- `policy_overclaim_rejection_rate`
+- `budget_stop_accuracy`
+- `skipped_not_pass_count`
+- `accepted_write_violation_count`
+
+These metrics are regression signals only. They do not prove the research
+claim, do not make loop output source metadata, do not mark skipped rows as
+passes, and do not authorize accepted promotion.
 
 ## Ecosystem Readiness Matrix
 
@@ -633,20 +665,28 @@ python scripts/ecosystem_smoke.py --matrix --cosheaf "python -m cosheaf.cli" --f
 
 The active integration matrix rows cover framework local smoke,
 framework verifier-evidence eval smoke, framework checked-evidence run-loop
-eval, framework research-run loop eval, framework strategy-planner eval,
+eval, framework research-run loop eval, framework research-loop eval,
+framework research-loop workflow smoke, framework strategy-planner eval,
 framework operator-session CLI smoke, framework operator-handoff dry-run
 smoke, optional verifier availability, framework git-tag release smoke,
 workspace-template install demo, workspace-template CLI-agent demo,
 workspace-template research-run demo, workspace-template strategy demo,
-workspace-template operator-session demo, workspace-template fake-provider
-smoke, workspace-template verifier-evidence demo, public KB policy guard,
-public KB checked-evidence policy docs, public KB strategy-plan policy docs,
-public KB operator-handoff policy docs, and public KB verifier-policy
-self-test coverage. The default git-tag release-smoke row uses the latest
-published release target `v0.5.0`. Release-candidate checks for `v0.6.0` should
-pass `--framework-tag v0.6.0` explicitly until publication closeout updates the
-published baseline. The git-tag release-smoke row remains an opt-in network row
-and is skipped unless `--include-network` is explicitly supplied.
+workspace-template research-loop demo, workspace-template operator-session
+demo, workspace-template fake-provider smoke, workspace-template
+verifier-evidence demo, public KB policy guard, public KB checked-evidence
+policy docs, public KB strategy-plan policy docs, public KB operator-handoff
+policy docs, public KB research-loop policy docs, and public KB
+verifier-policy self-test coverage. The default git-tag release-smoke row uses
+the latest published release target `v0.6.0`. Release-candidate checks for
+`v0.7.0` should pass `--framework-tag v0.7.0` explicitly until publication
+closeout updates the published baseline. The git-tag release-smoke row remains
+an opt-in network row and is skipped unless `--include-network` is explicitly
+supplied.
+
+The research-loop downstream matrix rows are framework-side compatibility
+checks. They require separate workspace-template and public-KB PRs to provide
+`make research-loop-demo` and `docs/RESEARCH_LOOP_POLICY.md` before the full
+three-repository Phase E matrix can be treated as complete.
 
 Network rows remain opt-in through `--include-network`. When optional external
 SAT/SMT/Lean/lake tools are unavailable, the optional verifier availability
@@ -691,19 +731,24 @@ SQLite index implicitly, but it does build context packs through the existing
 context-pack writer.
 
 The agent workflow, provider workflow, failure/counterexample, artifact
-failure-memory, and verifier evidence evals currently have no CLI commands.
-The checked-evidence and research-run loop evals have CLI commands:
+failure-memory, and verifier evidence evals currently have no direct `cosheaf
+eval ...` CLI commands. The checked-evidence, research-run loop,
+research-loop, and strategy-planner evals have CLI commands:
 
 ```bash
 cosheaf eval checked-evidence-run-loop --json
 cosheaf eval research-run-loop --json
+cosheaf eval research-loop --json
+cosheaf eval strategy-planner --json
 ```
 
-The checked-evidence and research-run loop evals use deterministic local
-fixtures and do not require hosted providers, API keys, MCP, network, SAT, SMT,
-Lean, or lake. Other Python-level evals may refresh `context/TASKS/<issue-id>/`
-context packs, redacted provider logs under `.cosheaf/providers/`, or eval
-fixtures under `.cosheaf/evals/`. Runtime outputs should not be committed.
+The checked-evidence, research-run loop, research-loop, and strategy-planner
+evals use
+deterministic local fixtures and do not require hosted providers, API keys,
+MCP, network, SAT, SMT, Lean, or lake. Other Python-level evals may refresh
+`context/TASKS/<issue-id>/` context packs, redacted provider logs under
+`.cosheaf/providers/`, or eval fixtures under `.cosheaf/evals/`. Runtime
+outputs should not be committed.
 
 ## Limitations
 

@@ -26,9 +26,10 @@ storage, CLI commands, schemas, tests, and docs for
 deterministic runner and external operator task/result protocol:
 `next/step/run --dry-run/export-task/import-result`. Phase D.1 has landed the
 attempt-memory index, deterministic failure clustering, cross-loop
-repeat-failure surfacing, retry-justification guard, and loop scanner. The next
-development focus is Phase E: deterministic research-loop evals, ecosystem
-smoke rows, and downstream demo/policy updates.
+repeat-failure surfacing, retry-justification guard, and loop scanner. Phase E
+has started by adding deterministic research-loop evals and framework ecosystem
+smoke rows; remaining Phase E work is downstream workspace-template demo and
+public-KB policy alignment.
 
 This line keeps the same authority boundary: loop records, task packets,
 operator results, and failure memory are review context only. They do not

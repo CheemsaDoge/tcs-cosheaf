@@ -406,6 +406,17 @@
   repository-local YAML case file.
 - `cosheaf eval research-run-loop --json`: emits deterministic JSON report
   output.
+- `cosheaf eval research-loop`: runs the default deterministic bounded
+  research-loop suite from `evals/research_loop/cases.yaml`.
+- `cosheaf eval research-loop --repo-root <path>`: resolves the eval case file
+  against an explicit repository root while using temporary fixtures for the
+  actual loop runtime checks.
+- `cosheaf eval research-loop --cases <path>`: uses an explicit
+  repository-local YAML case file.
+- `cosheaf eval research-loop --json`: emits deterministic JSON report output
+  with loop validity, attempt schema, repeat-failure, retry-block,
+  scanner-blocker, handoff-context, overclaim-rejection, budget-stop, and
+  skipped-not-pass metrics.
 - `cosheaf eval strategy-planner`: runs the default deterministic strategy
   planner boundary suite from `evals/strategy_planner/cases.yaml`.
 - `cosheaf eval strategy-planner --repo-root <path>`: runs strategy-planner
@@ -797,6 +808,13 @@
   harness. Default cases live in `evals/research_run_loop/cases.yaml` and do
   not require hosted providers, API keys, MCP, network, SAT, SMT, Lean, or
   lake.
+- `cosheaf.evals.research_loop`: deterministic bounded research-loop eval
+  harness. Default cases live in `evals/research_loop/cases.yaml`; cases build
+  temporary fixtures with an issue, public artifact marker, private draft
+  marker, prior failure, loop attempts, scanner rows, and budget-stop checks.
+  The harness does not write accepted knowledge, create human review, mutate
+  verifier results, call hosted providers, or require network, SAT, SMT, Lean,
+  or lake.
 - `cosheaf.services.models.ErrorResult`: public standard error DTO with code,
   message, remediation, blocking flag, optional repository-local
   `related_path`, optional `related_artifact`, and string-to-string details.
@@ -2779,20 +2797,26 @@ working directory.
 - `python scripts/ecosystem_smoke.py --matrix`: runs the structured
   three-repository compatibility matrix. Matrix rows cover framework local
   checkout, framework verifier-evidence eval smoke, framework
-  checked-evidence run-loop eval, framework research-run loop eval, optional
-  verifier availability, framework git tag release smoke, workspace-template
-  demo, workspace-template CLI-agent demo, workspace-template research-run
+  checked-evidence run-loop eval, framework research-run loop eval, framework
+  research-loop eval, framework research-loop workflow smoke, framework
+  strategy-planner eval, framework operator-session CLI smoke, framework
+  operator-handoff dry-run smoke, optional verifier availability, framework git
+  tag release smoke, workspace-template demo, workspace-template CLI-agent
+  demo, workspace-template research-run demo, workspace-template strategy demo,
+  workspace-template research-loop demo, workspace-template operator-session
   demo, workspace-template fake-provider smoke, workspace-template
   verifier-evidence demo, public KB policy guard, public KB checked-evidence
-  policy docs smoke, and public KB verifier-policy self-test. By default,
-  network-install rows are
-  reported as `skipped`, not `pass`. Optional verifier availability returns a
-  skipped matrix row when SAT/SMT/Lean/lake tools are unavailable; that skipped
-  result is not counted as pass.
+  policy docs smoke, public KB strategy-plan policy docs smoke, public KB
+  operator-handoff policy docs smoke, public KB research-loop policy docs
+  smoke, and public KB verifier-policy self-test. By default, network-install
+  rows are reported as `skipped`, not `pass`. Optional verifier availability
+  returns a skipped matrix row when SAT/SMT/Lean/lake tools are unavailable;
+  that skipped result is not counted as pass.
 - `python scripts/ecosystem_smoke.py --matrix --framework-tag <tag>`: selects
   the framework tag used by the opt-in network release-smoke row. The default
-  remains the compatibility baseline `v0.2.4`; pass `--framework-tag v0.3.0`
-  when checking the current published release.
+  is the current published release baseline `v0.6.0`; pass
+  `--framework-tag v0.7.0` when checking the v0.7.0 release candidate or
+  post-tag publication state.
 - `python scripts/ecosystem_smoke.py --matrix --include-network`: also runs
   matrix rows that perform normal framework package install or git clone steps.
   This still does not run real hosted providers or require API keys.
@@ -2808,6 +2832,11 @@ working directory.
   optional SAT/SMT/Lean/lake command availability for matrix accounting. Exit
   code `77` means the row is skipped, not pass. The probe does not run those
   tools and does not make any external verifier mandatory.
+- `python scripts/ecosystem_smoke.py --research-loop-workflow-smoke`: runs a
+  temporary local research-loop smoke covering start, append-attempt, next,
+  export-task, import-result with retry justification, scan, and finalize. It
+  writes only ignored `.cosheaf/` runtime files in the temporary workspace and
+  does not create human review or accepted knowledge.
 
 ### Schemas
 

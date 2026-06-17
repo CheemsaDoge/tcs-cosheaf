@@ -1,0 +1,21 @@
+cases:
+  - id: case.research-loop.loop-validity
+    kind: loop_validity
+  - id: case.research-loop.attempt-schema-validity
+    kind: attempt_schema_validity
+  - id: case.research-loop.repeat-failure-detection
+    kind: repeat_failure_detection
+  - id: case.research-loop.unjustified-retry-block
+    kind: unjustified_retry_block
+  - id: case.research-loop.public-private-leak-prevention
+    kind: public_private_leak_prevention
+  - id: case.research-loop.scanner-blocker-accuracy
+    kind: scanner_blocker_accuracy
+  - id: case.research-loop.handoff-review-context-validity
+    kind: handoff_review_context_validity
+  - id: case.research-loop.policy-overclaim-rejection
+    kind: policy_overclaim_rejection
+  - id: case.research-loop.budget-stop-accuracy
+    kind: budget_stop_accuracy
+  - id: case.research-loop.skipped-not-pass
+    kind: skipped_not_pass
