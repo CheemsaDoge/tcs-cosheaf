@@ -1,151 +1,76 @@
 # Current Milestone
 
-## Milestone
+Milestone: **v0.7.0 Bounded Research Loop + Attempt Memory**
 
-`v0.6.0` Operator Session + Review Handoff.
+Status: **in progress**
 
-## Goal
+Started: 2026-06-17
 
-Turn the published `v0.5.0` Operator MCP + Codex Application Layer release
-into a replayable, reviewable, privacy-audited operator session workflow.
+Previous milestone: v0.6.0 Operator Session + Review Handoff (completed 2026-06-16)
 
-The v0.6.0 line should help a maintainer inspect what an external operator did:
-which issue was worked on, which tools were called, which context and draft or
-review-context files were referenced, which checks ran, which checks were
-skipped, whether public/private boundaries held, and what needs human review
-next.
+## Objective
 
-Operator sessions and handoff bundles are review context only. They are not a
-new truth, accepted-knowledge, review, proof, verifier, gate, provider, or
-promotion authority.
+Turn the v0.6.0 operator session and review handoff layer into a bounded multi-attempt research loop harness. Enable external operators to explore multiple directions within budget, record failures as useful memory, detect repeat failures, and hand off complete loop audit trails for review.
 
-## Current Baseline
+## Scope
 
-- Framework package metadata and `cosheaf.__version__` record `0.6.0`.
-- `python -m cosheaf.cli version --json` reports package version `0.6.0`.
-- The public `v0.6.0` tag is published as annotated tag object
-  `74fa02076607ab035011f10b7cae1b11246d0c5f`, peeled to main commit
-  `acc8d715f830672f516e41921eb6416978232374`.
-- The GitHub release is published at
-  `https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.6.0`.
-- Release smoke from
-  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.6.0` passed during
-  publication closeout and installed `tcs-cosheaf==0.6.0`.
-- `tcs-cosheaf-workspace-template` active demo, Makefile, CLI-agent,
-  provider-preview, fake-provider smoke, verifier-evidence, failure-memory,
-  checked-evidence, research-run, strategy, and operator docs/scripts pin or
-  install `@v0.6.0` after workspace-template PR #75.
-- `tcs-kb-public` CI installs `tcs-cosheaf` from `@v0.6.0` after public KB PR
-  #90 and documents operator handoff records as public review context only.
-- The optional MCP tool surface includes read-only/operator runtime tools and
-  controlled draft/review/runtime write tools.
-- Forbidden authority-expanding MCP tools such as `write_accepted`,
-  `promote_artifact`, `mark_human_reviewed`,
-  `run_hosted_provider_by_default`, and `arbitrary_shell` are absent.
-- `docs/POST_V050_STATE_AUDIT.md` records the v0.5.0 completion audit for the
-  v0.6.0 kickoff.
-- `docs/CODEX_DEVELOPMENT_PLAN_V10.md` is the active accelerated v0.6.0 plan.
-- ADR 0027 records the Operator Session + Review Handoff direction.
-- Operator session DTOs, runtime storage, and CLI metadata commands are
-  implemented. Runtime files stay under ignored `.cosheaf/operator-sessions/`
-  paths.
-- Optional MCP session recording is implemented for whitelisted `tools/call`
-  requests when callers pass `session_id` in the tool arguments. It records
-  bounded metadata only and keeps MCP usable without session tracking.
-- Operator session leak scanning is implemented through
-  `cosheaf operator session scan <session-id> --json`, with deterministic
-  reports under `.cosheaf/operator-sessions/<session-id>/scan.json`.
-- Operator handoff bundle generation is implemented through
-  `cosheaf operator handoff build --session <session-id> --json` and
-  `cosheaf operator handoff show <handoff-id> --json`, with runtime bundles
-  under `.cosheaf/operator-sessions/<session-id>/handoff.json`.
-- Operator handoff export is implemented through
-  `cosheaf operator handoff export --handoff <handoff-id> --dry-run --json`
-  and `cosheaf operator handoff export --handoff <handoff-id> --json`, writing
-  explicit review-context YAML under `reviews/operator/`.
-- Downstream workspace-template and public-KB integration for operator-session
-  handoff workflows has landed, and the ecosystem smoke matrix includes
-  operator-session and handoff rows.
-- `docs/releases/v0.6.0.md` records the release scope, publication closeout,
-  post-tag release smoke, downstream pin updates, and final ecosystem matrix
-  counts.
+### In scope
 
-## Active Scope
+- Research loop data model, storage, CLI, schemas, tests, and docs
+- Loop runner with deterministic next-action planning
+- External operator task packet export and result import protocol
+- Attempt-memory index and repeat-failure detection
+- Failure-avoidance context injection into next attempts
+- Loop scanner extending session scanner coverage
+- Ecosystem demos and eval matrix for research-loop workflows
+- Conservative v0.7.0 RC and publication closeout
 
-The active line is:
+### Out of scope
 
-```text
-v0.6.0 Operator Session + Review Handoff
-```
+- Production autonomous AI mathematician
+- Automatic theorem proving
+- Accepted promotion through loop results
+- AI as human review
+- Default hosted provider calls
+- Unrestricted shell execution
+- Automatic Lean/mathlib/CSLib semantic alignment
+- Replacing validation/gate/review/promotion
 
-Compressed milestones:
+## Key deliverables
 
-1. Post-v0.5.0 kickoff audit, V10 plan, and ADR.
-2. Operator session model and runtime storage.
-3. Operator session CLI core.
-4. Optional MCP session recording.
-5. Operator session leak scanner.
-6. Review handoff bundle generation.
-7. Explicit review-context handoff export.
-8. Downstream workspace-template demo and public KB policy integration.
-9. Ecosystem smoke rows for the operator-session workflow.
-10. v0.6.0 release candidate, publication closeout, and downstream pin
-   alignment.
+1. Research loop model and storage (Phase B)
+2. Loop runner and operator protocol (Phase C)
+3. Attempt memory and scanner (Phase D)
+4. Ecosystem demos and eval (Phase E)
+5. v0.7.0 release candidate and publication (Phase F)
 
-## Current And Next Functional Tasks
+## Current phase
 
-Recently completed release-candidate task:
+**Phase A: post-v0.6.0 audit + V11 ADR**
 
-```text
-release-v060-readiness-and-rc
-```
+Task A.1: post-v060-v070-kickoff (in progress)
 
-That task prepared conservative `v0.6.0` release-candidate metadata after the
-operator-session, handoff, downstream demo/policy, and ecosystem smoke rows
-landed. Package metadata records `0.6.0`, release notes document the scope and
-limitations, and publication was completed by the follow-up closeout.
+## Non-negotiable invariants
 
-Most recently completed publication task:
+- Loop attempts cannot write `kb/accepted/`
+- Loop attempts cannot create human review
+- Loop attempts cannot mutate verifier results
+- Skipped remains skipped
+- Public mode cannot leak private content
+- Scanner blocks unsafe exports
+- CLI remains oracle
+- MCP remains optional adapter
+- No real provider/network/API-key in CI/default tests
+- Loop success never means accepted status
 
-```text
-release-v060-publication-closeout
-```
+## Framework package version
 
-Next project step:
+Current: `0.6.0`
+Target: `0.7.0`
 
-```text
-new post-v0.6.0 audit before starting another capability line
-```
+## References
 
-## Explicit Boundaries
-
-- CLI remains the human and CI oracle.
-- MCP remains optional and local.
-- Operator sessions record bounded metadata and safe references; they do not
-  execute arbitrary commands.
-- Operator-session storage is runtime state under ignored
-  `.cosheaf/operator-sessions/` paths.
-- Review handoff export writes explicit review context under
-  `reviews/operator/`.
-- No accepted KB writes through sessions, MCP, handoff bundles, or exports.
-- No promotion through sessions, MCP, handoff bundles, or exports.
-- No human-review creation through sessions, MCP, handoff bundles, or exports.
-- No verifier-result mutation through sessions, MCP, handoff bundles, or
-  exports.
-- No hosted provider default and no API-key requirement.
-- No real provider calls run in CI or default tests.
-- Session logs must be redacted and bounded.
-- Secrets, environment dumps, hidden reasoning markers, provider payloads, and
-  private content in public mode must be rejected or redacted.
-- Validation/gate/eval pass does not equal human review or accepted status.
-- Skipped verifier, provider, SAT, SMT, Lean, lake, optional-tool, network,
-  MCP, session, or eval results are not passes.
-- Public KB accepted artifacts still require complete source metadata and human
-  review.
-- Formal links remain metadata unless a checker actually records a result.
-- A successful Lean `#check` means only import and symbol resolution; it does
-  not prove informal/formal semantic alignment.
-
-Maintain the current maintainer override: do not add `codex` prefixes to issue
-names, branch names, or pull request titles, even when older examples show that
-prefix.
+- Plan: [`docs/CODEX_DEVELOPMENT_PLAN_V11.md`](../docs/CODEX_DEVELOPMENT_PLAN_V11.md)
+- ADR: [`docs/ADR/0028-bounded-research-loop-attempt-memory.md`](../docs/ADR/0028-bounded-research-loop-attempt-memory.md)
+- Audit: [`docs/POST_V060_STATE_AUDIT.md`](../docs/POST_V060_STATE_AUDIT.md)
+- Roadmap: [`docs/ROADMAP.md`](../docs/ROADMAP.md)
