@@ -29,6 +29,11 @@ from cosheaf.workflow.engine import (
     workflow_events_path,
     workflow_path,
 )
+from cosheaf.workflow.proposal import (
+    WORKFLOW_DRAFT_PROPOSAL_AUTHORITY_NOTICE,
+    build_draft_proposal,
+    write_draft_proposal,
+)
 
 runner = CliRunner()
 
@@ -278,3 +283,255 @@ def test_workflow_step_rejects_accepted_output_reference() -> None:
         assert "accepted KB paths" in str(exc)
     else:
         raise AssertionError("accepted output references must be rejected")
+
+
+def test_workflow_cli_draft_proposal_dry_run_and_private_write(
+    tmp_path: Path,
+) -> None:
+    context = RepoContext(tmp_path)
+    start_workflow(
+        context,
+        issue_id="issue.workflow.fixture",
+        workflow_id="workflow.fixture",
+    )
+
+    dry_run = runner.invoke(
+        app,
+        [
+            "workflow",
+            "draft-proposal",
+            "workflow.fixture",
+            "--repo-root",
+            str(tmp_path),
+            "--dry-run",
+            "--json",
+        ],
+    )
+    assert dry_run.exit_code == 0, dry_run.output
+    dry_run_payload = _json(dry_run.output)
+    assert dry_run_payload["written"] is False
+    assert dry_run_payload["dry_run"] is True
+    assert dry_run_payload["proposal"]["workflow_id"] == "workflow.fixture"
+    assert dry_run_payload["proposal"]["claim_candidates"][0]["status"] == "draft"
+
+    write = runner.invoke(
+        app,
+        [
+            "workflow",
+            "draft-proposal",
+            "workflow.fixture",
+            "--repo-root",
+            str(tmp_path),
+            "--private-root",
+            "kb/private",
+            "--artifact-id",
+            "claim.workflow.fixture.proposal",
+            "--json",
+        ],
+    )
+    assert write.exit_code == 0, write.output
+    write_payload = _json(write.output)
+    assert write_payload["written"] is True
+    assert write_payload["artifact_written"] is True
+    assert write_payload["target_path"] == (
+        "kb/private/draft/claims/claim.workflow.fixture.proposal.yaml"
+    )
+    written = (tmp_path / write_payload["target_path"]).read_text(encoding="utf-8")
+    assert "status: draft" in written
+    assert "human_reviewed" not in written
+
+
+def test_workflow_cli_draft_proposal_rejects_accepted_output(
+    tmp_path: Path,
+) -> None:
+    context = RepoContext(tmp_path)
+    start_workflow(
+        context,
+        issue_id="issue.workflow.fixture",
+        workflow_id="workflow.fixture",
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "workflow",
+            "draft-proposal",
+            "workflow.fixture",
+            "--repo-root",
+            str(tmp_path),
+            "--out",
+            "kb/accepted/claims/proposal.json",
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1
+    payload = _json(result.output)
+    assert payload["ok"] is False
+    assert "accepted" in payload["error"]["message"].lower()
+
+
+def test_build_draft_proposal_preserves_workflow_provenance(tmp_path: Path) -> None:
+    context = RepoContext(tmp_path)
+    start_workflow(
+        context,
+        issue_id="issue.workflow.fixture",
+        workflow_id="workflow.fixture",
+    )
+    step_workflow(
+        context,
+        "workflow.fixture",
+        action_id="workspace.info",
+        execute_local_action=False,
+    )
+
+    proposal = build_draft_proposal(context, "workflow.fixture")
+
+    assert proposal.workflow_id == "workflow.fixture"
+    assert proposal.claim_candidates[0].status == "draft"
+    assert proposal.claim_candidates[0].candidate_kind == "candidate_claim"
+    assert proposal.provenance.workflow_path == (
+        ".cosheaf/workflows/workflow.fixture/workflow.json"
+    )
+    assert proposal.provenance.librarian_path == (
+        ".cosheaf/workflows/workflow.fixture/librarian.json"
+    )
+    assert proposal.provenance.fsm_path == (
+        ".cosheaf/workflows/workflow.fixture/fsm.json"
+    )
+    assert proposal.provenance.loop_path == (
+        ".cosheaf/workflows/workflow.fixture/loop.json"
+    )
+    assert proposal.provenance.action_ids == ["workspace.info"]
+    assert proposal.evidence_summary.workflow_steps == 1
+    assert proposal.review_checklist.human_review_required is True
+    assert proposal.authority_notice == WORKFLOW_DRAFT_PROPOSAL_AUTHORITY_NOTICE
+
+
+def test_draft_proposal_dry_run_writes_nothing(tmp_path: Path) -> None:
+    context = RepoContext(tmp_path)
+    start_workflow(
+        context,
+        issue_id="issue.workflow.fixture",
+        workflow_id="workflow.fixture",
+    )
+
+    result = write_draft_proposal(
+        context,
+        "workflow.fixture",
+        out=Path(".cosheaf/workflows/workflow.fixture/proposal.json"),
+        dry_run=True,
+    )
+
+    assert result.written is False
+    assert result.target_path == ".cosheaf/workflows/workflow.fixture/proposal.json"
+    assert not (tmp_path / ".cosheaf/workflows/workflow.fixture/proposal.json").exists()
+
+
+def test_draft_proposal_rejects_accepted_output_path(tmp_path: Path) -> None:
+    context = RepoContext(tmp_path)
+    start_workflow(
+        context,
+        issue_id="issue.workflow.fixture",
+        workflow_id="workflow.fixture",
+    )
+
+    try:
+        write_draft_proposal(
+            context,
+            "workflow.fixture",
+            out=Path("kb/accepted/claims/proposal.json"),
+        )
+    except ValueError as exc:
+        assert "accepted" in str(exc).lower()
+    else:
+        raise AssertionError("accepted output paths must be rejected")
+
+
+def test_draft_proposal_rejects_public_kb_output_path(tmp_path: Path) -> None:
+    (tmp_path / "cosheaf.toml").write_text(
+        "\n".join(
+            [
+                "[workspace]",
+                "name = \"workflow-proposal-fixture\"",
+                "",
+                "[[kb]]",
+                "name = \"public\"",
+                "path = \"kb/public\"",
+                "readonly = true",
+                "priority = 10",
+                "",
+                "[[kb]]",
+                "name = \"private\"",
+                "path = \"kb/private\"",
+                "readonly = false",
+                "priority = 20",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    context = RepoContext(tmp_path)
+    start_workflow(
+        context,
+        issue_id="issue.workflow.fixture",
+        workflow_id="workflow.fixture",
+    )
+
+    try:
+        write_draft_proposal(
+            context,
+            "workflow.fixture",
+            out=Path("kb/public/proposals/proposal.json"),
+        )
+    except ValueError as exc:
+        assert "public" in str(exc).lower()
+    else:
+        raise AssertionError("public KB proposal output must be rejected")
+
+
+def test_private_root_artifact_write_stays_draft(tmp_path: Path) -> None:
+    context = RepoContext(tmp_path)
+    start_workflow(
+        context,
+        issue_id="issue.workflow.fixture",
+        workflow_id="workflow.fixture",
+    )
+
+    result = write_draft_proposal(
+        context,
+        "workflow.fixture",
+        private_root=Path("kb/private"),
+        artifact_id="claim.workflow.fixture.proposal",
+    )
+
+    assert result.written is True
+    assert result.target_path == (
+        "kb/private/draft/claims/claim.workflow.fixture.proposal.yaml"
+    )
+    written = (tmp_path / result.target_path).read_text(encoding="utf-8")
+    assert "status: draft" in written
+    assert "human_reviewed" not in written
+    assert "accepted" not in written
+
+
+def test_draft_proposal_rejects_candidate_authority_overclaim() -> None:
+    try:
+        build_draft_proposal(
+            RepoContext(Path(".")),
+            "workflow.missing",
+            workflow_payload={
+                "workflow_id": "workflow.missing",
+                "issue_id": "issue.workflow.fixture",
+                "query": "",
+                "status": "created",
+                "steps": [],
+                "readiness": None,
+                "created_at": "2026-06-18T00:00:00Z",
+                "updated_at": "2026-06-18T00:00:00Z",
+            },
+            candidate_status="accepted",
+        )
+    except ValueError as exc:
+        assert "draft" in str(exc).lower()
+    else:
+        raise AssertionError("accepted candidate status must be rejected")

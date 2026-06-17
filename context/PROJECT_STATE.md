@@ -3,6 +3,34 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V14 C.1 draft proposal from workflow - 2026-06-18
+
+Issue #428 implements draft proposal generation from persisted reviewable
+workflow output. The current workflow surface now adds:
+
+- `cosheaf workflow draft-proposal <workflow-id> --dry-run --json`;
+- `cosheaf workflow draft-proposal <workflow-id> --out <path> --json`;
+- `cosheaf workflow draft-proposal <workflow-id> --private-root <path>
+  --artifact-id <artifact-id> --json`.
+
+The Python surface lives in `cosheaf.workflow.proposal` and defines
+`DraftResearchArtifactProposal`, draft candidate DTOs, evidence/failure/
+dependency/review-checklist summaries, workflow provenance, and
+`DraftProposalWriteResult`.
+
+The command can preview a proposal without writing files, write review-context
+JSON under a safe repository-local non-public path, or write a draft claim YAML
+under a writable private draft root. It refuses `kb/accepted/` targets, public
+or readonly KB output paths, and candidate status overclaims. Private draft
+artifact output remains `status: draft` and does not create human review.
+
+This follow-up still does not implement workflow handoff build/show/scan/
+export, workflow scanner integration, reviewable-workflow eval coverage,
+downstream workspace-template demo targets, or public-KB workflow packet policy
+guards. Workflow output and draft proposals remain review context or draft
+artifacts only. They are not proof, source metadata, human review, verifier
+pass, gate pass, accepted status, accepted refutation, or promotion authority.
+
 ## V14 B.1 workflow core follow-up - 2026-06-18
 
 Issue #426 implements the persistent reviewable-workflow core after the
@@ -31,10 +59,9 @@ arbitrary shell execution remain disallowed through the workflow runner.
 Unknown actions and accepted-write actions are blocked and recorded as review
 context, not hidden or treated as pass.
 
-This follow-up does not implement draft proposal generation, workflow handoff
-build/show/scan/export, workflow scanner integration, reviewable-workflow eval
-coverage, downstream workspace-template demo targets, or public-KB workflow
-packet policy guards. Workflow output remains review context only. It is not
+At B.1 closeout, this follow-up did not implement draft proposals or later
+workflow handoff/scanner/eval/downstream policy work. V14 C.1 above supersedes
+the draft-proposal gap. Workflow output remains review context only. It is not
 proof, source metadata, human review, verifier pass, gate pass, accepted
 status, accepted refutation, or promotion authority.
 
@@ -66,7 +93,7 @@ not to be claimed as complete:
 
 - persisted workflow runtime storage and replay;
 - `workflow show` and bounded `workflow run`;
-- draft proposal generation from workflow output;
+- draft proposal generation from workflow output, later addressed by V14 C.1;
 - workflow handoff build/show/scan/export commands;
 - workflow scanner integration;
 - `cosheaf eval reviewable-workflow --json`;

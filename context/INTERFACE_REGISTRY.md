@@ -14,16 +14,29 @@
   `WORKFLOW_AUTHORITY_NOTICE`, `start_workflow`, `load_workflow`,
   `write_workflow`, `step_workflow`, `run_workflow`, `append_step`,
   `append_workflow_event`, `assess_readiness`, and workflow storage path
-  helpers. Runtime records are JSON under
+  helpers. Draft-proposal generation is implemented in
+  `cosheaf.workflow.proposal`; the Python surface defines
+  `DraftResearchArtifactProposal`, `DraftClaimCandidate`,
+  `DraftProofSketchCandidate`, `DraftCounterexampleCandidate`,
+  `DraftEvidenceSummary`, `DraftKnownFailureSummary`,
+  `DraftDependencySummary`, `DraftReviewChecklist`,
+  `WorkflowProposalProvenance`, `DraftProposalWriteResult`,
+  `WORKFLOW_DRAFT_PROPOSAL_AUTHORITY_NOTICE`, `build_draft_proposal`, and
+  `write_draft_proposal`. Runtime records are JSON under
   `.cosheaf/workflows/<workflow-id>/workflow.json`, `events.jsonl`,
-  `librarian.json`, `fsm.json`, `loop.json`, and `readiness.json`. The CLI
-  surface is `cosheaf workflow start --issue <issue-id> --query <query>
-  --json`, `cosheaf workflow show <workflow-id> --json`, `cosheaf workflow
-  step <workflow-id> --json`, `cosheaf workflow run <workflow-id>
-  --max-steps <n> --execute-local-actions --json`, and `cosheaf workflow
-  readiness <workflow-id> --json`. Workflow output is review context only and
-  does not grant proof, source metadata, human review, verifier pass, gate pass,
-  accepted status, accepted refutation, or promotion authority.
+  `librarian.json`, `fsm.json`, `loop.json`, `readiness.json`, and optional
+  review-context proposal JSON. The CLI surface is `cosheaf workflow start
+  --issue <issue-id> --query <query> --json`, `cosheaf workflow show
+  <workflow-id> --json`, `cosheaf workflow step <workflow-id> --json`,
+  `cosheaf workflow run <workflow-id> --max-steps <n>
+  --execute-local-actions --json`, `cosheaf workflow readiness <workflow-id>
+  --json`, `cosheaf workflow draft-proposal <workflow-id> --dry-run --json`,
+  `cosheaf workflow draft-proposal <workflow-id> --out <path> --json`, and
+  `cosheaf workflow draft-proposal <workflow-id> --private-root <path>
+  --artifact-id <artifact-id> --json`. Workflow output and draft proposals are
+  review context or draft artifacts only and do not grant proof, source
+  metadata, human review, verifier pass, gate pass, accepted status, accepted
+  refutation, or promotion authority.
 - Operator session DTOs, runtime storage, and CLI metadata commands are
   implemented under
   `cosheaf.operator_session`. The current surface defines
@@ -161,6 +174,17 @@
   state and classifies readiness as `ready_for_draft_proposal`, a blocker class,
   or `inconclusive`. Readiness is review guidance only; it is not acceptance,
   review, proof, verifier pass, or gate pass.
+- `cosheaf workflow draft-proposal <workflow-id> --dry-run --json`: builds a
+  deterministic draft proposal from persisted workflow output without writing
+  files.
+- `cosheaf workflow draft-proposal <workflow-id> --out <path> --json`: writes
+  review-context proposal JSON to a safe repository-local path. Accepted KB,
+  public KB, and readonly KB targets are refused.
+- `cosheaf workflow draft-proposal <workflow-id> --private-root <path>
+  --artifact-id <artifact-id> --json`: writes a draft claim YAML under a
+  writable private draft root. The artifact remains `status: draft` and this
+  command does not create human review, accepted status, verifier pass, gate
+  pass, source metadata, or promotion authority.
 - `cosheaf operator session start --issue <issue-id> --json`: creates a
   runtime operator-session metadata record under
   `.cosheaf/operator-sessions/<session-id>/session.json`, with matching
