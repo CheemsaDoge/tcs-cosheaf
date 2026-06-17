@@ -7,20 +7,20 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.10.0 Cross-Check Evidence + Checker Registry release
-candidate**. Package metadata records `0.10.0`; the public `v0.10.0` tag and
-GitHub release are not published yet. The latest published release remains
-`v0.9.0` at
-<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0>.
-The `v0.10.0` RC packages the V15 checker discipline line: typed local checker
-registry commands, checker-run sidecars, workflow cross-check reports,
+Current status: **v0.10.0 Cross-Check Evidence + Checker Registry published
+release**. Package metadata records `0.10.0`; the public `v0.10.0` tag and
+GitHub release are published at
+<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.10.0>.
+The `v0.10.0` release packages the V15 checker discipline line: typed local
+checker registry commands, checker-run sidecars, workflow cross-check reports,
 evidence reports, proof/source/formalization gap reports, `cosheaf gap`
-commands, deterministic checker/cross-check eval coverage, and downstream
-workspace/public-KB policy smoke. These surfaces are review context and
-regression evidence; they do not change proof, review, gate, verifier, source
-metadata, accepted-status, or promotion authority.
+commands, deterministic checker/cross-check eval coverage, downstream
+workspace cross-check demo coverage, and public-KB policy guard coverage.
+These surfaces are review context and regression evidence; they do not change
+proof, review, gate, verifier, source metadata, accepted-status, or promotion
+authority.
 
-The `v0.10.0` RC does not add production autonomy, hosted-provider defaults,
+The `v0.10.0` release does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, Lean semantic alignment, human review, accepted
 writes, verifier passes without real checker evidence, gate-pass authority,
 source metadata authority, accepted theorem/refutation authority, or promotion
@@ -350,11 +350,10 @@ surfaces can pin to `v0.5.0`. Downstream repositories that need Operator
 Session + Review Handoff surfaces can pin to `v0.6.0`. Downstream
 repositories that need Bounded Research Loop + Attempt Memory surfaces can pin
 to `v0.7.0`; deterministic execution-kernel surfaces can pin to `v0.8.0`; and
-the initial reviewable-workflow release line can pin to `v0.9.0`. The
-workspace-template and public KB active pins are aligned to `v0.9.0` until the
-`v0.10.0` tag is published and post-tag smoke passes. The `v0.10.0`
-release-candidate branch should be tested from a local checkout or explicit
-review branch, not described as a published tag.
+the initial reviewable-workflow release line can pin to `v0.9.0`. Downstream
+repositories that need the V15 checker registry and cross-check evidence
+surfaces can pin to `v0.10.0`. The workspace-template and public KB active pins
+are aligned to `v0.10.0` after post-tag smoke passed.
 
 ## Development Commands
 

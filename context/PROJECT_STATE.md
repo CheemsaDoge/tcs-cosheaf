@@ -3,15 +3,49 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V15 Phase F.2 v0.10.0 publication closeout - 2026-06-18
+
+Issue #444 records the `v0.10.0` Cross-Check Evidence + Checker Registry
+publication closeout after the release-candidate PR merged.
+
+The public `v0.10.0` tag and GitHub release are published:
+
+https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.10.0
+
+Post-tag release smoke from
+`git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.10.0` passed and
+installed `tcs-cosheaf==0.10.0`. The smoke ran help/version, validated a
+fixture, ran gatekeeper, rebuilt the index, and built a context pack.
+
+Downstream pin alignment is complete:
+
+- `tcs-cosheaf-workspace-template` PR #87 moves active install/demo pins to
+  `@v0.10.0`;
+- `tcs-kb-public` PR #101 moves CI/docs pins to `@v0.10.0`.
+
+Stale framework issues #412, #414, #416, and #419 were closed as completed or
+superseded by the V13/V14/V15 release lines.
+
+This closeout is documentation and release-state bookkeeping only. It does not
+add runtime capability. It does not change artifact schema, accepted promotion
+semantics, gatekeeper semantics, verifier adapter contracts, public KB content,
+or workspace-template behavior. Checker registry output, checker-run sidecars,
+cross-check reports, evidence reports, gap reports, and checker/cross-check
+eval output remain review context and regression evidence only. They are not
+proof, source metadata, human review, verifier pass without a real checker
+result, gate pass, accepted status, accepted theorem/refutation, or promotion
+authority. Skipped, unavailable, unsupported, and inconclusive checker results
+are not passes.
+
 ## V15 Phase F.1 v0.10.0 release candidate - 2026-06-18
 
-Issue #442 prepares the conservative `v0.10.0` Cross-Check Evidence +
+Issue #442 prepared the conservative `v0.10.0` Cross-Check Evidence +
 Checker Registry release candidate on branch
 `release-v0100-readiness-and-rc`.
 
-This release-candidate task updates package metadata from `0.9.0` to
-`0.10.0`, aligns `cosheaf.__version__`, adds
-`docs/releases/v0.10.0.md`, and updates current-status documentation after
+This release-candidate task updated package metadata from `0.9.0` to
+`0.10.0`, aligned `cosheaf.__version__`, added
+`docs/releases/v0.10.0.md`, and updated current-status documentation after
 the V15 framework and downstream closeout landed:
 
 - framework checker/cross-check eval and ecosystem smoke landed in issue #440;
@@ -19,10 +53,9 @@ the V15 framework and downstream closeout landed:
 - public KB cross-check/evidence/gap/checker report policy guard landed in
   PR #99.
 
-The latest published framework release remains `v0.9.0`. The `v0.10.0` tag,
-GitHub release, post-tag release smoke, and downstream workspace-template/
-public-KB pin updates remain Phase F.2 work after the release-candidate PR
-merges.
+The release-candidate PR merged as PR #443. The later Phase F.2 closeout above
+published the `v0.10.0` tag and GitHub release, ran post-tag release smoke,
+and aligned downstream workspace-template/public-KB pins.
 
 This task does not add runtime capability. It does not change artifact schema,
 accepted promotion semantics, gatekeeper semantics, verifier adapter
