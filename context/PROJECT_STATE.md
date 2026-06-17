@@ -9,13 +9,18 @@ Landed the core research-loop data model, storage, CLI, schemas, tests, and docs
 in one functional slice (`bounded-research-loop-core` branch).
 
 Implementation:
-- cosheaf/research/loop.py: ResearchLoop, ResearchLoopAttempt, AttemptFailureRecord
-  models with full validation, lifecycle states, and storage functions
+- cosheaf/research/loop.py: ResearchLoop, ResearchLoopAttempt,
+  ResearchLoopBudget, ResearchLoopStopCondition, ResearchLoopDecision,
+  AttemptFailureRecord, AttemptEvidenceSummary, AttemptPolicyFinding,
+  AttemptNextAction, and LoopReviewSummary models with validation, lifecycle
+  states, JSON runtime storage, and event-log helpers
 - schemas/research_loop.schema.json, research_loop_attempt.schema.json,
-  attempt_failure_record.schema.json
+  attempt_failure_record.schema.json, and related research-loop DTO schemas
 - CLI: cosheaf research-loop start/show/list/append-attempt/finalize
 - tests/test_research_loop.py: 14 tests covering model serialization, validation,
-  status transitions, max_attempts enforcement, storage save/load/list
+  terminal attempt requirements, accepted path rejection, public-mode private
+  reference rejection, status transitions, deterministic storage, and CLI JSON
+  smoke
 - docs/RESEARCH_LOOPS.md: full user-facing documentation
 
 Verification:
@@ -29,7 +34,7 @@ No accepted/promotion/human-review/verifier authority was added.
 
 ## v0.7.0 Development Kickoff - 2026-06-17
 
-Started the 0.7.0 Bounded Research Loop + Attempt Memory development line
+Started the v0.7.0 Bounded Research Loop + Attempt Memory development line
 after completing the published v0.6.0 Operator Session + Review Handoff
 release.
 

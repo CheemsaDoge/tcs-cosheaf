@@ -44,14 +44,15 @@ Research loops support bounded multi-attempt exploration of a research issue:
 cosheaf research-loop start --issue <issue-id> --json
 cosheaf research-loop show <loop-id> --json
 cosheaf research-loop list --json
-cosheaf research-loop append-attempt <loop-id> --planned-direction "explore X" --json
+cosheaf research-loop append-attempt <loop-id> --input-json attempt.json --json
 cosheaf research-loop finalize <loop-id> --json
 ```
 
 Loop records are review context only under `.cosheaf/research-loops/`. Each
-attempt records planned direction, actions taken, evidence refs, and structured
-failures. Loop success never means accepted status. Attempts cannot write
-`kb/accepted/` or create human review.
+attempt records planned direction, actions taken, evidence refs, terminal
+result or structured failure records, and policy findings. Loop success never
+means accepted status. Attempts cannot write `kb/accepted/`, create human
+review, mutate verifier results, or claim promotion authority.
 
 The runbook is documentation only. It does not embed an agent runtime, call
 hosted providers by default, require MCP, write accepted knowledge, create

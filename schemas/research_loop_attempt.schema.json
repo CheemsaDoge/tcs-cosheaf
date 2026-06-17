@@ -1,72 +1,102 @@
-﻿{
-  "$schema": "http://json-schema.org/draft-07/schema#",
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/research_loop_attempt.schema.json",
   "title": "ResearchLoopAttempt",
   "description": "One bounded attempt within a research loop.",
   "type": "object",
-  "required": ["attempt_id", "loop_id", "status", "planned_direction", "authority_notice"],
+  "required": [
+    "attempt_id",
+    "loop_id",
+    "attempt_number",
+    "status",
+    "planned_direction",
+    "policy_mode",
+    "actions_taken",
+    "failures",
+    "evidence",
+    "policy_findings",
+    "authority_notice"
+  ],
   "properties": {
     "attempt_id": {
       "type": "string",
-      "description": "Unique attempt identifier",
       "minLength": 1
     },
     "loop_id": {
       "type": "string",
-      "description": "Parent loop identifier",
       "minLength": 1
+    },
+    "attempt_number": {
+      "type": "integer",
+      "minimum": 1
     },
     "status": {
       "type": "string",
-      "enum": ["planned", "running", "completed", "failed", "abandoned"],
-      "description": "Lifecycle state for this attempt"
+      "enum": [
+        "planned",
+        "running",
+        "succeeded",
+        "failed",
+        "blocked",
+        "inconclusive",
+        "abandoned"
+      ]
     },
     "planned_direction": {
       "type": "string",
-      "description": "What this attempt intends to explore",
       "minLength": 1
+    },
+    "policy_mode": {
+      "type": "string",
+      "enum": ["public_only", "private_research"]
     },
     "started_at": {
       "type": ["string", "null"],
-      "format": "date-time",
-      "description": "When execution started"
+      "format": "date-time"
     },
     "completed_at": {
       "type": ["string", "null"],
-      "format": "date-time",
-      "description": "When execution finished"
+      "format": "date-time"
     },
-    "actions": {
+    "result_summary": {
+      "type": ["string", "null"]
+    },
+    "blocked_reason": {
+      "type": ["string", "null"]
+    },
+    "actions_taken": {
       "type": "array",
-      "description": "Actions executed during this attempt",
       "items": {
         "type": "string"
-      },
-      "default": []
+      }
     },
     "failures": {
       "type": "array",
-      "description": "Failures encountered",
       "items": {
         "$ref": "attempt_failure_record.schema.json"
-      },
-      "default": []
+      }
     },
     "evidence": {
-      "type": "array",
-      "description": "Evidence artifact IDs or file paths",
-      "items": {
-        "type": "string"
-      },
-      "default": []
+      "$ref": "attempt_evidence_summary.schema.json"
     },
-    "next_direction": {
-      "type": ["string", "null"],
-      "description": "Recommendation for next attempt if this fails"
+    "policy_findings": {
+      "type": "array",
+      "items": {
+        "$ref": "attempt_policy_finding.schema.json"
+      }
+    },
+    "next_action": {
+      "anyOf": [
+        {
+          "$ref": "attempt_next_action.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "authority_notice": {
-      "type": "string",
-      "description": "Authority disclaimer"
+      "type": "string"
     }
   },
   "additionalProperties": false

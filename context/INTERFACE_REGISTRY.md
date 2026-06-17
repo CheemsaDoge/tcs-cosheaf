@@ -41,6 +41,20 @@
   reports, handoff bundles, and exported handoff YAML are review metadata only
   and do not grant accepted writes, human review, verifier-result mutation, or
   promotion authority.
+- Bounded research-loop DTOs, runtime storage, and CLI metadata commands are
+  implemented under `cosheaf.research.loop`. The Python surface defines
+  `ResearchLoop`, `ResearchLoopAttempt`, `ResearchLoopBudget`,
+  `ResearchLoopStopCondition`, `ResearchLoopDecision`,
+  `AttemptFailureRecord`, `AttemptEvidenceSummary`, `AttemptPolicyFinding`,
+  `AttemptNextAction`, `LoopReviewSummary`, `ResearchLoopError`, storage path
+  helpers, `start_loop`, `write_loop`, `load_loop`, `append_attempt`,
+  `append_loop_event`, and `list_loops`. Runtime records are JSON under
+  `.cosheaf/research-loops/<loop-id>/loop.json`,
+  `.cosheaf/research-loops/<loop-id>/attempts/<attempt-id>.json`, and
+  `.cosheaf/research-loops/<loop-id>/events.jsonl`. The CLI surface is
+  `cosheaf research-loop start/show/list/append-attempt/finalize`. Loop
+  records are review context only and do not grant accepted writes, human
+  review, verifier-result mutation, gate pass, or promotion authority.
 - Artifact failure-memory surfacing is implemented for read-only inspection,
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
   and controlled append, artifact cards, memory search, compact context card
@@ -137,6 +151,27 @@
   closed when the handoff contains blocking scanner status, rejects accepted KB
   targets, includes scanner status and the authority notice, and does not
   create human review, accepted status, verifier pass, gate pass, or promotion
+  authority.
+- `cosheaf research-loop start --issue <issue-id> --json`: creates a bounded
+  runtime research-loop record under
+  `.cosheaf/research-loops/<loop-id>/loop.json`, initializes
+  `events.jsonl`, records the authority notice, and emits deterministic JSON.
+  Optional flags include `--loop-id <loop-id>`, `--max-attempts <n>`, and
+  `--repo-root <path>`.
+- `cosheaf research-loop show <loop-id> --json`: reads one research-loop
+  runtime record without writing files.
+- `cosheaf research-loop list --json`: lists runtime research-loop IDs under
+  `.cosheaf/research-loops/`.
+- `cosheaf research-loop append-attempt <loop-id> --input-json <path> --json`:
+  validates and appends one `ResearchLoopAttempt` JSON payload, writes the
+  attempt JSON under the loop runtime directory, updates `loop.json`, and
+  appends a bounded event. Attempt payloads reject accepted KB paths,
+  authority-overclaim fields, hidden-reasoning fields, missing terminal
+  result/failure evidence, and public-mode private references.
+- `cosheaf research-loop finalize <loop-id> --json`: marks the loop terminal
+  with `finalized` by default. Optional flags include `--status finalized|failed|abandoned`,
+  `--reason <text>`, and `--repo-root <path>`. Finalization does not create
+  human review, accepted status, verifier pass, gate pass, or promotion
   authority.
 - `cosheaf workspace info`: shows the active workspace name, configured/legacy
   mode, repository root, and KB roots.

@@ -5,7 +5,7 @@ import os
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Annotated, Any, Literal, NoReturn, cast
+from typing import Any, Literal, NoReturn, cast
 
 import typer
 from pydantic import ValidationError
@@ -268,6 +268,11 @@ run_app = typer.Typer(
     help="Research-run provenance commands.",
     no_args_is_help=True,
 )
+research_loop_app = typer.Typer(
+    add_completion=False,
+    help="Bounded research-loop commands.",
+    no_args_is_help=True,
+)
 orchestrator_app = typer.Typer(
     add_completion=False,
     help="Deterministic local orchestrator commands.",
@@ -346,6 +351,7 @@ app.add_typer(draft_app, name="draft")
 app.add_typer(bundle_app, name="bundle")
 app.add_typer(review_app, name="review")
 app.add_typer(run_app, name="run")
+app.add_typer(research_loop_app, name="research-loop")
 app.add_typer(orchestrator_app, name="orchestrator")
 app.add_typer(strategy_app, name="strategy")
 app.add_typer(workspace_app, name="workspace")
@@ -5791,138 +5797,250 @@ def _format_report_failures(report: ValidationReport) -> str:
 # Research loop commands
 
 
-@app.command()
+@research_loop_app.command("start")
 def research_loop_start(
-    issue_id: Annotated[str, typer.Argument(help="Issue ID this loop targets")],
-    max_attempts: Annotated[int, typer.Option(help="Maximum attempts")] = 10,
+    issue_id: str = typer.Option(
+        ...,
+        "--issue",
+        help="Issue ID this loop targets.",
+    ),
+    max_attempts: int = typer.Option(
+        10,
+        "--max-attempts",
+        help="Maximum attempts for this bounded loop.",
+    ),
+    loop_id: str | None = typer.Option(
+        None,
+        "--loop-id",
+        help="Optional deterministic loop ID.",
+    ),
     repo_root: Path = typer.Option(
         Path("."),
         "--repo-root",
         help="Repository root.",
     ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
 ) -> None:
-    """Start a new research loop for an issue."""
-    from datetime import UTC, datetime
+    """Start a bounded research loop for one issue."""
+    from cosheaf.research.loop import ResearchLoopBudget, ResearchLoopError, start_loop
 
-    from cosheaf.research.loop import ResearchLoop, save_loop
+    console = Console(width=120, markup=False)
+    try:
+        result = start_loop(
+            RepoContext(repo_root),
+            issue_id=issue_id,
+            loop_id=loop_id,
+            budget=ResearchLoopBudget(max_attempts=max_attempts),
+        )
+    except (ResearchLoopError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_loop_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Research loop started: {result.loop.loop_id}")
+    console.print(f"- path: {result.relative_path.as_posix()}")
+    console.print(f"- events: {result.events_path.as_posix()}")
+    console.print(f"- authority: {result.loop.authority_notice}")
 
-    context = RepoContext(repo_root)
-    loop_id = f"loop.{issue_id}.{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}"
 
-    loop = ResearchLoop(
-        loop_id=loop_id,
-        issue_id=issue_id,
-        max_attempts=max_attempts,
-    )
-
-    path = save_loop(context, loop)
-    typer.echo(f"Created research loop: {loop_id}")
-    typer.echo(f"Saved to: {path}")
-
-
-@app.command()
+@research_loop_app.command("show")
 def research_loop_show(
-    loop_id: Annotated[str, typer.Argument(help="Loop ID to show")],
+    loop_id: str = typer.Argument(..., help="Loop ID to show."),
     repo_root: Path = typer.Option(
         Path("."),
         "--repo-root",
         help="Repository root.",
     ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
 ) -> None:
-    """Show research loop details."""
-    import json
+    """Show one research-loop runtime record."""
+    from cosheaf.research.loop import ResearchLoopError, load_loop
 
-    from cosheaf.research.loop import load_loop
+    console = Console(width=120, markup=False)
+    try:
+        loop = load_loop(RepoContext(repo_root), loop_id)
+    except (ResearchLoopError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_loop_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(loop.to_dict())
+        return
+    console.print(f"Research loop: {loop.loop_id}")
+    console.print(f"- issue: {loop.issue_id}")
+    console.print(f"- status: {loop.status.value}")
+    console.print(f"- attempts: {len(loop.attempts)}")
+    console.print(f"- authority: {loop.authority_notice}")
 
-    context = RepoContext(repo_root)
-    loop = load_loop(context, loop_id)
 
-    typer.echo(json.dumps(loop.model_dump(mode="json"), indent=2, ensure_ascii=False))
-
-
-@app.command()
+@research_loop_app.command("list")
 def research_loop_list(
     repo_root: Path = typer.Option(
         Path("."),
         "--repo-root",
         help="Repository root.",
     ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
 ) -> None:
-    """List all research loops."""
+    """List research loops under the runtime directory."""
     from cosheaf.research.loop import list_loops
 
-    context = RepoContext(repo_root)
-    loops = list_loops(context)
-
+    loops = list_loops(RepoContext(repo_root))
+    if json_output:
+        _emit_json({"loops": loops})
+        return
     if not loops:
         typer.echo("No research loops found.")
         return
+    for item in loops:
+        typer.echo(item)
 
-    for loop_id in loops:
-        typer.echo(loop_id)
 
-
-@app.command()
+@research_loop_app.command("append-attempt")
 def research_loop_append_attempt(
-    loop_id: Annotated[str, typer.Argument(help="Loop ID")],
-    planned_direction: Annotated[str, typer.Argument(help="Planned direction")],
+    loop_id: str = typer.Argument(..., help="Loop ID."),
+    input_json: Path = typer.Option(
+        ...,
+        "--input-json",
+        help="ResearchLoopAttempt JSON payload.",
+    ),
     repo_root: Path = typer.Option(
         Path("."),
         "--repo-root",
         help="Repository root.",
     ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
 ) -> None:
-    """Append a new attempt to a research loop."""
+    """Append a validated terminal attempt record to a research loop."""
     from cosheaf.research.loop import (
         ResearchLoopAttempt,
-        ResearchLoopAttemptStatus,
+        ResearchLoopError,
+        append_attempt,
         load_loop,
-        save_attempt,
-        save_loop,
     )
 
+    console = Console(width=120, markup=False)
     context = RepoContext(repo_root)
-    loop = load_loop(context, loop_id)
+    try:
+        loop = load_loop(context, loop_id)
+        raw = _read_input_json_or_exit(input_json, json_output=json_output)
+        raw.setdefault("loop_id", loop.loop_id)
+        raw.setdefault("attempt_number", len(loop.attempts) + 1)
+        raw.setdefault(
+            "attempt_id",
+            f"{loop.loop_id}.attempt.{len(loop.attempts) + 1}",
+        )
+        attempt = ResearchLoopAttempt.model_validate(raw)
+        result = append_attempt(context, loop.loop_id, attempt)
+    except (ResearchLoopError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_loop_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Research loop attempt appended: {result.attempt.attempt_id}")
+    console.print(f"- status: {result.attempt.status.value}")
+    console.print(f"- path: {result.relative_path.as_posix()}")
+    console.print(f"- authority: {result.attempt.authority_notice}")
 
-    attempt_number = len(loop.attempts) + 1
-    attempt_id = f"{loop_id}.attempt.{attempt_number}"
-    attempt = ResearchLoopAttempt(
-        attempt_id=attempt_id,
-        loop_id=loop_id,
-        attempt_number=attempt_number,
-        status=ResearchLoopAttemptStatus.PLANNED,
-        planned_direction=planned_direction,
-    )
 
-    loop.add_attempt(attempt)
-    save_loop(context, loop)
-    save_attempt(context, attempt)
-
-    typer.echo(f"Added attempt: {attempt_id}")
-
-
-@app.command()
+@research_loop_app.command("finalize")
 def research_loop_finalize(
-    loop_id: Annotated[str, typer.Argument(help="Loop ID")],
-    reason: Annotated[str, typer.Option(help="Finalization reason")] = "",
+    loop_id: str = typer.Argument(..., help="Loop ID."),
+    status: str = typer.Option(
+        "finalized",
+        "--status",
+        help="Terminal status: finalized, abandoned, or failed.",
+    ),
+    reason: str | None = typer.Option(
+        None,
+        "--reason",
+        help="Optional finalization reason.",
+    ),
     repo_root: Path = typer.Option(
         Path("."),
         "--repo-root",
         help="Repository root.",
     ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
 ) -> None:
-    """Finalize a research loop."""
-    from cosheaf.research.loop import load_loop, save_loop
+    """Finalize a research loop without granting accepted authority."""
+    from cosheaf.research.loop import (
+        ResearchLoopError,
+        ResearchLoopStatus,
+        load_loop,
+        write_loop,
+    )
 
+    console = Console(width=120, markup=False)
     context = RepoContext(repo_root)
-    loop = load_loop(context, loop_id)
+    try:
+        loop = load_loop(context, loop_id)
+        updated = loop.finalize(
+            status=ResearchLoopStatus(status),
+            reason=reason,
+        )
+        result = write_loop(context, updated)
+    except (ResearchLoopError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _research_loop_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Research loop finalized: {result.loop.loop_id}")
+    console.print(f"- status: {result.loop.status.value}")
+    console.print(f"- authority: {result.loop.authority_notice}")
 
-    loop.finalize(reason=reason)
-    save_loop(context, loop)
 
-    typer.echo(f"Finalized loop: {loop_id}")
-    if reason:
-        typer.echo(f"Reason: {reason}")
+def _research_loop_error_result(exc: Exception) -> ErrorResult:
+    if hasattr(exc, "code") and hasattr(exc, "remediation"):
+        details = getattr(exc, "details", {})
+        related_path = None
+        if isinstance(details, dict):
+            related_path = _valid_related_path(details.get("path"))
+        return ErrorResult(
+            code=str(getattr(exc, "code")),
+            message=str(exc),
+            remediation=str(getattr(exc, "remediation")),
+            blocking=True,
+            related_path=related_path,
+        )
+    return _exception_to_error_result(
+        exc,
+        default_code="research_loop_validation_failed",
+    )
 
 
 if __name__ == "__main__":

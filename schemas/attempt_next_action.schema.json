@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/CheemsaDoge/tcs-cosheaf/schemas/attempt_next_action.schema.json",
+  "title": "AttemptNextAction",
+  "type": "object",
+  "required": ["action_id", "kind", "summary", "rationale", "required_inputs"],
+  "properties": {
+    "action_id": { "type": "string", "minLength": 1 },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "start_attempt",
+        "retry_with_justification",
+        "request_operator_input",
+        "finalize_loop",
+        "abandon_loop"
+      ]
+    },
+    "summary": { "type": "string", "minLength": 1 },
+    "rationale": { "type": "string", "minLength": 1 },
+    "required_inputs": { "type": "array", "items": { "type": "string" } },
+    "retry_requires_justification": { "type": "boolean" }
+  },
+  "additionalProperties": false
+}
