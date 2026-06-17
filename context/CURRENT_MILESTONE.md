@@ -2,21 +2,28 @@
 
 Milestone: **v0.10.0 Cross-Check Evidence + Checker Registry**
 
-Status: **V15 Phase E framework checker/cross-check eval in progress**
+Status: **V15 Phase F.1 release candidate in progress**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V15.md
 
-Current package version: `0.9.0`
+Current package version: `0.10.0`
 
-Current release: <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0>
+Latest published release:
+<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0>
+
+`v0.10.0` tag and GitHub release status: **not published yet**. Publication,
+post-tag release smoke, and downstream pin updates are Phase F.2 work after
+the release-candidate PR merges.
 
 Current focus:
 
-- use the typed checker registry from Phase B;
-- attach workflow cross-check reports and gap reports as review context only;
-- run deterministic checker/cross-check eval coverage for reviewer-facing
-  evidence boundaries;
-- preserve skipped-not-pass semantics for unavailable optional tools;
+- package the completed V15 implementation and downstream closeout as a
+  conservative `v0.10.0` release candidate;
+- keep package metadata, release notes, roadmap, milestone, project state, and
+  release checklist aligned;
+- verify the framework locally before opening or merging the release-candidate
+  PR;
+- preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
 
@@ -29,6 +36,12 @@ Current V15 surface on the development line:
 - `cosheaf gap list <workflow-id> --json`;
 - `cosheaf gap export <workflow-id> --out reviews/workflow/<name>.json --json`;
 - `cosheaf eval checker-crosscheck --json`.
+
+Completed V15 closeout before this RC:
+
+- framework checker/cross-check eval and ecosystem smoke landed in issue #440;
+- workspace-template cross-check demo landed in downstream PR #85;
+- public KB cross-check report policy guard landed in downstream PR #99.
 
 Completed V14 closeout:
 

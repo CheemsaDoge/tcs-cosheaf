@@ -3,6 +3,37 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V15 Phase F.1 v0.10.0 release candidate - 2026-06-18
+
+Issue #442 prepares the conservative `v0.10.0` Cross-Check Evidence +
+Checker Registry release candidate on branch
+`release-v0100-readiness-and-rc`.
+
+This release-candidate task updates package metadata from `0.9.0` to
+`0.10.0`, aligns `cosheaf.__version__`, adds
+`docs/releases/v0.10.0.md`, and updates current-status documentation after
+the V15 framework and downstream closeout landed:
+
+- framework checker/cross-check eval and ecosystem smoke landed in issue #440;
+- workspace-template cross-check demo landed in PR #85;
+- public KB cross-check/evidence/gap/checker report policy guard landed in
+  PR #99.
+
+The latest published framework release remains `v0.9.0`. The `v0.10.0` tag,
+GitHub release, post-tag release smoke, and downstream workspace-template/
+public-KB pin updates remain Phase F.2 work after the release-candidate PR
+merges.
+
+This task does not add runtime capability. It does not change artifact schema,
+accepted promotion semantics, gatekeeper semantics, verifier adapter
+contracts, public KB content, or workspace-template behavior. Checker registry
+output, checker-run sidecars, cross-check reports, evidence reports, gap
+reports, and checker/cross-check eval output remain review context and
+regression evidence only. They are not proof, source metadata, human review,
+verifier pass without a real checker result, gate pass, accepted status,
+accepted theorem/refutation, or promotion authority. Skipped, unavailable,
+unsupported, and inconclusive checker results are not passes.
+
 ## V15 Phase E framework checker/cross-check eval - 2026-06-18
 
 Issue #440 adds the framework-side deterministic checker/cross-check eval and

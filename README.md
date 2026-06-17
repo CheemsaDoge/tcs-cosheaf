@@ -7,30 +7,25 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.9.0 Reviewable Research Workflow MVP published release**.
-Package metadata records `0.9.0`; the public `v0.9.0` tag and GitHub release
-are published at
+Current status: **v0.10.0 Cross-Check Evidence + Checker Registry release
+candidate**. Package metadata records `0.10.0`; the public `v0.10.0` tag and
+GitHub release are not published yet. The latest published release remains
+`v0.9.0` at
 <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0>.
-The current line includes the deterministic execution-kernel baseline from
-`v0.8.0` plus reviewable-workflow CLI surfaces. The current development line
-adds persistent workflow runtime records under
-`.cosheaf/workflows/<workflow-id>/`, `workflow show`, persisted `workflow
-step`, bounded `workflow run`, persisted readiness reports, and
-`workflow draft-proposal` for review-only proposal output, plus
-`workflow handoff build/show/scan/export` for review-context handoff packets
-with fail-closed scanner guards, and `cosheaf eval reviewable-workflow --json`
-for deterministic issue-to-reviewable-packet regression coverage. The current
-V15 development line adds a typed local checker registry, `cosheaf checker`
-CLI surface, workflow cross-check reports, proof/source/formalization gap
-reports, and `cosheaf gap` commands for review-context records without
-changing proof, review, gate, verifier, source metadata, accepted-status, or
-promotion authority.
+The `v0.10.0` RC packages the V15 checker discipline line: typed local checker
+registry commands, checker-run sidecars, workflow cross-check reports,
+evidence reports, proof/source/formalization gap reports, `cosheaf gap`
+commands, deterministic checker/cross-check eval coverage, and downstream
+workspace/public-KB policy smoke. These surfaces are review context and
+regression evidence; they do not change proof, review, gate, verifier, source
+metadata, accepted-status, or promotion authority.
 
-The `v0.9.0` line does not add production autonomy, hosted-provider defaults,
+The `v0.10.0` RC does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, Lean semantic alignment, human review, accepted
-writes, verifier passes, gate passes, source metadata authority, accepted
-refutation authority, or promotion authority. Workflow, loop, session,
-operator, and handoff records remain review context only.
+writes, verifier passes without real checker evidence, gate-pass authority,
+source metadata authority, accepted theorem/refutation authority, or promotion
+authority. Workflow, loop, session, operator, handoff, checker, cross-check,
+gap, and eval records remain review context only.
 
 Earlier published baselines include `v0.1.1` Formal Link Layer support,
 `v0.2.0` deterministic local-MVP workflow, `v0.2.1` CLI-first agent and
@@ -210,8 +205,8 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- V15 deterministic eval and downstream policy smoke for checker/cross-check
-  reports.
+- `v0.10.0` tag publication, GitHub release publication, post-tag smoke, and
+  downstream workspace-template/public KB pin updates.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
@@ -356,9 +351,10 @@ Session + Review Handoff surfaces can pin to `v0.6.0`. Downstream
 repositories that need Bounded Research Loop + Attempt Memory surfaces can pin
 to `v0.7.0`; deterministic execution-kernel surfaces can pin to `v0.8.0`; and
 the initial reviewable-workflow release line can pin to `v0.9.0`. The
-workspace-template and public KB active pins are aligned to `v0.9.0`; later
-post-tag workflow follow-ups that are not in the published tag should be tested
-from a local checkout or an explicit newer commit.
+workspace-template and public KB active pins are aligned to `v0.9.0` until the
+`v0.10.0` tag is published and post-tag smoke passes. The `v0.10.0`
+release-candidate branch should be tested from a local checkout or explicit
+review branch, not described as a published tag.
 
 ## Development Commands
 

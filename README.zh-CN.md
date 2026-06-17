@@ -2,19 +2,21 @@
 
 TCS-Cosheaf 是一个以 Git 为持久记忆层的、带类型约束的理论计算机科学研究知识库与智能体协作框架。它把定义、命题、证明、构造、算法、归约、反例、实验、评审、议题和验证器证据保存为可审查的仓库文件，而不是只保存在聊天记录中。
 
-> 当前状态：**v0.9.0 Reviewable Research Workflow MVP 已发布版本**。包版本记录为
-> `0.9.0`，公开 `v0.9.0` tag 和 GitHub release 已发布：
+> 当前状态：**v0.10.0 Cross-Check Evidence + Checker Registry release candidate**。
+> 包版本记录为 `0.10.0`；公开 `v0.10.0` tag 和 GitHub release 尚未发布。
+> 最新已发布版本仍是 `v0.9.0`：
 > <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0>。
-> 本版本包含 `v0.8.0` 的 deterministic execution kernel 基线，并加入初始
-> `cosheaf workflow` CLI 表面。收尾审计确认：当前 workflow 表面仍较薄，
-> `start` 可以输出 workflow JSON record，但 `step` 和 `readiness` 仍是
-> ephemeral 输出，尚未读写计划中的 `.cosheaf/workflows/<workflow-id>/` 持久状态；
-> 后续 V14 工作已经补上 draft proposal、workflow handoff 和 `cosheaf eval reviewable-workflow --json` 的 framework 回归覆盖；这些输出仍只是 review context 或 regression signal，不是 accepted 权限。
-> 本版本不授予 accepted 写入、人类评审、验证器通过、gate 通过、source metadata、
-> accepted refutation 或 promotion 权限；workflow、loop、session、operator 与
-> handoff 记录始终仅为 review context。它仍不是生产就绪软件，也不提供 Web UI、
-> 默认真实托管提供商路径、自动定理证明、完整 Lean 自动形式化、自动 accepted
-> 提升或多用户权限系统。
+> `v0.10.0` RC 打包 V15 checker discipline：typed local checker registry、
+> checker-run sidecar、workflow cross-check/evidence/gap reports、`cosheaf gap`
+> 命令、deterministic checker/cross-check eval 覆盖，以及三仓 policy smoke。
+> 这些输出只是 review context 和 regression evidence，不改变 proof、人类评审、
+> gate、verifier、source metadata、accepted status 或 promotion 权限。
+> 本 RC 不新增生产自治、默认 hosted provider、自动定理证明、Lean 语义对齐、
+> 人类评审、accepted 写入、无真实 checker 证据的 verifier pass、gate-pass 权限、
+> source metadata 权限、accepted theorem/refutation 权限或 promotion 权限。
+> workflow、loop、session、operator、handoff、checker、cross-check、gap 与 eval
+> 记录始终仅为 review context。它仍不是生产就绪软件，也不提供 Web UI、默认真实
+> 托管提供商路径、完整 Lean 自动形式化、自动 accepted 提升或多用户权限系统。
 
 ## 为什么需要它
 

@@ -1,43 +1,40 @@
 # Roadmap
 
-TCS-Cosheaf has published the `v0.9.0` Reviewable Research Workflow MVP release
-after the published `v0.8.0` Deterministic Execution Kernel + Librarian + FSM
-release. Earlier published baselines include `v0.7.0` Bounded Research Loop +
-Attempt Memory, `v0.6.0` Operator Session + Review Handoff, `v0.5.0` Operator
-MCP + Codex Application Layer, `v0.4.0` Strategy Planner + Research Task Graph,
+TCS-Cosheaf is preparing the `v0.10.0` Cross-Check Evidence + Checker Registry
+release candidate after the published `v0.9.0` Reviewable Research Workflow
+MVP release. Earlier published baselines include `v0.8.0` Deterministic
+Execution Kernel + Librarian + FSM, `v0.7.0` Bounded Research Loop + Attempt
+Memory, `v0.6.0` Operator Session + Review Handoff, `v0.5.0` Operator MCP +
+Codex Application Layer, `v0.4.0` Strategy Planner + Research Task Graph,
 `v0.3.0` Checked Evidence and Research Run Loop, the `v0.2.x` CLI/provider/
 evidence/failure-memory line, `v0.2.0` local-MVP, and the `v0.1.1` Formal Link
-Layer support baseline. The project is still not production-ready. This roadmap
-records durable direction and named milestones; live issue state belongs in
-GitHub issues.
+Layer support baseline. The project is still not production-ready. This
+roadmap records durable direction and named milestones; live issue state
+belongs in GitHub issues.
 
-## Active Development Focus: V15 cross-check evidence
+## Active Development Focus: v0.10.0 release candidate
 
-The public `v0.9.0` tag and GitHub release are published, and package metadata
-records `0.9.0`. The V14 implementation line moved beyond the published thin
-surface by adding persistent workflow runtime records under
-`.cosheaf/workflows/<workflow-id>/`, `workflow show`, persisted `workflow
-step`, bounded `workflow run`, persisted readiness reports, draft proposal
-generation, and workflow handoff build/show/scan/export. These outputs remain
-runtime review context only. The framework line now also includes
-`cosheaf eval reviewable-workflow --json` as a deterministic regression signal
-for issue-to-reviewable-packet behavior. Downstream workspace-template and
-public KB closeout work for the reviewable-workflow demo and policy guard has
-landed.
+The public `v0.9.0` tag and GitHub release are published, and the latest
+published baseline remains `v0.9.0`. Package metadata on the current
+release-candidate branch records `0.10.0`; the public `v0.10.0` tag and
+GitHub release are not published yet. Tag publication, GitHub release
+publication, post-tag smoke, and downstream workspace-template/public KB pin
+updates are Phase F.2 work after the release-candidate PR merges.
 
-The V15 implementation line is in progress:
+The V15 implementation line has landed:
 
-- typed checker registry design and implementation has landed;
-- cross-check evidence reports attached to reviewable workflow context are now
+- typed checker registry design and implementation;
+- cross-check evidence reports attached to reviewable workflow context,
   implemented as runtime/review-context reports;
-- proof-obligation and gap taxonomy is implemented for workflow review
+- proof-obligation and gap taxonomy for workflow review
   guidance;
 - framework-side deterministic checker/cross-check eval and ecosystem smoke
-  coverage has landed;
-- remaining V15 work is downstream workspace-template/public-KB policy smoke
-  for cross-check reports;
-- conservative `v0.10.0` release packaging follows after implementation and
-  downstream closeout.
+  coverage;
+- workspace-template cross-check demo in downstream PR #85; and
+- public KB cross-check report policy guard in downstream PR #99.
+
+The active task is conservative `v0.10.0` RC packaging and verification. It
+does not add new runtime behavior.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
@@ -208,10 +205,29 @@ accepted status, or promotion authorization. Provider calls remain explicit,
 default-off, policy-scoped, previewed, consented, and excluded from CI/default
 tests. MCP remains optional and non-blocking.
 
+## Latest Release Candidate: v0.10.0
+
+Package metadata and `cosheaf.__version__` on the release-candidate branch
+record `0.10.0`. `docs/releases/v0.10.0.md` records the conservative RC scope
+and limitations. The public `v0.10.0` tag and GitHub release are not published
+yet.
+
+The `v0.10.0` RC packages typed checker registry commands, checker-run
+sidecars, workflow cross-check and evidence reports, proof/source/
+formalization gap reports, `cosheaf gap` commands, deterministic checker/
+cross-check eval coverage, downstream workspace-template cross-check demo
+coverage, and public KB cross-check report policy guards.
+
+These surfaces are review context and regression evidence only. They do not
+make checker reports proof, source metadata, human review, verifier pass
+without a real checker result, gate pass, accepted status, accepted theorem/
+refutation, or promotion authority. Skipped, unsupported, unavailable, and
+inconclusive checker results are not passes.
+
 ## Latest Published Release: v0.9.0
 
-Package metadata and `cosheaf.__version__` record `0.9.0`.
-`docs/releases/v0.9.0.md` records the conservative release scope and
+At publication time, package metadata and `cosheaf.__version__` recorded
+`0.9.0`. `docs/releases/v0.9.0.md` records the conservative release scope and
 limitations. The public `v0.9.0` tag and GitHub release are published.
 
 The `v0.9.0` release includes the first reviewable-workflow CLI surface on top
