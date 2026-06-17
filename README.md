@@ -19,9 +19,10 @@ Loop + Attempt Memory line. Phase B added core research-loop runtime records
 under `.cosheaf/research-loops/`, Phase C.1 added deterministic next-action
 planning plus external operator task/result packet commands, and Phase D.1 adds
 runtime attempt memory, repeat-failure avoidance, retry-justification checks,
-and a loop scanner. Phase E has started with deterministic research-loop evals
-and framework ecosystem smoke rows; downstream workspace-template demo and
-public-KB policy PRs are still separate follow-up work. That line is not
+and a loop scanner. Phase E has landed the deterministic research-loop eval,
+framework ecosystem smoke rows, downstream workspace-template
+`research-loop-demo`, and public-KB research-loop policy guard alignment. That
+line is not
 released yet and does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, human review, accepted writes, verifier passes, gate
 passes, or promotion authority.
@@ -188,11 +189,10 @@ Implemented:
   records, structured failure memory, deterministic C.1 next/step/run
   dry-run planning, external operator task/result packet commands, D.1
   attempt-memory indexing, repeat-failure surfacing, retry-justification
-  enforcement, loop scanning, and Phase E framework research-loop eval/smoke
-  rows. Downstream workspace-template research-loop demo and public-KB
-  research-loop policy alignment are not complete in this framework branch.
-  These records stay under ignored `.cosheaf/` runtime paths and remain review
-  context only.
+  enforcement, loop scanning, Phase E framework research-loop eval/smoke
+  rows, downstream workspace-template research-loop demo coverage, and
+  public-KB research-loop policy guard alignment. These records stay under
+  ignored `.cosheaf/` runtime paths and remain review context only.
 
 Planned or incomplete:
 

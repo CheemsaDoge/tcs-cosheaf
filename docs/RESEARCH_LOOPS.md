@@ -11,7 +11,7 @@ accepted knowledge, source metadata, or promotion authority.
 
 ## Scope
 
-Implemented through the current framework Phase E.1 slice:
+Implemented through the completed Phase E.1 slice:
 
 - core DTOs for loops, attempts, budgets, decisions, stop conditions, failure
   records, evidence summaries, policy findings, next actions, and review
@@ -48,7 +48,15 @@ Implemented through the current framework Phase E.1 slice:
 - framework ecosystem smoke rows for the research-loop eval and local
   start/append-attempt/next/export-task/import-result/scan/finalize workflow;
 - framework-side matrix row definitions for downstream workspace-template
-  `research-loop-demo` and public-KB `RESEARCH_LOOP_POLICY.md` checks.
+  `research-loop-demo` and public-KB `RESEARCH_LOOP_POLICY.md` checks;
+- downstream workspace-template `make research-loop-demo`, which uses a local
+  or otherwise explicit v0.7-capable framework source while keeping the
+  template's published install pin on `v0.6.0`;
+- downstream public-KB `docs/RESEARCH_LOOP_POLICY.md` and policy guard checks
+  that reject research-loop output used as source metadata, accepted proof,
+  human review, verifier/gate pass, accepted status, or promotion authority;
+- a no-network three-repository matrix run covering the Phase E framework,
+  workspace-template, and public-KB rows.
 
 These commands are still review-context infrastructure. They do not call
 hosted providers, run arbitrary shell commands, mark review, create verifier
@@ -59,10 +67,6 @@ explicitly refused until a later deterministic implementation.
 Not complete yet:
 
 - loop handoff export beyond explicit operator task JSON packets;
-- downstream workspace-template `make research-loop-demo`;
-- downstream public-KB research-loop policy docs and guard alignment;
-- full three-repository Phase E matrix completion after the downstream PRs
-  land;
 - v0.7.0 release-candidate metadata and publication;
 - hosted provider calls;
 - automatic theorem proving or Lean semantic alignment.
@@ -385,7 +389,8 @@ The regression suite covers:
 - unjustified repeat retry rejection and justified retry recording;
 - loop scanner clean and blocking paths with deterministic metrics.
 
-Framework Phase E.1 adds `cosheaf eval research-loop --json` and local
-research-loop ecosystem smoke rows. The downstream workspace-template demo,
-public-KB policy documentation, full three-repository Phase E matrix closeout,
-v0.7.0 release-candidate metadata, and publication closeout remain future work.
+Phase E.1 adds `cosheaf eval research-loop --json`, local research-loop
+ecosystem smoke rows, downstream workspace-template demo coverage, public-KB
+research-loop policy documentation, and a completed no-network
+three-repository matrix closeout. The remaining work is v0.7.0
+release-candidate metadata and publication closeout.

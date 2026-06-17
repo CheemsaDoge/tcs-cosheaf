@@ -4,6 +4,19 @@ Target: `v0.7.0 Bounded Research Loop + Attempt Memory`
 
 This is the accelerated post-`v0.6.0` plan.
 
+Execution status as of 2026-06-17:
+
+- Phase A through Phase E have landed.
+- Phase E landed across all three repositories: framework PR #407,
+  workspace-template PR #77, and public-KB PR #92.
+- The current next task is Phase F.1 `release-v070-readiness-and-rc`.
+- `v0.7.0` is not published yet. Do not claim package metadata, tag/release,
+  post-tag smoke, or downstream pins have moved until Phase F actually does
+  that work.
+- All authority boundaries still apply: no accepted writes, no human-review
+  creation, no verifier/gate pass authority, no hosted-provider default, no
+  automatic theorem proving, and no Lean semantic-alignment claim.
+
 The previous line, `v0.6.0 Operator Session + Review Handoff`, made external-operator work replayable and reviewable. The next line should turn that replayable session layer into a bounded multi-attempt research loop: issue-scoped, budgeted, resumable, auditable, failure-aware, and still unable to write accepted knowledge.
 
 One-sentence goal:

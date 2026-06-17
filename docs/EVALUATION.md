@@ -684,9 +684,12 @@ an opt-in network row and is skipped unless `--include-network` is explicitly
 supplied.
 
 The research-loop downstream matrix rows are framework-side compatibility
-checks. They require separate workspace-template and public-KB PRs to provide
-`make research-loop-demo` and `docs/RESEARCH_LOOP_POLICY.md` before the full
-three-repository Phase E matrix can be treated as complete.
+checks. The matching downstream surfaces have landed in
+`tcs-cosheaf-workspace-template` and `tcs-kb-public`, so the no-network Phase E
+matrix can exercise the full three-repository research-loop demo and policy
+coverage. The workspace-template research-loop demo still requires a local or
+otherwise explicit v0.7-capable framework source because the published
+workspace install pin remains `v0.6.0` until v0.7.0 publication.
 
 Network rows remain opt-in through `--include-network`. When optional external
 SAT/SMT/Lean/lake tools are unavailable, the optional verifier availability

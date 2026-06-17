@@ -3,10 +3,59 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
-## Task E.1 framework work in progress: research-loop eval and ecosystem rows - 2026-06-17
+## Phase E completed: research-loop eval, downstream demo, and public-KB policy - 2026-06-17
 
-Issue #406 / branch `research-loop-eval-and-ecosystem-demo` is the active Phase
-E.1 work item for the v0.7.0 bounded research-loop line.
+The v0.7.0 Phase E ecosystem work has landed across the three repositories:
+
+- `tcs-cosheaf` PR #407 added `cosheaf eval research-loop --json`,
+  `evals/research_loop/cases.yaml`, research-loop workflow smoke coverage, and
+  ecosystem matrix rows. It merged as commit
+  `92d5360a58b1767f393a444cf766e772ee71b0c3`.
+- `tcs-cosheaf-workspace-template` PR #77 added `make research-loop-demo` and
+  `scripts/demo_research_loop.sh`. It merged as commit
+  `7c30b3456c0123972fd3feb0fd7e0e147f3e27ed`.
+- `tcs-kb-public` PR #92 added `docs/RESEARCH_LOOP_POLICY.md` and expanded
+  the public-KB policy guard so research-loop output cannot be treated as
+  source metadata, accepted proof, human review, verifier/gate pass, accepted
+  status, accepted refutation, or promotion authority. It merged as commit
+  `197eccd30a81842a23a36d1500261198d5579c22`.
+
+The latest no-network three-repository matrix run used:
+
+```bash
+python scripts/ecosystem_smoke.py --matrix --framework-root . --workspace-template-root ../tcs-cosheaf-workspace-template --public-kb-root ../tcs-kb-public --cosheaf "python -m cosheaf.cli" --json
+```
+
+It passed with 25 rows: 22 pass, 0 fail, and 3 expected skipped rows for
+optional verifier availability, the framework git-tag network release-smoke
+row, and the workspace-template network install demo row.
+
+Current handoff state:
+
+- local squash-merged branches for the three Phase E PRs were cleaned after
+  `git cherry` confirmed patch-equivalent content on `origin/main`;
+- `tcs-cosheaf`, `tcs-cosheaf-workspace-template`, and `tcs-kb-public` main
+  are synced to their merged Phase E commits;
+- generated runtime outputs remain ignored under `.cosheaf/` or
+  `context/TASKS/` and must not be committed.
+
+Next task: start Phase F.1 `release-v070-readiness-and-rc` in
+`tcs-cosheaf`. Do not claim `v0.7.0` has been published until package
+metadata, release notes, tag/release, post-tag smoke, and downstream pin
+closeout actually happen. The workspace-template published install pin remains
+`v0.6.0`; the research-loop demo intentionally requires a local or otherwise
+explicit v0.7-capable framework source.
+
+Phase E did not add accepted writes, source-metadata authority, human-review
+authority, verifier/gate pass authority, hosted-provider defaults, arbitrary
+shell execution, automatic theorem proving, Lean semantic alignment, or
+promotion-policy changes.
+
+## Task E.1 completed: research-loop eval and ecosystem rows - 2026-06-17
+
+Issue #406 / branch `research-loop-eval-and-ecosystem-demo` was the framework
+Phase E.1 work item for the v0.7.0 bounded research-loop line. It merged in
+PR #407.
 
 Framework implementation state on this branch:
 
@@ -33,7 +82,7 @@ Framework implementation state on this branch:
 - `README.md`, `README.zh-CN.md`, `docs/EVALUATION.md`,
   `docs/RESEARCH_LOOPS.md`, `docs/ROADMAP.md`,
   `context/CURRENT_MILESTONE.md`, and `context/INTERFACE_REGISTRY.md` describe
-  the Phase E framework surfaces and the remaining downstream PR boundary.
+  the Phase E framework surfaces.
 
 Local verification during framework E.1 closeout:
 
@@ -54,13 +103,9 @@ Local verification during framework E.1 closeout:
 - Documentation closeout also removed stale wording that said the Phase E eval
   command remained future work after the framework eval command was added.
 
-Remaining E.1 work:
-
-- run final `git diff --check` after any further edits before PR;
-- open and merge the framework PR for issue #406 if CI passes;
-- add downstream workspace-template `research-loop-demo` in a separate PR;
-- add public-KB research-loop policy/guard docs in a separate PR;
-- rerun the ecosystem matrix after downstream PRs land.
+The downstream workspace-template demo and public-KB policy/guard docs landed
+after this framework PR; see the Phase E completed section above for the
+cross-repository closeout.
 
 No accepted KB writes, source-metadata semantics, human-review semantics,
 verifier/gate authority, hosted provider calls, arbitrary shell execution, or
