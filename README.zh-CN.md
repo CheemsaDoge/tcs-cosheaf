@@ -2,17 +2,19 @@
 
 TCS-Cosheaf 是一个以 Git 为持久记忆层的、带类型约束的理论计算机科学研究知识库与智能体协作框架。它把定义、命题、证明、构造、算法、归约、反例、实验、评审、议题和验证器证据保存为可审查的仓库文件，而不是只保存在聊天记录中。
 
-> 当前状态：**v0.7.0 Bounded Research Loop + Attempt Memory release
-> candidate**。包版本记录为 `0.7.0`；公开 `v0.7.0` tag、GitHub release、
-> post-tag release smoke 和下游 pin 对齐仍是后续 Phase F.2 步骤。本 RC 打包
-> bounded multi-attempt research loop（含确定性 next-action planning、operator
-> task/result protocol、runtime attempt memory、repeat-failure avoidance、
-> retry-justification guard、loop scanner、deterministic eval 和
-> three-repository ecosystem matrix closeout）。`v0.6.0` 仍是当前最新已发布
-> 版本。本 RC 不授予 accepted 写入、人类评审、验证器通过、gate 通过或 promotion
-> 权限；research-loop 记录始终仅为 review context。它仍不是生产就绪软件，也不
-> 提供 Web UI、默认真实托管提供商路径、自动定理证明、完整 Lean 自动形式化、
-> 自动 accepted 提升或多用户权限系统。
+> 当前状态：**v0.9.0 Reviewable Research Workflow MVP 已发布版本**。包版本记录为
+> `0.9.0`，公开 `v0.9.0` tag 和 GitHub release 已发布：
+> <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0>。
+> 本版本包含 `v0.8.0` 的 deterministic execution kernel 基线，并加入初始
+> `cosheaf workflow` CLI 表面。收尾审计确认：当前 workflow 表面仍较薄，
+> `start` 可以输出 workflow JSON record，但 `step` 和 `readiness` 仍是
+> ephemeral 输出，尚未读写计划中的 `.cosheaf/workflows/<workflow-id>/` 持久状态；
+> draft proposal、workflow handoff 和 `cosheaf eval reviewable-workflow` 仍是后续工作。
+> 本版本不授予 accepted 写入、人类评审、验证器通过、gate 通过、source metadata、
+> accepted refutation 或 promotion 权限；workflow、loop、session、operator 与
+> handoff 记录始终仅为 review context。它仍不是生产就绪软件，也不提供 Web UI、
+> 默认真实托管提供商路径、自动定理证明、完整 Lean 自动形式化、自动 accepted
+> 提升或多用户权限系统。
 
 ## 为什么需要它
 
@@ -114,6 +116,7 @@ make gate
 - [Agent access](docs/AGENT_ACCESS.md)
 - [Codex operator runbook](docs/CODEX_OPERATOR_RUNBOOK.md)
 - [Research loops](docs/RESEARCH_LOOPS.md)
+- [Reviewable workflows](docs/WORKFLOWS.md)
 - [Agent providers](docs/AGENT_PROVIDERS.md)
 - [Evaluation](docs/EVALUATION.md)
 - [Artifact lifecycle](docs/ARTIFACT_LIFECYCLE.md)

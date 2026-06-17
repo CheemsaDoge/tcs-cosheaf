@@ -50,8 +50,9 @@ Implemented through the completed Phase E.1 slice:
 - framework-side matrix row definitions for downstream workspace-template
   `research-loop-demo` and public-KB `RESEARCH_LOOP_POLICY.md` checks;
 - downstream workspace-template `make research-loop-demo`, which uses a local
-  or otherwise explicit v0.7-capable framework source while keeping the
-  template's published install pin on `v0.6.0`;
+  or otherwise explicit compatible framework source. At the v0.9.0 closeout,
+  workspace-template pin updates were partially present on a downstream branch
+  and still needed a dedicated drift cleanup before being treated as complete;
 - downstream public-KB `docs/RESEARCH_LOOP_POLICY.md` and policy guard checks
   that reject research-loop output used as source metadata, accepted proof,
   human review, verifier/gate pass, accepted status, or promotion authority;
@@ -67,7 +68,7 @@ explicitly refused until a later deterministic implementation.
 Not complete yet:
 
 - loop handoff export beyond explicit operator task JSON packets;
-- v0.7.0 release-candidate metadata and publication;
+- reviewable-workflow integration with research-loop runtime records;
 - hosted provider calls;
 - automatic theorem proving or Lean semantic alignment.
 
@@ -392,5 +393,6 @@ The regression suite covers:
 Phase E.1 adds `cosheaf eval research-loop --json`, local research-loop
 ecosystem smoke rows, downstream workspace-template demo coverage, public-KB
 research-loop policy documentation, and a completed no-network
-three-repository matrix closeout. The remaining work is v0.7.0
-release-candidate metadata and publication closeout.
+three-repository matrix closeout. The `v0.7.0` publication closeout is
+historical and complete; current follow-up work belongs to the v0.9.0
+reviewable-workflow line and downstream pin/policy drift cleanup.

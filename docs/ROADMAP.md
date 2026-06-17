@@ -1,46 +1,39 @@
 # Roadmap
 
-TCS-Cosheaf has published the `v0.6.0` Operator Session + Review Handoff
-release after the published `v0.5.0` Operator MCP + Codex Application Layer
-release and the published `v0.4.0` Strategy Planner + Research Task Graph
-release. `v0.6.0` is a replayable, redacted, review-context handoff layer over
-the existing CLI/MCP/service surfaces. The public `v0.6.0` tag, GitHub release,
-post-tag release smoke, and downstream workspace/public-KB pin updates are
-complete. This
-follows the published `v0.3.0` Checked Evidence and Research Run Loop release,
-the published `v0.2.4` Artifact Failure Memory and Attempt Traceability
-release, the published `v0.2.3` Verification Evidence Hardening release, the
-published `v0.2.2` Provider Transport and Agent Workflow Hardening release, the
-published `v0.2.1` CLI Agent Access and Hosted Provider Gateway prerelease, the
-published `v0.2.0` local-MVP release, and the earlier `v0.1.1` Formal Link
+TCS-Cosheaf has published the `v0.9.0` Reviewable Research Workflow MVP release
+after the published `v0.8.0` Deterministic Execution Kernel + Librarian + FSM
+release. Earlier published baselines include `v0.7.0` Bounded Research Loop +
+Attempt Memory, `v0.6.0` Operator Session + Review Handoff, `v0.5.0` Operator
+MCP + Codex Application Layer, `v0.4.0` Strategy Planner + Research Task Graph,
+`v0.3.0` Checked Evidence and Research Run Loop, the `v0.2.x` CLI/provider/
+evidence/failure-memory line, `v0.2.0` local-MVP, and the `v0.1.1` Formal Link
 Layer support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: v0.7.0 RC preparation
+## Active Development Focus: v0.9.0 documentation closeout and workflow gap audit
 
-The active post-`v0.6.0` development line is the `v0.7.0` Bounded Research
-Loop + Attempt Memory release candidate. Phases B through E have landed across
-all three repositories:
+The active closeout work is to align documentation with the real `v0.9.0`
+release state and code audit. The public `v0.9.0` tag and GitHub release are
+published, and package metadata records `0.9.0`. The current workflow surface
+is intentionally thin: `workflow start` emits a JSON record, while
+`workflow step` and `workflow readiness` are still ephemeral and do not yet
+read or write persisted `.cosheaf/workflows/<workflow-id>/` state.
 
-- Phase B: core research-loop DTOs, runtime storage, CLI, schemas, tests, docs
-- Phase C.1: deterministic runner and operator task/result protocol
-- Phase D.1: attempt-memory index, failure clustering, retry-justification
-  guard, loop scanner
-- Phase E: deterministic research-loop eval, ecosystem smoke rows, downstream
-  workspace-template demo, public-KB policy guard, three-repository matrix
-  closeout
+The next implementation work should start from these remaining V14 gaps:
 
-Phase F.1 (`release-v070-readiness-and-rc`) is the active work. It bumps the
-package version to `0.7.0`, adds RC release notes, and aligns documentation.
-Phase F.2 will handle the public tag, GitHub release, post-tag release smoke,
-and downstream pin alignment.
+- persistent workflow runtime storage and replay;
+- `workflow show` and bounded `workflow run`;
+- draft proposal generation from workflow output;
+- workflow handoff build/show/scan/export;
+- workflow scanner and reviewable-workflow eval coverage;
+- downstream workspace-template/public-KB pin and policy closeout.
 
-This line keeps the same authority boundary: loop records, task packets,
-operator results, and failure memory are review context only. They do not
-write accepted knowledge, create human review, mutate verifier results, mark
-gate pass, promote artifacts, call hosted providers by default, execute
-arbitrary shell through Cosheaf, or claim automatic theorem proving.
+The authority boundary is unchanged: workflow records, loop records, task
+packets, operator results, handoffs, and eval reports are review context only.
+They do not write accepted knowledge, create human review, mutate verifier
+results, mark gate pass, promote artifacts, call hosted providers by default,
+execute arbitrary shell through Cosheaf, or claim automatic theorem proving.
 
 ## Completed Release Focus: v0.6.0 Operator Session + Review Handoff
 
@@ -203,13 +196,31 @@ accepted status, or promotion authorization. Provider calls remain explicit,
 default-off, policy-scoped, previewed, consented, and excluded from CI/default
 tests. MCP remains optional and non-blocking.
 
-## Latest Published Release: v0.6.0
+## Latest Published Release: v0.9.0
 
-Package metadata and `cosheaf.__version__` record `0.6.0`.
-`docs/releases/v0.6.0.md` records the conservative release scope and
-limitations. The public `v0.6.0` tag and GitHub release are published,
-post-tag release smoke from `@v0.6.0` passed, and downstream
-workspace/public-KB pins now use `@v0.6.0`.
+Package metadata and `cosheaf.__version__` record `0.9.0`.
+`docs/releases/v0.9.0.md` records the conservative release scope and
+limitations. The public `v0.9.0` tag and GitHub release are published.
+
+The `v0.9.0` release includes the first reviewable-workflow CLI surface on top
+of the `v0.8.0` deterministic execution-kernel baseline. The workflow surface
+is not a complete issue-to-handoff engine yet: persistent workflow storage,
+draft proposal generation, workflow handoff commands, and
+`cosheaf eval reviewable-workflow --json` remain future work.
+
+This release does not make workflow, session, MCP, loop, scanner, handoff, or
+eval output proof, source metadata, checked evidence, verifier pass, gate pass,
+human review, accepted status, accepted refutation, or promotion authority. It
+does not add default hosted provider calls, API-key requirements, accepted
+writes, promotion semantics changes, web UI, production hosted multi-agent
+runtime, or automatic theorem proving.
+
+## Previous Published Release: v0.6.0
+
+At publication time, package metadata and `cosheaf.__version__` recorded
+`0.6.0`. `docs/releases/v0.6.0.md` records the conservative release scope. The
+public `v0.6.0` tag and GitHub release are published, release smoke from
+`@v0.6.0` passed, and downstream workspace/public-KB pin updates were complete.
 
 The `v0.6.0` release includes bounded operator-session records, optional MCP
 session recording, leak scanning, runtime handoff bundles, review-context
@@ -219,9 +230,7 @@ operator-handoff policy checks, and ecosystem smoke rows.
 This release does not make sessions, MCP recordings, scans, handoff bundles,
 or handoff exports proof, source metadata, checked evidence, verifier pass,
 gate pass, human review, accepted status, accepted refutation, or promotion
-authority. It does not add default hosted provider calls, API-key requirements,
-accepted writes, promotion semantics changes, web UI, production hosted
-multi-agent runtime, or automatic theorem proving.
+authority.
 
 ## Previous Published Release: v0.5.0
 

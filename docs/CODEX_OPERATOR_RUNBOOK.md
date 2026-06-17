@@ -4,6 +4,8 @@ This is the stable entrypoint for Codex-style operator instructions.
 
 Use:
 
+- `docs/WORKFLOWS.md` for the current v0.9.0 reviewable-workflow CLI surface
+  and remaining workflow gaps;
 - `docs/RESEARCH_LOOPS.md` for bounded multi-attempt research loops;
 - `docs/EXTERNAL_OPERATOR_RUN_LOOP.md` for the full CLI-first issue loop;
 - `docs/OPERATOR_SESSIONS.md` for bounded operator-session metadata records;

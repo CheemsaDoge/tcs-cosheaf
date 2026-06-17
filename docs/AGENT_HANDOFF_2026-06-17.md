@@ -1,46 +1,102 @@
-﻿# Agent Handoff: v0.7.0 Published
+# Agent Handoff: v0.9.0 Documentation Closeout
 
-## Current three-repo state (2026-06-17)
+## Current state checked on 2026-06-18
 
-| Repo | Main commit | Branch |
-|------|-----------|--------|
-| tcs-cosheaf | 5a49833+ | main (clean, v0.7.0 published) |
-| tcs-cosheaf-workspace-template | 21afcdf | main (clean, pinned to @v0.7.0) |
-| tcs-kb-public | e14054e | main (clean, CI pinned to @v0.7.0) |
+| Repo | Local branch | Local status |
+|------|--------------|--------------|
+| tcs-cosheaf | docs-v090-handoff-closeout | documentation closeout branch |
+| tcs-cosheaf-workspace-template | release-v090-pins | clean local branch, partial v0.9.0 pin updates |
+| tcs-kb-public | main | clean, still pinned to v0.7.0 in CI/docs |
 
-## v0.7.0 publication completed
+## Framework release state
 
-- Annotated tag v0.7.0 created and pushed
-- GitHub release: https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.7.0
-- Post-tag install smoke from @v0.7.0 passed
-- Framework PR #410: v0.7.0 RC metadata (version bump, release notes)
-- Workspace-template PR #78: pins/docs/scripts updated to @v0.7.0
-- Public KB PR #93: CI/docs updated to @v0.7.0
-- Final matrix: 22 pass, 0 fail, 3 skipped
+- `pyproject.toml` records `version = "0.9.0"`.
+- `cosheaf/__init__.py` records `__version__ = "0.9.0"`.
+- `python -m cosheaf.cli version --json` reports `0.9.0`.
+- GitHub release `v0.9.0` is published:
+  <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.9.0>.
 
-## Next task: v0.8.0 planning per maintainer direction
+## Code audit result
 
-The v0.7.0 milestone is complete. Next direction should come from a new
-longplan (e.g., v0.8.0) or a maintainer-directed bounded task.
+The current `cosheaf workflow` implementation is present but thin:
 
-## Key invariants (do not break)
+- `workflow start` emits a workflow JSON record and authority notice.
+- `workflow step` prints an ephemeral step status and does not persist state.
+- `workflow readiness` reports that persisted readiness is not assessable yet.
+- Persistent `.cosheaf/workflows/<workflow-id>/` storage, `workflow show`,
+  bounded `workflow run`, draft proposals, workflow handoffs, scanner
+  integration, and `cosheaf eval reviewable-workflow --json` are not complete.
 
-- No accepted writes without promotion workflow
-- No human review creation by agent
-- Skipped != pass
-- No hosted provider defaults
-- No automatic theorem proving or Lean semantic-alignment claims
-- Research-loop output is review context only, not source metadata or proof
-- No agent prefixes in branch/PR/issue titles
+Do not describe `v0.9.0` as a complete issue-to-handoff workflow engine. It is
+a published initial reviewable-workflow surface.
 
-## Verification commands (run before every PR)
+The normal verification ladder is not green on this checkout:
 
-make lint && make typecheck && make test && make validate && make gate && git diff --check
+- `make lint` fails with ruff issues across existing V13/V14 Python code,
+  including `cosheaf/actions/*`, `cosheaf/orchestrator_fsm/*`,
+  `cosheaf/workflow/*`, and `cosheaf/research/loop_executor.py`.
+- `make typecheck` fails with mypy issues in `cosheaf/librarian/retrieval.py`,
+  `cosheaf/actions/*`, and `cosheaf/research/loop_executor.py`.
+- `make validate`, `make gate`, workflow CLI smoke, version JSON, and
+  `git diff --check` passed for this documentation closeout.
+
+The lint/typecheck failures were not fixed in this docs-only handoff pass.
+
+## Downstream drift to fix after this branch
+
+Workspace-template:
+
+- README and Makefile mention `v0.9.0`.
+- Several scripts still default to `v0.8.0`.
+- Some docs still mention `v0.7.0`.
+
+Public KB:
+
+- `.github/workflows/ci.yml` still installs
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.7.0`.
+- README still says CI installs from the published `v0.7.0` framework tag.
+
+These require separate downstream PRs. Do not hide them in the framework
+closeout summary.
+
+## Key invariants
+
+- No accepted writes without the promotion workflow.
+- No human review creation by agents.
+- Skipped is not pass.
+- No default hosted provider path.
+- No automatic theorem proving or Lean semantic-alignment claim.
+- Workflow, loop, operator, handoff, eval, MCP, and provider outputs are review
+  context only.
+- No agent prefixes in branch, PR, or issue titles.
+
+## Verification commands
+
+Run before PR closeout when feasible:
+
+```bash
+make lint
+make typecheck
+make test
+make validate
+make gate
+git diff --check
+```
+
+For docs-only handoff work, at minimum run:
+
+```bash
+python -m cosheaf.cli version --json
+git diff --check
+```
 
 ## Operator notes
 
-- gh proxy: HTTP_PROXY=127.0.0.1:3067
-- cosheaf binary: C:\Users\ywjhn\AppData\Roaming\Python\Python313\Scripts
-- Git author: CheemsaDoge <cheemsadoge@gmail.com>
-- Three repos at H:\ai4tcs\tcs-cosheaf, H:\ai4tcs\tcs-cosheaf-workspace-template, H:\ai4tcs\tcs-kb-public
-- .cosheaf/ and context/TASKS/ are gitignored; do not commit runtime outputs
+- GitHub CLI/proxy fallback:
+  `HTTP_PROXY=http://127.0.0.1:3067` and
+  `HTTPS_PROXY=http://127.0.0.1:3067`.
+- Git author should be `CheemsaDoge <cheemsadoge@gmail.com>`.
+- Three repos are under `H:\ai4tcs\`.
+- Runtime outputs under `.cosheaf/` and `context/TASKS/` should not be
+  committed unless a task explicitly asks for persisted review-context
+  artifacts.
