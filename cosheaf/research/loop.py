@@ -499,6 +499,10 @@ class ResearchLoopAttempt(ResearchLoopModel):
     policy_findings: tuple[AttemptPolicyFinding, ...] = ()
     next_action: AttemptNextAction | None = None
     authority_notice: str = RESEARCH_LOOP_AUTHORITY_NOTICE
+    action_results: list[dict[str, object]] | None = Field(
+        default=None,
+        description="Optional local action results when run with --execute-local-actions",
+    )
 
     @field_validator("attempt_id", "loop_id")
     @classmethod

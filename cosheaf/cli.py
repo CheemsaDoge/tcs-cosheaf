@@ -6173,6 +6173,11 @@ def research_loop_run(
         "--dry-run",
         help="Plan next actions without writing runtime state.",
     ),
+    execute_local_actions: bool = typer.Option(
+        False,
+        "--execute-local-actions",
+        help="Execute whitelisted local actions (non-dry-run). Only safe actions allowed.",
+    ),
     repo_root: Path = typer.Option(
         Path("."),
         "--repo-root",
@@ -6189,13 +6194,20 @@ def research_loop_run(
 
     console = Console(width=120, markup=False)
     try:
-        result = run_loop(
-            RepoContext(repo_root),
-            loop_id,
-            max_attempts=max_attempts,
-            wallclock_minutes=wallclock_minutes,
-            dry_run=dry_run,
-        )
+        ctx = RepoContext(repo_root)
+        if execute_local_actions and not dry_run:
+            from cosheaf.research.loop import load_loop
+            from cosheaf.research.loop_executor import run_local_actions_step
+            loop = load_loop(ctx, loop_id)
+            result = run_local_actions_step(ctx, loop, dry_run=False)
+        else:
+            result = run_loop(
+                ctx,
+                loop_id,
+                max_attempts=max_attempts,
+                wallclock_minutes=wallclock_minutes,
+                dry_run=dry_run,
+            )
     except (ResearchLoopError, ValidationError, ValueError) as exc:
         _exit_with_error(
             _research_loop_error_result(exc),
@@ -6203,9 +6215,13 @@ def research_loop_run(
             console=console,
         )
     if json_output:
-        _emit_json(result.to_dict())
+        payload = result.to_dict() if hasattr(result, 'to_dict') else result.model_dump(mode="json")
+        _emit_json(payload)
         return
-    console.print(f"Research loop run: {result.loop_id}")
+    if execute_local_actions and not dry_run:
+        console.print(f"Research loop local run: {result.loop_id}")
+    else:
+        console.print(f"Research loop run: {result.loop_id}")
     console.print(f"- dry_run: {str(result.dry_run).lower()}")
     console.print(f"- planned_actions: {len(result.planned_actions)}")
     console.print(f"- writes_performed: {str(result.writes_performed).lower()}")
