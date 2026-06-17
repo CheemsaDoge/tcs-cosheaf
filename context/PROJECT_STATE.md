@@ -3,6 +3,21 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Phase F completed: v0.7.0 published - 2026-06-17
+
+v0.7.0 Bounded Research Loop + Attempt Memory is published:
+
+- Annotated tag `v0.7.0` created and pushed
+- GitHub release created: https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.7.0
+- Post-tag install smoke from `@v0.7.0` passed
+- Workspace-template PR #78: pins/docs/scripts updated to `@v0.7.0`
+- Public KB PR #93: CI/docs updated to `@v0.7.0`
+- Final ecosystem matrix: 22 pass, 0 fail, 3 skipped
+
+All authority boundaries preserved. v0.7.0 does not add production autonomy,
+automatic theorem proving, host-provider defaults, Lean semantic alignment, or
+accepted-promotion authority.
+
 ## Task F.1: release-v070-readiness-and-rc - 2026-06-17
 
 Branch `release-v070-readiness-and-rc` prepares the conservative `v0.7.0`
