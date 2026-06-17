@@ -47,6 +47,22 @@
   human review, verifier pass, gate pass, accepted status, accepted
   theorem/refutation, or promotion authority; skipped and inconclusive results
   are not passes.
+- Checker/cross-check eval DTOs and CLI metadata are implemented under
+  `cosheaf.evals.checker_crosscheck`. The Python surface defines
+  `CheckerCrossCheckEvalCase`, `CheckerCrossCheckEvalCaseResult`,
+  `CheckerCrossCheckEvalError`, `CheckerCrossCheckEvalKind`,
+  `CheckerCrossCheckEvalMetrics`, `CheckerCrossCheckEvalReport`,
+  `CheckerCrossCheckEvalSuite`, `load_checker_crosscheck_eval_suite`,
+  `resolve_checker_crosscheck_eval_case_path`,
+  `run_checker_crosscheck_eval_case`, and
+  `run_checker_crosscheck_eval_suite`. The default case file is
+  `evals/checker_crosscheck/cases.yaml`, and the CLI surface is
+  `cosheaf eval checker-crosscheck --json`. The eval builds temporary local
+  fixtures and reports regression metrics for checker pass/fail, skipped and
+  inconclusive non-pass handling, authority-overclaim rejection, private-leak
+  rejection, source gaps, formalization gaps, and accepted-write violations.
+  It does not write accepted knowledge, create human review, fabricate source
+  metadata, mutate verifier results, call hosted providers, or claim proof.
 - Reviewable-workflow DTOs and CLI metadata commands are implemented under
   `cosheaf.workflow`. The current Python surface defines `WorkflowStatus`,
   `ReadinessClass`, `WorkflowInput`, `WorkflowOutput`,
@@ -574,6 +590,19 @@
   repository-local YAML case file.
 - `cosheaf eval checked-evidence-run-loop --json`: emits deterministic JSON
   report output.
+- `cosheaf eval checker-crosscheck`: runs the default deterministic
+  checker/cross-check boundary suite from
+  `evals/checker_crosscheck/cases.yaml`.
+- `cosheaf eval checker-crosscheck --repo-root <path>`: resolves the eval case
+  file against an explicit repository root while using temporary fixtures for
+  checker/cross-check runtime checks.
+- `cosheaf eval checker-crosscheck --cases <path>`: uses an explicit
+  repository-local YAML case file.
+- `cosheaf eval checker-crosscheck --json`: emits deterministic JSON report
+  output with checked-pass boundary, failed-checker detection,
+  authority-overclaim, private-leak, source-gap, formalization-gap,
+  skipped-not-pass, inconclusive-not-pass, and accepted-write violation
+  metrics.
 - `cosheaf eval research-run-loop`: runs the default deterministic
   research-run boundary suite from `evals/research_run_loop/cases.yaml`.
 - `cosheaf eval research-run-loop --repo-root <path>`: runs research-run evals

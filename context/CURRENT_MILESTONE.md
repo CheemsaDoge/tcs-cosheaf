@@ -2,7 +2,7 @@
 
 Milestone: **v0.10.0 Cross-Check Evidence + Checker Registry**
 
-Status: **V15 Phase C/D workflow cross-check and gap taxonomy in progress**
+Status: **V15 Phase E framework checker/cross-check eval in progress**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V15.md
 
@@ -14,6 +14,8 @@ Current focus:
 
 - use the typed checker registry from Phase B;
 - attach workflow cross-check reports and gap reports as review context only;
+- run deterministic checker/cross-check eval coverage for reviewer-facing
+  evidence boundaries;
 - preserve skipped-not-pass semantics for unavailable optional tools;
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -25,7 +27,8 @@ Current V15 surface on the development line:
 - `cosheaf workflow evidence-report <workflow-id> --json`;
 - `cosheaf workflow export-crosscheck <workflow-id> --out reviews/workflow/<name>.json --json`;
 - `cosheaf gap list <workflow-id> --json`;
-- `cosheaf gap export <workflow-id> --out reviews/workflow/<name>.json --json`.
+- `cosheaf gap export <workflow-id> --out reviews/workflow/<name>.json --json`;
+- `cosheaf eval checker-crosscheck --json`.
 
 Completed V14 closeout:
 

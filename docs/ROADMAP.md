@@ -32,8 +32,10 @@ The V15 implementation line is in progress:
   implemented as runtime/review-context reports;
 - proof-obligation and gap taxonomy is implemented for workflow review
   guidance;
-- remaining V15 work is deterministic eval and downstream policy smoke for
-  cross-check reports;
+- framework-side deterministic checker/cross-check eval and ecosystem smoke
+  coverage has landed;
+- remaining V15 work is downstream workspace-template/public-KB policy smoke
+  for cross-check reports;
 - conservative `v0.10.0` release packaging follows after implementation and
   downstream closeout.
 

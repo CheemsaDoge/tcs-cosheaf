@@ -3,6 +3,33 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V15 Phase E framework checker/cross-check eval - 2026-06-18
+
+Issue #440 adds the framework-side deterministic checker/cross-check eval and
+ecosystem smoke matrix row for the V15 Cross-Check Evidence line. The current
+surface includes:
+
+- `cosheaf eval checker-crosscheck --json`;
+- default cases under `evals/checker_crosscheck/cases.yaml`;
+- Python APIs in `cosheaf.evals.checker_crosscheck`; and
+- ecosystem smoke row `framework.checker-crosscheck-eval`.
+
+The default suite builds temporary local fixtures for checked local evidence,
+failed checker evidence, skipped optional checker output, authority-overclaim
+rejection, private-leak rejection, source gaps, formalization/semantic-
+alignment gaps, and inconclusive evidence. It reports boundary metrics for
+checked-pass-not-accepted behavior, failed-checker detection, overclaim/private
+leak rejection, source/formalization gap detection, skipped/inconclusive
+non-pass handling, and accepted-write violations.
+
+This framework task does not implement downstream workspace-template demo or
+public-KB policy guard changes. It does not change artifact schema, accepted
+promotion semantics, gatekeeper semantics, verifier adapter contracts, public
+KB content, or workspace-template behavior. Checker/cross-check eval output,
+cross-check reports, gap reports, and checker sidecars remain review context
+only. They are not proof, source metadata, human review, verifier pass, gate
+pass, accepted status, accepted theorem/refutation, or promotion authority.
+
 ## V15 Phase C/D workflow cross-check and gap taxonomy - 2026-06-18
 
 Issue #438 adds workflow cross-check reports and a proof/source/formalization

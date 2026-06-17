@@ -61,6 +61,7 @@ from cosheaf.core.status import (
 )
 from cosheaf.evals import (
     DEFAULT_CHECKED_EVIDENCE_RUN_LOOP_EVAL_CASES,
+    DEFAULT_CHECKER_CROSSCHECK_EVAL_CASES,
     DEFAULT_CONTEXT_EVAL_CASES,
     DEFAULT_RESEARCH_LOOP_EVAL_CASES,
     DEFAULT_RESEARCH_RUN_LOOP_EVAL_CASES,
@@ -68,6 +69,7 @@ from cosheaf.evals import (
     DEFAULT_REVIEWABLE_WORKFLOW_EVAL_CASES,
     DEFAULT_STRATEGY_PLANNER_EVAL_CASES,
     CheckedEvidenceRunLoopEvalError,
+    CheckerCrossCheckEvalError,
     ContextEvalError,
     ResearchLoopEvalError,
     ResearchRunLoopEvalError,
@@ -75,6 +77,7 @@ from cosheaf.evals import (
     ReviewableWorkflowEvalError,
     StrategyPlannerEvalError,
     load_checked_evidence_run_loop_eval_suite,
+    load_checker_crosscheck_eval_suite,
     load_context_eval_suite,
     load_research_loop_eval_suite,
     load_research_run_loop_eval_suite,
@@ -82,6 +85,7 @@ from cosheaf.evals import (
     load_reviewable_workflow_eval_suite,
     load_strategy_planner_eval_suite,
     resolve_checked_evidence_run_loop_eval_case_path,
+    resolve_checker_crosscheck_eval_case_path,
     resolve_context_eval_case_path,
     resolve_research_loop_eval_case_path,
     resolve_research_run_loop_eval_case_path,
@@ -89,6 +93,7 @@ from cosheaf.evals import (
     resolve_reviewable_workflow_eval_case_path,
     resolve_strategy_planner_eval_case_path,
     run_checked_evidence_run_loop_eval_suite,
+    run_checker_crosscheck_eval_suite,
     run_context_eval_suite,
     run_research_loop_eval_suite,
     run_research_run_loop_eval_suite,
@@ -3033,6 +3038,75 @@ def eval_context(
             f"required_hit={case.metrics.required_artifact_hit:.6f} "
             f"failures={failures}"
         )
+
+    if not report.passed:
+        raise typer.Exit(code=1)
+
+
+@eval_app.command("checker-crosscheck")
+def eval_checker_crosscheck(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    cases: Path = typer.Option(
+        DEFAULT_CHECKER_CROSSCHECK_EVAL_CASES,
+        "--cases",
+        help="Repository-local YAML checker/cross-check eval case file.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text summary.",
+    ),
+) -> None:
+    """Run deterministic checker/cross-check regression cases."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        case_path = resolve_checker_crosscheck_eval_case_path(context, cases)
+        suite = load_checker_crosscheck_eval_suite(case_path)
+        report = run_checker_crosscheck_eval_suite(context, suite)
+    except CheckerCrossCheckEvalError as exc:
+        console.print(f"Checker/cross-check eval failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(report.to_json(), nl=False)
+        return
+
+    verdict = "pass" if report.passed else "fail"
+    console.print(f"Checker/cross-check eval verdict: {verdict}")
+    console.print(f"- cases: {report.case_count}")
+    console.print(
+        "- checked_pass_boundary_rate: "
+        f"{report.metrics.checked_pass_boundary_rate:.6f}"
+    )
+    console.print(
+        "- failed_checker_detection_rate: "
+        f"{report.metrics.failed_checker_detection_rate:.6f}"
+    )
+    console.print(
+        "- authority_overclaim_rejection_rate: "
+        f"{report.metrics.authority_overclaim_rejection_rate:.6f}"
+    )
+    console.print(
+        "- private_leak_rejection_rate: "
+        f"{report.metrics.private_leak_rejection_rate:.6f}"
+    )
+    console.print(f"- skipped_not_pass_count: {report.metrics.skipped_not_pass_count}")
+    console.print(
+        "- inconclusive_not_pass_count: "
+        f"{report.metrics.inconclusive_not_pass_count}"
+    )
+    console.print(
+        "- accepted_write_violation_count: "
+        f"{report.metrics.accepted_write_violation_count}"
+    )
+    for case in report.cases:
+        failures = ",".join(case.failures) if case.failures else "-"
+        console.print(f"- {case.id}: passed={str(case.passed).lower()} {failures}")
 
     if not report.passed:
         raise typer.Exit(code=1)

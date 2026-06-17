@@ -101,3 +101,18 @@ CI. Missing tools are reported as `skipped`. Availability alone is
 `python_local_check` runs only an explicit repository-local Python script from
 `payload.script_path`. It is not an arbitrary shell surface.
 
+## Eval Coverage
+
+The framework-side regression command is:
+
+```bash
+cosheaf eval checker-crosscheck --json
+```
+
+It builds temporary local fixtures for checker pass, checker fail, skipped
+optional checker, authority-overclaim rejection, private-leak rejection, source
+gap, formalization gap, and inconclusive evidence cases. The eval is a
+regression signal only. It does not write accepted knowledge, create human
+review, fabricate source metadata, promote artifacts, or claim proof from a
+checker/cross-check result.
+
