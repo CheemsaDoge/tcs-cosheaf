@@ -14,6 +14,8 @@ from rich.console import Console
 from cosheaf import __version__
 from cosheaf.actions.builtins import build_default_registry
 from cosheaf.actions.cli import action_app
+from cosheaf.librarian.cli import librarian_app
+from cosheaf.orchestrator_fsm.cli import fsm_app
 from cosheaf.agent.context_pack import (
     ContextPackError,
 )
@@ -353,6 +355,8 @@ app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
 app.add_typer(gate_app, name="gate")
 app.add_typer(action_app, name="action")
+app.add_typer(librarian_app, name="librarian")
+app.add_typer(fsm_app, name="orchestrator-fsm")
 app.add_typer(context_app, name="context")
 app.add_typer(task_app, name="task")
 app.add_typer(draft_app, name="draft")
