@@ -1,8 +1,8 @@
 # Current Milestone
 
-Milestone: **v0.7.0 Bounded Research Loop + Attempt Memory**
+Milestone: **v0.8.0 Deterministic Worker Loop + Local Action Registry**
 
-Status: **completed**
+Status: **kickoff (Phase A.1 in progress)**
 
 Started: 2026-06-17
 
@@ -94,12 +94,13 @@ Current v0.7.0 status:
 - non-dry-run loop execution remains refused until a later explicit
   deterministic implementation.
 
-Phase F.2 completed: tag `v0.7.0` published, GitHub release created
-(https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.7.0),
-post-tag install smoke passed, workspace-template PR #78 and public-KB
-PR #93 aligned downstream pins.
+Next milestone: v0.8.0 Deterministic Worker Loop + Local Action Registry.
+Phases: A (kickoff), B (action registry), C (loop execution),
+D (worker profiles), E (ecosystem), F (release).
 
-The v0.7.0 line is published and complete.
+Plan: docs/CODEX_DEVELOPMENT_PLAN_V12.md
+ADR: docs/ADR/0029-deterministic-worker-loop-action-registry.md
+Audit: docs/POST_V070_STATE_AUDIT.md
 
 ## Non-negotiable invariants
 
