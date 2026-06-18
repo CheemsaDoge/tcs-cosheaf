@@ -26,9 +26,11 @@ from cosheaf.campaigns import (
     CampaignStopCondition,
     ResearchCampaign,
     append_campaign_attempt,
+    build_campaign_handoff,
     build_campaign_scorecard,
     campaign_attempt_path,
     campaign_events_path,
+    campaign_handoff_path,
     campaign_path,
     export_campaign_operator_task,
     finalize_campaign,
@@ -837,3 +839,122 @@ def test_campaign_cli_d1_json_smoke(tmp_path: Path) -> None:
     run_payload = _json(run.output)
     assert run_payload["shell_commands_performed"] is False
     assert run_payload["provider_calls_performed"] is False
+
+
+def test_campaign_handoff_writes_review_context_summary(tmp_path: Path) -> None:
+    context = RepoContext(tmp_path)
+    campaign_id = "campaign.issue.fixture.c20260618.t020000z"
+    start_campaign(
+        context,
+        issue_id="issue.fixture",
+        campaign_id=campaign_id,
+        budget=CampaignBudget(max_attempts=4, max_failure_repeats=1),
+        now=STARTED_AT,
+    )
+    append_campaign_attempt(
+        context,
+        campaign_id,
+        CampaignAttempt(
+            attempt_id=f"{campaign_id}.attempt.1",
+            campaign_id=campaign_id,
+            attempt_number=1,
+            outcome=CampaignAttemptOutcome.FAILURE,
+            attempted_direction="Try direct induction",
+            completed_at=ENDED_AT,
+            failure_summary="The induction hypothesis is too weak",
+            proof_obligation_refs=("gap.issue.fixture.induction",),
+            check_report_refs=(".cosheaf/reports/checker.json",),
+        ),
+    )
+    append_campaign_attempt(
+        context,
+        campaign_id,
+        _result_attempt(
+            attempt_id=f"{campaign_id}.attempt.2",
+            campaign_id=campaign_id,
+            attempt_number=2,
+        ),
+    )
+
+    result = build_campaign_handoff(context, campaign_id, Path("reviews/campaign"))
+    payload = json.loads((tmp_path / result.handoff_path).read_text(encoding="utf-8"))
+
+    assert result.handoff_path == campaign_handoff_path("reviews/campaign")
+    assert payload["kind"] == "campaign_handoff"
+    assert payload["metrics"]["attempt_count"] == 2
+    assert payload["metrics"]["unique_direction_count"] == 2
+    assert payload["metrics"]["reviewable_draft_count"] == 1
+    assert payload["metrics"]["checked_evidence_count"] == 2
+    assert payload["metrics"]["gap_count"] == 2
+    assert payload["accepted_write_performed"] is False
+    assert "review context only" in payload["authority_notice"]
+    assert payload["limitations"]["not_human_review"] is True
+    assert payload["limitations"]["not_promotion_authority"] is True
+
+
+def test_campaign_handoff_rejects_accepted_output_dir(tmp_path: Path) -> None:
+    context = RepoContext(tmp_path)
+    campaign_id = "campaign.issue.fixture.c20260618.t020000z"
+    start_campaign(
+        context,
+        issue_id="issue.fixture",
+        campaign_id=campaign_id,
+        now=STARTED_AT,
+    )
+
+    with pytest.raises(CampaignError, match="accepted KB path"):
+        build_campaign_handoff(context, campaign_id, Path("kb/accepted/reviews"))
+
+
+def test_campaign_cli_e1_json_smoke(tmp_path: Path) -> None:
+    campaign_id = "campaign.issue.fixture.c20260618.t020000z"
+    start = runner.invoke(
+        app,
+        [
+            "campaign",
+            "start",
+            "--issue",
+            "issue.fixture",
+            "--campaign-id",
+            campaign_id,
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert start.exit_code == 0, start.output
+    input_path = tmp_path / "attempt.json"
+    input_path.write_text(json.dumps(_result_attempt().to_dict()), encoding="utf-8")
+    append = runner.invoke(
+        app,
+        [
+            "campaign",
+            "append-attempt",
+            campaign_id,
+            "--input-json",
+            str(input_path),
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert append.exit_code == 0, append.output
+
+    handoff = runner.invoke(
+        app,
+        [
+            "campaign",
+            "handoff",
+            campaign_id,
+            "--out",
+            "reviews/campaign",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert handoff.exit_code == 0, handoff.output
+    payload = _json(handoff.output)
+    assert payload["kind"] == "campaign_handoff_export"
+    assert payload["handoff"]["metrics"]["reviewable_draft_count"] == 1
+    assert payload["accepted_write_performed"] is False

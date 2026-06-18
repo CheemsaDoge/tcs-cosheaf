@@ -2,7 +2,7 @@
 
 Milestone: **V16 / v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns**
 
-Status: **V16 Phase D.1 campaign-runner-budget-controller landing**
+Status: **V16 Phase E.1 campaign-eval-and-handoff landing**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V16.md
 
@@ -14,16 +14,18 @@ Latest published release:
 `v0.10.0` publication closeout status: tag, GitHub release, post-tag release
 smoke, workspace-template pin update, and public KB CI pin update are complete.
 The V16 post-`v0.10.0` audit, V16 development plan, ADR 0032, Phase B.1
-campaign model core, and Phase C.1 external operator protocol v2 have landed
-as durable repo memory. The current task is the Phase D.1 campaign runner
-budget-controller increment: deterministic pause/resume, runtime scanning, and
-stop-policy enforcement for campaigns.
+campaign model core, Phase C.1 external operator protocol v2, and Phase D.1
+campaign runner budget controller have landed as durable repo memory. The
+current task is the Phase E.1 campaign eval and handoff increment: deterministic
+campaign handoff export, default campaign eval fixtures, and framework
+ecosystem matrix coverage.
 
 Current focus:
 
-- land V16 Phase D.1 `campaign-runner-budget-controller`:
-  `cosheaf campaign pause/resume/scan/run`, runtime scan reports, budget stop
-  conditions, and updated campaign documentation;
+- land V16 Phase E.1 `campaign-eval-and-handoff`:
+  `cosheaf campaign handoff`, `cosheaf eval campaign`, default campaign eval
+  cases, the framework campaign-eval ecosystem matrix row, and updated campaign
+  documentation;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -33,9 +35,9 @@ Planned V16 surface:
 - durable campaign records and scorecards under ignored `.cosheaf/campaigns/`
   runtime paths (B.1, landed);
 - external operator task/result packet v2 (C.1, landed);
-- campaign budget and stop-condition controller (D.1, current);
-- campaign review handoff reports;
-- deterministic `cosheaf eval campaign --json`; and
+- campaign budget and stop-condition controller (D.1, landed);
+- campaign review handoff reports (E.1, current);
+- deterministic `cosheaf eval campaign --json` (E.1, current); and
 - downstream workspace-template campaign demo plus public KB policy guard.
 
 V16 non-goals:

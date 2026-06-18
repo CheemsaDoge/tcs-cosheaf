@@ -32,7 +32,9 @@ harnesses reuse existing runtime surfaces; they do not introduce new
 retrieval, context-pack, provider, MCP, verifier, or orchestration algorithms.
 The reviewable-workflow eval harness checks issue-to-reviewable-packet
 workflow boundaries using temporary fixtures and existing workflow, draft
-proposal, and handoff scanner surfaces.
+proposal, and handoff scanner surfaces. The campaign eval harness checks
+bounded campaign handoff, scanner, budget-stop, and operator-contract
+boundaries with temporary fixtures.
 
 ## Retrieval Eval Cases
 
@@ -592,6 +594,57 @@ These metrics are regression signals only. Workflow eval output is not proof,
 source metadata, human review, verifier pass, gate pass, accepted status,
 accepted theorem/refutation, or promotion authority.
 
+## Campaign Eval Cases
+
+Campaign eval cases are YAML records under `evals/campaign/`. The default case
+file is:
+
+```text
+evals/campaign/cases.yaml
+```
+
+The harness is available both as a Python API in `cosheaf.evals.campaign` and
+as a CLI command:
+
+```bash
+cosheaf eval campaign --json
+```
+
+The suite builds temporary local campaign fixtures for each case. The caller
+repository is used only to resolve the repository-local case file. The harness
+writes no accepted knowledge in the caller repository, creates no human
+review, mutates no verifier results, calls no hosted providers, executes no
+shell commands through campaign runtime, and requires no network.
+
+Required case kinds for the default suite are:
+
+- `reviewable_handoff`: a campaign with failed and result attempts exports a
+  review-context handoff with draft, checked-evidence, and gap metrics.
+- `unsafe_output_blocked`: unsafe runtime output is surfaced as blocking scan
+  evidence in the handoff metrics.
+- `budget_stop_accuracy`: campaign budget exhaustion is reported accurately.
+- `operator_contract_boundary`: authority overclaims are rejected while valid
+  operator results remain review context only.
+
+## Campaign Eval Metrics
+
+`cosheaf eval campaign` reports:
+
+- `attempt_count`
+- `unique_direction_count`
+- `repeat_failure_count`
+- `reviewable_draft_count`
+- `checked_evidence_count`
+- `gap_count`
+- `unsafe_output_count`
+- `budget_stop_accuracy`
+- `operator_contract_validity`
+- `accepted_write_violation_count`
+
+These metrics are regression signals only. Campaign handoff and eval output is
+not proof, source metadata, human review, verifier pass, gate pass, accepted
+status, accepted theorem/refutation, or promotion authority.
+
 ## Checker/Cross-Check Eval Cases
 
 Checker/cross-check eval cases are YAML records under
@@ -782,9 +835,11 @@ python scripts/ecosystem_smoke.py --matrix --cosheaf "python -m cosheaf.cli" --f
 The active integration matrix rows cover framework local smoke,
 framework verifier-evidence eval smoke, framework checked-evidence run-loop
 eval, framework research-run loop eval, framework research-loop eval,
-framework research-loop workflow smoke, framework strategy-planner eval,
-framework operator-session CLI smoke, framework operator-handoff dry-run
-smoke, optional verifier availability, framework git-tag release smoke,
+framework reviewable-workflow eval, framework checker/cross-check eval,
+framework campaign eval, framework research-loop workflow smoke, framework
+strategy-planner eval, framework operator-session CLI smoke, framework
+operator-handoff dry-run smoke, optional verifier availability, framework
+git-tag release smoke,
 workspace-template install demo, workspace-template CLI-agent demo,
 workspace-template research-run demo, workspace-template strategy demo,
 workspace-template research-loop demo, workspace-template operator-session
@@ -854,19 +909,21 @@ context-pack writer.
 The agent workflow, provider workflow, failure/counterexample, artifact
 failure-memory, and verifier evidence evals currently have no direct `cosheaf
 eval ...` CLI commands. The checked-evidence, checker/cross-check,
-research-run loop, research-loop, and strategy-planner evals have CLI
-commands:
+research-run loop, research-loop, reviewable-workflow, campaign, and
+strategy-planner evals have CLI commands:
 
 ```bash
 cosheaf eval checked-evidence-run-loop --json
 cosheaf eval checker-crosscheck --json
 cosheaf eval research-run-loop --json
 cosheaf eval research-loop --json
+cosheaf eval reviewable-workflow --json
+cosheaf eval campaign --json
 cosheaf eval strategy-planner --json
 ```
 
 The checked-evidence, checker/cross-check, research-run loop, research-loop,
-and strategy-planner evals use
+reviewable-workflow, campaign, and strategy-planner evals use
 deterministic local fixtures and do not require hosted providers, API keys,
 MCP, network, SAT, SMT, Lean, or lake. Other Python-level evals may refresh
 `context/TASKS/<issue-id>/` context packs, redacted provider logs under

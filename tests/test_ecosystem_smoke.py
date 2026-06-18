@@ -202,6 +202,7 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
         "framework.research-loop-eval",
         "framework.reviewable-workflow-eval",
         "framework.checker-crosscheck-eval",
+        "framework.campaign-eval",
         "framework.research-loop-workflow-smoke",
         "framework.strategy-planner-eval",
         "framework.operator-session-cli-smoke",
@@ -243,6 +244,10 @@ def test_ecosystem_smoke_matrix_lists_required_three_repo_cases(
     )
     assert cases["framework.checker-crosscheck-eval"].argv[-2:] == (
         "checker-crosscheck",
+        "--json",
+    )
+    assert cases["framework.campaign-eval"].argv[-2:] == (
+        "campaign",
         "--json",
     )
     assert cases["framework.research-loop-workflow-smoke"].repo == "tcs-cosheaf"
@@ -437,8 +442,8 @@ def test_ecosystem_smoke_matrix_report_is_structured_and_identifies_failures(
     report = run_ecosystem_smoke_matrix(matrix, command_runner=fake_runner)
 
     assert report.passed is False
-    assert report.case_count == 27
-    assert report.pass_count == 23
+    assert report.case_count == 28
+    assert report.pass_count == 24
     assert report.fail_count == 1
     assert report.skip_count == 3
     skipped = [result for result in report.results if result.status == "skipped"]

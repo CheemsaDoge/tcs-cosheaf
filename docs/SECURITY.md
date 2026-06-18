@@ -96,8 +96,10 @@ checks:
   references, hidden reasoning, human-review claims, verifier/gate pass claims,
   accepted-status or accepted-refutation claims, and promotion claims. The
   current campaign surface includes deterministic pause/resume, runtime scan,
-  and budget-controller commands, but it does not run provider calls, execute
-  shell commands, scan handoffs, run evals, or write accepted KB content.
+  budget-controller commands, review handoff export, and deterministic campaign
+  eval fixtures, but it does not run provider calls, execute shell commands, or
+  write accepted KB content. Campaign handoffs and eval reports are review or
+  regression context only.
 - Reviewable workflow records are review context only. Persistent workflow
   runtime storage, `workflow show`, persisted `workflow step`, bounded
   `workflow run`, readiness reports, draft proposals, workflow handoff packets,

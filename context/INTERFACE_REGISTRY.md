@@ -195,6 +195,7 @@
   `CampaignPreviousFailure`, `CampaignNextResult`,
   `CampaignOperatorResult`, `CampaignOperatorFailure`,
   `CampaignAuthorityClaims`, `CampaignOperatorImportResult`,
+  `CampaignReviewMetrics`, `CampaignHandoffResult`,
   `CampaignRiskFinding`, `CampaignComparison`, `CampaignStatus`,
   `CampaignAttemptOutcome`, `CampaignRiskSeverity`, `CampaignError`,
   `CampaignWriteResult`, `CampaignAttemptWriteResult`,
@@ -206,21 +207,38 @@
   `build_campaign_next_result`, `build_campaign_operator_task`,
   `export_campaign_operator_task`, `import_campaign_operator_result`,
   `pause_campaign`, `resume_campaign`, `scan_campaign`, `run_campaign`,
-  `append_campaign_event`, and `build_campaign_scorecard`. Runtime records are
+  `build_campaign_review_metrics`, `build_campaign_handoff`,
+  `append_campaign_event`, `build_campaign_scorecard`, and
+  `campaign_handoff_path`. Runtime records are
   JSON under `.cosheaf/campaigns/<campaign-id>/campaign.json`,
   `.cosheaf/campaigns/<campaign-id>/attempts/<attempt-id>.json`,
   `.cosheaf/campaigns/<campaign-id>/operator-results/<attempt-id>.json`,
   `.cosheaf/campaigns/<campaign-id>/scorecard.json`, and
   `.cosheaf/campaigns/<campaign-id>/events.jsonl`; scanner reports are JSON
-  under `.cosheaf/campaigns/<campaign-id>/scan.json`. The CLI surface is
-  `cosheaf campaign start/show/append-attempt/scorecard/finalize/next/export-task/import-result/pause/resume/scan/run`.
+  under `.cosheaf/campaigns/<campaign-id>/scan.json`. Explicit campaign
+  handoff exports write `<out>/campaign_handoff.json` under a
+  repository-local non-accepted directory. The CLI surface is
+  `cosheaf campaign start/show/append-attempt/scorecard/finalize/next/export-task/import-result/pause/resume/scan/run/handoff`.
   Campaign records, attempts, scorecards, task packets, imported results, and
   event logs are review context only. Scan reports and run-controller output
-  are also review context only. They do not grant accepted writes, source
+  are also review context only. Handoff exports and campaign eval reports are
+  review/regression context only. They do not grant accepted writes, source
   metadata, human review, verifier-result mutation, gate pass, accepted status,
   accepted theorem/refutation status, or promotion authority. The current
   campaign surface does not run provider-backed or shell-backed campaign loops,
-  scan handoffs, run evals, call hosted providers, or execute shell commands.
+  call hosted providers, or execute shell commands.
+- Campaign eval DTOs and CLI metadata are implemented under
+  `cosheaf.evals.campaign`. The Python surface defines `CampaignEvalCase`,
+  `CampaignEvalCaseResult`, `CampaignEvalError`, `CampaignEvalKind`,
+  `CampaignEvalMetrics`, `CampaignEvalReport`, `CampaignEvalSuite`,
+  `DEFAULT_CAMPAIGN_EVAL_CASES`, `resolve_campaign_eval_case_path`,
+  `load_campaign_eval_suite`, and `run_campaign_eval_suite`. The default case
+  file is `evals/campaign/cases.yaml`, and the CLI surface is
+  `cosheaf eval campaign --json`. The eval builds temporary local fixtures and
+  reports campaign handoff, unsafe-output, budget-stop, operator-contract, and
+  accepted-write boundary metrics. It does not write accepted knowledge,
+  create human review, fabricate source metadata, mutate verifier results, call
+  hosted providers, execute campaign shell commands, or claim proof.
 - Artifact failure-memory surfacing is implemented for read-only inspection,
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
   and controlled append, artifact cards, memory search, compact context card
@@ -503,6 +521,15 @@
   runtime output, repeated failures, max attempts, and max draft outputs. It
   reports `shell_commands_performed=false`, `provider_calls_performed=false`,
   and `accepted_write_performed=false`.
+- `cosheaf campaign handoff <campaign-id> --out <dir> --json`: exports a
+  deterministic review-context `campaign_handoff.json` under a safe
+  repository-local non-accepted directory. The handoff includes attempt
+  summaries, scan findings, limitations, attempt/direction/failure counts,
+  reviewable draft counts, checked-evidence references, gap counts,
+  unsafe-output counts, budget-stop accuracy, and operator-contract boundary
+  handling. It does not create human review, source metadata, verifier/gate
+  pass, accepted status, accepted refutation, accepted writes, or promotion
+  authority.
 - `cosheaf workspace info`: shows the active workspace name, configured/legacy
   mode, repository root, and KB roots.
 - `cosheaf workspace info --repo-root <path>`: shows workspace configuration for
@@ -729,6 +756,16 @@
   whitelist, draft proposal, handoff scanner, authority-overclaim,
   private-leak, readiness-classification, skipped-not-pass, and accepted-write
   violation metrics.
+- `cosheaf eval campaign`: runs the default deterministic campaign boundary
+  suite from `evals/campaign/cases.yaml`.
+- `cosheaf eval campaign --repo-root <path>`: resolves the eval case file
+  against an explicit repository root while using temporary fixtures for the
+  actual campaign runtime checks.
+- `cosheaf eval campaign --cases <path>`: uses an explicit repository-local
+  YAML case file.
+- `cosheaf eval campaign --json`: emits deterministic JSON report output with
+  campaign handoff, unsafe-output, budget-stop, operator-contract, and
+  accepted-write boundary metrics.
 - `cosheaf eval strategy-planner`: runs the default deterministic strategy
   planner boundary suite from `evals/strategy_planner/cases.yaml`.
 - `cosheaf eval strategy-planner --repo-root <path>`: runs strategy-planner
@@ -3149,8 +3186,9 @@ working directory.
   checkout, framework verifier-evidence eval smoke, framework
   checked-evidence run-loop eval, framework research-run loop eval, framework
   research-loop eval, framework reviewable-workflow eval, framework
-  research-loop workflow smoke, framework strategy-planner eval, framework
-  operator-session CLI smoke, framework
+  checker/cross-check eval, framework campaign eval, framework research-loop
+  workflow smoke, framework strategy-planner eval, framework operator-session
+  CLI smoke, framework
   operator-handoff dry-run smoke, optional verifier availability, framework git
   tag release smoke, workspace-template demo, workspace-template CLI-agent
   demo, workspace-template research-run demo, workspace-template strategy demo,

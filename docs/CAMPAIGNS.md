@@ -35,13 +35,20 @@ cosheaf campaign export-task <campaign-id> --out <path> --json
 cosheaf campaign import-result <campaign-id> --input-json <path> --json
 ```
 
-The current D.1 budget-controller surface is:
+The D.1 budget-controller surface is:
 
 ```bash
 cosheaf campaign pause <campaign-id> --json
 cosheaf campaign resume <campaign-id> --json
 cosheaf campaign scan <campaign-id> --json
 cosheaf campaign run <campaign-id> --max-attempts <n> --json
+```
+
+The current E.1 review handoff/eval surface is:
+
+```bash
+cosheaf campaign handoff <campaign-id> --out <dir> --json
+cosheaf eval campaign --json
 ```
 
 `campaign start` creates one runtime campaign record. Optional flags include
@@ -110,6 +117,30 @@ failures, max attempts, and max draft outputs, and updates campaign status to
 `shell_commands_performed=false`, `provider_calls_performed=false`, and
 `accepted_write_performed=false`.
 
+`campaign handoff` exports a deterministic review summary to a repository-local
+directory as `campaign_handoff.json`. The output includes attempt summaries,
+runtime scan findings, known limitations, and these review metrics:
+
+- `attempt_count`
+- `unique_direction_count`
+- `repeat_failure_count`
+- `reviewable_draft_count`
+- `checked_evidence_count`
+- `gap_count`
+- `unsafe_output_count`
+- `budget_stop_accuracy`
+- `operator_contract_validity`
+
+The handoff is review context only. It is not proof, source metadata, human
+review, verifier pass, gate pass, accepted status, accepted refutation, or
+promotion authority. Accepted KB output directories are refused.
+
+`eval campaign` runs deterministic temporary campaign fixtures covering
+reviewable handoff generation, unsafe output blocking, budget-stop accounting,
+and operator-contract overclaim rejection. It writes no accepted knowledge in
+the caller repository, calls no hosted providers, requires no network, and
+reports skipped or blocked behavior as such rather than as pass evidence.
+
 ## Runtime Layout
 
 Campaign runtime records are ignored sidecars:
@@ -125,6 +156,15 @@ Campaign runtime records are ignored sidecars:
 
 These files are not YAML lifecycle artifacts and are not accepted knowledge.
 They should not be copied into public KB accepted paths.
+
+Explicit campaign handoffs are exported to the caller-provided repository-local
+directory:
+
+```text
+<out>/campaign_handoff.json
+```
+
+The export path must not be under an accepted KB path.
 
 ## Model Summary
 
@@ -180,13 +220,23 @@ The D.1 controller adds:
 - `scan_campaign`; and
 - `run_campaign`.
 
+The E.1 handoff/eval layer adds:
+
+- `CampaignReviewMetrics`;
+- `CampaignHandoffResult`;
+- `build_campaign_review_metrics`;
+- `build_campaign_handoff`;
+- `campaign_handoff_path`;
+- `cosheaf.evals.campaign`; and
+- `cosheaf eval campaign --json`.
+
 ## Non-Goals
 
 The current implementation does not provide:
 
 - provider-backed or shell-backed campaign runner loops;
-- campaign review handoff reports;
-- `cosheaf eval campaign`;
+- downstream workspace-template campaign demo;
+- public KB campaign-output policy guards;
 - hosted provider integration;
 - arbitrary shell execution;
 - automatic proof checking; or

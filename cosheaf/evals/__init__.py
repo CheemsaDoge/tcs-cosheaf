@@ -2,6 +2,19 @@
 
 from __future__ import annotations
 
+from cosheaf.evals.campaign import (
+    DEFAULT_CAMPAIGN_EVAL_CASES,
+    CampaignEvalCase,
+    CampaignEvalCaseResult,
+    CampaignEvalError,
+    CampaignEvalKind,
+    CampaignEvalMetrics,
+    CampaignEvalReport,
+    CampaignEvalSuite,
+    load_campaign_eval_suite,
+    resolve_campaign_eval_case_path,
+    run_campaign_eval_suite,
+)
 from cosheaf.evals.checked_evidence_run_loop import (
     DEFAULT_CHECKED_EVIDENCE_RUN_LOOP_EVAL_CASES,
     CheckedEvidenceRunLoopEvalCase,
@@ -111,6 +124,7 @@ from cosheaf.evals.strategy_planner import (
 
 __all__ = [
     "DEFAULT_CHECKED_EVIDENCE_RUN_LOOP_EVAL_CASES",
+    "DEFAULT_CAMPAIGN_EVAL_CASES",
     "DEFAULT_CHECKER_CROSSCHECK_EVAL_CASES",
     "DEFAULT_CONTEXT_EVAL_CASES",
     "DEFAULT_RETRIEVAL_EVAL_CASES",
@@ -118,6 +132,13 @@ __all__ = [
     "DEFAULT_RESEARCH_LOOP_EVAL_CASES",
     "DEFAULT_REVIEWABLE_WORKFLOW_EVAL_CASES",
     "DEFAULT_STRATEGY_PLANNER_EVAL_CASES",
+    "CampaignEvalCase",
+    "CampaignEvalCaseResult",
+    "CampaignEvalError",
+    "CampaignEvalKind",
+    "CampaignEvalMetrics",
+    "CampaignEvalReport",
+    "CampaignEvalSuite",
     "CheckedEvidenceRunLoopEvalCase",
     "CheckedEvidenceRunLoopEvalCaseResult",
     "CheckedEvidenceRunLoopEvalError",
@@ -172,6 +193,7 @@ __all__ = [
     "StrategyPlannerEvalMetrics",
     "StrategyPlannerEvalReport",
     "StrategyPlannerEvalSuite",
+    "load_campaign_eval_suite",
     "load_checked_evidence_run_loop_eval_suite",
     "load_checker_crosscheck_eval_suite",
     "load_context_eval_suite",
@@ -180,6 +202,7 @@ __all__ = [
     "load_research_loop_eval_suite",
     "load_reviewable_workflow_eval_suite",
     "load_strategy_planner_eval_suite",
+    "resolve_campaign_eval_case_path",
     "resolve_checked_evidence_run_loop_eval_case_path",
     "resolve_checker_crosscheck_eval_case_path",
     "resolve_context_eval_case_path",
@@ -188,6 +211,7 @@ __all__ = [
     "resolve_research_loop_eval_case_path",
     "resolve_reviewable_workflow_eval_case_path",
     "resolve_strategy_planner_eval_case_path",
+    "run_campaign_eval_suite",
     "run_checked_evidence_run_loop_eval_case",
     "run_checked_evidence_run_loop_eval_suite",
     "run_checker_crosscheck_eval_case",

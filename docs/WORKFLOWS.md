@@ -47,6 +47,8 @@ cosheaf campaign pause <campaign-id> --json
 cosheaf campaign resume <campaign-id> --json
 cosheaf campaign scan <campaign-id> --json
 cosheaf campaign run <campaign-id> --max-attempts <n> --json
+cosheaf campaign handoff <campaign-id> --out <dir> --json
+cosheaf eval campaign --json
 ```
 
 Current behavior:
@@ -136,6 +138,17 @@ Current behavior:
   max attempts, and max draft outputs. It does not execute shell commands,
   call hosted providers, create human review, write accepted KB content, or
   grant verifier/gate/promotion authority.
+- `campaign handoff` exports a deterministic `campaign_handoff.json` review
+  summary to a repository-local non-accepted directory. The handoff includes
+  attempt summaries, scan findings, explicit limitations, and metrics for
+  attempts, unique directions, repeated failures, reviewable drafts, checked
+  evidence refs, gaps, unsafe outputs, budget-stop accuracy, and
+  operator-contract handling.
+- `eval campaign` runs deterministic temporary campaign fixtures for
+  reviewable handoff generation, unsafe-output blocking, budget-stop
+  accounting, and operator-contract overclaim rejection. It is regression
+  coverage only and does not write accepted knowledge in the caller
+  repository.
 
 The current implementation lives under:
 
@@ -150,6 +163,7 @@ cosheaf/workflow/crosscheck.py
 cosheaf/gap_cli.py
 cosheaf/evals/reviewable_workflow.py
 cosheaf/evals/checker_crosscheck.py
+cosheaf/evals/campaign.py
 ```
 
 ## Runtime Layout
@@ -201,9 +215,10 @@ Campaign runtime records are also ignored sidecars:
 ```
 
 Campaign records and scorecards are not source-of-truth YAML artifacts and are
-not accepted knowledge. The current campaign surface does not yet include
-provider-backed or shell-backed campaign runner loops, campaign handoff
-reports, or campaign evals.
+not accepted knowledge. Explicit campaign handoffs may also be exported as
+`<out>/campaign_handoff.json` under a repository-local non-accepted directory.
+The current campaign surface does not include provider-backed or shell-backed
+campaign runner loops.
 
 ## Downstream Status
 

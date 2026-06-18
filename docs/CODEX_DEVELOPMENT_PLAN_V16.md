@@ -4,9 +4,9 @@ Target: `v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns`
 
 Status: Phase A has landed after the published `v0.10.0` Cross-Check Evidence +
 Checker Registry release and downstream workspace/public-KB pin closeout. Phase
-B.1 `campaign-model-core` and Phase C.1 `external-operator-protocol-v2` have
-landed. Phase D.1 `campaign-runner-budget-controller` is the current
-implementation increment.
+B.1 `campaign-model-core`, Phase C.1 `external-operator-protocol-v2`, and
+Phase D.1 `campaign-runner-budget-controller` have landed. Phase E.1
+`campaign-eval-and-handoff` is the current implementation increment.
 
 ## Goal
 
@@ -55,9 +55,10 @@ V16 should not embed a hosted LLM as an internal autonomous system owner.
    issue #448 / PR #449.
 3. Phase C: external operator task/result protocol v2. C.1
    `external-operator-protocol-v2` has landed.
-4. Phase D: campaign runner and budget controller. D.1 is
-   `campaign-runner-budget-controller`.
-5. Phase E: campaign review/handoff and eval.
+4. Phase D: campaign runner and budget controller. D.1
+   `campaign-runner-budget-controller` has landed.
+5. Phase E: campaign review/handoff and eval. E.1 is
+   `campaign-eval-and-handoff`.
 6. Phase F: `v0.11.0` release candidate and publication closeout.
 
 ## Phase A Scope
@@ -163,6 +164,12 @@ Add campaign eval cases and review handoff summaries:
 
 Acceptance for Phase E: campaign output becomes reviewable handoff context, not
 accepted knowledge.
+
+Phase E.1 implements the framework-side review handoff and eval surfaces only:
+`campaign handoff`, `eval campaign`, default campaign eval cases, and the
+framework ecosystem matrix row. Downstream workspace-template campaign demo
+and public KB campaign-output policy guards remain follow-up work before the
+`v0.11.0` release candidate.
 
 ## Phase F Outline
 
