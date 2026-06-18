@@ -45,6 +45,7 @@ from cosheaf.services.models import (
     WorkerBundleSubmitRequest,
     WorkerBundleSubmitResult,
 )
+from cosheaf.site import SiteExportResult, export_site_data
 from cosheaf.storage.repo import RepoContext
 
 
@@ -208,6 +209,21 @@ class CosheafApp:
     def forge_sync(self) -> ForgeActionResult:
         """Return read-only forge sync status."""
         return ForgeService(self.context).sync()
+
+    def export_site_data(
+        self,
+        out: str | Path,
+        *,
+        public_only: bool = False,
+        demo: bool = False,
+    ) -> SiteExportResult:
+        """Export deterministic sanitized JSON for the read-only website."""
+        return export_site_data(
+            self.context,
+            out,
+            public_only=public_only,
+            demo=demo,
+        )
 
     def memory_cards(
         self,

@@ -220,6 +220,7 @@ from cosheaf.services.models import (
 from cosheaf.services.models import (
     WorkspaceInfoResult as AgentWorkspaceInfoResult,
 )
+from cosheaf.site.cli import site_app
 from cosheaf.storage.index import rebuild_index
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
 from cosheaf.storage.repo import RepoContext
@@ -419,6 +420,7 @@ app.add_typer(workflow_app, name="workflow")
 app.add_typer(context_app, name="context")
 app.add_typer(issue_app, name="issue")
 app.add_typer(forge_app, name="forge")
+app.add_typer(site_app, name="site")
 app.add_typer(task_app, name="task")
 app.add_typer(draft_app, name="draft")
 app.add_typer(bundle_app, name="bundle")
@@ -531,6 +533,15 @@ _STABLE_V1_CLI_SURFACE: tuple[dict[str, str], ...] = (
         "notes": (
             "Preview GitHub plans, run confirmed local git actions, "
             "and create confirmed GitHub issues/PRs."
+        ),
+    },
+    {
+        "command": "site",
+        "preferred_invocation": "cosheaf site export --out .cosheaf/site-data",
+        "status": "stable",
+        "notes": (
+            "Export deterministic sanitized JSON sidecars for the read-only "
+            "website."
         ),
     },
     {

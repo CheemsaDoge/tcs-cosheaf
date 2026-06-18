@@ -40,6 +40,7 @@ SCHEMA_FILES = [
     "schemas/issue.schema.json",
     "schemas/operator_handoff.schema.json",
     "schemas/review.schema.json",
+    "schemas/site_export.schema.json",
     "schemas/attempt_evidence_summary.schema.json",
     "schemas/attempt_failure_record.schema.json",
     "schemas/attempt_next_action.schema.json",
