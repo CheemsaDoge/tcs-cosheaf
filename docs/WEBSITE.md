@@ -94,6 +94,34 @@ not export full private artifact statements. The sidecar can be regenerated
 from repository YAML and is never accepted knowledge, human review, verifier
 evidence, gate evidence, or promotion authority.
 
+## Static Frontend Scaffold
+
+The read-only website app lives under `website/`. It is an Astro static site
+that imports the committed demo fixture under `website/src/fixtures/site-data/`
+and renders the first Longplan B W2.1 routes:
+
+- Home
+- Docs / Concepts
+- Demo
+- Artifacts
+- Issues
+- Graph
+- Gate Reports
+- Authority Boundaries
+
+Build and test it locally with:
+
+```bash
+cd website && npm install
+cd website && npm test
+cd website && npm run build
+```
+
+The scaffold has no backend, no repository writes, no GitHub token handling, no
+runtime private repository fetch, and no hosted provider call. The rendered
+site is a human interface over exported JSON only; repository files remain the
+source of truth.
+
 ## Future Write Actions
 
 The frontend must not own GitHub credentials or tokens. Future authenticated

@@ -1,0 +1,34 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { loadSiteData } from "../lib/siteData";
+
+const data = await loadSiteData();
+const issue = data.issues.issues[0];
+---
+
+<BaseLayout title="Demo" eyebrow="Workspace fixture">
+  <section class="split-layout">
+    <article class="panel">
+      <p class="section-kicker">Demo issue</p>
+      <h2>{issue.title}</h2>
+      <p>{issue.summary.split("\n\n")[0]}</p>
+      <div class="tag-row">
+        {issue.labels.map((label) => <span class="tag">{label}</span>)}
+      </div>
+    </article>
+
+    <article class="panel">
+      <p class="section-kicker">Demo-only data</p>
+      <h2>Private fixture policy</h2>
+      <p>
+        Demo private records are rendered only because the fixture marks them
+        with demo tags and the export keeps full statements out of the sidecar.
+      </p>
+      <div class="workflow-rail" aria-label="Demo workflow">
+        <span>export</span>
+        <span>sanitize</span>
+        <span>render</span>
+      </div>
+    </article>
+  </section>
+</BaseLayout>

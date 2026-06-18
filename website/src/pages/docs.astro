@@ -1,0 +1,25 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const concepts = [
+  ["Repository source", "YAML and JSON sidecars remain the source of truth."],
+  ["Static export", "The website consumes deterministic sanitized JSON."],
+  ["Artifacts", "Cards expose safe metadata, status, dependencies, and risk flags."],
+  ["Issues", "Issue records organize work; they do not accept knowledge."],
+  ["Context packs", "Context summaries help review but are not authority."],
+  ["Gates", "Gate output can block workflow but does not prove truth."]
+];
+---
+
+<BaseLayout title="Docs / Concepts" eyebrow="Concept map">
+  <section class="card-grid">
+    {
+      concepts.map(([title, body]) => (
+        <article class="info-card">
+          <h2>{title}</h2>
+          <p>{body}</p>
+        </article>
+      ))
+    }
+  </section>
+</BaseLayout>

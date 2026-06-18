@@ -1,0 +1,30 @@
+{
+  "authority_notice": "Website export data is display context only; it is not source of truth, proof, source metadata, human review, verifier pass, gate pass, accepted status, accepted theorem/refutation status, or promotion authority.",
+  "demo_private_fixtures_allowed": true,
+  "kb_roots": [
+    {
+      "demo_private_fixtures_allowed": false,
+      "name": "public",
+      "path": "kb/public",
+      "priority": 10,
+      "readonly": true
+    },
+    {
+      "demo_private_fixtures_allowed": true,
+      "name": "private",
+      "path": "kb/private",
+      "priority": 20,
+      "readonly": false
+    }
+  ],
+  "kind": "workspace",
+  "mode": "configured",
+  "policy": {
+    "accepted_requires_source": true,
+    "private_can_depend_on_public": true,
+    "public_can_depend_on_private": false
+  },
+  "public_only": true,
+  "schema_version": 1,
+  "workspace_name": "my-tcs-workspace"
+}

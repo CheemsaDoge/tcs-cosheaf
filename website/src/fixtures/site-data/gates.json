@@ -1,0 +1,11 @@
+{
+  "authority_notice": "Website export data is display context only; it is not source of truth, proof, source metadata, human review, verifier pass, gate pass, accepted status, accepted theorem/refutation status, or promotion authority.",
+  "blocking_issues": [],
+  "gates": [],
+  "kind": "gates",
+  "nonblocking_issues": [],
+  "note": "Static export does not run gates; use cosheaf gate run.",
+  "report_paths": [],
+  "schema_version": 1,
+  "verdict": "not_run"
+}

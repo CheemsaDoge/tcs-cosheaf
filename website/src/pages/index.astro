@@ -1,0 +1,75 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { loadSiteData } from "../lib/siteData";
+
+const data = await loadSiteData();
+const edge = data.graph.edges[0];
+---
+
+<BaseLayout title="Read-only workspace export" eyebrow="Home">
+  <section class="metric-grid" aria-label="Export summary">
+    <article class="metric-card">
+      <span>Artifacts</span>
+      <strong>{data.artifacts.count}</strong>
+      <small>{data.artifacts.public_only ? "public/demo-safe export" : "local export"}</small>
+    </article>
+    <article class="metric-card">
+      <span>Issues</span>
+      <strong>{data.issues.count}</strong>
+      <small>repository workflow memory</small>
+    </article>
+    <article class="metric-card">
+      <span>Gate verdict</span>
+      <strong>{data.gates.verdict.replace("_", " ")}</strong>
+      <small>static export did not run gates</small>
+    </article>
+    <article class="metric-card">
+      <span>Graph edges</span>
+      <strong>{data.graph.edges.length}</strong>
+      <small>display context only</small>
+    </article>
+  </section>
+
+  <section class="split-layout">
+    <article class="panel">
+      <p class="section-kicker">Demo workspace</p>
+      <h2>{data.workspace.workspace_name}</h2>
+      <p>
+        The scaffold renders the exported sidecar without repository writes,
+        backend calls, provider calls, or GitHub credentials.
+      </p>
+      <div class="root-list">
+        {
+          data.workspace.kb_roots.map((root) => (
+            <div class="root-row">
+              <span>{root.name}</span>
+              <code>{root.path}</code>
+              <strong>{root.readonly ? "readonly" : "writable overlay"}</strong>
+            </div>
+          ))
+        }
+      </div>
+    </article>
+
+    <article class="panel graph-preview">
+      <p class="section-kicker">Dependency graph</p>
+      <h2>{edge ? `${edge.source_id} -> ${edge.target_id}` : "No edges"}</h2>
+      <div class="mini-graph" aria-label="Dependency graph preview">
+        {
+          data.graph.nodes.map((node, index) => (
+            <div class:list={["mini-node", index === 0 ? "source" : "target"]}>
+              <strong>{node.title}</strong>
+              <span>{node.status}</span>
+            </div>
+          ))
+        }
+        <div class="mini-edge" aria-hidden="true"></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="notice-band">
+    <strong>Authority boundary</strong>
+    <span>{data.authority_boundaries.notices[2]}</span>
+  </section>
+</BaseLayout>

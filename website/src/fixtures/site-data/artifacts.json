@@ -1,0 +1,76 @@
+{
+  "artifacts": [
+    {
+      "can_pull_full": false,
+      "demo_fixture": true,
+      "depends_on": [
+        "definition.graph"
+      ],
+      "domain": [
+        "graph-theory"
+      ],
+      "failure_count": 0,
+      "formalization_state": "none",
+      "id": "claim.example-private",
+      "path": "kb/private/claims/claim.example-private.yaml",
+      "recent_failure_directions": [],
+      "retrieval_score": 0.0,
+      "review_state": "requested",
+      "risk_flags": [
+        "private",
+        "draft"
+      ],
+      "root_scope": "private",
+      "sources": [],
+      "status": "draft",
+      "summary": "claim card for Example private draft (draft; graph-theory).",
+      "tags": [
+        "private",
+        "example",
+        "workspace-demo"
+      ],
+      "title": "Example private draft",
+      "trust_score": 0.1,
+      "type": "claim",
+      "verifier_state": "not_run",
+      "why_relevant": "repository artifact metadata"
+    },
+    {
+      "can_pull_full": false,
+      "demo_fixture": false,
+      "depends_on": [],
+      "domain": [
+        "graph-theory"
+      ],
+      "failure_count": 0,
+      "formalization_state": "planned",
+      "id": "definition.graph",
+      "path": "kb/public/definitions/definition.graph.yaml",
+      "recent_failure_directions": [],
+      "retrieval_score": 0.0,
+      "review_state": "requested",
+      "risk_flags": [
+        "draft"
+      ],
+      "root_scope": "public",
+      "sources": [],
+      "status": "draft",
+      "summary": "definition card for Graph (draft; graph-theory).",
+      "tags": [
+        "seed",
+        "bootstrap"
+      ],
+      "title": "Graph",
+      "trust_score": 0.1,
+      "type": "definition",
+      "verifier_state": "not_run",
+      "why_relevant": "repository artifact metadata"
+    }
+  ],
+  "authority_notice": "Website export data is display context only; it is not source of truth, proof, source metadata, human review, verifier pass, gate pass, accepted status, accepted theorem/refutation status, or promotion authority.",
+  "count": 2,
+  "demo_private_fixtures_allowed": true,
+  "kind": "artifacts",
+  "public_only": true,
+  "schema_version": 1
+}

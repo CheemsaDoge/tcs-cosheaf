@@ -1,0 +1,36 @@
+{
+  "accepted_draft_violations": [],
+  "authority_notice": "Website export data is display context only; it is not source of truth, proof, source metadata, human review, verifier pass, gate pass, accepted status, accepted theorem/refutation status, or promotion authority.",
+  "cycles": [],
+  "edges": [
+    {
+      "source_id": "claim.example-private",
+      "target_id": "definition.graph"
+    }
+  ],
+  "kind": "graph",
+  "missing_dependencies": [],
+  "nodes": [
+    {
+      "artifact_id": "claim.example-private",
+      "artifact_type": "claim",
+      "domain": [
+        "graph-theory"
+      ],
+      "path": "kb/private/claims/claim.example-private.yaml",
+      "status": "draft",
+      "title": "Example private draft"
+    },
+    {
+      "artifact_id": "definition.graph",
+      "artifact_type": "definition",
+      "domain": [
+        "graph-theory"
+      ],
+      "path": "kb/public/definitions/definition.graph.yaml",
+      "status": "draft",
+      "title": "Graph"
+    }
+  ],
+  "schema_version": 1
+}

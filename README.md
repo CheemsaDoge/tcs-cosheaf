@@ -67,9 +67,9 @@ provider `real-run` CLI path that is not used by default, GitHub Actions CI,
 checked counterexample evidence CLI/eval surfaces, research-run provenance
 CLI/eval surfaces, and collaboration templates. It is not production-ready
 software and does not
-yet provide a web UI, a default real hosted provider path, hosted worker CLI
-commands, automatic theorem proving, full Lean autoformalization, automatic
-accepted promotion, or multi-user permissions.
+yet provide a deployed production web UI, a default real hosted provider path,
+hosted worker CLI commands, automatic theorem proving, full Lean
+autoformalization, automatic accepted promotion, or multi-user permissions.
 
 ## Problem
 
@@ -446,6 +446,22 @@ gatekeeper and writes reports under `.cosheaf/reports/`. G8 is skipped when no
 PR checklist source is provided; use `cosheaf gate run --pr-checklist <path>` to
 validate a local PR body markdown file.
 
+## Static Website Scaffold
+
+The read-only static website app lives under `website/`. It renders sanitized
+demo export data from `website/src/fixtures/site-data/` and does not perform
+repository writes, backend calls, GitHub token handling, or hosted provider
+calls.
+
+```bash
+cd website && npm install
+cd website && npm test
+cd website && npm run build
+```
+
+The website remains display context only; repository files remain the source of
+truth. See [Website Scope And Data Contract](docs/WEBSITE.md).
+
 ## Roadmap
 
 The roadmap is tracked in [docs/ROADMAP.md](docs/ROADMAP.md). Live issue state
@@ -455,10 +471,10 @@ is tracked in GitHub issues rather than hard-coded in this README.
 
 For the MVP, TCS-Cosheaf does not aim to provide:
 
-- A web UI.
 - Model training.
 - An automatic theorem-proving agent.
 - Full Lean autoformalization.
+- A write-capable or production-hosted web UI.
 - A multi-user permission system.
 - A replacement for peer review, formal proof assistants, or domain expert
   judgment.
