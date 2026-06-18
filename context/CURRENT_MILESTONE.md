@@ -2,7 +2,7 @@
 
 Milestone: **V18 / v1.0.0 AI Math Collaborator MVP**
 
-Status: **V18 Phase D.1 documentation and operator packaging**
+Status: **V18 Phase E.1 security, authority, and benchmark release audit**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V18.md
 
@@ -18,10 +18,9 @@ Math Collaborator MVP scope.
 
 Current focus:
 
-- land V18 Phase D.1 `v100-docs-operator-package`: the v1.0 AI math
-  collaborator MVP docs, operator runbook, authority boundary docs, and
-  public/private policy entrypoint;
-- prepare for V18 Phase E security, authority, benchmark, and stale-doc audit;
+- land V18 Phase E.1 `v100-security-authority-benchmark-audit`: release audit,
+  authority-boundary audit, and benchmark baseline docs;
+- prepare for V18 Phase F release-candidate metadata and ecosystem smoke;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -32,8 +31,8 @@ Planned V18 surface:
 - CLI/API polish and deprecation cleanup (B.1, landed);
 - canonical workspace-template AI math collaborator demo (C.1, landed in
   workspace-template PR #95);
-- documentation and operator packaging (D.1, current);
-- security, authority, and benchmark release audit (E.1, next);
+- documentation and operator packaging (D.1, landed);
+- security, authority, and benchmark release audit (E.1, current);
 - `v1.0.0` release candidate and publication closeout.
 
 Frozen v1.0.0 scope:

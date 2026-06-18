@@ -3,6 +3,39 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V18 Phase E.1 security, authority, and benchmark release audit - 2026-06-18
+
+Issue #480 adds the v1.0.0 release-audit documentation on branch
+`v100-security-authority-benchmark-audit`.
+
+This documentation-only task adds:
+
+- `docs/V100_RELEASE_AUDIT.md`;
+- `docs/V100_AUTHORITY_BOUNDARY_AUDIT.md`; and
+- `docs/V100_BENCHMARK_BASELINE.md`.
+
+It records the Phase E audit categories from the V18 plan: accepted-write
+boundary, human-review boundary, promotion boundary, public/private leak
+boundary, hosted-provider default-off boundary, arbitrary shell boundary,
+checker skipped-not-pass boundary, workflow/campaign output non-authority
+boundary, benchmark reproducibility, docs-overclaim audit, and stale issue/PR
+audit.
+
+The local regression benchmark for this audit reports
+`benchmark.regression.r19700101.t000000z`, `passed: true`, `pass_count: 6`,
+`fail_count: 0`, `skipped_count: 3`, `authority_violation_count: 0`,
+`private_leak_count: 0`, `skipped_rows_are_passes: false`,
+`accepted_write_performed: false`, and `yaml_artifacts_mutated: false`.
+
+At audit time, the only open issue across the three repositories is this
+framework audit issue #480, and there are no open PRs across
+`tcs-cosheaf`, `tcs-cosheaf-workspace-template`, or `tcs-kb-public`.
+
+This task does not change code, schema, dependencies, CLI behavior, package
+version, KB artifacts, tags, releases, accepted promotion semantics,
+gatekeeper semantics, verifier adapter contracts, public KB content, or
+workspace-template behavior.
+
 ## V18 Phase D.1 documentation and operator packaging - 2026-06-18
 
 Issue #478 adds the v1.0.0 AI Math Collaborator MVP documentation entrypoints
