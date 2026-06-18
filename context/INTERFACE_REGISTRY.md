@@ -15,6 +15,17 @@
   knowledge authority and does not grant proof, source metadata, human review,
   verifier pass, gate pass, accepted status, accepted theorem/refutation
   status, or promotion authority.
+- App request/result DTOs are implemented under `cosheaf.app.models` and reuse
+  the existing `cosheaf.services.models.AgentAccessModel` base. The Python
+  surface defines `WorkspaceInfoRequest` / `WorkspaceInfoResult`,
+  `ValidateRequest` / `ValidateResult`, `GateRunRequest` / `GateRunResult`,
+  `ContextBuildRequest` / `ContextBuildResult`, `DraftWriteRequest` /
+  `DraftWriteResult`, `ReviewRequestWriteRequest` /
+  `ReviewRequestWriteResult`, and `ErrorResult`. Draft-write DTOs cover draft
+  artifact and source-note requests, while review-request DTOs remain draft and
+  informational only. `AgentAccessStatus.SKIPPED` remains distinct from
+  `AgentAccessStatus.PASS`; skipped, unavailable, and inconclusive states are
+  not pass states.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI

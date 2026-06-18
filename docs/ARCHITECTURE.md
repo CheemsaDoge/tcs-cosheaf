@@ -346,6 +346,13 @@ verifier semantics, or gate behavior. Future server, website, MCP, and forge
 surfaces should call `cosheaf.app` instead of importing Typer command
 functions or shelling out to the CLI.
 
+`cosheaf.app.models` exposes stable request/result DTOs for app use cases. The
+initial DTO family covers workspace info, validation, gate runs, context builds,
+draft artifact/source-note writes, review-request writes, and shared
+`ErrorResult` serialization. The DTOs reuse the existing agent-access model base
+and keep accepted-write and human-review authority unavailable through app
+requests.
+
 ### CLI Layer
 
 Provides public commands for validation, gate execution, graph inspection,
