@@ -3,6 +3,44 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V17 Phase A.1 post-v0.11.0 audit and kickoff - 2026-06-18
+
+Issue #460 starts the `v0.12.0 Research Memory Learning + Benchmark Suite v1`
+line on branch `post-v0110-v0120-kickoff`.
+
+This documentation-only task verifies the published `v0.11.0` baseline and
+lands durable V17 repo memory:
+
+- `docs/POST_V0110_STATE_AUDIT.md`;
+- `docs/CODEX_DEVELOPMENT_PLAN_V17.md`;
+- `docs/ADR/0033-research-memory-learning-benchmark-v1.md`;
+- roadmap, current milestone, and project-state updates.
+
+The audit confirms:
+
+- package version `0.11.0`;
+- public `v0.11.0` tag and GitHub release;
+- post-tag release smoke from `@v0.11.0`;
+- campaign CLI, handoff, and eval surfaces;
+- workspace-template active pins at `@v0.11.0`;
+- public KB CI/docs pins at `@v0.11.0`;
+- no stale open PRs/issues across the three repositories before issue #460 was
+  opened for this task; and
+- unchanged accepted-write, human-review, source-metadata, verifier/gate, and
+  promotion authority.
+
+This task does not add memory update runtime. It does not change code, schema,
+dependencies, CLI behavior, package version, KB artifacts, tags, releases,
+accepted promotion semantics, gatekeeper semantics, verifier adapter
+contracts, public KB content, or workspace-template behavior.
+
+V17 implementation starts next with `memory-update-policy-v1`: deterministic,
+explainable, bounded, rebuildable sidecar memory updates from workflow and
+campaign outcomes. Memory weights, benchmark runs, comparison reports, and
+static reports remain guidance or review context only; they are not proof,
+source metadata, human review, verifier pass, gate pass, accepted status,
+accepted theorem/refutation, or promotion authority.
+
 ## V16 Phase F.2 v0.11.0 publication closeout - 2026-06-18
 
 Issue #458 records the `v0.11.0 External Operator Campaigns` publication

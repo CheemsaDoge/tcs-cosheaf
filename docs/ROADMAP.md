@@ -1,7 +1,8 @@
 # Roadmap
 
 TCS-Cosheaf has published the V16 / `v0.11.0` External AI Operator Harness +
-Bounded Multi-Run Campaigns release. Earlier published baselines include the
+Bounded Multi-Run Campaigns release and is starting V17 / `v0.12.0` Research
+Memory Learning + Benchmark Suite v1. Earlier published baselines include the
 `v0.10.0` Cross-Check Evidence + Checker Registry release,
 `v0.9.0` Reviewable Research Workflow MVP, `v0.8.0` Deterministic Execution
 Kernel + Librarian + FSM, `v0.7.0` Bounded Research Loop + Attempt Memory,
@@ -13,53 +14,50 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: post-v0.11.0 closeout
+## Active Development Focus: V17 v0.12.0 kickoff
 
 The public `v0.11.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
-`@v0.11.0`. The V16 kickoff audit, development plan, and ADR are recorded in:
+`@v0.11.0`. The V17 kickoff audit, development plan, and ADR are recorded in:
 
-- [`docs/POST_V0100_STATE_AUDIT.md`](POST_V0100_STATE_AUDIT.md);
-- [`docs/CODEX_DEVELOPMENT_PLAN_V16.md`](CODEX_DEVELOPMENT_PLAN_V16.md);
-- [`docs/ADR/0032-external-operator-campaign-harness.md`](ADR/0032-external-operator-campaign-harness.md).
+- [`docs/POST_V0110_STATE_AUDIT.md`](POST_V0110_STATE_AUDIT.md);
+- [`docs/CODEX_DEVELOPMENT_PLAN_V17.md`](CODEX_DEVELOPMENT_PLAN_V17.md);
+- [`docs/ADR/0033-research-memory-learning-benchmark-v1.md`](ADR/0033-research-memory-learning-benchmark-v1.md).
 
-V16 implementation and downstream closeout have landed: durable campaign
-models, ignored runtime storage under `.cosheaf/campaigns/`,
-start/show/append-attempt/scorecard/finalize commands, bounded task/result
-packets through `campaign next/export-task/import-result`, deterministic
-`campaign pause/resume/scan/run` budget controls, `campaign handoff`,
-`cosheaf eval campaign --json`, workspace-template `make campaign-demo`, and
-public KB campaign-output policy guard coverage. The publication closeout
-records the tag/release, post-tag smoke, and downstream pin evidence.
-
-The V15 implementation line has landed:
-
-- typed checker registry design and implementation;
-- cross-check evidence reports attached to reviewable workflow context,
-  implemented as runtime/review-context reports;
-- proof-obligation and gap taxonomy for workflow review
-  guidance;
-- framework-side deterministic checker/cross-check eval and ecosystem smoke
-  coverage;
-- workspace-template cross-check demo in downstream PR #85; and
-- public KB cross-check report policy guard in downstream PR #99.
-
-The V15 release is complete. The V16 Phase A kickoff was documentation only.
-Campaign runtime began with the focused Phase B implementation task, continued
-with the Phase C packet protocol, added a deterministic Phase D.1 budget
-controller, added the Phase E.1 handoff/eval layer, and then landed downstream
-demo/policy coverage. It must remain bounded sidecar metadata rather than an
-autonomous agent runtime.
+V17 will add deterministic sidecar memory updates, benchmark suite v1,
+comparative reports, and static Markdown/JSON review reports. It must remain
+operational learning rather than model training or a new truth source.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
 cross-check reports, gap reports, campaign records, campaign attempts,
-scorecards, scans, campaign handoffs, and campaign eval reports are review
-context only
-unless a real checker result explicitly records verifier evidence. They do not
-write accepted knowledge, create human review, fabricate source metadata, mark
-gate pass, promote artifacts, call hosted providers by default, execute
-arbitrary shell through Cosheaf, or claim automatic theorem proving.
+scorecards, scans, campaign handoffs, campaign eval reports, memory weights,
+benchmark runs, comparisons, and static reports are review context or
+sidecar guidance only unless a real checker result explicitly records verifier
+evidence. They do not write accepted knowledge, create human review, fabricate
+source metadata, mark gate pass, promote artifacts, call hosted providers by
+default, execute arbitrary shell through Cosheaf, train a model, or claim
+automatic theorem proving.
+
+## Planned Release Focus: v0.12.0 Research Memory Learning + Benchmark Suite v1
+
+V17 turns workflow and campaign history into deterministic memory updates and
+measurable benchmark progress. Memory weights are sidecar guidance for future
+retrieval and planning, not truth judgments.
+
+The planned implementation phases are:
+
+- post-v0.11.0 audit and V17 plan/ADR (current);
+- deterministic memory update policy v1;
+- benchmark suite v1;
+- comparative workflow/campaign/benchmark reports;
+- static Markdown/JSON research reports; and
+- conservative `v0.12.0` release metadata and publication closeout.
+
+This line will not train models, mutate YAML artifacts from memory updates,
+make benchmark success accepted status, create human review, grant promotion
+authority, add default hosted provider calls, require API keys, or add web UI
+dependencies.
 
 ## Completed Release Focus: v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns
 
