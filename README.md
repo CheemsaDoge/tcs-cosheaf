@@ -460,7 +460,9 @@ cd website && npm run build
 ```
 
 The website remains display context only; repository files remain the source of
-truth. See [Website Scope And Data Contract](docs/WEBSITE.md).
+truth. The static build output is `website/dist`; see
+[Website Scope And Data Contract](docs/WEBSITE.md) and
+[Static Website Deployment](docs/DEPLOYMENT.md).
 
 ## Roadmap
 
@@ -504,6 +506,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Checker registry](docs/CHECKERS.md)
 - [Draft proposals](docs/DRAFT_PROPOSALS.md)
 - [Review handoffs](docs/REVIEW_HANDOFFS.md)
+- [Static website deployment](docs/DEPLOYMENT.md)
 - [External operator run loop](docs/EXTERNAL_OPERATOR_RUN_LOOP.md)
 - [Operator workspace demo](docs/OPERATOR_WORKSPACE_DEMO.md)
 - [Operator Skill package](docs/OPERATOR_SKILL.md)

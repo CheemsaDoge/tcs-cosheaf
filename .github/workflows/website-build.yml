@@ -1,0 +1,42 @@
+name: Website build
+
+on:
+  pull_request:
+    paths:
+      - "website/**"
+      - "docs/DEPLOYMENT.md"
+      - "docs/WEBSITE.md"
+      - ".github/workflows/website-build.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "website/**"
+      - "docs/DEPLOYMENT.md"
+      - "docs/WEBSITE.md"
+      - ".github/workflows/website-build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  website-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: website-dist
+          path: website/dist
+          if-no-files-found: error
