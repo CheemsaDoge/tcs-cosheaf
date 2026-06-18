@@ -2,9 +2,8 @@
 
 Target: `v0.12.0 Research Memory Learning + Benchmark Suite v1`
 
-Status: Phase B.1 memory update policy v1 after the published `v0.11.0`
-External Operator Campaigns release and downstream workspace/public-KB pin
-closeout.
+Status: Phase C.1 benchmark suite v1 after the published `v0.11.0` External
+Operator Campaigns release and downstream workspace/public-KB pin closeout.
 
 ## Goal
 
@@ -46,8 +45,8 @@ This is operational learning, not model training:
 ## Phase Structure
 
 1. Phase A: post-`v0.11.0` audit and V17 landing. Landed in issue #460.
-2. Phase B: memory update policy v1. Current issue #462.
-3. Phase C: benchmark suite v1.
+2. Phase B: memory update policy v1. Landed in issue #462.
+3. Phase C: benchmark suite v1. Current issue #464.
 4. Phase D: comparative run reports.
 5. Phase E: retrieval/workflow quality reports as static Markdown/JSON.
 6. Phase F: `v0.12.0` release candidate and publication closeout.
@@ -131,6 +130,15 @@ Required suites:
 
 Acceptance for Phase C: maintainers can measure whether changes improve or
 damage the research harness without needing hosted providers or network access.
+
+Phase C.1 implementation adds `cosheaf.benchmark`, runtime sidecars under
+`.cosheaf/benchmark-runs/<run-id>/run.json`, and the three CLI commands listed
+above. It aggregates existing deterministic eval harnesses instead of creating
+a second fixture system. Benchmark output remains regression evidence only: it
+does not mutate YAML artifacts, write accepted knowledge, create human review,
+fabricate source metadata, mutate verifier results, mark gates as passing, call
+hosted providers, use network access, execute shell commands, or promote
+artifacts.
 
 ## Phase D Outline
 

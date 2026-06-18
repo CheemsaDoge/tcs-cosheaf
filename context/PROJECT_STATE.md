@@ -3,6 +3,34 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V17 Phase C.1 benchmark suite v1 - 2026-06-18
+
+Issue #464 adds deterministic benchmark suite v1 on branch
+`benchmark-suite-v1`.
+
+The current surface includes:
+
+- `cosheaf.benchmark` DTOs and helpers for benchmark suite metadata, component
+  results, aggregate metrics, persisted run sidecars, and report rendering;
+- supported suites `smoke`, `regression`, `authority_negative`,
+  `private_boundary`, `research_loop`, `campaign`, and `review_workflow`;
+- runtime benchmark runs under `.cosheaf/benchmark-runs/<run-id>/run.json`;
+- `cosheaf benchmark list --json`;
+- `cosheaf benchmark run --suite <suite> --json`; and
+- `cosheaf benchmark report <run-id> --out <path> --json`.
+
+The benchmark aggregator reuses existing deterministic eval harnesses for
+retrieval, context, checker/cross-check, checked evidence, research-run loops,
+research loops, reviewable workflows, campaigns, and strategy planning. It
+reports pass, fail, skipped, retrieval, context, workflow, checker, failure,
+budget, authority, private-boundary, and handoff metrics in a stable v1 shape.
+
+Benchmark runs are regression evidence only. They do not mutate YAML artifacts,
+write accepted knowledge, create human review, fabricate source metadata,
+mutate verifier results, mark gates as passing, call hosted providers, use
+network access, execute shell commands, or promote artifacts. Skipped,
+unsupported, unavailable, and inconclusive rows remain separate from passes.
+
 ## V17 Phase B.1 memory update policy v1 - 2026-06-18
 
 Issue #462 adds deterministic memory update sidecars from workflow and campaign

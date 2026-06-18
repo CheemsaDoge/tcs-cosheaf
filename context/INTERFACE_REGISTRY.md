@@ -4,6 +4,21 @@
 
 ### Active And Planned Interfaces
 
+- Benchmark suite DTOs, runtime storage, and CLI commands are implemented
+  under `cosheaf.benchmark`. The Python surface defines `BenchmarkSuiteName`,
+  `BenchmarkComponentName`, `BenchmarkMetrics`, `BenchmarkComponentResult`,
+  `BenchmarkRun`, `BenchmarkSuiteInfo`, `BenchmarkListResult`,
+  `BenchmarkReportResult`, `BenchmarkError`, `list_benchmark_suites`,
+  `run_benchmark_suite`, `load_benchmark_run`, `write_benchmark_run`,
+  `write_benchmark_report`, `render_benchmark_markdown`, and
+  `benchmark_run_path`. Runtime records are JSON under
+  `.cosheaf/benchmark-runs/<run-id>/run.json`. The CLI surface is `cosheaf
+  benchmark list --json`, `cosheaf benchmark run --suite <suite> --json`, and
+  `cosheaf benchmark report <run-id> --out <path> --json`. Benchmark output is
+  deterministic regression evidence only. It does not grant proof, source
+  metadata, human review, verifier pass, gate pass, accepted status, accepted
+  theorem/refutation, or promotion authority; skipped rows are reported
+  separately and are not passes.
 - Memory update DTOs, sidecar storage, and CLI commands are implemented under
   `cosheaf.memory.updates`. The Python surface defines `MemorySignal`,
   `MemoryEdgeUpdate`, `MemoryWeightStore`, `MemoryUpdatePolicy`,
@@ -382,6 +397,17 @@
 - `cosheaf gap export <workflow-id> --out <path> --json`: exports one workflow
   gap report as JSON only under `reviews/workflow/`. Accepted KB targets,
   repository-external paths, and non-JSON suffixes are rejected.
+- `cosheaf benchmark list --json`: lists supported benchmark suites,
+  component eval harnesses, and benchmark categories without writing files.
+- `cosheaf benchmark run --suite <suite> --json`: runs one deterministic
+  benchmark suite, writes `.cosheaf/benchmark-runs/<run-id>/run.json`, and
+  reports aggregate pass/fail/skipped, retrieval, context, workflow, checker,
+  failure, budget, authority, private-boundary, and handoff metrics. It does
+  not call hosted providers, use network access, mutate YAML artifacts, write
+  accepted knowledge, create human review, or promote artifacts.
+- `cosheaf benchmark report <run-id> --out <path> --json`: renders an existing
+  benchmark run sidecar to a safe repository-local `.json` or Markdown path.
+  Accepted KB targets are rejected. Reports are review context only.
 - `cosheaf memory update-from-workflow <workflow-id> --json`: reads one
   persisted workflow runtime record, writes a deterministic update-run sidecar
   under `.cosheaf/memory/update-runs/`, rebuilds

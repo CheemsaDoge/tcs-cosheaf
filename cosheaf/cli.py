@@ -44,6 +44,13 @@ from cosheaf.agent.providers import (
     ProviderMode,
 )
 from cosheaf.agent.task import WorkerType
+from cosheaf.benchmark import (
+    BenchmarkError,
+    BenchmarkSuiteName,
+    list_benchmark_suites,
+    run_benchmark_suite,
+    write_benchmark_report,
+)
 from cosheaf.checkers.cli import checker_app
 from cosheaf.config.workspace import KbRootConfig, WorkspaceConfigError
 from cosheaf.core.artifact import BaseArtifact, is_external_dependency_ref
@@ -334,6 +341,11 @@ eval_app = typer.Typer(
     help="Deterministic local evaluation commands.",
     no_args_is_help=True,
 )
+benchmark_app = typer.Typer(
+    add_completion=False,
+    help="Deterministic benchmark suite commands.",
+    no_args_is_help=True,
+)
 memory_app = typer.Typer(
     add_completion=False,
     help="Deterministic memory/card commands.",
@@ -400,6 +412,7 @@ app.add_typer(strategy_app, name="strategy")
 app.add_typer(workspace_app, name="workspace")
 app.add_typer(ingest_app, name="ingest")
 app.add_typer(eval_app, name="eval")
+app.add_typer(benchmark_app, name="benchmark")
 app.add_typer(memory_app, name="memory")
 app.add_typer(mcp_app, name="mcp")
 app.add_typer(provider_app, name="provider")
@@ -2938,6 +2951,128 @@ def memory_search(
             )
             for reason in hit.why_relevant:
                 console.print(f"  why: {reason}")
+
+
+@benchmark_app.command("list")
+def benchmark_list(
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """List deterministic benchmark suites."""
+    result = list_benchmark_suites()
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console = Console(width=120, markup=False)
+    for suite in result.suites:
+        components = ", ".join(component.value for component in suite.components)
+        console.print(f"{suite.name.value}: {components}")
+
+
+@benchmark_app.command("run")
+def benchmark_run(
+    suite: BenchmarkSuiteName = typer.Option(
+        ...,
+        "--suite",
+        help="Benchmark suite to run.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """Run a deterministic benchmark suite and persist its sidecar."""
+    console = Console(width=120, markup=False)
+    try:
+        result = run_benchmark_suite(RepoContext(repo_root), suite)
+    except BenchmarkError as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code="benchmark_run_failed",
+                    message=str(exc),
+                    remediation="Inspect benchmark suite names and eval case files.",
+                    blocking=True,
+                )
+            )
+            raise typer.Exit(code=1) from None
+        console.print(f"Benchmark run failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        _emit_json(result.to_dict())
+        if not result.passed:
+            raise typer.Exit(code=1)
+        return
+    verdict = "pass" if result.passed else "fail"
+    console.print(f"Benchmark verdict: {verdict}")
+    console.print(f"- run_id: {result.run_id}")
+    console.print(f"- suite: {result.suite.value}")
+    console.print(f"- pass_count: {result.metrics.pass_count}")
+    console.print(f"- fail_count: {result.metrics.fail_count}")
+    console.print(f"- skipped_count: {result.metrics.skipped_count}")
+    console.print(
+        f"- authority_violation_count: {result.metrics.authority_violation_count}"
+    )
+    console.print(f"- private_leak_count: {result.metrics.private_leak_count}")
+    console.print(f"- authority: {result.authority_notice}")
+    if not result.passed:
+        raise typer.Exit(code=1)
+
+
+@benchmark_app.command("report")
+def benchmark_report(
+    run_id: str = typer.Argument(..., help="Benchmark run ID."),
+    out: Path = typer.Option(
+        ...,
+        "--out",
+        help="Repository-local .md or .json output path.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON summary instead of text lines.",
+    ),
+) -> None:
+    """Write a static benchmark report from an existing run sidecar."""
+    console = Console(width=120, markup=False)
+    try:
+        result = write_benchmark_report(RepoContext(repo_root), run_id, out)
+    except BenchmarkError as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code="benchmark_report_failed",
+                    message=str(exc),
+                    remediation="Run the benchmark first and use a safe output path.",
+                    blocking=True,
+                    related_artifact=_valid_related_artifact(run_id),
+                )
+            )
+            raise typer.Exit(code=1) from None
+        console.print(f"Benchmark report failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Benchmark report written: {result.out_path}")
+    console.print(f"- format: {result.report_format}")
+    console.print(f"- authority: {result.authority_notice}")
 
 
 @eval_app.command("campaign")

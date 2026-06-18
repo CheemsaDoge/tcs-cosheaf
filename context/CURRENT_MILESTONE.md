@@ -2,7 +2,7 @@
 
 Milestone: **V17 / v0.12.0 Research Memory Learning + Benchmark Suite v1**
 
-Status: **V17 Phase B.1 memory update policy v1**
+Status: **V17 Phase C.1 benchmark suite v1**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V17.md
 
@@ -19,8 +19,8 @@ review reports.
 
 Current focus:
 
-- land V17 Phase B.1 `memory-update-policy-v1`: deterministic workflow and
-  campaign history updates into rebuildable sidecar memory weights;
+- land V17 Phase C.1 `benchmark-suite-v1`: deterministic benchmark suites over
+  existing eval harnesses with persisted sidecar runs and static reports;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -28,8 +28,8 @@ Current focus:
 Planned V17 surface:
 
 - post-v0.11.0 audit and V17 plan/ADR (A.1, landed);
-- deterministic memory update policy v1 (B.1, current);
-- benchmark suite v1;
+- deterministic memory update policy v1 (B.1, landed);
+- benchmark suite v1 (C.1, current);
 - comparative workflow/campaign/benchmark reports;
 - static Markdown/JSON research reports; and
 - `v0.12.0` release candidate and publication closeout.
@@ -43,6 +43,14 @@ Current V17 B.1 surface:
 - `cosheaf memory update-from-campaign <campaign-id> --json`;
 - `cosheaf memory rebuild --json`; and
 - `cosheaf memory explain <artifact-id> --json`.
+
+Current V17 C.1 surface:
+
+- `cosheaf.benchmark` benchmark suite aggregator;
+- `.cosheaf/benchmark-runs/<run-id>/run.json`;
+- `cosheaf benchmark list --json`;
+- `cosheaf benchmark run --suite <suite> --json`; and
+- `cosheaf benchmark report <run-id> --out <path> --json`.
 
 V17 non-goals:
 

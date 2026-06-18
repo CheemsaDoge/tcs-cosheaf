@@ -36,6 +36,19 @@ proposal, and handoff scanner surfaces. The campaign eval harness checks
 bounded campaign handoff, scanner, budget-stop, and operator-contract
 boundaries with temporary fixtures.
 
+V17 benchmark commands aggregate these existing eval harnesses without adding a
+second fixture system:
+
+```bash
+cosheaf benchmark list --json
+cosheaf benchmark run --suite smoke --json
+cosheaf benchmark report <run-id> --out reviews/benchmark/smoke.md --json
+```
+
+Benchmark runs are persisted under `.cosheaf/benchmark-runs/` and remain
+regression evidence only. Skipped rows are reported separately and are not
+passes.
+
 ## Retrieval Eval Cases
 
 Retrieval eval cases are YAML records under `evals/retrieval/`. The default

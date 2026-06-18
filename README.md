@@ -246,6 +246,12 @@ Implemented:
   expose the v1 policy. Memory weights remain sidecar guidance only; they are
   not proof, source metadata, human review, verifier/gate pass, accepted
   status, or promotion authority.
+- V17 benchmark suite development surfaces: `cosheaf.benchmark` aggregates the
+  existing deterministic eval harnesses behind `cosheaf benchmark list`,
+  `cosheaf benchmark run --suite <suite> --json`, and `cosheaf benchmark
+  report <run-id> --out <path> --json`. Benchmark runs are persisted under
+  `.cosheaf/benchmark-runs/` and remain regression evidence only, not accepted
+  status or promotion authority.
 
 Planned or incomplete:
 
@@ -253,8 +259,7 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- V17 benchmark suite, comparison commands, static reports, and `v0.12.0`
-  release closeout.
+- V17 comparison commands, static reports, and `v0.12.0` release closeout.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
@@ -450,6 +455,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Research loops](docs/RESEARCH_LOOPS.md)
 - [Reviewable workflows](docs/WORKFLOWS.md)
 - [Memory updates](docs/MEMORY_UPDATES.md)
+- [Benchmarks](docs/BENCHMARKS.md)
 - [Checker registry](docs/CHECKERS.md)
 - [Draft proposals](docs/DRAFT_PROPOSALS.md)
 - [Review handoffs](docs/REVIEW_HANDOFFS.md)
