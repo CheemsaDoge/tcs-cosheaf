@@ -7,12 +7,12 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.12.0 Research Memory Learning + Benchmark Suite v1 release
-candidate**. Package metadata records `0.12.0`. The public `v0.12.0` tag,
-GitHub release, post-tag release smoke, and downstream workspace-template/public
-KB pin updates are Phase F.2 work.
+Current status: **v0.12.0 Research Memory Learning + Benchmark Suite v1
+published release**. Package metadata records `0.12.0`. The public `v0.12.0`
+tag, GitHub release, post-tag release smoke, and downstream
+workspace-template/public KB pin updates are complete.
 
-The `v0.12.0` release candidate packages the V17 memory and benchmark line:
+The `v0.12.0` release packages the V17 memory and benchmark line:
 deterministic sidecar memory updates under `.cosheaf/memory/`, benchmark suite
 v1, comparative reports, and static Markdown/JSON review reports. Memory
 weights, benchmark runs, comparisons, and static reports remain review context
@@ -20,10 +20,10 @@ or sidecar guidance only and do not create proof, source metadata, human
 review, verifier pass, gate pass, accepted status, accepted refutation, or
 promotion authority.
 
-The latest published release is `v0.11.0`:
-<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.11.0>.
+The latest published release is `v0.12.0`:
+<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.12.0>.
 
-The `v0.12.0` release candidate does not add production autonomy, hosted-provider
+The `v0.12.0` release does not add production autonomy, hosted-provider
 defaults, model training, automatic correctness improvement, automatic theorem
 proving, Lean semantic alignment, human review, accepted writes, verifier
 passes without real checker evidence, gate-pass authority, source metadata
@@ -411,8 +411,8 @@ to `v0.7.0`; deterministic execution-kernel surfaces can pin to `v0.8.0`; and
 the initial reviewable-workflow release line can pin to `v0.9.0`. Downstream
 repositories that need the V15 checker registry and cross-check evidence
 surfaces can pin to `v0.10.0`. Downstream repositories that need the V16
-bounded campaign surfaces can pin to `v0.11.0`. Downstream repositories should
-wait for the `v0.12.0` tag before pinning to the V17 memory/benchmark release.
+bounded campaign surfaces can pin to `v0.11.0`. Downstream repositories that
+need the V17 memory/benchmark release can pin to `v0.12.0`.
 
 ## Development Commands
 

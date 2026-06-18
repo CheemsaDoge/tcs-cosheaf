@@ -1,9 +1,8 @@
 # Roadmap
 
-TCS-Cosheaf has published the V16 / `v0.11.0` External AI Operator Harness +
-Bounded Multi-Run Campaigns release and is preparing the V17 / `v0.12.0`
-Research Memory Learning + Benchmark Suite v1 release candidate. Earlier
-published baselines include the
+TCS-Cosheaf has published the V17 / `v0.12.0` Research Memory Learning +
+Benchmark Suite v1 release. Earlier published baselines include the
+`v0.11.0` External AI Operator Harness + Bounded Multi-Run Campaigns release,
 `v0.10.0` Cross-Check Evidence + Checker Registry release,
 `v0.9.0` Reviewable Research Workflow MVP, `v0.8.0` Deterministic Execution
 Kernel + Librarian + FSM, `v0.7.0` Bounded Research Loop + Attempt Memory,
@@ -15,24 +14,22 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V17 v0.12.0 release candidate
+## Active Development Focus: Post-v0.12.0 closeout
 
-The public `v0.11.0` tag and GitHub release are published, post-tag release
+The public `v0.12.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
-`@v0.11.0`. The V17 kickoff audit, development plan, and ADR are recorded in:
+`@v0.12.0`. The V17 kickoff audit, development plan, and ADR are recorded in:
 
 - [`docs/POST_V0110_STATE_AUDIT.md`](POST_V0110_STATE_AUDIT.md);
 - [`docs/CODEX_DEVELOPMENT_PLAN_V17.md`](CODEX_DEVELOPMENT_PLAN_V17.md);
 - [`docs/ADR/0033-research-memory-learning-benchmark-v1.md`](ADR/0033-research-memory-learning-benchmark-v1.md).
 
-V17 will add deterministic sidecar memory updates, benchmark suite v1,
-comparative reports, and static Markdown/JSON review reports. It must remain
+V17 added deterministic sidecar memory updates, benchmark suite v1,
+comparative reports, and static Markdown/JSON review reports. It remains
 operational learning rather than model training or a new truth source.
 
-The current implementation focus is release-candidate closeout: package
-metadata, release notes, milestone docs, and verification records for the
-conservative `v0.12.0` RC. Tag publication, GitHub release, post-tag smoke, and
-downstream pin updates remain separate Phase F.2 work.
+The current implementation focus is publication closeout documentation and
+release-state bookkeeping. No new runtime capability is part of the closeout.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
@@ -45,7 +42,7 @@ source metadata, mark gate pass, promote artifacts, call hosted providers by
 default, execute arbitrary shell through Cosheaf, train a model, or claim
 automatic theorem proving.
 
-## Planned Release Focus: v0.12.0 Research Memory Learning + Benchmark Suite v1
+## Completed Release Focus: v0.12.0 Research Memory Learning + Benchmark Suite v1
 
 V17 turns workflow and campaign history into deterministic memory updates and
 measurable benchmark progress. Memory weights are sidecar guidance for future
@@ -58,7 +55,7 @@ The planned implementation phases are:
 - benchmark suite v1 (landed);
 - comparative workflow/campaign/benchmark reports (landed);
 - static Markdown/JSON research reports (landed);
-- conservative `v0.12.0` release metadata and publication closeout (current).
+- conservative `v0.12.0` release metadata and publication closeout (landed).
 
 This line will not train models, mutate YAML artifacts from memory updates,
 make benchmark success accepted status, create human review, grant promotion
@@ -248,7 +245,22 @@ accepted status, or promotion authorization. Provider calls remain explicit,
 default-off, policy-scoped, previewed, consented, and excluded from CI/default
 tests. MCP remains optional and non-blocking.
 
-## Latest Published Release: v0.10.0
+## Latest Published Release: v0.12.0
+
+The published `v0.12.0` tag records package metadata and `cosheaf.__version__`
+as `0.12.0`. `docs/releases/v0.12.0.md` records the conservative release
+scope and limitations. The public `v0.12.0` tag and GitHub release are
+published, post-tag release smoke passed, and downstream
+workspace-template/public KB pins are aligned to `@v0.12.0`.
+
+The `v0.12.0` release packages deterministic sidecar memory updates, benchmark
+suite v1, comparative reports, and static Markdown/JSON review reports. These
+surfaces are sidecar guidance or review/regression context only. They do not
+create proof, source metadata, human review, verifier pass, gate pass,
+accepted status, accepted theorem/refutation, or promotion authority.
+Skipped, unsupported, unavailable, and inconclusive rows are not passes.
+
+## Previous Published Release: v0.10.0
 
 The published `v0.10.0` tag records package metadata and `cosheaf.__version__`
 as `0.10.0`.

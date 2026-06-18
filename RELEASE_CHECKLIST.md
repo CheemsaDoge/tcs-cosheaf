@@ -4,11 +4,9 @@ This checklist records the current three-repository release state for the
 framework package, public KB, and workspace template. It is not a
 production-readiness claim.
 
-The current framework package metadata is prepared as the `v0.12.0` Research
-Memory Learning + Benchmark Suite v1 release candidate. The latest published
-framework release remains `v0.11.0` External Operator Campaigns; the public
-`v0.12.0` tag, GitHub release, post-tag smoke, and downstream pin alignment are
-future Phase F.2 work.
+The current framework package metadata is published as the `v0.12.0` Research
+Memory Learning + Benchmark Suite v1 release. The public `v0.12.0` tag, GitHub
+release, post-tag smoke, and downstream pin alignment are complete.
 
 Published baseline summary:
 
@@ -38,8 +36,8 @@ Published baseline summary:
 - `v0.11.0` packages bounded external-operator campaigns, campaign
   task/result packets, deterministic campaign controller checks, campaign
   handoff/eval surfaces, and downstream campaign demo/policy closeout.
-- `v0.12.0` release-candidate metadata packages deterministic sidecar memory
-  updates, benchmark suite v1, comparative reports, and static review reports.
+- `v0.12.0` packages deterministic sidecar memory updates, benchmark suite v1,
+  comparative reports, and static review reports.
 
 ## Scope
 
@@ -49,9 +47,9 @@ Published baseline summary:
 - Current framework package metadata version:
   `0.12.0`.
 - Latest published framework release:
-  `v0.11.0`.
+  `v0.12.0`.
 - Current published tag:
-  `v0.11.0`.
+  `v0.12.0`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
@@ -88,16 +86,16 @@ Published baseline summary:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.10.0`.
 - Downstream dependency for External Operator Campaigns:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.11.0`.
-- Intended downstream dependency for Research Memory Learning + Benchmark
-  Suite v1 after publication:
+- Downstream dependency for Research Memory Learning + Benchmark Suite v1:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.12.0`.
 
-## v0.12.0 Release Candidate Baseline
+## v0.12.0 Published Release Baseline
 
-`docs/releases/v0.12.0.md` is the release-candidate note for Research Memory
-Learning + Benchmark Suite v1. Phase F.1 prepares package metadata and status
-docs in issue #470. Phase F.2 must still publish the tag and release, run
-post-tag release smoke, and align downstream pins.
+`docs/releases/v0.12.0.md` is the published release note for Research Memory
+Learning + Benchmark Suite v1. Phase F.1 prepared package metadata and status
+docs in issue #470 / PR #471. Phase F.2 published the tag and release, ran
+post-tag release smoke, and aligned downstream pins in issue #472 plus
+workspace-template PR #93 and public KB PR #107.
 
 - [x] Memory update commands are present:
   `cosheaf memory update-from-workflow`, `update-from-campaign`, `rebuild`,
@@ -113,10 +111,14 @@ post-tag release smoke, and align downstream pins.
 - [x] Package metadata records `0.12.0`.
 - [x] Regression benchmark reports `passed: true`, 6 pass, 0 fail, and 3
   skipped rows with `skipped_rows_are_passes: false`.
-- [ ] Public `v0.12.0` tag and GitHub release are published.
-- [ ] Post-tag release smoke from `@v0.12.0` passed.
-- [ ] Workspace-template pins moved to `@v0.12.0`.
-- [ ] Public KB CI/docs pins moved to `@v0.12.0`.
+- [x] Public `v0.12.0` tag and GitHub release are published.
+- [x] Post-tag release smoke from `@v0.12.0` passed and installed
+  `tcs-cosheaf==0.12.0`.
+- [x] Workspace-template pins moved to `@v0.12.0` in PR #93.
+- [x] Public KB CI/docs pins moved to `@v0.12.0` in PR #107.
+- [x] The no-network ecosystem matrix with `--framework-tag v0.12.0` reports
+  28 rows: 25 pass, 0 fail, and 3 skipped. Skipped rows are not counted as
+  pass.
 - [x] No model training, automatic correctness improvement, production
   autonomy, hosted-provider default, automatic theorem proving, Lean semantic
   alignment, human-review creation, accepted-write, verifier-pass, gate-pass,
@@ -617,6 +619,8 @@ smoke, and downstream pin updates.
   reviewed release-candidate main commit.
 - [x] Remote tag `v0.11.0` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
+- [x] Remote tag `v0.12.0` exists and points through the annotated tag to the
+  reviewed release-candidate main commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
 - [x] Historical workspace-template artifact-failure-memory verification remains
@@ -641,6 +645,10 @@ smoke, and downstream pin updates.
   after v0.9.0 tag publication and release smoke succeeded.
 - [x] Workspace-template and public KB active pins moved to `@v0.10.0` only
   after v0.10.0 tag publication and release smoke succeeded.
+- [x] Workspace-template and public KB active pins moved to `@v0.11.0` only
+  after v0.11.0 tag publication and release smoke succeeded.
+- [x] Workspace-template and public KB active pins moved to `@v0.12.0` only
+  after v0.12.0 tag publication and release smoke succeeded.
 
 ### License
 
@@ -711,8 +719,8 @@ gate output and release notes.
 
 ## Agent Access And Provider Status
 
-Current agent/operator/checker surfaces through the `v0.12.0` release candidate
-and latest published `v0.11.0` release:
+Current agent/operator/checker surfaces through the latest published `v0.12.0`
+release:
 
 - CLI-first operator workflow with stable JSON output for core read/check
   commands.
@@ -773,7 +781,7 @@ and latest published `v0.11.0` release:
   cross-check/evidence reports, proof/source/formalization gap reports, and
   checker/cross-check evals.
 - Deterministic sidecar memory updates, benchmark suite v1, comparative
-  reports, and static review reports from the `v0.12.0` RC line.
+  reports, and static review reports from the `v0.12.0` release line.
 
 Boundaries:
 
