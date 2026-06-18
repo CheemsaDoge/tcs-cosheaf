@@ -135,6 +135,7 @@ def test_interface_list_json_documents_stable_surface() -> None:
     assert preferred["gate"] == "cosheaf gate run"
     assert preferred["research-run"] == "cosheaf research-run ..."
     assert preferred["mcp"] == "cosheaf mcp ..."
+    assert preferred["server"] == "cosheaf server serve --readonly --port 8765"
 
     aliases = {
         item["alias"]: item["preferred"] for item in payload["compatibility_aliases"]

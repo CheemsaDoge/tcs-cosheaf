@@ -1,13 +1,14 @@
 # Server Readiness
 
-This document records the in-process entry points a future server should call.
-It does not implement a server, web UI, network service, hosted provider, or
-GitHub mutation path.
+This document records the in-process entry points local server code should call.
+The first implemented server surface is the read-only localhost website API in
+[Local Read-Only Server API](SERVER_API.md). It does not implement a web UI,
+hosted provider, public network service, or GitHub mutation path.
 
 ## Server Entry Points
 
-Future server code should open the repository through `open_app` and then call
-the app facade directly:
+Server code should open the repository through `open_app` and then call the app
+facade directly:
 
 - `CosheafApp.workspace_info`
 - `CosheafApp.validate_repository`
@@ -25,10 +26,10 @@ returning raw Python exceptions or terminal-only CLI text.
 
 ## Boundary Rules
 
-The future server should call `cosheaf.app` and shared service/forge objects
-in-process. It should not shell out to `cosheaf` CLI commands for workspace
-info, validation, gatekeeper runs, context packs, local issue creation, or
-forge previews.
+Server code should call `cosheaf.app` and shared service/forge objects
+in-process. It must not shell out to `cosheaf` CLI commands for workspace info,
+validation, gatekeeper runs, context packs, local issue creation, forge
+previews, or website payloads.
 
 Forge previews are read-only planning output. They do not call `git`, `gh`, the
 network, create GitHub issues, create GitHub PRs, push, store credentials, or
@@ -45,7 +46,6 @@ passing gate nor a GitHub workflow state creates accepted knowledge.
 ## Regression Coverage
 
 `tests/test_server_readiness.py` proves the listed app and forge entry points
-can be called without CLI subprocesses. The test monkeypatches
-`subprocess.run` to fail, then exercises workspace info, repository validation,
-gatekeeper, context build/show, local issue creation, forge issue preview,
-forge PR preview, and `ErrorResult` serialization.
+can be called without CLI subprocesses. `tests/test_readonly_server.py` proves
+the read-only website API routes app-layer payloads without CLI subprocesses
+and refuses non-GET methods.

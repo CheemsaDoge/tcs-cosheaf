@@ -464,6 +464,15 @@ truth. The static build output is `website/dist`; see
 [Website Scope And Data Contract](docs/WEBSITE.md) and
 [Static Website Deployment](docs/DEPLOYMENT.md).
 
+For local dynamic preview without cloud auth:
+
+```bash
+cosheaf server serve --readonly --port 8765
+```
+
+The server binds to localhost, serves read-only website JSON endpoints, and
+does not write repository records. See [Local Read-Only Server API](docs/SERVER_API.md).
+
 ## Roadmap
 
 The roadmap is tracked in [docs/ROADMAP.md](docs/ROADMAP.md). Live issue state
@@ -514,6 +523,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Agent providers](docs/AGENT_PROVIDERS.md)
 - [Operator MCP](docs/OPERATOR_MCP.md)
 - [MCP server](docs/MCP_SERVER.md)
+- [Local read-only server API](docs/SERVER_API.md)
 - [Evaluation](docs/EVALUATION.md)
 - [Artifact lifecycle](docs/ARTIFACT_LIFECYCLE.md)
 - [Artifact schema](docs/ARTIFACT_SCHEMA.md)
