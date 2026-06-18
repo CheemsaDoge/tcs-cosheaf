@@ -3,6 +3,33 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V18 Phase F.2 v1.0.0 publication closeout - 2026-06-18
+
+Issue #484 records the `v1.0.0 AI Math Collaborator MVP` publication closeout
+on branch `release-v100-publication-closeout`.
+
+The public `v1.0.0` tag and GitHub release are published:
+
+https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v1.0.0
+
+Publication evidence:
+
+- annotated tag object: `c6a404fc5718e6973cee29f9ca1f6fe6e2c3bd53`;
+- tagged main commit: `9bbb515db270c90c1029df08353d19e03e507847`;
+- post-tag release smoke from
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v1.0.0` passed and
+  installed `tcs-cosheaf==1.0.0`;
+- workspace-template PR #97 moves active pins to `@v1.0.0`;
+- `tcs-kb-public` PR #109 moves CI/docs pins to `@v1.0.0`; and
+- the no-network ecosystem matrix with `--framework-tag v1.0.0` reports 28
+  rows: 25 pass, 0 fail, and 3 skipped. Skipped rows are not counted as pass.
+
+This closeout does not add production autonomy, hosted-provider defaults,
+automatic theorem proving, Lean/mathlib/CSLib semantic alignment,
+human-review creation, accepted writes, verifier-pass authority, gate-pass
+authority, source-metadata authority, accepted theorem/refutation authority, or
+promotion authority.
+
 ## V18 Phase F.1 v1.0.0 release candidate - 2026-06-18
 
 Issue #482 prepares the conservative `v1.0.0 AI Math Collaborator MVP`

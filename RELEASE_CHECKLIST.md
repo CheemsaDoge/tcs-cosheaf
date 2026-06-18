@@ -4,9 +4,9 @@ This checklist records the current three-repository release state for the
 framework package, public KB, and workspace template. It is not a
 production-readiness claim.
 
-The current framework package metadata is published as the `v0.12.0` Research
-Memory Learning + Benchmark Suite v1 release. The public `v0.12.0` tag, GitHub
-release, post-tag smoke, and downstream pin alignment are complete.
+The current framework package metadata is published as the `v1.0.0` AI Math
+Collaborator MVP release. The public `v1.0.0` tag, GitHub release, post-tag
+smoke, and downstream pin alignment are complete.
 
 Published baseline summary:
 
@@ -38,6 +38,7 @@ Published baseline summary:
   handoff/eval surfaces, and downstream campaign demo/policy closeout.
 - `v0.12.0` packages deterministic sidecar memory updates, benchmark suite v1,
   comparative reports, and static review reports.
+- `v1.0.0` packages the AI Math Collaborator MVP release.
 
 ## Scope
 
@@ -45,11 +46,11 @@ Published baseline summary:
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
 - Current framework package metadata version:
-  `0.12.0`.
+  `1.0.0`.
 - Latest published framework release:
-  `v0.12.0`.
+  `v1.0.0`.
 - Current published tag:
-  `v0.12.0`.
+  `v1.0.0`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
@@ -88,6 +89,39 @@ Published baseline summary:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.11.0`.
 - Downstream dependency for Research Memory Learning + Benchmark Suite v1:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.12.0`.
+- Downstream dependency for AI Math Collaborator MVP:
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v1.0.0`.
+
+## v1.0.0 Published Release Baseline
+
+`docs/releases/v1.0.0.md` is the published release note for AI Math
+Collaborator MVP. Phase F.1 prepared package metadata and status docs in issue
+#482 / PR #483. Phase F.2 published the tag and release, ran post-tag release
+smoke, and aligned downstream pins in issue #484 plus workspace-template PR
+#97 and public KB PR #109.
+
+- [x] Package metadata records `1.0.0`.
+- [x] `cosheaf interface list --json` records the stable v1.0 CLI surface.
+- [x] Workspace validation, gates, indexing, context packs, lifecycle
+  governance, workflow, checker, gap, research-loop, research-run, campaign,
+  memory, benchmark, compare, report, operator session, provider fake/preview,
+  optional verifier, and handoff surfaces are present.
+- [x] The workspace-template canonical `make ai-math-collaborator-demo` path
+  passed after pinning to `@v1.0.0`.
+- [x] Regression benchmark reports `passed: true`, 6 pass, 0 fail, and 3
+  skipped rows with `skipped_rows_are_passes: false`.
+- [x] Public `v1.0.0` tag and GitHub release are published.
+- [x] Post-tag release smoke from `@v1.0.0` passed and installed
+  `tcs-cosheaf==1.0.0`.
+- [x] Workspace-template pins moved to `@v1.0.0` in PR #97.
+- [x] Public KB CI/docs pins moved to `@v1.0.0` in PR #109.
+- [x] The no-network ecosystem matrix with `--framework-tag v1.0.0` reports
+  28 rows: 25 pass, 0 fail, and 3 skipped. Skipped rows are not counted as
+  pass.
+- [x] No production autonomy, hosted-provider default, automatic theorem
+  proving, Lean/mathlib/CSLib semantic alignment, human-review creation,
+  accepted-write, verifier-pass, gate-pass, source-metadata, accepted
+  theorem/refutation, or promotion authority is introduced.
 
 ## v0.12.0 Published Release Baseline
 
@@ -719,7 +753,7 @@ gate output and release notes.
 
 ## Agent Access And Provider Status
 
-Current agent/operator/checker surfaces through the latest published `v0.12.0`
+Current agent/operator/checker surfaces through the latest published `v1.0.0`
 release:
 
 - CLI-first operator workflow with stable JSON output for core read/check

@@ -2,10 +2,9 @@
 
 Target: `v1.0.0 AI Math Collaborator MVP`
 
-Status: Phase F release-candidate and publication closeout after Phase A scope
-freeze, Phase B CLI/API polish, the workspace-template Phase C demo, Phase D
-documentation/operator packaging, and Phase E security/authority/benchmark
-audit.
+Status: Complete through Phase F.2. The `v1.0.0` tag, GitHub release,
+post-tag release smoke, workspace-template pin update, and public KB CI/docs
+pin update are complete.
 
 ## Goal
 
@@ -107,7 +106,7 @@ for optional framework installation.
 3. Phase C: end-to-end AI math collaborator demo (landed downstream).
 4. Phase D: documentation and operator packaging (landed).
 5. Phase E: security, authority, and benchmark release audit (landed).
-6. Phase F: v1.0.0 release candidate and publication closeout (current).
+6. Phase F: v1.0.0 release candidate and publication closeout (landed).
 
 ## Phase A Scope
 
@@ -158,9 +157,9 @@ readiness boundaries across all three repositories.
 
 ## Phase F Outline
 
-Prepare and publish the conservative `v1.0.0` release only after Phase B-E
-evidence is complete. Downstream pins and demos must be aligned before claiming
-publication closeout.
+Prepared and published the conservative `v1.0.0` release only after Phase B-E
+evidence was complete. Downstream pins and demos are aligned before publication
+closeout is claimed.
 
 ## Required Verification Pattern
 

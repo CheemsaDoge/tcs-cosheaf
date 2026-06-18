@@ -106,6 +106,23 @@ a BOM. A BOM at the start of the file can make the PR checklist gate miss the
 first heading, for example reporting `missing PR checklist section: summary`
 even when the file visibly starts with `## Summary`.
 
+The same BOM problem can break Bash scripts after mechanical text rewrites. If
+PowerShell rewrites `scripts/*.sh` with `Set-Content -Encoding UTF8`, Bash may
+print a first-line error such as:
+
+```text
+scripts/demo_workspace.sh: line 1: ﻿#!/usr/bin/env: No such file or directory
+```
+
+When mechanically updating docs and scripts, rewrite with explicit UTF-8
+without BOM:
+
+```powershell
+$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+$text = [System.IO.File]::ReadAllText($path)
+[System.IO.File]::WriteAllText($path, $text, $utf8NoBom)
+```
+
 A safe no-BOM pattern is:
 
 ```powershell
