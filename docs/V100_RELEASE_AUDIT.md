@@ -2,16 +2,20 @@
 
 Date: 2026-06-18
 
-Scope: V18 Phase E release-readiness audit before preparing any `v1.0.0`
+Scope: Historical V18 Phase E release-readiness audit before preparing any `v1.0.0`
 release candidate. This audit inspects the current framework repository plus
 downstream workspace-template and public-KB state. It does not publish a tag,
 bump package metadata, or change runtime behavior.
 
-## Current Release State
+Note: V18 Phase F.2 later published the `v1.0.0` tag and GitHub release. The
+state below is the pre-RC audit snapshot, not the current release state.
 
-- Latest published framework release: `v0.12.0`.
-- Current framework package version: `0.12.0`.
-- Target release line: planned `v1.0.0` AI Math Collaborator MVP.
+## Historical Pre-RC Release State
+
+- At Phase E audit time, latest published framework release: `v0.12.0`.
+- At Phase E audit time, framework package version: `0.12.0`.
+- At Phase E audit time, target release line: planned `v1.0.0` AI Math
+  Collaborator MVP.
 - V18 Phase A scope freeze: landed.
 - V18 Phase B CLI/API polish: landed.
 - V18 Phase C workspace-template demo: landed in workspace-template PR #95.
@@ -73,8 +77,11 @@ Full local command verification for the PR is recorded in the PR body.
 
 ## Release-Candidate Decision
 
-This audit finds no release-blocking stale issue, stale PR, docs-overclaim, or
-benchmark-regression blocker for moving to V18 Phase F. It does not itself make
-`v1.0.0` published or ready; Phase F must still run full tests, gates,
-benchmark, ecosystem smoke, release metadata updates, and downstream alignment.
+This audit found no release-blocking stale issue, stale PR, docs-overclaim, or
+benchmark-regression blocker for moving to V18 Phase F. At audit time it did
+not itself make `v1.0.0` published or ready; Phase F still had to run full
+tests, gates, benchmark, ecosystem smoke, release metadata updates, and
+downstream alignment.
+That Phase F work has since completed; see `docs/releases/v1.0.0.md` and
+`context/PROJECT_STATE.md` for publication evidence.
 
