@@ -12,10 +12,15 @@
     "created_at",
     "updated_at",
     "authors",
-    "severity",
-    "description",
-    "related_artifacts",
-    "tags"
+    "related_artifacts"
+  ],
+  "anyOf": [
+    {
+      "required": ["summary"]
+    },
+    {
+      "required": ["description"]
+    }
   ],
   "properties": {
     "id": {
@@ -31,7 +36,7 @@
     },
     "status": {
       "type": "string",
-      "enum": ["open", "closed"]
+      "enum": ["open", "blocked", "closed"]
     },
     "created_at": {
       "type": "string",
@@ -51,8 +56,13 @@
       "type": "string",
       "enum": ["low", "medium", "high"]
     },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
     "description": {
-      "type": "string"
+      "type": "string",
+      "minLength": 1
     },
     "related_artifacts": {
       "type": "array",
@@ -67,6 +77,39 @@
         "type": "string"
       },
       "uniqueItems": true
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "related_sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "parent_issue": {
+      "type": "string"
+    },
+    "external_links": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "scope": {
+      "type": "string",
+      "enum": ["private", "public"],
+      "default": "private"
+    },
+    "close_reason": {
+      "type": "string",
+      "minLength": 1
     }
   }
 }

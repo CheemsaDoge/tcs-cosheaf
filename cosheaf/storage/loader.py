@@ -8,7 +8,14 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml  # type: ignore[import-untyped]
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+)
 from yaml import YAMLError
 
 from cosheaf.core.artifact import BaseArtifact
@@ -30,31 +37,87 @@ class UnsupportedArtifactTypeError(LoadError):
 
 
 class IssueRecord(BaseModel):
-    """Minimal issue record model used by the storage loader."""
+    """Repository-local issue record model used by storage and context flows."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     id: str
     type: Literal["issue"]
     title: str
-    status: Literal["open", "closed"]
+    status: Literal["open", "blocked", "closed"]
+    summary: str = Field(validation_alias=AliasChoices("summary", "description"))
     created_at: datetime
     updated_at: datetime
     authors: list[str] = Field(default_factory=list)
-    severity: Literal["low", "medium", "high"]
-    description: str
+    severity: Literal["low", "medium", "high"] = "medium"
+    labels: list[str] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("labels", "tags"),
+    )
     related_artifacts: list[str] = Field(default_factory=list)
-    tags: list[str] = Field(default_factory=list)
+    related_sources: list[str] = Field(default_factory=list)
+    parent_issue: str | None = None
+    external_links: list[str] = Field(default_factory=list)
+    scope: Literal["private", "public"] = "private"
+    close_reason: str | None = None
 
     @field_validator("id")
     @classmethod
     def _validate_id(cls, value: str) -> str:
         return validate_artifact_id(value)
 
-    @field_validator("related_artifacts")
+    @field_validator("title", "summary")
     @classmethod
-    def _validate_related_artifacts(cls, values: list[str]) -> list[str]:
+    def _validate_required_text(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("text field must be non-empty")
+        return normalized
+
+    @field_validator("authors", "labels", "external_links")
+    @classmethod
+    def _normalize_text_list(cls, values: list[str]) -> list[str]:
+        result: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            normalized = value.strip()
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            result.append(normalized)
+        return result
+
+    @field_validator("related_artifacts", "related_sources")
+    @classmethod
+    def _validate_related_ids(cls, values: list[str]) -> list[str]:
         return [validate_artifact_id(value) for value in values]
+
+    @field_validator("parent_issue")
+    @classmethod
+    def _validate_parent_issue(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return validate_artifact_id(value)
+
+    @field_validator("close_reason")
+    @classmethod
+    def _validate_close_reason(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("close_reason must be non-empty when set")
+        return normalized
+
+    @property
+    def description(self) -> str:
+        """Legacy accessor for context-pack callers."""
+        return self.summary
+
+    @property
+    def tags(self) -> list[str]:
+        """Legacy accessor for issue-local relevance callers."""
+        return self.labels
 
 
 class ReviewRecord(BaseModel):

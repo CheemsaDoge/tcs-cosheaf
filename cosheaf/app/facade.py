@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, Literal, Self
 
 from cosheaf.agent.context_pack import CONTEXT_MAX_CARDS, ContextPackResult
 from cosheaf.agent.orchestrator_state import ReducerResult
@@ -19,6 +19,7 @@ from cosheaf.gates.promotion_readiness import (
     PromotionReadinessReport,
     build_promotion_readiness_report,
 )
+from cosheaf.issues import IssueListResult, IssueResult, LocalIssueService
 from cosheaf.memory import (
     ArtifactCard,
     ArtifactCardStatus,
@@ -118,6 +119,42 @@ class CosheafApp:
             max_full_artifacts=max_full_artifacts,
             public_only=public_only,
         )
+
+    def create_issue(
+        self,
+        *,
+        issue_id: str,
+        title: str,
+        summary: str | None = None,
+        authors: Sequence[str] = (),
+        labels: Sequence[str] = (),
+        related_artifacts: Sequence[str] = (),
+        related_sources: Sequence[str] = (),
+        scope: Literal["private", "public"] = "private",
+    ) -> IssueResult:
+        """Create an open repository-local issue YAML record."""
+        return LocalIssueService(self.context).create(
+            issue_id=issue_id,
+            title=title,
+            summary=summary,
+            authors=tuple(authors),
+            labels=tuple(labels),
+            related_artifacts=tuple(related_artifacts),
+            related_sources=tuple(related_sources),
+            scope=scope,
+        )
+
+    def show_issue(self, issue_id: str) -> IssueResult:
+        """Return one repository-local issue record."""
+        return LocalIssueService(self.context).show(issue_id)
+
+    def list_issues(self) -> IssueListResult:
+        """Return all repository-local issue records."""
+        return LocalIssueService(self.context).list()
+
+    def close_issue(self, issue_id: str, *, reason: str) -> IssueResult:
+        """Close a repository-local issue without changing artifact state."""
+        return LocalIssueService(self.context).close(issue_id, reason=reason)
 
     def memory_cards(
         self,
