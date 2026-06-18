@@ -1001,6 +1001,16 @@
 - `cosheaf context show <issue-id> --json`: emits deterministic JSON with
   issue ID, task directory, repository-local context file path, public-only
   status, private-context-included flag, and rendered `CONTEXT.md` content.
+- `cosheaf issue create --title <title> --id <id> --json`: creates an open
+  repository-local issue YAML record under `issues/open/` and emits deterministic
+  JSON. It does not create a GitHub issue, call the network, promote artifacts,
+  or change artifact status.
+- `cosheaf issue show <id> --json`: reads one local issue record and emits
+  deterministic JSON without writing.
+- `cosheaf issue list --json`: lists local issue records in deterministic order.
+- `cosheaf issue close <id> --reason <reason> --json`: moves an open or blocked
+  local issue record to `issues/closed/`, records the close reason, and does not
+  accept, refute, review, verify, gate, or promote related artifacts.
 - `cosheaf memory cards`: builds deterministic artifact cards from existing
   repository metadata. Default output is compact text lines, not full artifact
   YAML or statements.
@@ -2245,7 +2255,10 @@ These helpers are pure validation, path-formatting, status-classification, or de
   returns the configured KB root containing a repository-relative path.
 - `cosheaf.storage.repo.RepoContext.kb_relative_path(path: str | Path) -> Path | None`:
   returns a path relative to its configured KB root when applicable.
-- `cosheaf.storage.loader.IssueRecord`: Pydantic v2 model for issue YAML records loaded by storage.
+- `cosheaf.storage.loader.IssueRecord`: Pydantic v2 model for local issue YAML
+  records loaded by storage. It accepts `status` values `open`, `blocked`, and
+  `closed`; modern fields `summary`, `labels`, `related_sources`, and `scope`;
+  and compatibility aliases `description` and `tags` for older issue fixtures.
 - `cosheaf.storage.loader.ReviewRecord`: Pydantic v2 model for review YAML records loaded by storage.
 - `cosheaf.storage.loader.LoadedRecord`: loaded record wrapper with repository-relative `source_path`, typed `record`, and optional KB root metadata (`kb_root_name`, `kb_root_path`, `kb_root_readonly`, `kb_relative_path`).
 
@@ -3390,7 +3403,10 @@ working directory.
   least one library entry with `id`, `name`, `system`, `git`, `commit`,
   `lean_version`, and `lake_manifest`; `notes` is optional. This schema is
   metadata-only and does not imply Lean, lake, CSLib, or mathlib execution.
-- `schemas/issue.schema.json`: issue YAML schema.
+- `schemas/issue.schema.json`: issue YAML schema. It covers repository-local
+  issue records with `open`, `blocked`, and `closed` statuses, modern
+  `summary`/`labels` fields, and compatibility `description`/`tags` fields for
+  older records.
 - `schemas/operator_handoff.schema.json`: operator handoff bundle schema. It
   serializes compact runtime review context under
   `.cosheaf/operator-sessions/<session-id>/handoff.json`, including session

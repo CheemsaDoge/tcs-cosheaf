@@ -129,6 +129,7 @@ from cosheaf.gates.promotion_readiness import build_promotion_readiness_report
 from cosheaf.gates.source_metadata_gate import missing_required_source_metadata
 from cosheaf.graph.claim_graph import DependencyGraph, build_dependency_graph
 from cosheaf.ingest import IngestError, MarkItDownIngestAdapter
+from cosheaf.issues.cli import issue_app
 from cosheaf.librarian.cli import librarian_app
 from cosheaf.mcp import READ_ONLY_TOOL_NAMES, serve_stdio
 from cosheaf.memory import (
@@ -415,6 +416,7 @@ app.add_typer(librarian_app, name="librarian")
 app.add_typer(fsm_app, name="orchestrator-fsm")
 app.add_typer(workflow_app, name="workflow")
 app.add_typer(context_app, name="context")
+app.add_typer(issue_app, name="issue")
 app.add_typer(task_app, name="task")
 app.add_typer(draft_app, name="draft")
 app.add_typer(bundle_app, name="bundle")
@@ -513,6 +515,12 @@ _STABLE_V1_CLI_SURFACE: tuple[dict[str, str], ...] = (
         "preferred_invocation": "cosheaf context build <issue-id>",
         "status": "stable",
         "notes": "Build review context packs for issues.",
+    },
+    {
+        "command": "issue",
+        "preferred_invocation": "cosheaf issue ...",
+        "status": "stable",
+        "notes": "Manage repository-local issue YAML without GitHub calls.",
     },
     {
         "command": "artifact",

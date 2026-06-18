@@ -69,6 +69,20 @@ edges, reverse dependency edges, formalization references, formal policy rows,
 and the indexed source KB root. Query methods do not rebuild indexes
 implicitly.
 
+### Issue Layer
+
+Repository-local issues are first-class YAML records under `issues/open/`,
+`issues/blocked/`, and `issues/closed/`. They are modeled by
+`cosheaf.storage.loader.IssueRecord` and managed through `cosheaf issue ...`.
+The issue layer is independent of GitHub: local issue creation and closure are
+filesystem writes only, do not require a token or network call, and do not
+change artifact lifecycle state.
+
+Local issues provide task-scoped retrieval and context inputs. Context-pack
+commands resolve local issue records by ID and use `related_artifacts` to seed
+bounded context, but an issue status is workflow memory only. Closing an issue
+does not accept, refute, review, verify, gate, or promote any artifact.
+
 ### Formal Link Layer
 
 Records references from artifacts to external formal declarations, currently
