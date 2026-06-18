@@ -6389,6 +6389,164 @@ def campaign_import_result(
     console.print("- accepted knowledge merge: not performed")
 
 
+@campaign_app.command("pause")
+def campaign_pause(
+    campaign_id: str = typer.Argument(..., help="Campaign ID."),
+    reason: str | None = typer.Option(
+        None,
+        "--reason",
+        help="Optional pause reason.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Pause a campaign without executing shell or provider work."""
+    from cosheaf.campaigns import CampaignError, pause_campaign
+
+    console = Console(width=120, markup=False)
+    try:
+        result = pause_campaign(RepoContext(repo_root), campaign_id, reason=reason)
+    except (CampaignError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _campaign_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Campaign paused: {result.campaign.campaign_id}")
+    console.print(f"- status: {result.campaign.status.value}")
+    console.print("- shell/provider execution: not performed")
+
+
+@campaign_app.command("resume")
+def campaign_resume(
+    campaign_id: str = typer.Argument(..., help="Campaign ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Resume a paused campaign without bypassing blockers or budgets."""
+    from cosheaf.campaigns import CampaignError, resume_campaign
+
+    console = Console(width=120, markup=False)
+    try:
+        result = resume_campaign(RepoContext(repo_root), campaign_id)
+    except (CampaignError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _campaign_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Campaign resumed: {result.campaign.campaign_id}")
+    console.print(f"- status: {result.campaign.status.value}")
+    console.print("- shell/provider execution: not performed")
+
+
+@campaign_app.command("scan")
+def campaign_scan(
+    campaign_id: str = typer.Argument(..., help="Campaign ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Scan campaign runtime outputs for unsafe authority claims."""
+    from cosheaf.campaigns import CampaignError, scan_campaign
+
+    console = Console(width=120, markup=False)
+    try:
+        result = scan_campaign(RepoContext(repo_root), campaign_id)
+    except (CampaignError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _campaign_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        if result.run_blocked:
+            raise typer.Exit(1)
+        return
+    console.print(f"Campaign scan: {result.campaign_id}")
+    console.print(f"- findings: {result.finding_count}")
+    console.print(f"- blockers: {result.blocking_finding_count}")
+    console.print(f"- report: {result.report_path.as_posix()}")
+    console.print(f"- authority: {result.authority_notice}")
+    if result.run_blocked:
+        raise typer.Exit(1)
+
+
+@campaign_app.command("run")
+def campaign_run(
+    campaign_id: str = typer.Argument(..., help="Campaign ID."),
+    max_attempts: int | None = typer.Option(
+        None,
+        "--max-attempts",
+        help="Optional attempt ceiling for this controller invocation.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Run deterministic campaign budget checks without model or shell calls."""
+    from cosheaf.campaigns import CampaignError, run_campaign
+
+    console = Console(width=120, markup=False)
+    try:
+        result = run_campaign(
+            RepoContext(repo_root),
+            campaign_id,
+            max_attempts=max_attempts,
+        )
+    except (CampaignError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _campaign_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Campaign run controller: {result.campaign.campaign_id}")
+    console.print(f"- status: {result.campaign.status.value}")
+    console.print(f"- shell commands: {result.shell_commands_performed}")
+    console.print(f"- provider calls: {result.provider_calls_performed}")
+    console.print(f"- authority: {result.authority_notice}")
+
+
 # Research loop commands
 
 

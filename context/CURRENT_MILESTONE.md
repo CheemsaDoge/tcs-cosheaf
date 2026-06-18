@@ -2,7 +2,7 @@
 
 Milestone: **V16 / v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns**
 
-Status: **V16 Phase C.1 external-operator-protocol-v2 landing**
+Status: **V16 Phase D.1 campaign-runner-budget-controller landing**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V16.md
 
@@ -13,17 +13,17 @@ Latest published release:
 
 `v0.10.0` publication closeout status: tag, GitHub release, post-tag release
 smoke, workspace-template pin update, and public KB CI pin update are complete.
-The V16 post-`v0.10.0` audit, V16 development plan, ADR 0032, and Phase B.1
-campaign model core have landed as durable repo memory. The current task is the
-Phase C.1 external operator protocol v2 increment: bounded task packets,
-structured result imports, and deterministic next-task preview for campaigns.
+The V16 post-`v0.10.0` audit, V16 development plan, ADR 0032, Phase B.1
+campaign model core, and Phase C.1 external operator protocol v2 have landed
+as durable repo memory. The current task is the Phase D.1 campaign runner
+budget-controller increment: deterministic pause/resume, runtime scanning, and
+stop-policy enforcement for campaigns.
 
 Current focus:
 
-- land V16 Phase C.1 `external-operator-protocol-v2`:
-  `operator_task_v2` and `operator_result_v2` campaign DTOs,
-  `cosheaf campaign next/export-task/import-result`, and updated campaign
-  documentation;
+- land V16 Phase D.1 `campaign-runner-budget-controller`:
+  `cosheaf campaign pause/resume/scan/run`, runtime scan reports, budget stop
+  conditions, and updated campaign documentation;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -32,9 +32,9 @@ Planned V16 surface:
 
 - durable campaign records and scorecards under ignored `.cosheaf/campaigns/`
   runtime paths (B.1, landed);
-- external operator task/result packet v2 (C.1, current);
-- campaign budget and stop-condition controller;
-- campaign scanner and handoff reports;
+- external operator task/result packet v2 (C.1, landed);
+- campaign budget and stop-condition controller (D.1, current);
+- campaign review handoff reports;
 - deterministic `cosheaf eval campaign --json`; and
 - downstream workspace-template campaign demo plus public KB policy guard.
 

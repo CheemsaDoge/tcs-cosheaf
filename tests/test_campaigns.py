@@ -20,6 +20,8 @@ from cosheaf.campaigns import (
     CampaignOperatorResult,
     CampaignRiskFinding,
     CampaignRiskSeverity,
+    CampaignRunResult,
+    CampaignScanResult,
     CampaignStatus,
     CampaignStopCondition,
     ResearchCampaign,
@@ -33,6 +35,10 @@ from cosheaf.campaigns import (
     import_campaign_operator_result,
     load_campaign,
     next_campaign_operator_task,
+    pause_campaign,
+    resume_campaign,
+    run_campaign,
+    scan_campaign,
     start_campaign,
 )
 from cosheaf.cli import app
@@ -576,3 +582,258 @@ def test_campaign_cli_c1_json_smoke(tmp_path: Path) -> None:
     imported_payload = _json(imported.output)
     assert imported_payload["attempt"]["outcome"] == "result"
     assert imported_payload["accepted_write_performed"] is False
+
+
+def test_campaign_run_marks_attempt_budget_exhausted(tmp_path: Path) -> None:
+    context = RepoContext(tmp_path)
+    start_campaign(
+        context,
+        issue_id="issue.fixture",
+        campaign_id="campaign.issue.fixture.c20260618.t020000z",
+        budget=CampaignBudget(max_attempts=1),
+        now=STARTED_AT,
+    )
+    append_campaign_attempt(
+        context,
+        "campaign.issue.fixture.c20260618.t020000z",
+        _result_attempt(campaign_id="campaign.issue.fixture.c20260618.t020000z"),
+    )
+
+    result = run_campaign(
+        context,
+        "campaign.issue.fixture.c20260618.t020000z",
+        max_attempts=1,
+    )
+
+    assert isinstance(result, CampaignRunResult)
+    assert result.campaign.status is CampaignStatus.BUDGET_EXHAUSTED
+    assert result.stop_conditions["all_budget_exhausted"] is True
+    assert result.writes_performed is True
+    assert result.shell_commands_performed is False
+    assert result.provider_calls_performed is False
+
+
+def test_campaign_run_rejects_terminal_campaign(tmp_path: Path) -> None:
+    context = RepoContext(tmp_path)
+    start_campaign(
+        context,
+        issue_id="issue.fixture",
+        campaign_id="campaign.issue.fixture.c20260618.t020000z",
+        now=STARTED_AT,
+    )
+    finalize_campaign(
+        context,
+        "campaign.issue.fixture.c20260618.t020000z",
+        status=CampaignStatus.FINALIZED,
+        now=ENDED_AT,
+    )
+
+    with pytest.raises(CampaignError, match="terminal campaigns cannot be modified"):
+        run_campaign(
+            context,
+            "campaign.issue.fixture.c20260618.t020000z",
+            max_attempts=1,
+        )
+
+
+def test_campaign_pause_and_resume_persist_status(tmp_path: Path) -> None:
+    context = RepoContext(tmp_path)
+    start_campaign(
+        context,
+        issue_id="issue.fixture",
+        campaign_id="campaign.issue.fixture.c20260618.t020000z",
+        now=STARTED_AT,
+    )
+
+    paused = pause_campaign(
+        context,
+        "campaign.issue.fixture.c20260618.t020000z",
+        reason="Human requested a pause",
+    )
+    paused_run = run_campaign(
+        context,
+        "campaign.issue.fixture.c20260618.t020000z",
+        max_attempts=1,
+    )
+    resumed = resume_campaign(context, "campaign.issue.fixture.c20260618.t020000z")
+
+    assert paused.campaign.status is CampaignStatus.PAUSED
+    assert paused_run.stop_conditions["human_pause_requested"] is True
+    assert resumed.campaign.status is CampaignStatus.RUNNING
+    assert load_campaign(
+        context,
+        "campaign.issue.fixture.c20260618.t020000z",
+    ).campaign.status is CampaignStatus.RUNNING
+
+
+def test_campaign_run_blocks_repeated_failures(tmp_path: Path) -> None:
+    context = RepoContext(tmp_path)
+    start_campaign(
+        context,
+        issue_id="issue.fixture",
+        campaign_id="campaign.issue.fixture.c20260618.t020000z",
+        budget=CampaignBudget(max_attempts=5, max_failure_repeats=1),
+        now=STARTED_AT,
+    )
+    for index in (1, 2):
+        append_campaign_attempt(
+            context,
+            "campaign.issue.fixture.c20260618.t020000z",
+            CampaignAttempt(
+                attempt_id=f"campaign.issue.fixture.c20260618.t020000z.attempt.{index}",
+                campaign_id="campaign.issue.fixture.c20260618.t020000z",
+                attempt_number=index,
+                outcome=CampaignAttemptOutcome.FAILURE,
+                attempted_direction="Try direct induction",
+                completed_at=ENDED_AT,
+                failure_summary="The same route failed again",
+            ),
+        )
+
+    result = run_campaign(
+        context,
+        "campaign.issue.fixture.c20260618.t020000z",
+        max_attempts=5,
+    )
+
+    assert result.campaign.status is CampaignStatus.BLOCKED
+    assert result.stop_conditions["repeated_failure_without_justification"] is True
+    assert any(finding.code == "repeated_failure" for finding in result.scan.findings)
+
+
+def test_campaign_run_stops_on_max_draft_outputs(tmp_path: Path) -> None:
+    context = RepoContext(tmp_path)
+    start_campaign(
+        context,
+        issue_id="issue.fixture",
+        campaign_id="campaign.issue.fixture.c20260618.t020000z",
+        budget=CampaignBudget(max_attempts=5, max_draft_outputs=1),
+        now=STARTED_AT,
+    )
+    append_campaign_attempt(
+        context,
+        "campaign.issue.fixture.c20260618.t020000z",
+        _result_attempt(campaign_id="campaign.issue.fixture.c20260618.t020000z"),
+    )
+
+    result = run_campaign(
+        context,
+        "campaign.issue.fixture.c20260618.t020000z",
+        max_attempts=5,
+    )
+
+    assert result.campaign.status is CampaignStatus.BUDGET_EXHAUSTED
+    assert result.stop_conditions["reviewable_draft_created"] is True
+    assert result.stop_conditions["all_budget_exhausted"] is True
+
+
+def test_campaign_scan_blocks_unsafe_runtime_output(tmp_path: Path) -> None:
+    context = RepoContext(tmp_path)
+    started = start_campaign(
+        context,
+        issue_id="issue.fixture",
+        campaign_id="campaign.issue.fixture.c20260618.t020000z",
+        now=STARTED_AT,
+    )
+    unsafe = (
+        tmp_path
+        / started.relative_path.parent
+        / "operator-results"
+        / "unsafe.json"
+    )
+    unsafe.parent.mkdir(parents=True, exist_ok=True)
+    unsafe.write_text(
+        json.dumps({"accepted_status": True, "path": "kb/accepted/claims/x.yaml"}),
+        encoding="utf-8",
+    )
+
+    result = scan_campaign(context, "campaign.issue.fixture.c20260618.t020000z")
+
+    assert isinstance(result, CampaignScanResult)
+    assert result.blocking_finding_count >= 1
+    assert result.run_blocked is True
+    assert any(
+        finding.code == "accepted_authority_overclaim"
+        for finding in result.findings
+    )
+
+
+def test_campaign_cli_d1_json_smoke(tmp_path: Path) -> None:
+    campaign_id = "campaign.issue.fixture.c20260618.t020000z"
+    start = runner.invoke(
+        app,
+        [
+            "campaign",
+            "start",
+            "--issue",
+            "issue.fixture",
+            "--campaign-id",
+            campaign_id,
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert start.exit_code == 0, start.output
+
+    pause = runner.invoke(
+        app,
+        [
+            "campaign",
+            "pause",
+            campaign_id,
+            "--reason",
+            "manual pause",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert pause.exit_code == 0, pause.output
+    assert _json(pause.output)["campaign"]["status"] == "paused"
+
+    resume = runner.invoke(
+        app,
+        [
+            "campaign",
+            "resume",
+            campaign_id,
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert resume.exit_code == 0, resume.output
+    assert _json(resume.output)["campaign"]["status"] == "running"
+
+    scan = runner.invoke(
+        app,
+        [
+            "campaign",
+            "scan",
+            campaign_id,
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert scan.exit_code == 0, scan.output
+    assert _json(scan.output)["run_blocked"] is False
+
+    run = runner.invoke(
+        app,
+        [
+            "campaign",
+            "run",
+            campaign_id,
+            "--max-attempts",
+            "1",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    assert run.exit_code == 0, run.output
+    run_payload = _json(run.output)
+    assert run_payload["shell_commands_performed"] is False
+    assert run_payload["provider_calls_performed"] is False

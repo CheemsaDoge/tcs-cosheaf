@@ -198,25 +198,29 @@
   `CampaignRiskFinding`, `CampaignComparison`, `CampaignStatus`,
   `CampaignAttemptOutcome`, `CampaignRiskSeverity`, `CampaignError`,
   `CampaignWriteResult`, `CampaignAttemptWriteResult`,
-  `CampaignScorecardResult`, `CampaignOperatorTaskExportResult`, storage path
+  `CampaignScorecardResult`, `CampaignOperatorTaskExportResult`,
+  `CampaignScanFinding`, `CampaignScanResult`, `CampaignRunResult`, storage path
   helpers, `start_campaign`, `write_campaign`, `load_campaign`,
   `append_campaign_attempt`, `show_campaign_scorecard`,
   `finalize_campaign`, `next_campaign_operator_task`,
   `build_campaign_next_result`, `build_campaign_operator_task`,
   `export_campaign_operator_task`, `import_campaign_operator_result`,
+  `pause_campaign`, `resume_campaign`, `scan_campaign`, `run_campaign`,
   `append_campaign_event`, and `build_campaign_scorecard`. Runtime records are
   JSON under `.cosheaf/campaigns/<campaign-id>/campaign.json`,
   `.cosheaf/campaigns/<campaign-id>/attempts/<attempt-id>.json`,
   `.cosheaf/campaigns/<campaign-id>/operator-results/<attempt-id>.json`,
   `.cosheaf/campaigns/<campaign-id>/scorecard.json`, and
-  `.cosheaf/campaigns/<campaign-id>/events.jsonl`. The CLI surface is
-  `cosheaf campaign start/show/append-attempt/scorecard/finalize/next/export-task/import-result`.
+  `.cosheaf/campaigns/<campaign-id>/events.jsonl`; scanner reports are JSON
+  under `.cosheaf/campaigns/<campaign-id>/scan.json`. The CLI surface is
+  `cosheaf campaign start/show/append-attempt/scorecard/finalize/next/export-task/import-result/pause/resume/scan/run`.
   Campaign records, attempts, scorecards, task packets, imported results, and
-  event logs are review context only. They do not grant accepted writes,
-  source metadata, human review, verifier-result mutation, gate pass, accepted
-  status, accepted theorem/refutation status, or promotion authority. The
-  current campaign surface does not run campaign loops, scan handoffs, run
-  evals, call hosted providers, or execute shell commands.
+  event logs are review context only. Scan reports and run-controller output
+  are also review context only. They do not grant accepted writes, source
+  metadata, human review, verifier-result mutation, gate pass, accepted status,
+  accepted theorem/refutation status, or promotion authority. The current
+  campaign surface does not run provider-backed or shell-backed campaign loops,
+  scan handoffs, run evals, call hosted providers, or execute shell commands.
 - Artifact failure-memory surfacing is implemented for read-only inspection,
   controlled append-only draft writes, WorkerBundle-to-failure-log planning
   and controlled append, artifact cards, memory search, compact context card
@@ -478,6 +482,27 @@
   runtime campaign attempt. Imports do not create proof, source metadata,
   human review, verifier/gate pass, accepted status, accepted refutation, or
   promotion authority.
+- `cosheaf campaign pause <campaign-id> --json`: records a human pause by
+  setting campaign status to `paused` and appending a bounded runtime event.
+  It does not execute shell commands, call providers, write accepted KB content,
+  create human review, or grant promotion authority.
+- `cosheaf campaign resume <campaign-id> --json`: resumes only paused
+  campaigns by setting status to `running` and appending a bounded runtime
+  event. It does not clear blocked or budget-exhausted campaigns.
+- `cosheaf campaign scan <campaign-id> --json`: scans campaign runtime JSON and
+  JSONL sidecars under `.cosheaf/campaigns/<campaign-id>/`, writes
+  `.cosheaf/campaigns/<campaign-id>/scan.json`, emits deterministic JSON with
+  findings, and exits nonzero when blocking findings exist. It blocks accepted
+  write references, accepted/refutation overclaims, human-review claims,
+  verifier/gate pass claims, promotion claims, hidden reasoning, secrets, raw
+  provider payloads, public-mode private references, invalid runtime JSON, and
+  repeated failures beyond the campaign budget.
+- `cosheaf campaign run <campaign-id> --max-attempts <n> --json`: runs the
+  deterministic campaign budget controller. It calls the scanner, appends a
+  bounded runtime event, and applies stop policies for pause state, unsafe
+  runtime output, repeated failures, max attempts, and max draft outputs. It
+  reports `shell_commands_performed=false`, `provider_calls_performed=false`,
+  and `accepted_write_performed=false`.
 - `cosheaf workspace info`: shows the active workspace name, configured/legacy
   mode, repository root, and KB roots.
 - `cosheaf workspace info --repo-root <path>`: shows workspace configuration for

@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import re
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from pydantic import ValidationError
 
@@ -31,9 +33,101 @@ from cosheaf.campaigns.models import (
 )
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.paths import normalize_repo_path, repo_relative_posix
+from cosheaf.security.provider_logs import scan_provider_log_text
 from cosheaf.storage.repo import RepoContext
 
 CAMPAIGN_RUNTIME_ROOT = Path(".cosheaf") / "campaigns"
+CAMPAIGN_SCAN_KIND = "campaign_scan"
+_CAMPAIGN_TERMINAL_STATUSES = frozenset({"finalized", "abandoned", "failed"})
+_PRIVATE_PATH_PATTERN = re.compile(
+    r"(?i)(?:^|[/\\])kb[/\\]private[/\\]|(?:^|[/\\])private[/\\]"
+)
+_ACCEPTED_PATH_PATTERN = re.compile(r"(?i)(?:^|[/\\])kb[/\\][^\"'\s,}]*accepted[/\\]")
+_AUTHORITY_BOOLEAN_KEYS = frozenset(
+    {
+        "accepted",
+        "accepted_refutation",
+        "accepted_status",
+        "accepted_write",
+        "accepted_write_performed",
+        "artifact_status",
+        "gate_pass",
+        "human_review",
+        "human_review_created",
+        "human_reviewed",
+        "promote",
+        "promotion",
+        "promotion_authority",
+        "promotion_performed",
+        "review_state",
+        "source_metadata",
+        "source_metadata_created",
+        "verifier_pass",
+        "verifier_result_mutated",
+    }
+)
+_AUTHORITY_TEXT_PATTERN = re.compile(
+    r"(?i)(accepted_status\s*[:=]\s*accepted|accepted_refutation|"
+    r"human_reviewed|mark\s+human\s+review|mark\s+.*reviewed|"
+    r"promote\s+this|promotion_authority|"
+    r"verifier_pass\s*[:=]\s*true|gate_pass\s*[:=]\s*true)"
+)
+_PROVIDER_PAYLOAD_KEYS = frozenset(
+    {
+        "provider_payload",
+        "provider_request",
+        "provider_response",
+        "raw_provider_payload",
+        "raw_provider_request",
+        "raw_provider_response",
+        "raw_request",
+        "raw_response",
+    }
+)
+_ENVIRONMENT_DUMP_KEYS = frozenset({"env", "environ", "environment", "env_dump"})
+_CAMPAIGN_SCAN_FINDING_MESSAGES = {
+    "accepted_authority_overclaim": (
+        "campaign runtime output claims accepted status or acceptance authority"
+    ),
+    "accepted_refutation_overclaim": (
+        "campaign runtime output claims accepted refutation authority"
+    ),
+    "accepted_write_attempt": (
+        "campaign runtime output references an accepted KB write target"
+    ),
+    "api_key": "campaign runtime output contains an API-key-shaped value",
+    "authority_claim": (
+        "campaign runtime output claims review, verifier, gate, accepted, or "
+        "promotion authority"
+    ),
+    "bearer_token": "campaign runtime output contains an unredacted bearer token",
+    "environment_dump": "campaign runtime output contains an environment-like dump",
+    "events_json_invalid": "campaign event JSON could not be parsed",
+    "gate_verifier_overclaim": (
+        "campaign runtime output claims verifier or gate pass authority"
+    ),
+    "hidden_reasoning": "campaign runtime output contains hidden-reasoning marker text",
+    "human_review_overclaim": "campaign runtime output claims human-review authority",
+    "operator_result_json_invalid": "campaign operator-result JSON could not be parsed",
+    "private_reference_in_public_mode": (
+        "public-only campaign runtime output references private content"
+    ),
+    "promotion_overclaim": "campaign runtime output claims promotion authority",
+    "provider_payload": "campaign runtime output stores raw provider payload data",
+    "repeated_failure": (
+        "campaign repeated the same failed direction beyond its configured budget"
+    ),
+    "runtime_json_invalid": "campaign runtime JSON could not be parsed",
+    "secret_env_value": (
+        "campaign runtime output contains a secret-looking key with a value"
+    ),
+    "absolute_private_path": (
+        "campaign runtime output contains an absolute user or private path"
+    ),
+    "unapproved_private_context": (
+        "campaign runtime output contains private context without matching policy"
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -133,6 +227,104 @@ class CampaignOperatorTaskExportResult:
             "accepted_write_performed": self.accepted_write_performed,
             "authority_notice": CAMPAIGN_AUTHORITY_NOTICE,
             "operator_task": self.task.to_dict(),
+        }
+
+
+@dataclass(frozen=True)
+class CampaignScanFinding:
+    """One deterministic campaign runtime scan finding."""
+
+    code: str
+    severity: Literal["warning", "blocker"]
+    message: str
+    source_path: str
+    line: int | None = None
+    field_path: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "code": self.code,
+            "severity": self.severity,
+            "message": self.message,
+            "source_path": self.source_path,
+        }
+        if self.line is not None:
+            payload["line"] = self.line
+        if self.field_path is not None:
+            payload["field_path"] = self.field_path
+        return payload
+
+
+@dataclass(frozen=True)
+class CampaignScanResult:
+    """One campaign runtime scan report."""
+
+    campaign: ResearchCampaign
+    policy_mode: str
+    findings: tuple[CampaignScanFinding, ...]
+    report_path: Path
+    accepted_write_performed: Literal[False] = False
+    authority_notice: str = CAMPAIGN_AUTHORITY_NOTICE
+
+    @property
+    def campaign_id(self) -> str:
+        return self.campaign.campaign_id
+
+    @property
+    def finding_count(self) -> int:
+        return len(self.findings)
+
+    @property
+    def blocking_finding_count(self) -> int:
+        return sum(1 for finding in self.findings if finding.severity == "blocker")
+
+    @property
+    def run_blocked(self) -> bool:
+        return self.blocking_finding_count > 0
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": 1,
+            "kind": CAMPAIGN_SCAN_KIND,
+            "campaign_id": self.campaign.campaign_id,
+            "policy_mode": self.policy_mode,
+            "finding_count": self.finding_count,
+            "blocking_finding_count": self.blocking_finding_count,
+            "run_blocked": self.run_blocked,
+            "report_path": self.report_path.as_posix(),
+            "accepted_write_performed": self.accepted_write_performed,
+            "authority_notice": self.authority_notice,
+            "findings": [finding.to_dict() for finding in self.findings],
+        }
+
+
+@dataclass(frozen=True)
+class CampaignRunResult:
+    """Deterministic campaign controller result."""
+
+    campaign: ResearchCampaign
+    scan: CampaignScanResult
+    stop_conditions: dict[str, bool]
+    writes_performed: bool
+    shell_commands_performed: Literal[False] = False
+    provider_calls_performed: Literal[False] = False
+    accepted_write_performed: Literal[False] = False
+    authority_notice: str = CAMPAIGN_AUTHORITY_NOTICE
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": 1,
+            "kind": "campaign_run",
+            "campaign_id": self.campaign.campaign_id,
+            "status": self.campaign.status.value,
+            "stop_conditions": self.stop_conditions,
+            "writes_performed": self.writes_performed,
+            "shell_commands_performed": self.shell_commands_performed,
+            "provider_calls_performed": self.provider_calls_performed,
+            "accepted_write_performed": self.accepted_write_performed,
+            "authority_notice": self.authority_notice,
+            "scan": self.scan.to_dict(),
+            "campaign": self.campaign.to_dict(),
         }
 
 
@@ -316,6 +508,157 @@ def finalize_campaign(
         recorded_at=updated.finalized_at,
     )
     return result
+
+
+def pause_campaign(
+    context: RepoContext,
+    campaign_id: str,
+    *,
+    reason: str | None = None,
+) -> CampaignWriteResult:
+    """Pause a mutable campaign without executing any work."""
+    loaded = load_campaign(context, campaign_id)
+    _ensure_campaign_mutable(loaded.campaign)
+    updated = loaded.campaign._replace(
+        status=CampaignStatus.PAUSED,
+        updated_at=_utc_now(),
+    )
+    result = write_campaign(context, updated)
+    append_campaign_event(
+        context,
+        campaign_id=updated.campaign_id,
+        event_kind="campaign_paused",
+        payload={"reason": _safe_text(reason) if reason else "manual pause"},
+        recorded_at=updated.updated_at,
+    )
+    return result
+
+
+def resume_campaign(
+    context: RepoContext,
+    campaign_id: str,
+) -> CampaignWriteResult:
+    """Resume a paused campaign without bypassing blockers or budgets."""
+    loaded = load_campaign(context, campaign_id)
+    if loaded.campaign.status is not CampaignStatus.PAUSED:
+        raise CampaignError(
+            "only paused campaigns can be resumed",
+            code="campaign_not_paused",
+            remediation=(
+                "Resume only paused campaigns. Start a new campaign when blocked "
+                "or budget exhausted."
+            ),
+        )
+    updated = loaded.campaign._replace(
+        status=CampaignStatus.RUNNING,
+        updated_at=_utc_now(),
+    )
+    result = write_campaign(context, updated)
+    append_campaign_event(
+        context,
+        campaign_id=updated.campaign_id,
+        event_kind="campaign_resumed",
+        payload={"status": updated.status.value},
+        recorded_at=updated.updated_at,
+    )
+    return result
+
+
+def scan_campaign(
+    context: RepoContext,
+    campaign_id: str,
+    *,
+    write_report: bool = True,
+) -> CampaignScanResult:
+    """Scan campaign runtime outputs for unsafe authority or leakage claims."""
+    loaded = load_campaign(context, campaign_id)
+    campaign = loaded.campaign
+    scanner = _CampaignRuntimeScanner(campaign=campaign)
+    runtime_root = context.resolve(campaign_path(campaign.campaign_id).parent)
+    _ensure_repo_local(context, runtime_root)
+    for relative_path, target in _iter_campaign_scan_files(
+        context,
+        campaign.campaign_id,
+    ):
+        text = target.read_text(encoding="utf-8-sig")
+        if target.suffix.lower() == ".jsonl":
+            scanner.scan_events_jsonl(text, source_path=relative_path.as_posix())
+            continue
+        scanner.scan_json_file(
+            text,
+            source_path=relative_path.as_posix(),
+            invalid_code=_invalid_json_code(relative_path),
+        )
+    scanner.scan_budget_state()
+    result = CampaignScanResult(
+        campaign=campaign,
+        policy_mode=_campaign_policy_mode(campaign),
+        findings=tuple(scanner.findings),
+        report_path=campaign_scan_path(campaign.campaign_id),
+    )
+    if write_report:
+        target = context.resolve(result.report_path)
+        _ensure_repo_local(context, target)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(
+            json.dumps(result.to_dict(), ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+    return result
+
+
+def run_campaign(
+    context: RepoContext,
+    campaign_id: str,
+    *,
+    max_attempts: int | None = None,
+) -> CampaignRunResult:
+    """Apply deterministic campaign stop policies without running providers or shell."""
+    loaded = load_campaign(context, campaign_id)
+    campaign = loaded.campaign
+    _ensure_campaign_mutable(campaign)
+    scan = scan_campaign(context, campaign.campaign_id)
+    stop_conditions = _campaign_stop_conditions(
+        campaign,
+        scan,
+        max_attempts=max_attempts,
+    )
+    next_status = campaign.status
+    if campaign.status is CampaignStatus.PAUSED:
+        next_status = CampaignStatus.PAUSED
+    elif stop_conditions["unsafe_runtime_output"] or stop_conditions[
+        "repeated_failure_without_justification"
+    ]:
+        next_status = CampaignStatus.BLOCKED
+    elif stop_conditions["all_budget_exhausted"]:
+        next_status = CampaignStatus.BUDGET_EXHAUSTED
+    elif campaign.status is CampaignStatus.CREATED:
+        next_status = CampaignStatus.RUNNING
+
+    status_changed = next_status is not campaign.status
+    updated = campaign
+    if status_changed:
+        updated = campaign._replace(status=next_status, updated_at=_utc_now())
+        write_campaign(context, updated)
+    append_campaign_event(
+        context,
+        campaign_id=updated.campaign_id,
+        event_kind="campaign_run_controller",
+        payload={
+            "status": updated.status.value,
+            "stop_conditions": stop_conditions,
+            "shell_commands_performed": False,
+            "provider_calls_performed": False,
+        },
+        recorded_at=updated.updated_at,
+    )
+    return CampaignRunResult(
+        campaign=updated,
+        scan=scan,
+        stop_conditions=stop_conditions,
+        writes_performed=True,
+    )
 
 
 def next_campaign_operator_task(
@@ -564,6 +907,12 @@ def campaign_events_path(campaign_id: str) -> Path:
     """Return runtime events JSONL path."""
     resolved = validate_artifact_id(campaign_id.strip())
     return CAMPAIGN_RUNTIME_ROOT / resolved / "events.jsonl"
+
+
+def campaign_scan_path(campaign_id: str) -> Path:
+    """Return runtime campaign scan report path."""
+    resolved = validate_artifact_id(campaign_id.strip())
+    return CAMPAIGN_RUNTIME_ROOT / resolved / "scan.json"
 
 
 def campaign_operator_result_path(campaign_id: str, attempt_id: str) -> Path:
@@ -840,6 +1189,310 @@ def _ensure_public_result_payload(payload: CampaignOperatorResult) -> None:
         )
 
 
+def _ensure_campaign_mutable(campaign: ResearchCampaign) -> None:
+    if campaign.status.value in _CAMPAIGN_TERMINAL_STATUSES:
+        raise CampaignError(
+            "terminal campaigns cannot be modified",
+            code="campaign_terminal",
+            remediation="Start a new campaign or inspect the terminal campaign.",
+        )
+
+
+def _iter_campaign_scan_files(
+    context: RepoContext,
+    campaign_id: str,
+) -> Iterator[tuple[Path, Path]]:
+    base = campaign_path(campaign_id).parent
+    root = context.resolve(base)
+    if not root.is_dir():
+        return
+    candidates = sorted(
+        target
+        for target in root.rglob("*")
+        if target.is_file() and target.suffix.lower() in {".json", ".jsonl"}
+    )
+    for target in candidates:
+        relative = Path(repo_relative_posix(context.repo_root, target))
+        if relative == campaign_scan_path(campaign_id):
+            continue
+        yield relative, target
+
+
+def _invalid_json_code(relative_path: Path) -> str:
+    text = relative_path.as_posix()
+    if "/operator-results/" in text:
+        return "operator_result_json_invalid"
+    return "runtime_json_invalid"
+
+
+def _campaign_policy_mode(campaign: ResearchCampaign) -> str:
+    if campaign.operator_policy.policy_mode == "public_only":
+        return "public_only"
+    if any(attempt.policy_mode == "public_only" for attempt in campaign.attempts):
+        return "public_only"
+    return "private_research"
+
+
+def _campaign_stop_conditions(
+    campaign: ResearchCampaign,
+    scan: CampaignScanResult,
+    *,
+    max_attempts: int | None,
+) -> dict[str, bool]:
+    effective_max_attempts = campaign.budget.max_attempts
+    if max_attempts is not None:
+        effective_max_attempts = min(effective_max_attempts, max_attempts)
+    attempt_budget_exhausted = len(campaign.attempts) >= effective_max_attempts
+    draft_budget_exhausted = _draft_budget_exhausted(campaign)
+    return {
+        "human_pause_requested": campaign.status is CampaignStatus.PAUSED,
+        "unsafe_runtime_output": scan.run_blocked,
+        "repeated_failure_without_justification": any(
+            finding.code == "repeated_failure" and finding.severity == "blocker"
+            for finding in scan.findings
+        ),
+        "reviewable_draft_created": draft_budget_exhausted,
+        "all_budget_exhausted": attempt_budget_exhausted or draft_budget_exhausted,
+    }
+
+
+def _draft_budget_exhausted(campaign: ResearchCampaign) -> bool:
+    if campaign.budget.max_draft_outputs is None:
+        return False
+    return _draft_output_count(campaign) >= campaign.budget.max_draft_outputs
+
+
+def _draft_output_count(campaign: ResearchCampaign) -> int:
+    return sum(len(attempt.draft_proposal_refs) for attempt in campaign.attempts)
+
+
+def _repeated_failure_directions(campaign: ResearchCampaign) -> tuple[str, ...]:
+    if campaign.budget.max_failure_repeats is None:
+        return ()
+    counts: dict[str, int] = {}
+    for attempt in campaign.attempts:
+        if attempt.outcome is not CampaignAttemptOutcome.FAILURE:
+            continue
+        key = attempt.attempted_direction.strip().lower()
+        counts[key] = counts.get(key, 0) + 1
+    return tuple(
+        direction
+        for direction, count in sorted(counts.items())
+        if count > campaign.budget.max_failure_repeats
+    )
+
+
+class _CampaignRuntimeScanner:
+    def __init__(self, *, campaign: ResearchCampaign) -> None:
+        self.campaign = campaign
+        self.policy_mode = _campaign_policy_mode(campaign)
+        self.findings: list[CampaignScanFinding] = []
+        self._seen: set[tuple[str, str, int | None, str | None]] = set()
+
+    def scan_json_file(
+        self,
+        text: str,
+        *,
+        source_path: str,
+        invalid_code: str,
+    ) -> object | None:
+        self.scan_text(text, source_path=source_path)
+        try:
+            parsed = cast(object, json.loads(text))
+        except json.JSONDecodeError as exc:
+            self._add(
+                invalid_code,
+                source_path=source_path,
+                line=exc.lineno,
+                severity="blocker",
+            )
+            return None
+        self.scan_json(parsed, source_path=source_path)
+        return parsed
+
+    def scan_events_jsonl(self, text: str, *, source_path: str) -> None:
+        self.scan_text(text, source_path=source_path)
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            if not line.strip():
+                continue
+            try:
+                parsed = json.loads(line)
+            except json.JSONDecodeError:
+                self._add(
+                    "events_json_invalid",
+                    source_path=source_path,
+                    line=line_number,
+                    severity="blocker",
+                )
+                continue
+            self.scan_json(parsed, source_path=source_path)
+
+    def scan_text(self, text: str, *, source_path: str) -> None:
+        for finding in scan_provider_log_text(text, path=source_path):
+            self._add(
+                finding.kind,
+                source_path=source_path,
+                line=finding.line,
+                field_path=finding.key,
+                severity="blocker",
+            )
+        if _ACCEPTED_PATH_PATTERN.search(text):
+            self._add(
+                "accepted_write_attempt",
+                source_path=source_path,
+                severity="blocker",
+            )
+        if _AUTHORITY_TEXT_PATTERN.search(text):
+            self._add(
+                "authority_claim",
+                source_path=source_path,
+                severity="blocker",
+            )
+        if self.policy_mode == "public_only" and _PRIVATE_PATH_PATTERN.search(text):
+            self._add(
+                "private_reference_in_public_mode",
+                source_path=source_path,
+                severity="blocker",
+            )
+
+    def scan_json(self, value: object, *, source_path: str) -> None:
+        for field_path, scalar in _walk_json(value):
+            key = field_path[-1] if field_path else ""
+            normalized_key = _normalize_key(key)
+            path_text = ".".join(field_path)
+            if normalized_key in _PROVIDER_PAYLOAD_KEYS:
+                self._add(
+                    "provider_payload",
+                    source_path=source_path,
+                    field_path=path_text,
+                    severity="blocker",
+                )
+            if normalized_key in _ENVIRONMENT_DUMP_KEYS:
+                self._add(
+                    "environment_dump",
+                    source_path=source_path,
+                    field_path=path_text,
+                    severity="blocker",
+                )
+            if normalized_key in _AUTHORITY_BOOLEAN_KEYS and _truthy_authority(scalar):
+                self._add(
+                    _authority_code(normalized_key),
+                    source_path=source_path,
+                    field_path=path_text,
+                    severity="blocker",
+                )
+            if isinstance(scalar, str) and _AUTHORITY_TEXT_PATTERN.search(scalar):
+                self._add(
+                    "authority_claim",
+                    source_path=source_path,
+                    field_path=path_text,
+                    severity="blocker",
+                )
+            if isinstance(scalar, str) and _ACCEPTED_PATH_PATTERN.search(scalar):
+                self._add(
+                    "accepted_write_attempt",
+                    source_path=source_path,
+                    field_path=path_text,
+                    severity="blocker",
+                )
+
+    def scan_budget_state(self) -> None:
+        for direction in _repeated_failure_directions(self.campaign):
+            self._add(
+                "repeated_failure",
+                source_path=campaign_path(self.campaign.campaign_id).as_posix(),
+                field_path=direction,
+                severity="blocker",
+            )
+
+    def _add(
+        self,
+        code: str,
+        *,
+        source_path: str,
+        severity: Literal["warning", "blocker"],
+        line: int | None = None,
+        field_path: str | None = None,
+    ) -> None:
+        marker = (code, source_path, line, field_path)
+        if marker in self._seen:
+            return
+        self._seen.add(marker)
+        self.findings.append(
+            CampaignScanFinding(
+                code=code,
+                severity=severity,
+                message=_CAMPAIGN_SCAN_FINDING_MESSAGES.get(
+                    code,
+                    f"campaign runtime scanner finding: {code}",
+                ),
+                source_path=source_path,
+                line=line,
+                field_path=field_path,
+            )
+        )
+
+
+def _walk_json(
+    value: object,
+    path: tuple[str, ...] = (),
+) -> Iterator[tuple[tuple[str, ...], object]]:
+    yield path, value
+    if isinstance(value, Mapping):
+        for raw_key, child in value.items():
+            yield from _walk_json(child, (*path, str(raw_key)))
+        return
+    if isinstance(value, list):
+        for index, child in enumerate(value):
+            yield from _walk_json(child, (*path, str(index)))
+
+
+def _normalize_key(key: str) -> str:
+    return key.strip().lower().replace("-", "_").replace(".", "_")
+
+
+def _truthy_authority(value: object) -> bool:
+    if value is True:
+        return True
+    if not isinstance(value, str):
+        return False
+    return value.strip().lower() in {
+        "true",
+        "accepted",
+        "approved",
+        "human_reviewed",
+        "promote",
+        "promotion_performed",
+        "verifier_pass",
+    }
+
+
+def _authority_code(normalized_key: str) -> str:
+    if normalized_key in {"accepted", "accepted_status", "artifact_status"}:
+        return "accepted_authority_overclaim"
+    if normalized_key == "accepted_refutation":
+        return "accepted_refutation_overclaim"
+    if normalized_key in {"accepted_write", "accepted_write_performed"}:
+        return "accepted_write_attempt"
+    if normalized_key in {
+        "human_review",
+        "human_review_created",
+        "human_reviewed",
+        "review_state",
+    }:
+        return "human_review_overclaim"
+    if normalized_key in {"gate_pass", "verifier_pass", "verifier_result_mutated"}:
+        return "gate_verifier_overclaim"
+    if normalized_key in {
+        "promote",
+        "promotion",
+        "promotion_authority",
+        "promotion_performed",
+    }:
+        return "promotion_overclaim"
+    return "authority_claim"
+
+
 def _validate_output_path(value: str | Path) -> Path:
     normalized = normalize_repo_path(str(value))
     if not normalized or normalized == ".":
@@ -896,7 +1549,11 @@ def _ensure_repo_local(context: RepoContext, target: Path) -> None:
 
 __all__ = [
     "CAMPAIGN_RUNTIME_ROOT",
+    "CAMPAIGN_SCAN_KIND",
     "CampaignAttemptWriteResult",
+    "CampaignRunResult",
+    "CampaignScanFinding",
+    "CampaignScanResult",
     "CampaignOperatorTaskExportResult",
     "CampaignScorecardResult",
     "CampaignWriteResult",
@@ -908,12 +1565,17 @@ __all__ = [
     "campaign_events_path",
     "campaign_operator_result_path",
     "campaign_path",
+    "campaign_scan_path",
     "campaign_scorecard_path",
     "export_campaign_operator_task",
     "finalize_campaign",
     "import_campaign_operator_result",
     "load_campaign",
     "next_campaign_operator_task",
+    "pause_campaign",
+    "resume_campaign",
+    "run_campaign",
+    "scan_campaign",
     "show_campaign_scorecard",
     "start_campaign",
     "write_campaign",
