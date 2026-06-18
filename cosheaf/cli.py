@@ -189,6 +189,7 @@ from cosheaf.research.run import (
     load_research_run,
     start_research_run,
 )
+from cosheaf.server.cli import server_app
 from cosheaf.services import (
     BundleValidationService,
     ContextSendPolicyService,
@@ -421,6 +422,7 @@ app.add_typer(context_app, name="context")
 app.add_typer(issue_app, name="issue")
 app.add_typer(forge_app, name="forge")
 app.add_typer(site_app, name="site")
+app.add_typer(server_app, name="server")
 app.add_typer(task_app, name="task")
 app.add_typer(draft_app, name="draft")
 app.add_typer(bundle_app, name="bundle")
@@ -542,6 +544,14 @@ _STABLE_V1_CLI_SURFACE: tuple[dict[str, str], ...] = (
         "notes": (
             "Export deterministic sanitized JSON sidecars for the read-only "
             "website."
+        ),
+    },
+    {
+        "command": "server",
+        "preferred_invocation": "cosheaf server serve --readonly --port 8765",
+        "status": "stable_readonly_local",
+        "notes": (
+            "Serve localhost read-only website JSON APIs through the app facade."
         ),
     },
     {

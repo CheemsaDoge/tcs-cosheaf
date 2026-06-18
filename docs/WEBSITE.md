@@ -128,6 +128,12 @@ GitHub Actions workflow runs `npm ci`, `npm test`, and `npm run build` under
 the site and does not require secrets. Manual Cloudflare Pages or equivalent
 static-host setup is documented in [Static Website Deployment](DEPLOYMENT.md).
 
+For local dynamic preview, `cosheaf server serve --readonly --port 8765`
+exposes the same read-only website payloads through localhost JSON endpoints.
+The server calls the app facade in-process, does not shell out to CLI commands,
+does not write repository records, and does not run gates or context builds as
+request side effects. See [Local Read-Only Server API](SERVER_API.md).
+
 Artifact, issue, and context views now include static detail pages generated
 from the fixture data. Artifact filters run in the browser over already-exported
 metadata only. Status badges include authority explanations; missing verifier

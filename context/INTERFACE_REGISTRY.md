@@ -61,6 +61,18 @@
   write, human review, verifier-result mutation, or promotion. Exported
   website data is display context only and remains subordinate to repository
   YAML/JSON source files.
+- Local read-only website API server is implemented under `cosheaf.server` and
+  exposed through `cosheaf server serve --readonly --port 8765`. The Python
+  surface defines `ReadOnlySiteApi`, `ApiResponse`, `make_handler`, and
+  `serve_readonly_api`. The HTTP surface is localhost JSON endpoints:
+  `GET /api/health`, `/api/workspace`, `/api/artifacts`, `/api/issues`,
+  `/api/graph`, `/api/gates`, and `/api/context/<issue_id>`. The server calls
+  `cosheaf.app.open_app` and app facade methods in-process, generates website
+  export payloads in a temporary directory outside the repository, and refuses
+  non-GET methods. It performs no accepted writes, promotion, human review,
+  verifier mutation, gate run, context build, provider call, GitHub action, or
+  CLI subprocess. Server output is display context only and remains subordinate
+  to repository YAML/JSON source files.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI
