@@ -15,7 +15,7 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V18 CLI/API polish
+## Active Development Focus: V18 documentation and release audit
 
 The public `v0.12.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
@@ -29,11 +29,14 @@ V18 packages the existing safe research harness as a stable AI math
 collaborator MVP. It is polish, demo, documentation, audit, and release work;
 it is not another broad feature-expansion line.
 
-The current implementation focus is CLI/API polish and deprecation cleanup.
-`cosheaf interface list --json` records the stable v1.0 CLI surface, while
-`cosheaf research-run ...` is the preferred research-run root command and
-`cosheaf run ...` remains compatibility behavior. Broad new runtime features
-are deferred until after v1.0.0 unless they fix a release blocker.
+V18 Phase A scope freeze, Phase B CLI/API polish, and the workspace-template
+canonical AI math collaborator demo have landed. The current focus is Phase D
+documentation/operator packaging followed by Phase E security, authority, and
+benchmark audit. `cosheaf interface list --json` records the stable v1.0 CLI
+surface, while `cosheaf research-run ...` is the preferred research-run root
+command and `cosheaf run ...` remains compatibility behavior. Broad new
+runtime features are deferred until after v1.0.0 unless they fix a release
+blocker.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
@@ -56,10 +59,10 @@ and compare the result against benchmark expectations.
 The planned implementation phases are:
 
 - post-v0.12.0 audit and v1.0 scope freeze (landed);
-- CLI/API polish and deprecation cleanup (current);
-- canonical workspace-template AI math collaborator demo;
-- documentation and operator packaging;
-- security, authority, and benchmark release audit;
+- CLI/API polish and deprecation cleanup (landed);
+- canonical workspace-template AI math collaborator demo (landed);
+- documentation and operator packaging (current);
+- security, authority, and benchmark release audit (next);
 - conservative `v1.0.0` release metadata and publication closeout.
 
 This line will not add autonomous theorem proving, automatic accepted

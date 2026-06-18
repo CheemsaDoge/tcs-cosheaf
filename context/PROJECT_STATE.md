@@ -3,6 +3,36 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V18 Phase D.1 documentation and operator packaging - 2026-06-18
+
+Issue #478 adds the v1.0.0 AI Math Collaborator MVP documentation entrypoints
+on branch `v100-docs-operator-package`.
+
+This documentation-only task adds:
+
+- `docs/AI_MATH_COLLABORATOR_MVP.md`;
+- `docs/OPERATOR_RUNBOOK.md`;
+- `docs/AUTHORITY_BOUNDARIES.md`;
+- `docs/PUBLIC_PRIVATE_POLICY.md`; and
+- README, roadmap, current-milestone, and project-state navigation updates.
+
+It records that V18 Phase A scope freeze and Phase B CLI/API polish have
+landed, and that the canonical workspace-template demo landed downstream as
+PR #95 with `make ai-math-collaborator-demo`.
+
+The docs keep CLI as the oracle and describe skills/MCP/provider surfaces as
+optional or default-off guidance only. Workflow, campaign, checker, memory,
+benchmark, comparison, report, provider, MCP, and operator outputs remain
+review context or sidecar guidance only. They are not proof, source metadata,
+human review, verifier pass, gate pass, accepted status, accepted theorem or
+refutation status, or promotion authority. Skipped, unavailable, unsupported,
+and inconclusive rows remain not-pass.
+
+This task does not change code, schema, dependencies, CLI behavior, package
+version, KB artifacts, tags, releases, accepted promotion semantics,
+gatekeeper semantics, verifier adapter contracts, public KB content, or
+workspace-template behavior.
+
 ## V18 Phase B.1 CLI/API polish and deprecation cleanup - 2026-06-18
 
 Issue #476 adds a small CLI discoverability cleanup on branch
