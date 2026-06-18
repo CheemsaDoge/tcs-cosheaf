@@ -30,6 +30,9 @@
   delegates repository validation and gatekeeper runs to `cosheaf.app.open_app`.
   Public command names and JSON DTOs remain `cosheaf validate`,
   `cosheaf gate`, and `cosheaf gate run`.
+- The context CLI group is registered from `cosheaf.context_cli` and delegates
+  context build/show operations to `cosheaf.app.open_app`. Public command names
+  and JSON DTOs remain `cosheaf context build` and `cosheaf context show`.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI
