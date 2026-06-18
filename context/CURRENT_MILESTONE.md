@@ -2,26 +2,24 @@
 
 Milestone: **V17 / v0.12.0 Research Memory Learning + Benchmark Suite v1**
 
-Status: **V17 Phase F.1 v0.12.0 release candidate**
+Status: **V17 Phase F.2 v0.12.0 publication closeout**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V17.md
 
 Current package version: `0.12.0`
 
 Latest published release:
-<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.11.0>
+<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.12.0>
 
-`v0.11.0` publication closeout status: tag, GitHub release, post-tag release
+`v0.12.0` publication closeout status: tag, GitHub release, post-tag release
 smoke, workspace-template pin update, and public KB CI/docs pin update are
-complete. V17 starts from that published baseline and focuses on deterministic
-sidecar memory updates, benchmark suite v1, comparative reports, and static
-review reports.
+complete. V17 packages deterministic sidecar memory updates, benchmark suite
+v1, comparative reports, and static review reports.
 
 Current focus:
 
-- land V17 Phase F.1 `release-v0120-readiness-and-rc`: package metadata,
-  release notes, and current-status docs for the conservative v0.12.0 release
-  candidate;
+- land V17 Phase F.2 `release-v0120-publication-closeout`: release-state docs
+  for the published v0.12.0 tag, release smoke, and downstream pin updates;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -67,13 +65,15 @@ Current V17 E.1 surface:
 - `cosheaf report campaign <campaign-id> --out <dir> --json`; and
 - `cosheaf report benchmark <run-id> --out <dir> --json`.
 
-Current V17 F.1 surface:
+Current V17 F.2 surface:
 
 - package metadata and `cosheaf.__version__` record `0.12.0`;
-- `docs/releases/v0.12.0.md` records the release-candidate scope and
-  authority boundary; and
-- tag publication, GitHub release, post-tag release smoke, and downstream pin
-  updates remain Phase F.2 work.
+- `docs/releases/v0.12.0.md` records the published release scope and
+  authority boundary;
+- the public `v0.12.0` tag and GitHub release are published;
+- post-tag release smoke from `@v0.12.0` passed; and
+- workspace-template PR #93 and public KB PR #107 moved active pins to
+  `@v0.12.0`.
 
 V17 non-goals:
 

@@ -2,8 +2,9 @@
 
 Target: `v0.12.0 Research Memory Learning + Benchmark Suite v1`
 
-Status: Phase F.1 v0.12.0 release candidate after the published `v0.11.0` External
-Operator Campaigns release and downstream workspace/public-KB pin closeout.
+Status: Complete through Phase F.2. The `v0.12.0` tag, GitHub release,
+post-tag release smoke, and downstream workspace/public-KB pin closeout are
+published.
 
 ## Goal
 
@@ -50,8 +51,8 @@ This is operational learning, not model training:
 4. Phase D: comparative run reports. Landed in issue #466.
 5. Phase E: retrieval/workflow quality reports as static Markdown/JSON. Landed
    in issue #468.
-6. Phase F: `v0.12.0` release candidate and publication closeout. Current
-   issue #470.
+6. Phase F: `v0.12.0` release candidate and publication closeout. F.1 landed
+   in issue #470 / PR #471, and F.2 is tracked in issue #472.
 
 ## Phase A Scope
 
@@ -191,9 +192,9 @@ Prepare and publish a conservative `v0.12.0` release only after memory,
 benchmark, comparison, static-report, downstream policy/demo alignment, and
 release documentation pass.
 
-Phase F.1 prepares package metadata, release notes, and current-status docs for
-`0.12.0`. Phase F.2 will publish the annotated tag and GitHub release, run
-post-tag release smoke, and align downstream workspace-template/public KB pins
+Phase F.1 prepared package metadata, release notes, and current-status docs for
+`0.12.0`. Phase F.2 publishes the annotated tag and GitHub release, runs
+post-tag release smoke, and aligns downstream workspace-template/public KB pins
 to `@v0.12.0`.
 
 ## Required Verification Pattern

@@ -3,6 +3,41 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V17 Phase F.2 v0.12.0 publication closeout - 2026-06-18
+
+Issue #472 records the `v0.12.0 Research Memory Learning + Benchmark Suite v1`
+publication closeout after the release-candidate PR merged.
+
+The public `v0.12.0` tag and GitHub release are published:
+
+https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.12.0
+
+The annotated tag object is
+`be58f818f3f8dd75803f514b74acd7485ade2f69`, and it peels to main commit
+`8c5e5651acf290883488785b553f623742fca1f6`.
+
+Post-tag release smoke from
+`git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.12.0` passed and
+installed `tcs-cosheaf==0.12.0`.
+
+Downstream pin alignment is complete:
+
+- `tcs-cosheaf-workspace-template` PR #93 moves active install/demo pins to
+  `@v0.12.0`;
+- `tcs-kb-public` PR #107 moves CI/docs pins to `@v0.12.0`.
+
+The no-network ecosystem matrix with `--framework-tag v0.12.0` reports 28 rows:
+25 pass, 0 fail, and 3 skipped. Skipped rows are not counted as pass.
+
+This closeout is documentation and release-state bookkeeping only. It does not
+add runtime capability. It does not change artifact schema, accepted promotion
+semantics, gatekeeper semantics, verifier adapter contracts, public KB content,
+or workspace-template behavior. Memory weights, benchmark runs, comparisons,
+and static reports remain sidecar guidance or review context only. They are
+not proof, source metadata, human review, verifier pass, gate pass, accepted
+status, accepted theorem/refutation, or promotion authority. Skipped,
+unavailable, unsupported, and inconclusive results are not passes.
+
 ## V17 Phase F.1 v0.12.0 release candidate - 2026-06-18
 
 Issue #470 prepares the conservative `v0.12.0 Research Memory Learning +
@@ -829,11 +864,11 @@ Changes:
   limitations and authority boundaries
 - README, README.zh-CN.md, ROADMAP, CURRENT_MILESTONE, PROJECT_STATE updated
 
-The RC does not claim `v0.7.0` is published. The public tag, GitHub release,
-post-tag release smoke, and downstream pin alignment remain future Phase F.2
-steps. No accepted writes, human-review creation, verifier/gate authority,
-hosted-provider defaults, automatic theorem proving, or Lean semantic alignment
-are added.
+At that RC snapshot, `v0.7.0` was not yet published; the public tag, GitHub
+release, post-tag release smoke, and downstream pin alignment were still
+later Phase F.2 steps. No accepted writes, human-review creation,
+verifier/gate authority, hosted-provider defaults, automatic theorem proving,
+or Lean semantic alignment were added.
 
 Local verification before PR:
 - `make lint`: passed
