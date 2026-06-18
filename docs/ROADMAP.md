@@ -1,8 +1,8 @@
 # Roadmap
 
-TCS-Cosheaf has published the `v0.10.0` Cross-Check Evidence + Checker
-Registry release and is preparing the V16 / `v0.11.0` External AI Operator
-Harness + Bounded Multi-Run Campaigns release candidate. Earlier published baselines include
+TCS-Cosheaf has published the V16 / `v0.11.0` External AI Operator Harness +
+Bounded Multi-Run Campaigns release. Earlier published baselines include the
+`v0.10.0` Cross-Check Evidence + Checker Registry release,
 `v0.9.0` Reviewable Research Workflow MVP, `v0.8.0` Deterministic Execution
 Kernel + Librarian + FSM, `v0.7.0` Bounded Research Loop + Attempt Memory,
 `v0.6.0` Operator Session + Review Handoff, `v0.5.0` Operator MCP + Codex
@@ -13,11 +13,11 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V16 v0.11.0 release candidate
+## Active Development Focus: post-v0.11.0 closeout
 
-The public `v0.10.0` tag and GitHub release are published, post-tag release
+The public `v0.11.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
-`@v0.10.0`. The V16 kickoff audit, development plan, and ADR are recorded in:
+`@v0.11.0`. The V16 kickoff audit, development plan, and ADR are recorded in:
 
 - [`docs/POST_V0100_STATE_AUDIT.md`](POST_V0100_STATE_AUDIT.md);
 - [`docs/CODEX_DEVELOPMENT_PLAN_V16.md`](CODEX_DEVELOPMENT_PLAN_V16.md);
@@ -29,8 +29,8 @@ start/show/append-attempt/scorecard/finalize commands, bounded task/result
 packets through `campaign next/export-task/import-result`, deterministic
 `campaign pause/resume/scan/run` budget controls, `campaign handoff`,
 `cosheaf eval campaign --json`, workspace-template `make campaign-demo`, and
-public KB campaign-output policy guard coverage. The current step prepares the
-conservative `v0.11.0` release candidate metadata.
+public KB campaign-output policy guard coverage. The publication closeout
+records the tag/release, post-tag smoke, and downstream pin evidence.
 
 The V15 implementation line has landed:
 
@@ -61,7 +61,7 @@ write accepted knowledge, create human review, fabricate source metadata, mark
 gate pass, promote artifacts, call hosted providers by default, execute
 arbitrary shell through Cosheaf, or claim automatic theorem proving.
 
-## Planned Release Focus: v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns
+## Completed Release Focus: v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns
 
 V16 adds a bounded campaign harness for many attempts against one issue. The
 operator remains external; Cosheaf controls context, budgets, output recording,
@@ -75,7 +75,7 @@ The planned implementation phases are:
 - campaign review handoff and deterministic eval (E.1, landed);
 - workspace-template campaign demo and public KB campaign-output policy guard
   (landed);
-- conservative `v0.11.0` release candidate (current) and publication closeout.
+- conservative `v0.11.0` release metadata and publication closeout (landed).
 
 This line will not make campaign success proof, source metadata, human review,
 verifier/gate pass, accepted status, accepted theorem/refutation, or promotion

@@ -2,29 +2,27 @@
 
 Milestone: **V16 / v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns**
 
-Status: **V16 Phase F.1 v0.11.0 release-candidate readiness**
+Status: **V16 Phase F.2 v0.11.0 publication closeout**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V16.md
 
 Current package version: `0.11.0`
 
 Latest published release:
-<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.10.0>
+<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.11.0>
 
-`v0.10.0` publication closeout status: tag, GitHub release, post-tag release
-smoke, workspace-template pin update, and public KB CI pin update are complete.
-The V16 post-`v0.10.0` audit, V16 development plan, ADR 0032, Phase B.1
-campaign model core, Phase C.1 external operator protocol v2, and Phase D.1
-campaign runner budget controller have landed as durable repo memory. Phase
-E.1 campaign eval/handoff, downstream workspace-template campaign demo, and
-public KB campaign-output policy guard coverage have also landed. The current
-task prepares the conservative `v0.11.0` release candidate metadata and
-release note.
+`v0.11.0` publication closeout status: tag, GitHub release, post-tag release
+smoke, workspace-template pin update, and public KB CI/docs pin update are
+complete. The V16 post-`v0.10.0` audit, V16 development plan, ADR 0032, Phase
+B.1 campaign model core, Phase C.1 external operator protocol v2, Phase D.1
+campaign runner budget controller, and Phase E.1 campaign eval/handoff have
+landed as durable repo memory. Downstream workspace-template campaign demo and
+public KB campaign-output policy guard coverage have also landed.
 
 Current focus:
 
-- land V16 Phase F.1 `release-v0110-readiness-and-rc`: package metadata
-  `0.11.0`, `cosheaf.__version__`, release notes, and current-status docs;
+- land V16 Phase F.2 `release-v0110-publication-closeout`: release-state docs
+  for the published tag, GitHub release, post-tag smoke, and downstream pins;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -38,8 +36,10 @@ Planned V16 surface:
 - campaign review handoff reports (E.1, landed);
 - deterministic `cosheaf eval campaign --json` (E.1, landed);
 - downstream workspace-template campaign demo plus public KB policy guard
-  (landed); and
-- `v0.11.0` release candidate metadata (F.1, current).
+  (landed);
+- `v0.11.0` F.1 release metadata (landed); and
+- `v0.11.0` publication closeout: tag, GitHub release, post-tag smoke, and
+  downstream pins (F.2, landed).
 
 V16 non-goals:
 
@@ -81,7 +81,14 @@ Completed V16 implementation and downstream closeout:
 - Phase E.1 `campaign-eval-and-handoff` landed in issue #454 / PR #455;
 - workspace-template campaign demo landed in downstream issue #88 / PR #89;
 - public KB campaign-output policy guard landed in downstream issue #102 / PR
-  #103.
+  #103;
+- `v0.11.0` release-candidate metadata landed in issue #456 / PR #457;
+- the annotated `v0.11.0` tag and GitHub release are published;
+- post-tag release smoke from `@v0.11.0` passed;
+- workspace-template active pins moved to `@v0.11.0` in downstream issue #90 /
+  PR #91; and
+- public KB CI/docs pins moved to `@v0.11.0` in downstream issue #104 / PR
+  #105.
 
 Completed V14 closeout:
 

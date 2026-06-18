@@ -3,6 +3,41 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V16 Phase F.2 v0.11.0 publication closeout - 2026-06-18
+
+Issue #458 records the `v0.11.0 External Operator Campaigns` publication
+closeout after the release-candidate PR merged.
+
+The public `v0.11.0` tag and GitHub release are published:
+
+https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.11.0
+
+The annotated tag object is
+`640b503b9421555c277dd722f125a389ceb9efc5`, and it peels to main commit
+`b04a34bf1a1b27310e64625a3d9be3a84998e622`.
+
+Post-tag release smoke from
+`git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.11.0` passed and
+installed `tcs-cosheaf==0.11.0`.
+
+Downstream pin alignment is complete:
+
+- `tcs-cosheaf-workspace-template` PR #91 moves active install/demo pins to
+  `@v0.11.0`;
+- `tcs-kb-public` PR #105 moves CI/docs pins to `@v0.11.0`.
+
+At publication closeout, the framework repository has no open PRs and the only
+open issue is this closeout issue #458.
+
+This closeout is documentation and release-state bookkeeping only. It does not
+add runtime capability. It does not change artifact schema, accepted promotion
+semantics, gatekeeper semantics, verifier adapter contracts, public KB content,
+or workspace-template behavior. Campaign records, attempts, scorecards, scans,
+operator packets, handoffs, and campaign eval reports remain review context
+only. They are not proof, source metadata, human review, verifier pass, gate
+pass, accepted status, accepted theorem/refutation, or promotion authority.
+Skipped, unavailable, unsupported, and inconclusive results are not passes.
+
 ## V16 Phase F.1 v0.11.0 release candidate - 2026-06-18
 
 Issue #456 prepares the conservative `v0.11.0 External Operator Campaigns`
