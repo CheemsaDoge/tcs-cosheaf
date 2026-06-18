@@ -1037,14 +1037,12 @@ later Phase F.2 steps. No accepted writes, human-review creation,
 verifier/gate authority, hosted-provider defaults, automatic theorem proving,
 or Lean semantic alignment were added.
 
-Local verification before PR:
+Local verification before this F.1 PR snapshot:
 - `make lint`: passed
-- `make typecheck`: TBD
-- `make test`: TBD
-- `make validate`: TBD
-- `make gate`: TBD
-- `python scripts/ecosystem_smoke.py --matrix --framework-tag v0.7.0 ...`: TBD
-- `git diff --check`: TBD
+- the remaining full verification outputs were not recorded in this F.1
+  snapshot. The later Phase F.2 publication closeout above records the
+  completed `v0.7.0` tag, release smoke, downstream pin alignment, and final
+  ecosystem matrix.
 
 ## Phase E completed: research-loop eval, downstream demo, and public-KB policy - 2026-06-17
 
