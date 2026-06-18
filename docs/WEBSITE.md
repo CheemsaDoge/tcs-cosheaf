@@ -122,6 +122,12 @@ runtime private repository fetch, and no hosted provider call. The rendered
 site is a human interface over exported JSON only; repository files remain the
 source of truth.
 
+The static output directory is `website/dist`. The separate `Website build`
+GitHub Actions workflow runs `npm ci`, `npm test`, and `npm run build` under
+`website/`, then uploads `website/dist` as a CI artifact. It does not deploy
+the site and does not require secrets. Manual Cloudflare Pages or equivalent
+static-host setup is documented in [Static Website Deployment](DEPLOYMENT.md).
+
 Artifact, issue, and context views now include static detail pages generated
 from the fixture data. Artifact filters run in the browser over already-exported
 metadata only. Status badges include authority explanations; missing verifier
