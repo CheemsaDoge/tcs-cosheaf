@@ -2,7 +2,7 @@
 
 Milestone: **V17 / v0.12.0 Research Memory Learning + Benchmark Suite v1**
 
-Status: **V17 Phase C.1 benchmark suite v1**
+Status: **V17 Phase D.1 comparative run reports**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V17.md
 
@@ -19,8 +19,8 @@ review reports.
 
 Current focus:
 
-- land V17 Phase C.1 `benchmark-suite-v1`: deterministic benchmark suites over
-  existing eval harnesses with persisted sidecar runs and static reports;
+- land V17 Phase D.1 `comparative-run-reports`: side-by-side workflow,
+  campaign, and benchmark comparisons over existing runtime records;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -29,8 +29,8 @@ Planned V17 surface:
 
 - post-v0.11.0 audit and V17 plan/ADR (A.1, landed);
 - deterministic memory update policy v1 (B.1, landed);
-- benchmark suite v1 (C.1, current);
-- comparative workflow/campaign/benchmark reports;
+- benchmark suite v1 (C.1, landed);
+- comparative workflow/campaign/benchmark reports (D.1, current);
 - static Markdown/JSON research reports; and
 - `v0.12.0` release candidate and publication closeout.
 
@@ -52,6 +52,13 @@ Current V17 C.1 surface:
 - `cosheaf benchmark run --suite <suite> --json`; and
 - `cosheaf benchmark report <run-id> --out <path> --json`.
 
+Current V17 D.1 surface:
+
+- `cosheaf.compare` deterministic comparison DTOs and helpers;
+- `cosheaf compare workflows <before-id> <after-id> --json`;
+- `cosheaf compare campaigns <before-id> <after-id> --json`; and
+- `cosheaf compare benchmarks <before-id> <after-id> --json`.
+
 V17 non-goals:
 
 - no model training;
@@ -61,9 +68,9 @@ V17 non-goals:
 - no human-review creation;
 - no source-metadata fabrication;
 - no YAML artifact mutation from memory updates;
-- no benchmark-as-truth or benchmark-as-accepted-status claims; and
+- no benchmark/comparison-as-truth or accepted-status claims; and
 - no accepted-status, accepted theorem/refutation, verifier/gate, or promotion
-  authority from memory or benchmark output.
+  authority from memory, benchmark, or comparison output.
 
 Current V15 surface on the development line:
 

@@ -14,7 +14,7 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V17 v0.12.0 benchmark suite
+## Active Development Focus: V17 v0.12.0 comparative reports
 
 The public `v0.11.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
@@ -28,10 +28,10 @@ V17 will add deterministic sidecar memory updates, benchmark suite v1,
 comparative reports, and static Markdown/JSON review reports. It must remain
 operational learning rather than model training or a new truth source.
 
-The current implementation focus is benchmark suite v1: existing deterministic
-eval harnesses can be run through `cosheaf benchmark`, persisted under
-`.cosheaf/benchmark-runs/`, and rendered as static JSON or Markdown reports
-without mutating YAML artifacts or granting accepted-knowledge authority.
+The current implementation focus is comparative reports: existing workflow,
+campaign, and benchmark records can be compared through `cosheaf compare`
+commands. Comparisons are metric-scoped review context and highlight safety
+regressions without claiming a globally better result.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
@@ -54,8 +54,8 @@ The planned implementation phases are:
 
 - post-v0.11.0 audit and V17 plan/ADR (landed);
 - deterministic memory update policy v1 (landed);
-- benchmark suite v1 (current);
-- comparative workflow/campaign/benchmark reports;
+- benchmark suite v1 (landed);
+- comparative workflow/campaign/benchmark reports (current);
 - static Markdown/JSON research reports; and
 - conservative `v0.12.0` release metadata and publication closeout.
 
