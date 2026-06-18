@@ -3,6 +3,23 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V17 Phase F.1 v0.12.0 release candidate - 2026-06-18
+
+Issue #470 prepares the conservative `v0.12.0 Research Memory Learning +
+Benchmark Suite v1` release candidate on branch
+`release-v0120-readiness-and-rc`.
+
+The release-candidate scope bumps `pyproject.toml` and `cosheaf.__version__`
+from `0.11.0` to `0.12.0`, adds `docs/releases/v0.12.0.md`, and aligns README,
+roadmap, milestone, project-state, and release-checklist status with the V17
+RC.
+
+This task does not publish the `v0.12.0` tag or GitHub release, run post-tag
+release smoke, update downstream pins to `@v0.12.0`, add model training,
+default hosted provider calls, automatic theorem proving, accepted writes,
+human-review creation, source metadata, verifier/gate authority, or promotion
+authority. Publication closeout remains Phase F.2.
+
 ## V17 Phase E.1 static research reports - 2026-06-18
 
 Issue #468 adds static Markdown/JSON report directories on branch
