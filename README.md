@@ -276,7 +276,6 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- V18 `v1.0.0` publication closeout.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
@@ -403,7 +402,7 @@ cosheaf context show <issue-id>
 See [Workspace quickstart](docs/WORKSPACE_QUICKSTART.md),
 [Workspace model](docs/WORKSPACE.md), and
 [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md) for layered KB roots.
-For the planned v1.0 collaborator workflow, use
+For the v1.0 collaborator workflow, use
 [AI Math Collaborator MVP](docs/AI_MATH_COLLABORATOR_MVP.md),
 [Operator Runbook](docs/OPERATOR_RUNBOOK.md), and the workspace-template
 `make ai-math-collaborator-demo` path.

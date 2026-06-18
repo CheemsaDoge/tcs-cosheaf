@@ -624,8 +624,8 @@ smoke, and downstream pin updates.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.12.0`.
-- [x] `cosheaf.__version__` records `0.12.0`.
+- [x] `pyproject.toml` records package version `1.0.0`.
+- [x] `cosheaf.__version__` records `1.0.0`.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
@@ -655,6 +655,8 @@ smoke, and downstream pin updates.
   reviewed release-candidate main commit.
 - [x] Remote tag `v0.12.0` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
+- [x] Remote tag `v1.0.0` exists and points through the annotated tag to the
+  reviewed release-candidate main commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
 - [x] Historical workspace-template artifact-failure-memory verification remains
@@ -683,6 +685,8 @@ smoke, and downstream pin updates.
   after v0.11.0 tag publication and release smoke succeeded.
 - [x] Workspace-template and public KB active pins moved to `@v0.12.0` only
   after v0.12.0 tag publication and release smoke succeeded.
+- [x] Workspace-template and public KB active pins moved to `@v1.0.0` only
+  after v1.0.0 tag publication and release smoke succeeded.
 
 ### License
 
