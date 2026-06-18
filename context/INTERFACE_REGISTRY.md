@@ -11,11 +11,12 @@
   artifact writes, controlled source-note writes, controlled review-request
   writes, WorkerBundle validate/submit/reduce, review-request generation from
   WorkerBundle, read-only promotion-readiness reports, forge dry-run previews,
-  and confirmed local forge git actions. The facade delegates to existing
-  services, forge services, and read-only domain functions. It is not a new
-  knowledge authority and does not grant proof, source metadata, human review,
-  verifier pass, gate pass, accepted status, accepted theorem/refutation
-  status, or promotion authority.
+  confirmed local forge git actions, confirmed GitHub issue/PR actions, and
+  read-only forge sync status. The facade delegates to existing services, forge
+  services, and read-only domain functions. It is not a new knowledge authority
+  and does not grant proof, source metadata, human review, verifier pass, gate
+  pass, accepted status, accepted theorem/refutation status, or promotion
+  authority.
 - App request/result DTOs are implemented under `cosheaf.app.models` and reuse
   the existing `cosheaf.services.models.AgentAccessModel` base. The Python
   surface defines `WorkspaceInfoRequest` / `WorkspaceInfoResult`,
@@ -37,14 +38,15 @@
 - Forge planning and local git actions are implemented under `cosheaf.forge`
   and exposed through `cosheaf forge ...` plus the app facade methods
   `forge_status`, `forge_issue_preview`, `forge_pr_preview`,
-  `forge_branch_create`, and `forge_commit`. The Python surface defines
+  `forge_branch_create`, `forge_commit`, `forge_github_issue_create`,
+  `forge_github_pr_create`, and `forge_sync`. The Python surface defines
   `ForgeCredentialProvider`, `LocalGitPlan`, `GitHubIssuePlan`, `GitHubPrPlan`,
   `ForgePreviewResult`, `ForgeActionResult`, `ForgeService`, and
-  `ForgePreviewError` / `ForgeActionError`. GitHub-facing forge surfaces remain
-  dry-run only. Confirmed local git actions may create local branches or
-  commits, but perform no push, GitHub write, token storage, network call,
-  artifact acceptance, refutation, human review, verifier pass, gate pass, or
-  promotion.
+  `ForgePreviewError` / `ForgeActionError`. Forge previews remain dry-run only.
+  Confirmed local git actions may create local branches or commits. Confirmed
+  GitHub actions may create GitHub issues or PRs through `gh`, but perform no
+  push, token storage, artifact acceptance, refutation, human review, verifier
+  pass, gate pass, or promotion. `forge sync` is read-only in A4.3.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI
@@ -1028,9 +1030,18 @@
 - `cosheaf forge issue preview --from issues/open/<issue-id>.yaml --json`:
   reads one repository-local issue YAML record and emits a dry-run
   `GitHubIssuePlan`. It does not create a GitHub issue or use credentials.
+- `cosheaf forge issue create --from issues/open/<issue-id>.yaml --confirm --json`:
+  refuses to run without `--confirm`, creates a GitHub issue through
+  `gh issue create`, and writes the returned URL into the local issue record's
+  `external_links` when possible. It does not close the local issue, push,
+  store credentials, or change accepted/promotion state.
 - `cosheaf forge pr preview --base main --head <branch> --json`: emits a
   dry-run `LocalGitPlan` and `GitHubPrPlan`. It does not run `git`, run `gh`,
   push, create a PR, call the network, or mutate repository files.
+- `cosheaf forge pr create --base main --head <branch> --draft --confirm --json`:
+  refuses to run without `--confirm` and creates a GitHub pull request through
+  `gh pr create`. It does not push, store credentials, close local issues, or
+  change accepted/promotion state.
 - `cosheaf forge branch create <branch> --confirm --json`: refuses to run
   without `--confirm`, refuses dirty working trees, then creates and switches
   to a local branch. It does not push, create a PR, call GitHub, read tokens, or
@@ -1040,6 +1051,9 @@
   changes, runs repository validation and gatekeeper in-process, and creates
   one local commit. It does not push, create a PR, call GitHub, read tokens, or
   change accepted/promotion state.
+- `cosheaf forge sync --json`: emits a typed read-only sync status placeholder.
+  In A4.3 it does not call `git`, run `gh`, call the network, or mutate
+  repository files.
 - `cosheaf memory cards`: builds deterministic artifact cards from existing
   repository metadata. Default output is compact text lines, not full artifact
   YAML or statements.
@@ -2289,8 +2303,8 @@ These helpers are pure validation, path-formatting, status-classification, or de
   `closed`; modern fields `summary`, `labels`, `related_sources`, and `scope`;
   and compatibility aliases `description` and `tags` for older issue fixtures.
 - `cosheaf.forge.ForgeCredentialProvider`: protocol for future explicit
-  credential lookup; the current dry-run forge commands do not read or store
-  tokens.
+  credential lookup. Current GitHub actions rely on credentials outside the
+  repository through `gh` and do not read or store token values.
 - `cosheaf.forge.LocalGitPlan`: dry-run local git plan DTO with `repo_root`,
   optional `base` and `head`, planned command text, `commit_performed: false`,
   and `push_performed: false`.
@@ -2304,8 +2318,11 @@ These helpers are pure validation, path-formatting, status-classification, or de
   `github_writes_performed: false`, and authority-boundary warning text.
 - `cosheaf.forge.ForgeActionResult`: result DTO for explicit forge actions. It
   records `action`, `action_performed`, `git_writes_performed`,
-  `push_performed: false`, `github_pr_created: false`, optional `branch`,
-  optional `commit_hash`, and whether validation/gate ran before a commit.
+  `network_calls_performed`, `github_writes_performed`,
+  `push_performed: false`, `github_issue_created`, `github_pr_created`,
+  `local_issue_closed: false`, optional `branch`, `base`, `head`,
+  `commit_hash`, `source_path`, `issue_id`, `github_issue_url`,
+  `github_pr_url`, and whether validation/gate ran before a commit.
 - `cosheaf.storage.loader.ReviewRecord`: Pydantic v2 model for review YAML records loaded by storage.
 - `cosheaf.storage.loader.LoadedRecord`: loaded record wrapper with repository-relative `source_path`, typed `record`, and optional KB root metadata (`kb_root_name`, `kb_root_path`, `kb_root_readonly`, `kb_relative_path`).
 

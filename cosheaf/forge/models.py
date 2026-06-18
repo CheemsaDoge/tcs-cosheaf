@@ -10,6 +10,11 @@ from cosheaf.core.ids import validate_artifact_id
 from cosheaf.services.models import AgentAccessModel
 
 FORGE_AUTHORITY_WARNING = (
+    "Forge output is workflow context only; it does not grant proof, source "
+    "metadata, human review, verifier pass, gate pass, accepted status, "
+    "accepted theorem/refutation status, or promotion authority."
+)
+FORGE_PREVIEW_AUTHORITY_WARNING = (
     "Forge previews are dry-run planning output only; they do not perform git "
     "commits, git pushes, GitHub issue creation, GitHub PR creation, token "
     "storage, network calls, human review, verifier passes, gate passes, "
@@ -104,7 +109,7 @@ class ForgePreviewResult(AgentAccessModel):
     network_calls_performed: Literal[False] = False
     git_writes_performed: Literal[False] = False
     github_writes_performed: Literal[False] = False
-    authority_warning: str = FORGE_AUTHORITY_WARNING
+    authority_warning: str = FORGE_PREVIEW_AUTHORITY_WARNING
     local_git_plan: LocalGitPlan | None = None
     github_issue_plan: GitHubIssuePlan | None = None
     github_pr_plan: GitHubPrPlan | None = None
@@ -121,13 +126,21 @@ class ForgeActionResult(AgentAccessModel):
 
     action: str
     action_performed: bool = False
-    network_calls_performed: Literal[False] = False
+    network_calls_performed: bool = False
     git_writes_performed: bool = False
-    github_writes_performed: Literal[False] = False
+    github_writes_performed: bool = False
     push_performed: Literal[False] = False
-    github_pr_created: Literal[False] = False
+    github_issue_created: bool = False
+    github_pr_created: bool = False
     branch: str | None = None
+    base: str | None = None
+    head: str | None = None
     commit_hash: str | None = None
+    source_path: str | None = None
+    issue_id: str | None = None
+    github_issue_url: str | None = None
+    github_pr_url: str | None = None
+    local_issue_closed: Literal[False] = False
     validation_performed: bool = False
     gate_performed: bool = False
     authority_warning: str = FORGE_AUTHORITY_WARNING
@@ -137,12 +150,27 @@ class ForgeActionResult(AgentAccessModel):
     def _action(cls, value: str) -> str:
         return _non_empty(value)
 
-    @field_validator("branch", "commit_hash")
+    @field_validator(
+        "branch",
+        "base",
+        "head",
+        "commit_hash",
+        "source_path",
+        "github_issue_url",
+        "github_pr_url",
+    )
     @classmethod
     def _optional_text(cls, value: str | None) -> str | None:
         if value is None:
             return None
         return _non_empty(value)
+
+    @field_validator("issue_id")
+    @classmethod
+    def _optional_issue_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return validate_artifact_id(value.strip())
 
 
 def _non_empty(value: str) -> str:

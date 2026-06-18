@@ -527,10 +527,10 @@ _STABLE_V1_CLI_SURFACE: tuple[dict[str, str], ...] = (
     {
         "command": "forge",
         "preferred_invocation": "cosheaf forge ...",
-        "status": "stable_confirmed_local",
+        "status": "stable_confirmed",
         "notes": (
-            "Preview GitHub plans and run confirmed local git "
-            "branch/commit actions."
+            "Preview GitHub plans, run confirmed local git actions, "
+            "and create confirmed GitHub issues/PRs."
         ),
     },
     {

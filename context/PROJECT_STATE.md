@@ -3,6 +3,28 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V19 Phase A4.3 forge GitHub actions - 2026-06-19
+
+Issue #508 adds confirmed Forge GitHub issue and pull-request actions on branch
+`arch-forge-github-actions`.
+
+The current surface includes:
+
+- `cosheaf forge issue create --from issues/open/<issue-id>.yaml --confirm --json`;
+- `cosheaf forge pr create --base main --head <branch> --draft --confirm --json`;
+- `cosheaf forge sync --json`;
+- app facade methods `forge_github_issue_create`,
+  `forge_github_pr_create`, and `forge_sync`; and
+- `ForgeActionResult` fields for GitHub issue/PR URLs and write flags.
+
+Confirmed GitHub actions require `--confirm` and call the external `gh`
+command. Forge does not persist tokens in the repository, does not push
+branches, and does not treat GitHub issue/PR/merge state as source metadata,
+human review, verifier pass, gate pass, accepted status, accepted
+theorem/refutation status, or promotion authority. GitHub issue creation may
+write the returned URL into the local issue record's `external_links`, but it
+does not close the local issue. `forge sync` is read-only in this phase.
+
 ## V18 Phase F.2 v1.0.0 publication closeout - 2026-06-18
 
 Issue #484 records the `v1.0.0 AI Math Collaborator MVP` publication closeout

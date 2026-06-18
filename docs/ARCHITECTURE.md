@@ -86,10 +86,12 @@ does not accept, refute, review, verify, gate, or promote any artifact.
 ### Forge Layer
 
 The forge layer is the typed boundary for local git and GitHub workflow
-planning and controlled local git actions. It is implemented under
-`cosheaf.forge` and exposes forge status, GitHub issue preview from a local
-issue YAML file, GitHub PR preview from base/head branch names, confirmed local
-branch creation, and confirmed local commit.
+planning, controlled local git actions, and narrowly confirmed GitHub
+issue/PR actions. It is implemented under `cosheaf.forge` and exposes forge
+status, GitHub issue preview from a local issue YAML file, GitHub PR preview
+from base/head branch names, confirmed local branch creation, confirmed local
+commit, confirmed GitHub issue creation, confirmed GitHub PR creation, and a
+read-only sync placeholder.
 
 Forge previews do not run `git`, `gh`, or any subprocess. They do not call the
 network, create GitHub issues, create GitHub PRs, commit, push, read or store
@@ -101,8 +103,18 @@ Local git actions are narrower than general shell access. `forge branch create`
 requires `--confirm`, refuses dirty working trees, and creates/switches to a
 local branch. `forge commit` requires `--confirm`, refuses unstaged or
 untracked ambiguity, requires staged changes, runs repository validation and
-gatekeeper in-process, and then creates one local commit. Forge does not push,
-create pull requests, call GitHub, read tokens, or store credentials.
+gatekeeper in-process, and then creates one local commit. Local git actions do
+not push, create pull requests, call GitHub, read tokens, or store credentials.
+
+GitHub actions are narrower than general `gh` access. `forge issue create`
+requires `--confirm`, calls `gh issue create`, and when possible records the
+returned GitHub issue URL in the local issue record's `external_links` without
+closing the local issue. `forge pr create` requires `--confirm` and calls
+`gh pr create`; it does not push the branch or create accepted-artifact
+authority. GitHub credentials remain outside the repository through the user's
+authenticated `gh` state or token environment variables supported by `gh`;
+Forge does not read token values or persist credentials. `forge sync` is
+read-only in A4.3 and performs no subprocess, network, or repository mutation.
 
 Forge output is workflow planning context only. It does not grant proof, source
 metadata, human review, verifier pass, gate pass, accepted status, accepted
