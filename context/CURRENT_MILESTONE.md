@@ -30,6 +30,9 @@ Post-v1.0.0 Longplan A architecture work:
 - `docs/ARCHITECTURE_REFACTOR_AUDIT.md` is the A0.1 audit artifact; and
 - `docs/ADR/0035-app-boundary.md` proposes `cosheaf.app` as the next stable
   application-usecase boundary without changing runtime behavior in A0.1.
+- issue #494 / branch `arch-app-facade` introduces `cosheaf.app` as a thin
+  facade over existing services and read-only promotion-readiness reporting,
+  without changing CLI behavior or accepted-promotion authority.
 
 Planned V18 surface:
 
