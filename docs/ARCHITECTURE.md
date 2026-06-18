@@ -361,6 +361,8 @@ verifier invocation.
 
 The validate/gate command group lives in `cosheaf.validation_cli` and calls the
 `cosheaf.app` facade for repository validation and gatekeeper runs.
+The context command group lives in `cosheaf.context_cli` and calls the same app
+facade for context build/show operations.
 
 CLI commands now call typed service functions for workspace inspection,
 repository and artifact validation, gate execution, context-pack generation,

@@ -8,6 +8,7 @@ import pytest
 import yaml  # type: ignore[import-untyped]
 from typer.testing import CliRunner
 
+import cosheaf.context_cli as context_cli
 from cosheaf.agent.context_pack import ContextPackError, build_context_pack
 from cosheaf.cli import app
 from cosheaf.memory import RetrievalRole
@@ -1091,6 +1092,86 @@ def test_context_show_prints_context_pack(tmp_path: Path) -> None:
     assert "# Context Pack: issue.fixture.context" in result.output
     assert "claim.fixture.accepted" in result.output
     assert "[DRAFT] claim.fixture.draft" in result.output
+
+
+def test_context_cli_routes_through_app_facade(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[str, str, bool]] = []
+
+    class FakeContextResult:
+        def __init__(self, issue_id: str, repo_root: Path) -> None:
+            self.issue_id = issue_id
+            self.task_dir = repo_root / "context" / "TASKS" / issue_id
+            self.files = [self.task_dir / "CONTEXT.md"]
+
+    class FakeApp:
+        def __init__(self, repo_root: str | Path) -> None:
+            self.context = RepoContext(Path(repo_root))
+
+        def build_context(
+            self,
+            issue_id: str,
+            *,
+            role: RetrievalRole | str = RetrievalRole.ORCHESTRATOR,
+            max_cards: int = 20,
+            max_full_artifacts: int | None = None,
+            public_only: bool = False,
+        ) -> FakeContextResult:
+            calls.append(("build", issue_id, public_only))
+            return FakeContextResult(issue_id, self.context.repo_root)
+
+        def show_context(
+            self,
+            issue_id: str,
+            *,
+            role: RetrievalRole | str = RetrievalRole.ORCHESTRATOR,
+            max_cards: int = 20,
+            max_full_artifacts: int | None = None,
+            public_only: bool = False,
+        ) -> str:
+            calls.append(("show", issue_id, public_only))
+            return f"# Context Pack: {issue_id}\n"
+
+    def fake_open_app(repo_root: str | Path = ".") -> FakeApp:
+        return FakeApp(repo_root)
+
+    monkeypatch.setattr(context_cli, "open_app", fake_open_app)
+
+    build = runner.invoke(
+        app,
+        [
+            "context",
+            "build",
+            "issue.fixture.context",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+    show = runner.invoke(
+        app,
+        [
+            "context",
+            "show",
+            "issue.fixture.context",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert build.exit_code == 0, build.output
+    assert json.loads(build.output)["issue_id"] == "issue.fixture.context"
+    assert show.exit_code == 0, show.output
+    assert json.loads(show.output)["content"] == (
+        "# Context Pack: issue.fixture.context\n"
+    )
+    assert calls == [
+        ("build", "issue.fixture.context", False),
+        ("show", "issue.fixture.context", False),
+    ]
 
 
 def test_context_build_cli_accepts_role_and_full_artifact_budget(
