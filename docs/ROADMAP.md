@@ -1,8 +1,8 @@
 # Roadmap
 
-TCS-Cosheaf has published the V17 / `v0.12.0` Research Memory Learning +
-Benchmark Suite v1 release and is now polishing the V18 / `v1.0.0` AI Math
-Collaborator MVP CLI/API surface. Earlier published baselines include the
+TCS-Cosheaf has published the V18 / `v1.0.0` AI Math Collaborator MVP release.
+Earlier published baselines include the V17 / `v0.12.0` Research Memory
+Learning + Benchmark Suite v1 release,
 `v0.11.0` External AI Operator Harness + Bounded Multi-Run Campaigns release,
 `v0.10.0` Cross-Check Evidence + Checker Registry release,
 `v0.9.0` Reviewable Research Workflow MVP, `v0.8.0` Deterministic Execution
@@ -15,11 +15,11 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V18 release candidate
+## Completed Release Focus: v1.0.0 AI Math Collaborator MVP
 
-The public `v0.12.0` tag and GitHub release are published, post-tag release
+The public `v1.0.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
-`@v0.12.0`. V18 froze the v1.0.0 MVP scope in:
+`@v1.0.0`. V18 froze the v1.0.0 MVP scope in:
 
 - [`docs/POST_V0120_STATE_AUDIT.md`](POST_V0120_STATE_AUDIT.md);
 - [`docs/CODEX_DEVELOPMENT_PLAN_V18.md`](CODEX_DEVELOPMENT_PLAN_V18.md);
@@ -31,10 +31,9 @@ it is not another broad feature-expansion line.
 
 V18 Phase A scope freeze, Phase B CLI/API polish, the workspace-template
 canonical AI math collaborator demo, Phase D documentation/operator packaging,
-and Phase E security/authority/benchmark audit have landed. The current focus
-is Phase F release-candidate metadata, ecosystem smoke, and publication
-closeout. `cosheaf interface list --json` records the stable v1.0 CLI surface,
-while `cosheaf research-run ...` is the preferred research-run root
+Phase E security/authority/benchmark audit, and Phase F publication closeout
+have landed. `cosheaf interface list --json` records the stable v1.0 CLI
+surface, while `cosheaf research-run ...` is the preferred research-run root
 command and `cosheaf run ...` remains compatibility behavior. Broad new
 runtime features are deferred until after v1.0.0 unless they fix a release
 blocker.
@@ -50,7 +49,7 @@ source metadata, mark gate pass, promote artifacts, call hosted providers by
 default, execute arbitrary shell through Cosheaf, train a model, or claim
 automatic theorem proving.
 
-## Planned Release Focus: v1.0.0 AI Math Collaborator MVP
+## Published Release Focus: v1.0.0 AI Math Collaborator MVP
 
 v1.0.0 means a human or external AI operator can take a research issue, run
 Cosheaf, receive context, plan attempts, execute bounded safe local actions,
@@ -64,7 +63,7 @@ The planned implementation phases are:
 - canonical workspace-template AI math collaborator demo (landed);
 - documentation and operator packaging (landed);
 - security, authority, and benchmark release audit (landed);
-- conservative `v1.0.0` release metadata and publication closeout.
+- conservative `v1.0.0` release metadata and publication closeout (landed).
 
 This line will not add autonomous theorem proving, automatic accepted
 promotion, AI-as-human-review, default hosted provider calls, formal
@@ -274,20 +273,23 @@ accepted status, or promotion authorization. Provider calls remain explicit,
 default-off, policy-scoped, previewed, consented, and excluded from CI/default
 tests. MCP remains optional and non-blocking.
 
-## Latest Published Release: v0.12.0
+## Latest Published Release: v1.0.0
 
-The published `v0.12.0` tag records package metadata and `cosheaf.__version__`
-as `0.12.0`. `docs/releases/v0.12.0.md` records the conservative release
-scope and limitations. The public `v0.12.0` tag and GitHub release are
+The published `v1.0.0` tag records package metadata and `cosheaf.__version__`
+as `1.0.0`. `docs/releases/v1.0.0.md` records the conservative release
+scope and limitations. The public `v1.0.0` tag and GitHub release are
 published, post-tag release smoke passed, and downstream
-workspace-template/public KB pins are aligned to `@v0.12.0`.
+workspace-template/public KB pins are aligned to `@v1.0.0`.
 
-The `v0.12.0` release packages deterministic sidecar memory updates, benchmark
-suite v1, comparative reports, and static Markdown/JSON review reports. These
-surfaces are sidecar guidance or review/regression context only. They do not
-create proof, source metadata, human review, verifier pass, gate pass,
-accepted status, accepted theorem/refutation, or promotion authority.
-Skipped, unsupported, unavailable, and inconclusive rows are not passes.
+The `v1.0.0` release packages the CLI-first AI Math Collaborator MVP: workspace
+validation/gates/index/context/lifecycle governance, reviewable workflow,
+checker, gap, research-loop, research-run, campaign, memory, benchmark,
+comparison, static-report, operator session, review handoff, fake/default-off
+provider, optional verifier adapter, and workspace-template demo surfaces.
+These surfaces are sidecar guidance or review/regression context only. They do
+not create proof, source metadata, human review, verifier pass, gate pass,
+accepted status, accepted theorem/refutation, or promotion authority. Skipped,
+unsupported, unavailable, and inconclusive rows are not passes.
 
 ## Previous Published Release: v0.10.0
 

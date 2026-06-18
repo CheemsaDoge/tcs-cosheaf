@@ -7,34 +7,32 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v1.0.0 AI Math Collaborator MVP release candidate**.
-Package metadata records `1.0.0`. The latest published release remains
-`v0.12.0` until the `v1.0.0` publication closeout creates the public tag,
-GitHub release, post-tag release smoke, and downstream workspace-template/
-public KB pin updates.
+Current status: **v1.0.0 AI Math Collaborator MVP published release**.
+Package metadata records `1.0.0`. The public `v1.0.0` tag, GitHub release,
+post-tag release smoke, and downstream workspace-template/public KB pin updates
+are complete.
 
-The `v0.12.0` release packages the V17 memory and benchmark line:
-deterministic sidecar memory updates under `.cosheaf/memory/`, benchmark suite
-v1, comparative reports, and static Markdown/JSON review reports. Memory
-weights, benchmark runs, comparisons, and static reports remain review context
-or sidecar guidance only and do not create proof, source metadata, human
-review, verifier pass, gate pass, accepted status, accepted refutation, or
-promotion authority.
+The `v1.0.0` release packages the V18 AI Math Collaborator MVP line:
+CLI-first workspace validation, gates, indexing, context packs, lifecycle
+governance, reviewable workflow/checker/gap/research-loop/research-run/
+campaign/memory/benchmark/compare/report surfaces, operator session and
+review handoff surfaces, fake/default-off provider paths, optional verifier
+tool adapters, and the workspace-template canonical demo. These surfaces
+remain review context or sidecar guidance only and do not create proof, source
+metadata, human review, verifier pass, gate pass, accepted status, accepted
+refutation, or promotion authority.
 
-The latest published release is `v0.12.0`:
-<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.12.0>.
+The latest published release is `v1.0.0`:
+<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v1.0.0>.
 
-The `v0.12.0` release does not add production autonomy, hosted-provider
+The `v1.0.0` release does not add production autonomy, hosted-provider
 defaults, model training, automatic correctness improvement, automatic theorem
-proving, Lean semantic alignment, human review, accepted writes, verifier
-passes without real checker evidence, gate-pass authority, source metadata
-authority, accepted theorem/refutation authority, or promotion authority.
+proving, Lean/mathlib/CSLib semantic alignment, human review, accepted writes,
+verifier passes without real checker evidence, gate-pass authority, source
+metadata authority, accepted theorem/refutation authority, or promotion
+authority.
 
-The active V18 line is preparing a conservative `v1.0.0` AI Math Collaborator
-MVP from the existing CLI-first workflow, campaign, checker, memory, benchmark,
-and report surfaces. The `v1.0.0` release candidate is not production-ready
-and is not a published tag yet. The canonical user demo lives in the workspace
-template:
+The canonical user demo lives in the workspace template:
 
 ```bash
 make ai-math-collaborator-demo
@@ -431,7 +429,7 @@ repositories that need the V15 checker registry and cross-check evidence
 surfaces can pin to `v0.10.0`. Downstream repositories that need the V16
 bounded campaign surfaces can pin to `v0.11.0`. Downstream repositories that
 need the V17 memory/benchmark release can pin to `v0.12.0`. Downstream
-repositories should wait for the V18 publication closeout before pinning to
+repositories that need the V18 AI Math Collaborator MVP release can pin to
 `v1.0.0`.
 
 ## Development Commands

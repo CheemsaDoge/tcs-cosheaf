@@ -2,25 +2,23 @@
 
 Milestone: **V18 / v1.0.0 AI Math Collaborator MVP**
 
-Status: **V18 Phase F.1 v1.0.0 release candidate**
+Status: **V18 Phase F.2 v1.0.0 publication closeout complete**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V18.md
 
 Current package version: `1.0.0`
 
 Latest published release:
-<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.12.0>
+<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v1.0.0>
 
-`v0.12.0` publication closeout status: tag, GitHub release, post-tag release
+`v1.0.0` publication closeout status: tag, GitHub release, post-tag release
 smoke, workspace-template pin update, and public KB CI/docs pin update are
-complete. V18 starts from that published baseline and freezes the v1.0.0 AI
-Math Collaborator MVP scope.
+complete.
 
 Current focus:
 
-- land V18 Phase F.1 `release-v100-readiness-and-rc`: package metadata,
-  release notes, release-candidate docs, benchmark, and ecosystem smoke;
-- prepare for V18 Phase F.2 publication closeout after RC verification;
+- maintain the published `v1.0.0` AI Math Collaborator MVP baseline;
+- keep downstream workspace-template and public KB pins aligned to `v1.0.0`;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -33,16 +31,17 @@ Planned V18 surface:
   workspace-template PR #95);
 - documentation and operator packaging (D.1, landed);
 - security, authority, and benchmark release audit (E.1, landed);
-- `v1.0.0` release candidate and publication closeout (F.1 current).
+- `v1.0.0` release candidate and publication closeout (F.1/F.2 landed).
 
-Current V18 F.1 surface:
+Current V18 F.2 surface:
 
 - package metadata and `cosheaf.__version__` record `1.0.0`;
-- `docs/releases/v1.0.0.md` records the release-candidate scope and
-  authority boundary;
-- the public `v1.0.0` tag and GitHub release are not published yet; and
-- downstream workspace-template/public KB pins remain on `v0.12.0` until
-  publication closeout.
+- `docs/releases/v1.0.0.md` records the published release scope and authority
+  boundary;
+- the public `v1.0.0` tag and GitHub release are published;
+- post-tag release smoke from `@v1.0.0` passed; and
+- workspace-template PR #97 and public KB PR #109 moved active pins to
+  `@v1.0.0`.
 
 Frozen v1.0.0 scope:
 
