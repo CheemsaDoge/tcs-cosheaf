@@ -127,10 +127,15 @@ from cosheaf.memory import (
     MemoryGraphError,
     MemoryRootScope,
     MemorySearchError,
+    MemoryUpdateError,
     RetrievalRole,
     build_memory_graph,
     compute_global_pagerank,
+    explain_memory_weight,
     load_memory_graph_snapshot,
+    rebuild_memory_weights,
+    update_memory_from_campaign,
+    update_memory_from_workflow,
 )
 from cosheaf.operator_session import (
     OPERATOR_SESSION_AUTHORITY_NOTICE,
@@ -3467,6 +3472,175 @@ def eval_strategy_planner(
 
     if not report.passed:
         raise typer.Exit(code=1)
+
+
+@memory_app.command("update-from-workflow")
+def memory_update_from_workflow(
+    workflow_id: str = typer.Argument(..., help="Workflow ID to learn from."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """Update sidecar memory weights from one persisted workflow."""
+    console = Console(width=120, markup=False)
+    try:
+        result = update_memory_from_workflow(RepoContext(repo_root), workflow_id)
+    except (MemoryUpdateError, ValidationError, ValueError) as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code="memory_update_failed",
+                    message=str(exc),
+                    remediation="Check the workflow ID and runtime sidecar files.",
+                    blocking=True,
+                    related_artifact=_valid_related_artifact(workflow_id),
+                )
+            )
+            raise typer.Exit(code=1) from None
+        console.print(f"Memory update failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Memory update run written: {result.run_path}")
+    console.print(f"- updates: {len(result.run.updates)}")
+    console.print(f"- weights: {result.weights_path}")
+    console.print(f"- authority: {result.authority_notice}")
+
+
+@memory_app.command("update-from-campaign")
+def memory_update_from_campaign(
+    campaign_id: str = typer.Argument(..., help="Campaign ID to learn from."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """Update sidecar memory weights from one persisted campaign."""
+    console = Console(width=120, markup=False)
+    try:
+        result = update_memory_from_campaign(RepoContext(repo_root), campaign_id)
+    except (MemoryUpdateError, ValidationError, ValueError) as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code="memory_update_failed",
+                    message=str(exc),
+                    remediation="Check the campaign ID and runtime sidecar files.",
+                    blocking=True,
+                    related_artifact=_valid_related_artifact(campaign_id),
+                )
+            )
+            raise typer.Exit(code=1) from None
+        console.print(f"Memory update failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Memory update run written: {result.run_path}")
+    console.print(f"- updates: {len(result.run.updates)}")
+    console.print(f"- weights: {result.weights_path}")
+    console.print(f"- authority: {result.authority_notice}")
+
+
+@memory_app.command("explain")
+def memory_explain(
+    artifact_id: str = typer.Argument(..., help="Artifact ID to explain."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """Explain sidecar memory weights touching one artifact."""
+    console = Console(width=120, markup=False)
+    try:
+        result = explain_memory_weight(RepoContext(repo_root), artifact_id)
+    except (MemoryUpdateError, ValidationError, ValueError) as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code="memory_explain_failed",
+                    message=str(exc),
+                    remediation="Run `cosheaf memory rebuild` first.",
+                    blocking=True,
+                    related_artifact=_valid_related_artifact(artifact_id),
+                )
+            )
+            raise typer.Exit(code=1) from None
+        console.print(f"Memory explain failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    if not result.edges:
+        console.print(f"No memory weights for {artifact_id}.")
+    for edge in result.edges:
+        console.print(
+            f"{edge.source_id} -> {edge.target_id} | weight={edge.weight:.6f} | "
+            f"signals={','.join(edge.signals)}"
+        )
+    console.print(f"- authority: {result.authority_notice}")
+
+
+@memory_app.command("rebuild")
+def memory_rebuild(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """Rebuild sidecar memory weights from update-run sidecars."""
+    console = Console(width=120, markup=False)
+    try:
+        result = rebuild_memory_weights(RepoContext(repo_root))
+    except (MemoryUpdateError, ValidationError, ValueError) as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code="memory_rebuild_failed",
+                    message=str(exc),
+                    remediation="Inspect .cosheaf/memory/update-runs/*.json.",
+                    blocking=True,
+                )
+            )
+            raise typer.Exit(code=1) from None
+        console.print(f"Memory rebuild failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Memory weights rebuilt: {result.weight_count} edge(s).")
+    console.print("- sidecar: .cosheaf/memory/weights.json")
+    console.print(f"- authority: {result.authority_notice}")
 
 
 @memory_graph_app.command("build")

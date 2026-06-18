@@ -14,7 +14,7 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V17 v0.12.0 kickoff
+## Active Development Focus: V17 v0.12.0 memory updates
 
 The public `v0.11.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
@@ -27,6 +27,11 @@ smoke passed, and downstream workspace-template/public KB pins are aligned to
 V17 will add deterministic sidecar memory updates, benchmark suite v1,
 comparative reports, and static Markdown/JSON review reports. It must remain
 operational learning rather than model training or a new truth source.
+
+The current implementation focus is memory update policy v1: workflow and
+campaign history can write rebuildable `.cosheaf/memory/update-runs/*.json`
+sidecars and aggregate `.cosheaf/memory/weights.json` without mutating YAML
+artifacts or granting accepted-knowledge authority.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
@@ -47,8 +52,8 @@ retrieval and planning, not truth judgments.
 
 The planned implementation phases are:
 
-- post-v0.11.0 audit and V17 plan/ADR (current);
-- deterministic memory update policy v1;
+- post-v0.11.0 audit and V17 plan/ADR (landed);
+- deterministic memory update policy v1 (current);
 - benchmark suite v1;
 - comparative workflow/campaign/benchmark reports;
 - static Markdown/JSON research reports; and

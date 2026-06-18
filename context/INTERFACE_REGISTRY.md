@@ -4,6 +4,24 @@
 
 ### Active And Planned Interfaces
 
+- Memory update DTOs, sidecar storage, and CLI commands are implemented under
+  `cosheaf.memory.updates`. The Python surface defines `MemorySignal`,
+  `MemoryEdgeUpdate`, `MemoryWeightStore`, `MemoryUpdatePolicy`,
+  `MemoryUpdateRun`, `MemoryExplainResult`, `MemoryUpdateResult`,
+  `MemoryUpdateError`, `default_memory_update_policy`,
+  `update_memory_from_workflow`, `update_memory_from_campaign`,
+  `rebuild_memory_weights`, `explain_memory_weight`,
+  `load_memory_update_runs`, `load_memory_weights`,
+  `write_memory_update_run`, `write_memory_weights`, and
+  `memory_update_run_path`. Runtime update-run sidecars are JSON under
+  `.cosheaf/memory/update-runs/<run-id>.json`; aggregate weights are JSON under
+  `.cosheaf/memory/weights.json`. The CLI surface is `cosheaf memory
+  update-from-workflow <workflow-id> --json`, `cosheaf memory
+  update-from-campaign <campaign-id> --json`, `cosheaf memory rebuild --json`,
+  and `cosheaf memory explain <artifact-id> --json`. Memory weights are
+  deterministic sidecar guidance only. They do not grant proof, source
+  metadata, human review, verifier pass, gate pass, accepted status, accepted
+  theorem/refutation, or promotion authority.
 - Checker registry DTOs, runtime storage, and CLI commands are implemented
   under `cosheaf.checkers`. The Python surface defines
   `CheckerRegistry`, `CheckerSpec`, `CheckerInput`, `CheckerResult`,
@@ -364,6 +382,21 @@
 - `cosheaf gap export <workflow-id> --out <path> --json`: exports one workflow
   gap report as JSON only under `reviews/workflow/`. Accepted KB targets,
   repository-external paths, and non-JSON suffixes are rejected.
+- `cosheaf memory update-from-workflow <workflow-id> --json`: reads one
+  persisted workflow runtime record, writes a deterministic update-run sidecar
+  under `.cosheaf/memory/update-runs/`, rebuilds
+  `.cosheaf/memory/weights.json`, and reports `accepted_write_performed=false`
+  plus `yaml_artifacts_mutated=false`.
+- `cosheaf memory update-from-campaign <campaign-id> --json`: reads one
+  persisted campaign runtime record, writes a deterministic update-run sidecar,
+  rebuilds aggregate memory weights, and keeps the same no-accepted-write and
+  no-YAML-mutation boundary.
+- `cosheaf memory rebuild --json`: rebuilds `.cosheaf/memory/weights.json`
+  from existing update-run sidecars without reading or mutating YAML artifacts.
+- `cosheaf memory explain <artifact-id> --json`: reads aggregate sidecar
+  weights and shows edges touching one artifact ID. Explanation output is
+  guidance only and is not proof, human review, verifier/gate pass, accepted
+  status, or promotion authority.
 - `cosheaf operator session start --issue <issue-id> --json`: creates a
   runtime operator-session metadata record under
   `.cosheaf/operator-sessions/<session-id>/session.json`, with matching
