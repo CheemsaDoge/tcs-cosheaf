@@ -126,6 +126,9 @@ Artifact, issue, and context views now include static detail pages generated
 from the fixture data. Artifact filters run in the browser over already-exported
 metadata only. Status badges include authority explanations; missing verifier
 or source data is rendered as not checked or unavailable instead of pass.
+Graph and gate pages render dependency, reverse-dependency, neighborhood, gate
+summary, warning, skip, and report-reference views from the same static export.
+Graph edges are explanatory only, and gate pass never implies accepted status.
 
 ## Future Write Actions
 

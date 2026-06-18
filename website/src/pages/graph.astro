@@ -1,11 +1,25 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { loadSiteData } from "../lib/siteData";
+import {
+  artifactHref,
+  dependenciesFor,
+  dependentsFor,
+  loadSiteData
+} from "../lib/siteData";
 
 const data = await loadSiteData();
+const nodeLimitNotice =
+  data.graph.nodes.length > 25
+    ? `Showing ${data.graph.nodes.length} nodes as a navigable list for readability.`
+    : "This graph is an explanatory map, not proof or accepted authority.";
 ---
 
 <BaseLayout title="Graph" eyebrow="Dependency relationships">
+  <section class="notice-band">
+    <strong>Graph boundary</strong>
+    <span>{nodeLimitNotice}</span>
+  </section>
+
   <section class="panel">
     <div class="graph-canvas" aria-label="Artifact dependency graph">
       {
@@ -13,7 +27,7 @@ const data = await loadSiteData();
           <div
             class:list={["graph-node", index === 0 ? "left-node" : "right-node"]}
           >
-            <strong>{node.title}</strong>
+            <strong><a href={artifactHref(node.artifact_id)}>{node.title}</a></strong>
             <span>{node.artifact_type}</span>
             <small>{node.status}</small>
           </div>
@@ -35,6 +49,39 @@ const data = await loadSiteData();
           <code>{edge.target_id}</code>
         </div>
       ))
+    }
+  </section>
+
+  <section class="card-grid compact">
+    {
+      data.graph.nodes.map((node) => {
+        const deps = dependenciesFor(node.artifact_id, data.graph.edges);
+        const revDeps = dependentsFor(node.artifact_id, data.graph.edges);
+        return (
+          <article class="info-card">
+            <h2><a href={artifactHref(node.artifact_id)}>{node.title}</a></h2>
+            <p>{node.artifact_id}</p>
+            <div class="neighborhood-grid">
+              <div>
+                <strong>Depends on</strong>
+                <div class="related-list">
+                  {deps.length > 0
+                    ? deps.map((id) => <a href={artifactHref(id)}>{id}</a>)
+                    : <span>none</span>}
+                </div>
+              </div>
+              <div>
+                <strong>Used by</strong>
+                <div class="related-list">
+                  {revDeps.length > 0
+                    ? revDeps.map((id) => <a href={artifactHref(id)}>{id}</a>)
+                    : <span>none</span>}
+                </div>
+              </div>
+            </div>
+          </article>
+        );
+      })
     }
   </section>
 </BaseLayout>
