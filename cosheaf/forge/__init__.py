@@ -9,11 +9,12 @@ from cosheaf.forge.models import (
     GitHubPrPlan,
     LocalGitPlan,
 )
-from cosheaf.forge.service import ForgePreviewError, ForgeService
+from cosheaf.forge.service import ForgeActionError, ForgePreviewError, ForgeService
 
 __all__ = [
     "FORGE_AUTHORITY_WARNING",
     "ForgeActionResult",
+    "ForgeActionError",
     "ForgeCredentialProvider",
     "ForgePreviewError",
     "ForgePreviewResult",

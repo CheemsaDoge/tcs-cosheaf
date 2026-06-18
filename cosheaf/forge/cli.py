@@ -8,8 +8,8 @@ from pathlib import Path
 import typer
 from rich.console import Console
 
-from cosheaf.forge.models import ForgePreviewResult
-from cosheaf.forge.service import ForgePreviewError, ForgeService
+from cosheaf.forge.models import ForgeActionResult, ForgePreviewResult
+from cosheaf.forge.service import ForgeActionError, ForgePreviewError, ForgeService
 from cosheaf.services.models import ErrorResult
 from cosheaf.storage.repo import RepoContext
 
@@ -28,9 +28,15 @@ forge_pr_app = typer.Typer(
     help="Dry-run GitHub pull request planning commands.",
     no_args_is_help=True,
 )
+forge_branch_app = typer.Typer(
+    add_completion=False,
+    help="Local git branch commands.",
+    no_args_is_help=True,
+)
 
 forge_app.add_typer(forge_issue_app, name="issue")
 forge_app.add_typer(forge_pr_app, name="pr")
+forge_app.add_typer(forge_branch_app, name="branch")
 
 
 @forge_app.command("status")
@@ -111,6 +117,64 @@ def forge_pr_preview(
     )
 
 
+@forge_branch_app.command("create")
+def forge_branch_create(
+    branch: str = typer.Argument(..., help="Branch name to create and switch to."),
+    confirm: bool = typer.Option(
+        False,
+        "--confirm",
+        help="Confirm the local git branch write.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Create and switch to a local branch with explicit confirmation."""
+    _emit_action_or_exit(
+        lambda: ForgeService(RepoContext(repo_root)).create_branch(
+            branch,
+            confirm=confirm,
+        ),
+        json_output=json_output,
+    )
+
+
+@forge_app.command("commit")
+def forge_commit(
+    message: str = typer.Option(..., "--message", help="Commit message."),
+    confirm: bool = typer.Option(
+        False,
+        "--confirm",
+        help="Confirm the local git commit.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Run validation/gate and create one local git commit."""
+    _emit_action_or_exit(
+        lambda: ForgeService(RepoContext(repo_root)).commit(
+            message=message,
+            confirm=confirm,
+        ),
+        json_output=json_output,
+    )
+
+
 def _emit_preview_or_exit(
     run: Callable[[], ForgePreviewResult],
     *,
@@ -145,6 +209,40 @@ def _emit_preview_or_exit(
         f"- github_writes_performed: {str(result.github_writes_performed).lower()}"
     )
     console.print(f"- authority: {result.authority_warning}")
+
+
+def _emit_action_or_exit(
+    run: Callable[[], ForgeActionResult],
+    *,
+    json_output: bool,
+) -> None:
+    console = Console(width=120, markup=False)
+    try:
+        result = run()
+    except ForgeActionError as exc:
+        error = ErrorResult(
+            code=exc.code,
+            message=str(exc),
+            remediation="Fix the local git state or pass explicit confirmation.",
+            blocking=True,
+        )
+        if json_output:
+            typer.echo(error.to_json(), nl=False)
+        else:
+            console.print(f"Forge action failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(result.to_json(), nl=False)
+        return
+    payload = result.to_dict()
+    console.print(f"Forge action: {payload.get('action', 'unknown')}")
+    console.print(f"- action_performed: {str(payload.get('action_performed')).lower()}")
+    console.print(
+        f"- git_writes_performed: {str(payload.get('git_writes_performed')).lower()}"
+    )
+    console.print("- network_calls_performed: false")
+    console.print("- github_writes_performed: false")
 
 
 __all__ = ["forge_app"]

@@ -117,18 +117,31 @@ class ForgePreviewResult(AgentAccessModel):
 
 
 class ForgeActionResult(AgentAccessModel):
-    """Non-executing placeholder result for future explicit forge actions."""
+    """Result for explicit forge actions."""
 
     action: str
-    action_performed: Literal[False] = False
+    action_performed: bool = False
     network_calls_performed: Literal[False] = False
-    git_writes_performed: Literal[False] = False
+    git_writes_performed: bool = False
     github_writes_performed: Literal[False] = False
+    push_performed: Literal[False] = False
+    github_pr_created: Literal[False] = False
+    branch: str | None = None
+    commit_hash: str | None = None
+    validation_performed: bool = False
+    gate_performed: bool = False
     authority_warning: str = FORGE_AUTHORITY_WARNING
 
     @field_validator("action")
     @classmethod
     def _action(cls, value: str) -> str:
+        return _non_empty(value)
+
+    @field_validator("branch", "commit_hash")
+    @classmethod
+    def _optional_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
         return _non_empty(value)
 
 

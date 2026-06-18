@@ -2,23 +2,34 @@
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from pydantic import ValidationError
 
 from cosheaf.core.paths import normalize_repo_path
 from cosheaf.forge.models import (
+    ForgeActionResult,
     ForgePreviewResult,
     GitHubIssuePlan,
     GitHubPrPlan,
     LocalGitPlan,
 )
+from cosheaf.services import GateService, ValidationService
 from cosheaf.storage.loader import IssueRecord, LoadError, load_yaml_file
 from cosheaf.storage.repo import RepoContext
 
 
 class ForgePreviewError(ValueError):
     """Raised when a dry-run forge preview cannot be constructed."""
+
+
+class ForgeActionError(ValueError):
+    """Raised when an explicit forge action cannot be completed."""
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
 
 
 class ForgeService:
@@ -88,6 +99,75 @@ class ForgeService:
             ),
         )
 
+    def create_branch(self, branch: str, *, confirm: bool) -> ForgeActionResult:
+        """Create and switch to a local branch after explicit confirmation."""
+        normalized_branch = _git_ref(branch, "branch")
+        if not confirm:
+            raise ForgeActionError(
+                "forge_confirm_required",
+                "forge branch create requires --confirm",
+            )
+        status = _git_status(self.context)
+        if status:
+            raise ForgeActionError(
+                "forge_dirty_state",
+                "dirty state blocks branch creation; commit, stash, or clean it first",
+            )
+        _run_git(self.context, "switch", "-c", normalized_branch)
+        return ForgeActionResult(
+            action="branch_create",
+            action_performed=True,
+            git_writes_performed=True,
+            branch=normalized_branch,
+        )
+
+    def commit(self, *, message: str, confirm: bool) -> ForgeActionResult:
+        """Run validation/gate and create one local git commit."""
+        normalized_message = _action_non_empty(message, "message")
+        if not confirm:
+            raise ForgeActionError(
+                "forge_confirm_required",
+                "forge commit requires --confirm",
+            )
+        status = _git_status(self.context)
+        staged = _staged_changes(status)
+        ambiguous = _ambiguous_dirty_lines(status)
+        if ambiguous:
+            detail = "; ".join(ambiguous)
+            raise ForgeActionError(
+                "forge_dirty_state",
+                f"dirty or untracked state blocks commit: {detail}",
+            )
+        if not staged:
+            raise ForgeActionError(
+                "forge_no_staged_changes",
+                "forge commit requires staged changes",
+            )
+
+        validation = ValidationService(self.context).validate_repository()
+        if not validation.ok:
+            raise ForgeActionError(
+                "forge_validation_failed",
+                "repository validation failed; fix validation before committing",
+            )
+        gate = GateService(self.context).run()
+        if gate.report.verdict != "pass":
+            raise ForgeActionError(
+                "forge_gate_failed",
+                "repository gate failed; fix gate failures before committing",
+            )
+
+        _run_git(self.context, "commit", "-m", normalized_message)
+        commit_hash = _run_git(self.context, "rev-parse", "HEAD").stdout.strip()
+        return ForgeActionResult(
+            action="commit",
+            action_performed=True,
+            git_writes_performed=True,
+            commit_hash=commit_hash,
+            validation_performed=True,
+            gate_performed=True,
+        )
+
 
 def _repo_local_input_path(path: str | Path) -> Path:
     value = str(path)
@@ -120,4 +200,51 @@ def _non_empty(value: str, field_name: str) -> str:
     return normalized
 
 
-__all__ = ["ForgePreviewError", "ForgeService"]
+def _git_ref(value: str, field_name: str) -> str:
+    normalized = _action_non_empty(value, field_name)
+    if normalized.startswith("-") or any(char.isspace() for char in normalized):
+        raise ForgeActionError("forge_invalid_git_ref", f"invalid git ref: {value}")
+    return normalized
+
+
+def _action_non_empty(value: str, field_name: str) -> str:
+    normalized = value.strip()
+    if not normalized:
+        raise ForgeActionError("forge_invalid_input", f"{field_name} must be non-empty")
+    return normalized
+
+
+def _run_git(context: RepoContext, *args: str) -> subprocess.CompletedProcess[str]:
+    result = subprocess.run(
+        ["git", *args],
+        cwd=context.repo_root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        message = result.stderr.strip() or result.stdout.strip() or "git command failed"
+        raise ForgeActionError("forge_git_failed", message)
+    return result
+
+
+def _git_status(context: RepoContext) -> tuple[str, ...]:
+    output = _run_git(context, "status", "--porcelain=v1").stdout
+    return tuple(line for line in output.splitlines() if line)
+
+
+def _staged_changes(status: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(line for line in status if line[:2] != "??" and line[0] != " ")
+
+
+def _ambiguous_dirty_lines(status: tuple[str, ...]) -> tuple[str, ...]:
+    ambiguous: list[str] = []
+    for line in status:
+        if line[:2] == "??":
+            ambiguous.append(f"untracked {line[3:]}")
+        elif len(line) > 1 and line[1] != " ":
+            ambiguous.append(f"unstaged {line[3:]}")
+    return tuple(ambiguous)
+
+
+__all__ = ["ForgeActionError", "ForgePreviewError", "ForgeService"]
