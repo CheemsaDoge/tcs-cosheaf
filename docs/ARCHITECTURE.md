@@ -397,6 +397,12 @@ verifier semantics, or gate behavior. Future server, website, MCP, and forge
 surfaces should call `cosheaf.app` instead of importing Typer command
 functions or shelling out to the CLI.
 
+The server-readiness contract is documented in
+[Server Readiness](SERVER_READINESS.md). It lists the in-process app and forge
+entry points that a future server should call for workspace info, validation,
+gatekeeper runs, context packs, local issue creation, forge previews, and
+structured error serialization.
+
 `cosheaf.app.models` exposes stable request/result DTOs for app use cases. The
 initial DTO family covers workspace info, validation, gate runs, context
 builds, draft artifact/source-note writes, review-request writes, forge
