@@ -3,6 +3,45 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V18 Phase A.1 post-v0.12.0 audit and v1.0 scope freeze - 2026-06-18
+
+Issue #474 starts the `v1.0.0 AI Math Collaborator MVP` line on branch
+`post-v0120-v100-scope-freeze`.
+
+This documentation-only task verifies the published `v0.12.0` baseline and
+lands durable V18 repo memory:
+
+- `docs/POST_V0120_STATE_AUDIT.md`;
+- `docs/CODEX_DEVELOPMENT_PLAN_V18.md`;
+- `docs/ADR/0034-v100-ai-math-collaborator-mvp-scope.md`;
+- roadmap, current milestone, and project-state updates.
+
+The audit confirms:
+
+- package version `0.12.0`;
+- public `v0.12.0` tag and GitHub release;
+- downstream workspace-template active pins at `@v0.12.0`;
+- public KB CI/docs pins at `@v0.12.0`;
+- deterministic memory update, benchmark, comparison, and static-report
+  surfaces exist;
+- no open PRs across the three repositories before issue #474 was opened;
+- stale framework issue #462 was closed as completed V17 work; and
+- unchanged accepted-write, human-review, source-metadata, verifier/gate, and
+  promotion authority.
+
+V18 scope is frozen around packaging the existing safe research harness as a
+stable v1.0.0 AI math collaborator MVP. The remaining V18 work is CLI/API
+polish, a canonical workspace-template demo, documentation/operator packaging,
+security and authority audits, release candidate metadata, and publication
+closeout.
+
+This task does not change code, schema, dependencies, CLI behavior, package
+version, KB artifacts, tags, releases, accepted promotion semantics, gatekeeper
+semantics, verifier adapter contracts, public KB content, or workspace-template
+behavior. It does not add hosted provider defaults, automatic theorem proving,
+automatic accepted promotion, AI-as-human-review, web UI, production SaaS, or
+multi-user permissions.
+
 ## V17 Phase F.2 v0.12.0 publication closeout - 2026-06-18
 
 Issue #472 records the `v0.12.0 Research Memory Learning + Benchmark Suite v1`
