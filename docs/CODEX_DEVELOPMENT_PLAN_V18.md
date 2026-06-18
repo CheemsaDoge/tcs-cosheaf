@@ -2,9 +2,10 @@
 
 Target: `v1.0.0 AI Math Collaborator MVP`
 
-Status: Phase E security, authority, and benchmark release audit after Phase A
-scope freeze, Phase B CLI/API polish, the workspace-template Phase C demo, and
-Phase D documentation/operator packaging.
+Status: Phase F release-candidate and publication closeout after Phase A scope
+freeze, Phase B CLI/API polish, the workspace-template Phase C demo, Phase D
+documentation/operator packaging, and Phase E security/authority/benchmark
+audit.
 
 ## Goal
 
@@ -105,8 +106,8 @@ for optional framework installation.
 2. Phase B: CLI/API polish and deprecation cleanup (landed).
 3. Phase C: end-to-end AI math collaborator demo (landed downstream).
 4. Phase D: documentation and operator packaging (landed).
-5. Phase E: security, authority, and benchmark release audit (current).
-6. Phase F: v1.0.0 release candidate and publication closeout.
+5. Phase E: security, authority, and benchmark release audit (landed).
+6. Phase F: v1.0.0 release candidate and publication closeout (current).
 
 ## Phase A Scope
 

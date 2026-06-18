@@ -3,6 +3,22 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V18 Phase F.1 v1.0.0 release candidate - 2026-06-18
+
+Issue #482 prepares the conservative `v1.0.0 AI Math Collaborator MVP`
+release candidate on branch `release-v100-readiness-and-rc`.
+
+This release-candidate task updates package metadata and `cosheaf.__version__`
+from `0.12.0` to `1.0.0`, adds `docs/releases/v1.0.0.md`, and aligns README,
+roadmap, milestone, and project-state docs with RC status.
+
+The `v1.0.0` tag and GitHub release are not published in this task.
+Downstream workspace-template/public KB pins remain on `@v0.12.0` until
+publication closeout. This task does not change code behavior, schema,
+dependencies, KB artifacts, accepted promotion semantics, gatekeeper
+semantics, verifier adapter contracts, hosted-provider defaults, or
+workspace-template behavior.
+
 ## V18 Phase E.1 security, authority, and benchmark release audit - 2026-06-18
 
 Issue #480 adds the v1.0.0 release-audit documentation on branch

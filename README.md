@@ -7,10 +7,11 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.12.0 Research Memory Learning + Benchmark Suite v1
-published release**. Package metadata records `0.12.0`. The public `v0.12.0`
-tag, GitHub release, post-tag release smoke, and downstream
-workspace-template/public KB pin updates are complete.
+Current status: **v1.0.0 AI Math Collaborator MVP release candidate**.
+Package metadata records `1.0.0`. The latest published release remains
+`v0.12.0` until the `v1.0.0` publication closeout creates the public tag,
+GitHub release, post-tag release smoke, and downstream workspace-template/
+public KB pin updates.
 
 The `v0.12.0` release packages the V17 memory and benchmark line:
 deterministic sidecar memory updates under `.cosheaf/memory/`, benchmark suite
@@ -31,7 +32,9 @@ authority, accepted theorem/refutation authority, or promotion authority.
 
 The active V18 line is preparing a conservative `v1.0.0` AI Math Collaborator
 MVP from the existing CLI-first workflow, campaign, checker, memory, benchmark,
-and report surfaces. The canonical user demo lives in the workspace template:
+and report surfaces. The `v1.0.0` release candidate is not production-ready
+and is not a published tag yet. The canonical user demo lives in the workspace
+template:
 
 ```bash
 make ai-math-collaborator-demo
@@ -275,7 +278,7 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- V17 `v0.12.0` publication closeout.
+- V18 `v1.0.0` publication closeout.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
@@ -427,7 +430,9 @@ the initial reviewable-workflow release line can pin to `v0.9.0`. Downstream
 repositories that need the V15 checker registry and cross-check evidence
 surfaces can pin to `v0.10.0`. Downstream repositories that need the V16
 bounded campaign surfaces can pin to `v0.11.0`. Downstream repositories that
-need the V17 memory/benchmark release can pin to `v0.12.0`.
+need the V17 memory/benchmark release can pin to `v0.12.0`. Downstream
+repositories should wait for the V18 publication closeout before pinning to
+`v1.0.0`.
 
 ## Development Commands
 
