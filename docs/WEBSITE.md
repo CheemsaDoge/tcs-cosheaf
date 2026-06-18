@@ -129,6 +129,11 @@ or source data is rendered as not checked or unavailable instead of pass.
 Graph and gate pages render dependency, reverse-dependency, neighborhood, gate
 summary, warning, skip, and report-reference views from the same static export.
 Graph edges are explanatory only, and gate pass never implies accepted status.
+The Authority Boundaries route now includes a short new-user guide covering
+what Cosheaf is, what it is not, why gates/verifiers/AI output are not truth or
+human review, how public/private KB roots are separated, and how accepted
+status enters through repository records, source metadata, validation, gates,
+real human review, and explicit promotion.
 
 ## Future Write Actions
 
