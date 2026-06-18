@@ -1,8 +1,8 @@
-﻿# Current Milestone
+# Current Milestone
 
 Milestone: **V18 / v1.0.0 AI Math Collaborator MVP**
 
-Status: **V18 Phase B.1 CLI/API polish and deprecation cleanup**
+Status: **V18 Phase D.1 documentation and operator packaging**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V18.md
 
@@ -18,9 +18,10 @@ Math Collaborator MVP scope.
 
 Current focus:
 
-- land V18 Phase B.1 `cli-api-polish-deprecation-cleanup`: deterministic
-  interface discovery, preferred `research-run` spelling, and compatibility
-  alias documentation;
+- land V18 Phase D.1 `v100-docs-operator-package`: the v1.0 AI math
+  collaborator MVP docs, operator runbook, authority boundary docs, and
+  public/private policy entrypoint;
+- prepare for V18 Phase E security, authority, benchmark, and stale-doc audit;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -28,10 +29,11 @@ Current focus:
 Planned V18 surface:
 
 - post-v0.12.0 audit and v1.0 scope freeze (A.1, landed);
-- CLI/API polish and deprecation cleanup (B.1, current);
-- canonical workspace-template AI math collaborator demo;
-- documentation and operator packaging;
-- security, authority, and benchmark release audit;
+- CLI/API polish and deprecation cleanup (B.1, landed);
+- canonical workspace-template AI math collaborator demo (C.1, landed in
+  workspace-template PR #95);
+- documentation and operator packaging (D.1, current);
+- security, authority, and benchmark release audit (E.1, next);
 - `v1.0.0` release candidate and publication closeout.
 
 Frozen v1.0.0 scope:
@@ -44,7 +46,7 @@ Frozen v1.0.0 scope:
   autoformalization, automatic promotion, and multi-user permissions to
   v1.1+ or later.
 
-Current V18 B.1 surface:
+Landed V18 B.1 surface:
 
 - `cosheaf interface list --json` emits a deterministic stable-interface
   discovery payload;

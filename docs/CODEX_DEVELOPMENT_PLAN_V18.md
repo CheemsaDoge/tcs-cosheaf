@@ -2,9 +2,8 @@
 
 Target: `v1.0.0 AI Math Collaborator MVP`
 
-Status: Phase A.1 scope freeze after the published `v0.12.0 Research Memory
-Learning + Benchmark Suite v1` release and downstream workspace/public-KB pin
-closeout.
+Status: Phase D documentation/operator packaging after Phase A scope freeze,
+Phase B CLI/API polish, and the workspace-template Phase C demo.
 
 ## Goal
 
@@ -101,11 +100,11 @@ for optional framework installation.
 
 ## Phase Structure
 
-1. Phase A: post-v0.12.0 audit and v1.0 scope freeze. Current issue #474.
-2. Phase B: CLI/API polish and deprecation cleanup.
-3. Phase C: end-to-end AI math collaborator demo.
-4. Phase D: documentation and operator packaging.
-5. Phase E: security, authority, and benchmark release audit.
+1. Phase A: post-v0.12.0 audit and v1.0 scope freeze (landed).
+2. Phase B: CLI/API polish and deprecation cleanup (landed).
+3. Phase C: end-to-end AI math collaborator demo (landed downstream).
+4. Phase D: documentation and operator packaging (current).
+5. Phase E: security, authority, and benchmark release audit (next).
 6. Phase F: v1.0.0 release candidate and publication closeout.
 
 ## Phase A Scope

@@ -29,6 +29,17 @@ proving, Lean semantic alignment, human review, accepted writes, verifier
 passes without real checker evidence, gate-pass authority, source metadata
 authority, accepted theorem/refutation authority, or promotion authority.
 
+The active V18 line is preparing a conservative `v1.0.0` AI Math Collaborator
+MVP from the existing CLI-first workflow, campaign, checker, memory, benchmark,
+and report surfaces. The canonical user demo lives in the workspace template:
+
+```bash
+make ai-math-collaborator-demo
+```
+
+See [AI Math Collaborator MVP](docs/AI_MATH_COLLABORATOR_MVP.md) and
+[Operator Runbook](docs/OPERATOR_RUNBOOK.md).
+
 Earlier published baselines include `v0.1.1` Formal Link Layer support,
 `v0.2.0` deterministic local-MVP workflow, `v0.2.1` CLI-first agent and
 hosted-provider gateway surfaces, `v0.2.2` provider transport hardening,
@@ -391,6 +402,10 @@ cosheaf context show <issue-id>
 See [Workspace quickstart](docs/WORKSPACE_QUICKSTART.md),
 [Workspace model](docs/WORKSPACE.md), and
 [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md) for layered KB roots.
+For the planned v1.0 collaborator workflow, use
+[AI Math Collaborator MVP](docs/AI_MATH_COLLABORATOR_MVP.md),
+[Operator Runbook](docs/OPERATOR_RUNBOOK.md), and the workspace-template
+`make ai-math-collaborator-demo` path.
 Downstream repositories that only need Formal Link Layer metadata can stay
 pinned to `v0.1.1`. Downstream repositories that need the deterministic
 local-MVP workflow can pin to `v0.2.0`. Downstream repositories that need the
@@ -454,6 +469,10 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Architecture](docs/ARCHITECTURE.md)
 - [Workspace quickstart](docs/WORKSPACE_QUICKSTART.md)
 - [Workspace model](docs/WORKSPACE.md)
+- [AI Math Collaborator MVP](docs/AI_MATH_COLLABORATOR_MVP.md)
+- [Operator runbook](docs/OPERATOR_RUNBOOK.md)
+- [Authority boundaries](docs/AUTHORITY_BOUNDARIES.md)
+- [Public/private policy](docs/PUBLIC_PRIVATE_POLICY.md)
 - [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md)
 - [Gatekeeper and validation gates](docs/GATES.md)
 - [Agent access](docs/AGENT_ACCESS.md)
