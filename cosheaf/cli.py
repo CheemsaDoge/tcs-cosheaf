@@ -172,6 +172,11 @@ from cosheaf.operator_session import (
     write_operator_session,
 )
 from cosheaf.orchestrator_fsm.cli import fsm_app
+from cosheaf.reports import (
+    write_benchmark_static_report,
+    write_campaign_report,
+    write_workflow_report,
+)
 from cosheaf.research.run import (
     RESEARCH_RUN_AUTHORITY_NOTICE,
     ResearchRunError,
@@ -357,6 +362,11 @@ compare_app = typer.Typer(
     help="Analytical comparison commands.",
     no_args_is_help=True,
 )
+report_app = typer.Typer(
+    add_completion=False,
+    help="Static review report commands.",
+    no_args_is_help=True,
+)
 memory_app = typer.Typer(
     add_completion=False,
     help="Deterministic memory/card commands.",
@@ -425,6 +435,7 @@ app.add_typer(ingest_app, name="ingest")
 app.add_typer(eval_app, name="eval")
 app.add_typer(benchmark_app, name="benchmark")
 app.add_typer(compare_app, name="compare")
+app.add_typer(report_app, name="report")
 app.add_typer(memory_app, name="memory")
 app.add_typer(mcp_app, name="mcp")
 app.add_typer(provider_app, name="provider")
@@ -3156,6 +3167,117 @@ def compare_benchmarks_cli(
     )
 
 
+@report_app.command("workflow")
+def report_workflow(
+    workflow_id: str = typer.Argument(..., help="Workflow ID."),
+    out: Path = typer.Option(
+        ...,
+        "--out",
+        help="Repository-local output directory.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    public_only: bool = typer.Option(
+        False,
+        "--public-only",
+        help="Reject reports that include private references.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """Write static Markdown/JSON report files for a workflow."""
+    _emit_static_report_or_exit(
+        lambda: write_workflow_report(
+            RepoContext(repo_root),
+            workflow_id,
+            out,
+            public_only=public_only,
+        ),
+        json_output=json_output,
+        code="workflow_report_failed",
+    )
+
+
+@report_app.command("campaign")
+def report_campaign(
+    campaign_id: str = typer.Argument(..., help="Campaign ID."),
+    out: Path = typer.Option(
+        ...,
+        "--out",
+        help="Repository-local output directory.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    public_only: bool = typer.Option(
+        False,
+        "--public-only",
+        help="Reject reports that include private references.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """Write static Markdown/JSON report files for a campaign."""
+    _emit_static_report_or_exit(
+        lambda: write_campaign_report(
+            RepoContext(repo_root),
+            campaign_id,
+            out,
+            public_only=public_only,
+        ),
+        json_output=json_output,
+        code="campaign_report_failed",
+    )
+
+
+@report_app.command("benchmark")
+def report_benchmark(
+    run_id: str = typer.Argument(..., help="Benchmark run ID."),
+    out: Path = typer.Option(
+        ...,
+        "--out",
+        help="Repository-local output directory.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    public_only: bool = typer.Option(
+        False,
+        "--public-only",
+        help="Keep the static report on aggregate benchmark fields only.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """Write static Markdown/JSON report files for a benchmark run."""
+    _emit_static_report_or_exit(
+        lambda: write_benchmark_static_report(
+            RepoContext(repo_root),
+            run_id,
+            out,
+            public_only=public_only,
+        ),
+        json_output=json_output,
+        code="benchmark_static_report_failed",
+    )
+
+
 @eval_app.command("campaign")
 def eval_campaign(
     repo_root: Path = typer.Option(
@@ -4879,6 +5001,44 @@ def _emit_compare_or_exit(
         f"- safety_regressions: {len(payload.get('safety_regressions', []))}"
     )
     console.print(f"- authority: {COMPARE_AUTHORITY_NOTICE}")
+
+
+def _emit_static_report_or_exit(
+    run: Callable[[], Any],
+    *,
+    json_output: bool,
+    code: str,
+) -> None:
+    console = Console(width=120, markup=False)
+    try:
+        result = run()
+    except ValueError as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code=code,
+                    message=str(exc),
+                    remediation=(
+                        "Use an existing runtime record ID and a repository-local "
+                        "non-accepted output directory."
+                    ),
+                    blocking=True,
+                )
+            )
+            raise typer.Exit(code=1) from None
+        console.print(f"Static report failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    payload = result.to_dict()
+    if json_output:
+        _emit_json(payload)
+        return
+    console.print(
+        f"Static report written: {payload['subject']} {payload['record_id']} "
+        f"-> {payload['out_dir']}"
+    )
+    console.print(f"- files: {len(payload.get('files', {}))}")
+    console.print(f"- authority: {payload['authority_notice']}")
 
 
 def _emit_model(model: AgentAccessModel) -> None:

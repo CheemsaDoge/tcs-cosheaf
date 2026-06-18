@@ -61,6 +61,20 @@ cosheaf compare benchmarks <before-id> <after-id> --json
 Comparison reports are analytical review context only. They show metric deltas
 and safety regressions, but do not prove that one attempt is globally better.
 
+V17 static report commands export existing records into review directories:
+
+```bash
+cosheaf report workflow <workflow-id> --out reviews/workflow/<id> --json
+cosheaf report campaign <campaign-id> --out reviews/campaign/<id> --json
+cosheaf report benchmark <run-id> --out reviews/benchmark/<id> --json
+```
+
+Static reports write Markdown summaries and JSON sidecars for metrics,
+authority findings, memory changes, checker matrices, and review handoff
+summaries. They are review context only and must not be treated as proof,
+source metadata, human review, verifier pass, gate pass, accepted status, or
+promotion authority.
+
 ## Retrieval Eval Cases
 
 Retrieval eval cases are YAML records under `evals/retrieval/`. The default

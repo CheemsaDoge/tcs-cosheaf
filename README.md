@@ -257,6 +257,11 @@ Implemented:
   workflows`, `cosheaf compare campaigns`, and `cosheaf compare benchmarks`.
   Comparison reports are metric-scoped review context only and highlight
   safety regressions without claiming a globally better result.
+- V17 static report development surfaces: `cosheaf.reports` writes static
+  Markdown/JSON report directories for existing workflow, campaign, and
+  benchmark records through `cosheaf report workflow`, `cosheaf report
+  campaign`, and `cosheaf report benchmark`. Static reports are review context
+  only and are refused under accepted KB paths.
 
 Planned or incomplete:
 
@@ -264,7 +269,7 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- V17 static reports and `v0.12.0` release closeout.
+- V17 `v0.12.0` release closeout.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
@@ -462,6 +467,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Memory updates](docs/MEMORY_UPDATES.md)
 - [Benchmarks](docs/BENCHMARKS.md)
 - [Comparisons](docs/COMPARISONS.md)
+- [Static reports](docs/STATIC_REPORTS.md)
 - [Checker registry](docs/CHECKERS.md)
 - [Draft proposals](docs/DRAFT_PROPOSALS.md)
 - [Review handoffs](docs/REVIEW_HANDOFFS.md)

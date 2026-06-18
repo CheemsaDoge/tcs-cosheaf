@@ -3,6 +3,27 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V17 Phase E.1 static research reports - 2026-06-18
+
+Issue #468 adds static Markdown/JSON report directories on branch
+`static-research-dashboard-reports`.
+
+The current surface includes:
+
+- `cosheaf.reports` DTOs and helpers for workflow, campaign, and benchmark
+  static reports;
+- `cosheaf report workflow <workflow-id> --out <dir> --json`;
+- `cosheaf report campaign <campaign-id> --out <dir> --json`; and
+- `cosheaf report benchmark <run-id> --out <dir> --json`.
+
+Static reports read existing runtime records and write `summary.md`,
+`metrics.json`, `authority_findings.json`, `memory_changes.json`,
+`checker_matrix.json`, and `review_handoff_summary.md` under repository-local
+non-accepted directories. They are review context only: they do not mutate YAML
+artifacts, write accepted knowledge, create human review, fabricate source
+metadata, mutate verifier results, mark gates as passing, call hosted
+providers, use network access, execute shell commands, or promote artifacts.
+
 ## V17 Phase D.1 comparative run reports - 2026-06-18
 
 Issue #466 adds deterministic comparison reports on branch
