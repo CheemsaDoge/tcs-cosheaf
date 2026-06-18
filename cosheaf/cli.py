@@ -283,6 +283,11 @@ graph_app = typer.Typer(
     help="Graph commands.",
     no_args_is_help=True,
 )
+interface_app = typer.Typer(
+    add_completion=False,
+    help="Public interface discovery commands.",
+    no_args_is_help=True,
+)
 gate_app = typer.Typer(
     add_completion=False,
     help="Gatekeeper commands.",
@@ -413,6 +418,7 @@ app.add_typer(counterexample_app, name="counterexample")
 counterexample_app.add_typer(counterexample_evidence_app, name="evidence")
 app.add_typer(index_app, name="index")
 app.add_typer(graph_app, name="graph")
+app.add_typer(interface_app, name="interface")
 app.add_typer(gate_app, name="gate")
 app.add_typer(checker_app, name="checker")
 app.add_typer(gap_app, name="gap")
@@ -425,6 +431,7 @@ app.add_typer(task_app, name="task")
 app.add_typer(draft_app, name="draft")
 app.add_typer(bundle_app, name="bundle")
 app.add_typer(review_app, name="review")
+app.add_typer(run_app, name="research-run")
 app.add_typer(run_app, name="run")
 app.add_typer(research_loop_app, name="research-loop")
 app.add_typer(campaign_app, name="campaign")
@@ -483,6 +490,177 @@ _FAILURE_LOG_AUTHORITY_NOTICE = (
     "checked counterexample evidence, human review, gate success, accepted "
     "status, or promotion evidence"
 )
+_INTERFACE_AUTHORITY_NOTICE = (
+    "Interface discovery is documentation metadata only; it does not grant "
+    "proof, source metadata, human review, verifier pass, gate pass, accepted "
+    "status, accepted theorem/refutation status, or promotion authority."
+)
+_STABLE_V1_CLI_SURFACE: tuple[dict[str, str], ...] = (
+    {
+        "command": "workspace",
+        "preferred_invocation": "cosheaf workspace info",
+        "status": "stable",
+        "notes": "Inspect configured KB roots and workspace policy.",
+    },
+    {
+        "command": "validate",
+        "preferred_invocation": "cosheaf validate",
+        "status": "stable",
+        "notes": "Validate YAML records and repository invariants.",
+    },
+    {
+        "command": "gate",
+        "preferred_invocation": "cosheaf gate run",
+        "status": "stable",
+        "notes": "Run gatekeeper checks; skipped rows are not passes.",
+    },
+    {
+        "command": "index",
+        "preferred_invocation": "cosheaf index rebuild",
+        "status": "stable",
+        "notes": "Rebuild deterministic local search/query index.",
+    },
+    {
+        "command": "context",
+        "preferred_invocation": "cosheaf context build <issue-id>",
+        "status": "stable",
+        "notes": "Build review context packs for issues.",
+    },
+    {
+        "command": "artifact",
+        "preferred_invocation": "cosheaf artifact ...",
+        "status": "stable",
+        "notes": "Inspect and manage artifact lifecycle through governed paths.",
+    },
+    {
+        "command": "promotion",
+        "preferred_invocation": "cosheaf promotion readiness <artifact-id>",
+        "status": "stable",
+        "notes": "Read-only promotion readiness reporting.",
+    },
+    {
+        "command": "workflow",
+        "preferred_invocation": "cosheaf workflow ...",
+        "status": "stable",
+        "notes": "Reviewable workflow records, draft proposals, and handoffs.",
+    },
+    {
+        "command": "checker",
+        "preferred_invocation": "cosheaf checker ...",
+        "status": "stable",
+        "notes": "Checker registry and local checker runs.",
+    },
+    {
+        "command": "gap",
+        "preferred_invocation": "cosheaf gap ...",
+        "status": "stable",
+        "notes": "Workflow gap reports and exports.",
+    },
+    {
+        "command": "research-loop",
+        "preferred_invocation": "cosheaf research-loop ...",
+        "status": "stable",
+        "notes": "Bounded local research-loop metadata.",
+    },
+    {
+        "command": "research-run",
+        "preferred_invocation": "cosheaf research-run ...",
+        "status": "stable",
+        "notes": "Research-run provenance and review context.",
+    },
+    {
+        "command": "campaign",
+        "preferred_invocation": "cosheaf campaign ...",
+        "status": "stable",
+        "notes": "Bounded research campaign metadata.",
+    },
+    {
+        "command": "memory",
+        "preferred_invocation": "cosheaf memory ...",
+        "status": "stable",
+        "notes": "Deterministic memory cards, search, and sidecar updates.",
+    },
+    {
+        "command": "benchmark",
+        "preferred_invocation": "cosheaf benchmark ...",
+        "status": "stable",
+        "notes": "Deterministic local benchmark suite commands.",
+    },
+    {
+        "command": "compare",
+        "preferred_invocation": "cosheaf compare ...",
+        "status": "stable",
+        "notes": "Analytical comparison reports.",
+    },
+    {
+        "command": "report",
+        "preferred_invocation": "cosheaf report ...",
+        "status": "stable",
+        "notes": "Static review report generation.",
+    },
+    {
+        "command": "operator session",
+        "preferred_invocation": "cosheaf operator session ...",
+        "status": "stable",
+        "notes": "Operator audit-session metadata.",
+    },
+    {
+        "command": "provider",
+        "preferred_invocation": "cosheaf provider fake-run ...",
+        "status": "stable_default_off",
+        "notes": "Fake/preview/config paths; real hosted send remains explicit.",
+    },
+    {
+        "command": "mcp",
+        "preferred_invocation": "cosheaf mcp ...",
+        "status": "optional_adapter",
+        "notes": "Optional adapter surface; CLI remains the oracle.",
+    },
+)
+_COMPATIBILITY_ALIASES: tuple[dict[str, str], ...] = (
+    {
+        "alias": "cosheaf gate",
+        "preferred": "cosheaf gate run",
+        "status": "compatibility_supported",
+        "notes": "Kept for the v1.0 line; new docs should prefer gate run.",
+    },
+    {
+        "alias": "cosheaf run",
+        "preferred": "cosheaf research-run",
+        "status": "compatibility_supported",
+        "notes": "Kept for existing research-run provenance scripts.",
+    },
+)
+_OPTIONAL_ADAPTER_SURFACES: tuple[dict[str, str], ...] = (
+    {
+        "surface": "provider real-run",
+        "status": "experimental_default_off",
+        "notes": "Requires explicit consent, network allowance, and configuration.",
+    },
+    {
+        "surface": "mcp",
+        "status": "optional_adapter",
+        "notes": "Does not replace CLI authority.",
+    },
+    {
+        "surface": "external verifier execution",
+        "status": "optional",
+        "notes": "Unavailable tools produce skipped results, not passes.",
+    },
+)
+
+
+def _interface_list_payload() -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "package": "tcs-cosheaf",
+        "version": __version__,
+        "target_release": "v1.0.0",
+        "authority_notice": _INTERFACE_AUTHORITY_NOTICE,
+        "stable_cli_surface": list(_STABLE_V1_CLI_SURFACE),
+        "compatibility_aliases": list(_COMPATIBILITY_ALIASES),
+        "optional_adapter_surfaces": list(_OPTIONAL_ADAPTER_SURFACES),
+    }
 
 
 @app.command()
@@ -504,6 +682,29 @@ def version(
         )
         return
     Console().print(f"tcs-cosheaf {__version__}")
+
+
+@interface_app.command("list")
+def interface_list(
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """List the stable v1.0 CLI surface and compatibility aliases."""
+    payload = _interface_list_payload()
+    if json_output:
+        _emit_json(payload)
+        return
+    console = Console(markup=False)
+    console.print("Stable v1.0 CLI surface:")
+    for item in payload["stable_cli_surface"]:
+        console.print(f"- {item['preferred_invocation']} [{item['status']}]")
+    console.print("Compatibility aliases:")
+    for item in payload["compatibility_aliases"]:
+        console.print(f"- {item['alias']} -> {item['preferred']}")
+    console.print(f"Authority: {payload['authority_notice']}")
 
 
 @workspace_app.command("info")

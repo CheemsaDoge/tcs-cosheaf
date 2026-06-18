@@ -45,7 +45,7 @@ expected.
 4. Start a research run:
 
    ```bash
-   cosheaf run start --issue <issue-id> --operator external --json
+   cosheaf research-run start --issue <issue-id> --operator external --json
    ```
 
 5. Inspect workspace state:
@@ -97,9 +97,9 @@ expected.
     with:
 
     ```bash
-    cosheaf run append-command --run <run-id> --input-json <command.json> --json
-    cosheaf run append-artifact --run <run-id> --artifact <artifact-id> --json
-    cosheaf run append-output --run <run-id> --input-json <output.json> --json
+    cosheaf research-run append-command --run <run-id> --input-json <command.json> --json
+    cosheaf research-run append-artifact --run <run-id> --artifact <artifact-id> --json
+    cosheaf research-run append-output --run <run-id> --input-json <output.json> --json
     ```
 
 13. Stage draft artifacts, source notes, bundles, failure logs, checked
@@ -119,17 +119,17 @@ expected.
 15. Finalize and inspect the research run:
 
     ```bash
-    cosheaf run finalize --run <run-id> --status completed --stop-reason "<reason>" --json
-    cosheaf run evidence-report --run <run-id> --json
-    cosheaf run replay-plan --run <run-id> --json
+    cosheaf research-run finalize --run <run-id> --status completed --stop-reason "<reason>" --json
+    cosheaf research-run evidence-report --run <run-id> --json
+    cosheaf research-run replay-plan --run <run-id> --json
     ```
 
 16. Preview review export first, then export only when a review record is
     intended:
 
     ```bash
-    cosheaf run export-review --run <run-id> --dry-run --json
-    cosheaf run export-review --run <run-id> --json
+    cosheaf research-run export-review --run <run-id> --dry-run --json
+    cosheaf research-run export-review --run <run-id> --json
     ```
 
 17. Open one PR. The PR must record the run ID/path when a run was used,

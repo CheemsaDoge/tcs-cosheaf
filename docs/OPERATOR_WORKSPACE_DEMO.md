@@ -55,7 +55,7 @@ cosheaf strategy plan \
 Start a provenance run:
 
 ```bash
-cosheaf run start \
+cosheaf research-run start \
   --issue "$ISSUE_ID" \
   --operator external \
   --operator-label "operator demo" \
@@ -84,7 +84,7 @@ Example command record:
 Append it with:
 
 ```bash
-cosheaf run append-command \
+cosheaf research-run append-command \
   --run "$RUN_ID" \
   --input-json .cosheaf/operator-demo/command.validate.json \
   --json
@@ -93,7 +93,7 @@ cosheaf run append-command \
 Record a relevant artifact as read or touched:
 
 ```bash
-cosheaf run append-artifact \
+cosheaf research-run append-artifact \
   --run "$RUN_ID" \
   --artifact construction.graph-toy.0001 \
   --mode read \
@@ -142,7 +142,7 @@ Example output reference:
 ```
 
 ```bash
-cosheaf run append-output \
+cosheaf research-run append-output \
   --run "$RUN_ID" \
   --input-json .cosheaf/operator-demo/output.context-pack.json \
   --json
@@ -158,14 +158,14 @@ cosheaf gate run --json
 Finalize the run and preview review export:
 
 ```bash
-cosheaf run finalize \
+cosheaf research-run finalize \
   --run "$RUN_ID" \
   --status completed \
   --stop-reason "operator workspace demo completed" \
   --json
 
-cosheaf run evidence-report --run "$RUN_ID" --json
-cosheaf run export-review --run "$RUN_ID" --dry-run --json
+cosheaf research-run evidence-report --run "$RUN_ID" --json
+cosheaf research-run export-review --run "$RUN_ID" --dry-run --json
 ```
 
 When a strategy plan was generated, update it from the run and preview the

@@ -2,7 +2,7 @@
 
 Milestone: **V18 / v1.0.0 AI Math Collaborator MVP**
 
-Status: **V18 Phase A.1 post-v0.12.0 audit and v1.0 scope freeze**
+Status: **V18 Phase B.1 CLI/API polish and deprecation cleanup**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V18.md
 
@@ -18,16 +18,17 @@ Math Collaborator MVP scope.
 
 Current focus:
 
-- land V18 Phase A.1 `post-v0120-v100-scope-freeze`: docs-only state audit,
-  V18 plan, ADR, roadmap, milestone, and project-state updates;
+- land V18 Phase B.1 `cli-api-polish-deprecation-cleanup`: deterministic
+  interface discovery, preferred `research-run` spelling, and compatibility
+  alias documentation;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
 
 Planned V18 surface:
 
-- post-v0.12.0 audit and v1.0 scope freeze (A.1, current);
-- CLI/API polish and deprecation cleanup;
+- post-v0.12.0 audit and v1.0 scope freeze (A.1, landed);
+- CLI/API polish and deprecation cleanup (B.1, current);
 - canonical workspace-template AI math collaborator demo;
 - documentation and operator packaging;
 - security, authority, and benchmark release audit;
@@ -42,6 +43,16 @@ Frozen v1.0.0 scope:
 - defer web UI, default hosted providers, automatic theorem proving,
   autoformalization, automatic promotion, and multi-user permissions to
   v1.1+ or later.
+
+Current V18 B.1 surface:
+
+- `cosheaf interface list --json` emits a deterministic stable-interface
+  discovery payload;
+- `cosheaf interface list` emits a text summary of the same stable v1.0 CLI
+  surface;
+- `cosheaf research-run ...` is the preferred research-run provenance root
+  command; and
+- `cosheaf run ...` remains a compatibility alias for existing scripts.
 
 Current V17 B.1 surface:
 

@@ -1,8 +1,8 @@
 # Roadmap
 
 TCS-Cosheaf has published the V17 / `v0.12.0` Research Memory Learning +
-Benchmark Suite v1 release and is now freezing the V18 / `v1.0.0` AI Math
-Collaborator MVP scope. Earlier published baselines include the
+Benchmark Suite v1 release and is now polishing the V18 / `v1.0.0` AI Math
+Collaborator MVP CLI/API surface. Earlier published baselines include the
 `v0.11.0` External AI Operator Harness + Bounded Multi-Run Campaigns release,
 `v0.10.0` Cross-Check Evidence + Checker Registry release,
 `v0.9.0` Reviewable Research Workflow MVP, `v0.8.0` Deterministic Execution
@@ -15,11 +15,11 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V18 v1.0.0 scope freeze
+## Active Development Focus: V18 CLI/API polish
 
 The public `v0.12.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
-`@v0.12.0`. V18 freezes the v1.0.0 MVP scope in:
+`@v0.12.0`. V18 froze the v1.0.0 MVP scope in:
 
 - [`docs/POST_V0120_STATE_AUDIT.md`](POST_V0120_STATE_AUDIT.md);
 - [`docs/CODEX_DEVELOPMENT_PLAN_V18.md`](CODEX_DEVELOPMENT_PLAN_V18.md);
@@ -29,7 +29,10 @@ V18 packages the existing safe research harness as a stable AI math
 collaborator MVP. It is polish, demo, documentation, audit, and release work;
 it is not another broad feature-expansion line.
 
-The current implementation focus is scope freeze. Broad new runtime features
+The current implementation focus is CLI/API polish and deprecation cleanup.
+`cosheaf interface list --json` records the stable v1.0 CLI surface, while
+`cosheaf research-run ...` is the preferred research-run root command and
+`cosheaf run ...` remains compatibility behavior. Broad new runtime features
 are deferred until after v1.0.0 unless they fix a release blocker.
 
 The authority boundary is unchanged: workflow records, loop records, task
@@ -52,8 +55,8 @@ and compare the result against benchmark expectations.
 
 The planned implementation phases are:
 
-- post-v0.12.0 audit and v1.0 scope freeze (current);
-- CLI/API polish and deprecation cleanup;
+- post-v0.12.0 audit and v1.0 scope freeze (landed);
+- CLI/API polish and deprecation cleanup (current);
 - canonical workspace-template AI math collaborator demo;
 - documentation and operator packaging;
 - security, authority, and benchmark release audit;

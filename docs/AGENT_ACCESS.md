@@ -73,7 +73,7 @@ are not passes.
 External coding agents should use CLI first:
 
 1. Read `AGENTS.md`, `context/CURRENT_MILESTONE.md`, and the relevant issue.
-2. Start `cosheaf run start --issue <issue-id> --operator external --json`
+2. Start `cosheaf research-run start --issue <issue-id> --operator external --json`
    when auditable operator provenance is expected.
 3. Run `cosheaf workspace info --json` when machine-readable workspace state
    is needed, or `cosheaf workspace info` for human inspection.
@@ -85,8 +85,8 @@ External coding agents should use CLI first:
 6. Write only draft/proposal/bundle/source-note staging outputs when a task
    explicitly permits writes.
 7. Record relevant commands and controlled outputs through
-   `cosheaf run append-command`, `cosheaf run append-artifact`, and
-   `cosheaf run append-output` when a run was started.
+   `cosheaf research-run append-command`, `cosheaf research-run append-artifact`, and
+   `cosheaf research-run append-output` when a run was started.
 8. Re-run the required validation/test/gate commands.
 9. Finalize the run, inspect `evidence-report`, preview `export-review`, and
    export only when a review record is intended.
@@ -101,7 +101,7 @@ For a Codex-style repository task, the concrete sequence is:
 1. Read policy and scope: `AGENTS.md`, `context/CURRENT_MILESTONE.md`, the
    issue, and any generated context pack referenced by the issue.
 2. Start a research run when auditable operator provenance is expected:
-   `cosheaf run start --issue <issue-id> --operator external --json`.
+   `cosheaf research-run start --issue <issue-id> --operator external --json`.
 3. Inspect the workspace:
    `cosheaf workspace info --json`.
 4. Establish a baseline:
@@ -114,7 +114,7 @@ For a Codex-style repository task, the concrete sequence is:
 7. Make only issue-scoped edits. Use controlled write commands for
    draft/proposal/source-note/bundle/review-staging outputs when the issue
    permits those writes.
-8. Record commands, artifacts, and controlled outputs through the `cosheaf run`
+8. Record commands, artifacts, and controlled outputs through the `cosheaf research-run`
    append commands when a run was started.
 9. Re-run the task-required tests, validation, and gates.
 10. Finalize and inspect the run, preview `export-review`, and export only
@@ -282,17 +282,17 @@ exported for review under `reviews/runs/<run-id>.yaml`.
 Lifecycle commands:
 
 ```bash
-cosheaf run start --issue <issue-id> --operator external --json
-cosheaf run append-command --run <run-id> --input-json <command.json> --json
-cosheaf run append-artifact --run <run-id> --artifact <artifact-id> --json
-cosheaf run append-artifact --run <run-id> --artifact <artifact-id> --mode touched --json
-cosheaf run append-output --run <run-id> --input-json <output.json> --json
-cosheaf run finalize --run <run-id> --status completed --stop-reason <text> --json
-cosheaf run show <run-id> --json
-cosheaf run evidence-report --run <run-id> --json
-cosheaf run export-review --run <run-id> --dry-run --json
-cosheaf run export-review --run <run-id> --json
-cosheaf run replay-plan --run <run-id> --json
+cosheaf research-run start --issue <issue-id> --operator external --json
+cosheaf research-run append-command --run <run-id> --input-json <command.json> --json
+cosheaf research-run append-artifact --run <run-id> --artifact <artifact-id> --json
+cosheaf research-run append-artifact --run <run-id> --artifact <artifact-id> --mode touched --json
+cosheaf research-run append-output --run <run-id> --input-json <output.json> --json
+cosheaf research-run finalize --run <run-id> --status completed --stop-reason <text> --json
+cosheaf research-run show <run-id> --json
+cosheaf research-run evidence-report --run <run-id> --json
+cosheaf research-run export-review --run <run-id> --dry-run --json
+cosheaf research-run export-review --run <run-id> --json
+cosheaf research-run replay-plan --run <run-id> --json
 ```
 
 Research run records are provenance only. They do not execute commands, call

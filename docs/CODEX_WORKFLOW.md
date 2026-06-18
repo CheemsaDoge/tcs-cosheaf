@@ -206,7 +206,7 @@ Follow this sequence for nontrivial issue work:
 
 1. Read `AGENTS.md`, `context/CURRENT_MILESTONE.md`, this workflow document,
    and the GitHub issue.
-2. Start a research run with `cosheaf run start --issue <issue-id>
+2. Start a research run with `cosheaf research-run start --issue <issue-id>
    --operator external --json` when auditable operator provenance is expected.
 3. Inspect workspace state:
    `cosheaf workspace info --json`.
@@ -229,14 +229,14 @@ Follow this sequence for nontrivial issue work:
    outputs, write only draft/proposal/source-note/bundle/review-staging
    records through the controlled commands above.
 9. Record relevant commands, artifacts, and controlled outputs with
-   `cosheaf run append-command`, `cosheaf run append-artifact`, and
-   `cosheaf run append-output`. Do not store secrets, hidden reasoning, full
+   `cosheaf research-run append-command`, `cosheaf research-run append-artifact`, and
+   `cosheaf research-run append-output`. Do not store secrets, hidden reasoning, full
    environment dumps, or accepted-write claims.
 10. Re-run task-required checks, including `make lint`, `make typecheck`,
     `make test`, `make validate`, `make gate`, and `git diff --check` unless
     the issue narrows the required command set.
-11. Finalize and export the run with `cosheaf run finalize` and
-    `cosheaf run export-review --dry-run` first, then `export-review` only when
+11. Finalize and export the run with `cosheaf research-run finalize` and
+    `cosheaf research-run export-review --dry-run` first, then `export-review` only when
     a review record is intended. For strategy-planner work, update and stage
     strategy review context with `cosheaf strategy update-from-run --plan
     <plan-id> --run <run-id> --json` and `cosheaf strategy export-review --plan
@@ -378,14 +378,14 @@ commands when the result will be parsed by a program:
 - `cosheaf bundle submit --input-json <path> --json --dry-run`
 - `cosheaf review request --input-json <path> --json --dry-run`
 - `cosheaf review request-from-bundle --bundle <path> --json --dry-run`
-- `cosheaf run start --issue <issue-id> --operator external --json`
-- `cosheaf run append-command --run <run-id> --input-json <path> --json`
-- `cosheaf run append-artifact --run <run-id> --artifact <artifact-id> --json`
-- `cosheaf run append-output --run <run-id> --input-json <path> --json`
-- `cosheaf run finalize --run <run-id> --status completed --stop-reason <text> --json`
-- `cosheaf run evidence-report --run <run-id> --json`
-- `cosheaf run export-review --run <run-id> --dry-run --json`
-- `cosheaf run replay-plan --run <run-id> --json`
+- `cosheaf research-run start --issue <issue-id> --operator external --json`
+- `cosheaf research-run append-command --run <run-id> --input-json <path> --json`
+- `cosheaf research-run append-artifact --run <run-id> --artifact <artifact-id> --json`
+- `cosheaf research-run append-output --run <run-id> --input-json <path> --json`
+- `cosheaf research-run finalize --run <run-id> --status completed --stop-reason <text> --json`
+- `cosheaf research-run evidence-report --run <run-id> --json`
+- `cosheaf research-run export-review --run <run-id> --dry-run --json`
+- `cosheaf research-run replay-plan --run <run-id> --json`
 
 JSON mode keeps human text rendering out of stdout and uses structured
 `ErrorResult` payloads for expected command failures. Human output remains the
