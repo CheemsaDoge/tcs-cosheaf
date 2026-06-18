@@ -1,0 +1,286 @@
+"""Thin app facade over existing Cosheaf services.
+
+The app layer is intentionally boring: it gives future server, MCP, and UI
+callers one import surface without moving policy-heavy service code yet.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
+from pathlib import Path
+from typing import Any, Self
+
+from cosheaf.agent.context_pack import CONTEXT_MAX_CARDS, ContextPackResult
+from cosheaf.agent.orchestrator_state import ReducerResult
+from cosheaf.agent.worker_bundle_v2 import WorkerBundleV2
+from cosheaf.core.status import ArtifactStatus, ArtifactType
+from cosheaf.gates.gatekeeper import GatekeeperRunResult, ValidationReport
+from cosheaf.gates.promotion_readiness import (
+    PromotionReadinessReport,
+    build_promotion_readiness_report,
+)
+from cosheaf.memory import (
+    ArtifactCard,
+    ArtifactCardStatus,
+    RetrievalResult,
+    RetrievalRole,
+)
+from cosheaf.services import (
+    ArtifactWriteResult,
+    BundleValidationService,
+    ContextPackService,
+    ControlledWriteResult,
+    DraftWriteService,
+    GateService,
+    MemorySearchService,
+    ReviewRequestFromBundleResult,
+    ValidationService,
+    WorkspaceInfoResult,
+    WorkspaceService,
+)
+from cosheaf.services.models import (
+    DraftArtifactWriteRequest,
+    WorkerBundleSubmitRequest,
+    WorkerBundleSubmitResult,
+)
+from cosheaf.storage.repo import RepoContext
+
+
+class CosheafApp:
+    """Application facade for existing repository use cases."""
+
+    def __init__(self, context: RepoContext) -> None:
+        self.context = context
+
+    @classmethod
+    def from_repo_root(cls, repo_root: str | Path = ".") -> Self:
+        """Create an app facade from a repository root."""
+        return cls(RepoContext(Path(repo_root)))
+
+    def workspace_info(self) -> WorkspaceInfoResult:
+        """Return active workspace metadata."""
+        return WorkspaceService(self.context).info()
+
+    def validate_repository(self) -> ValidationReport:
+        """Validate repository YAML records and invariants."""
+        return ValidationService(self.context).validate_repository()
+
+    def validate_artifact_file(self, path: str | Path) -> ValidationReport:
+        """Validate one repository-local artifact YAML file."""
+        return ValidationService(self.context).validate_artifact_file(path)
+
+    def run_gate(
+        self,
+        *,
+        persist_review: bool = False,
+        pr_checklist_path: str | Path | None = None,
+        timestamp: str | None = None,
+    ) -> GatekeeperRunResult:
+        """Run gatekeeper checks and return report metadata."""
+        return GateService(self.context).run(
+            persist_review=persist_review,
+            pr_checklist_path=pr_checklist_path,
+            timestamp=timestamp,
+        )
+
+    def build_context(
+        self,
+        issue_id: str,
+        *,
+        role: RetrievalRole | str = RetrievalRole.ORCHESTRATOR,
+        max_cards: int = CONTEXT_MAX_CARDS,
+        max_full_artifacts: int | None = None,
+        public_only: bool = False,
+    ) -> ContextPackResult:
+        """Build a deterministic issue-scoped context pack."""
+        return ContextPackService(self.context).build(
+            issue_id,
+            role=role,
+            max_cards=max_cards,
+            max_full_artifacts=max_full_artifacts,
+            public_only=public_only,
+        )
+
+    def show_context(
+        self,
+        issue_id: str,
+        *,
+        role: RetrievalRole | str = RetrievalRole.ORCHESTRATOR,
+        max_cards: int = CONTEXT_MAX_CARDS,
+        max_full_artifacts: int | None = None,
+        public_only: bool = False,
+    ) -> str:
+        """Build and return the rendered main context document."""
+        return ContextPackService(self.context).show(
+            issue_id,
+            role=role,
+            max_cards=max_cards,
+            max_full_artifacts=max_full_artifacts,
+            public_only=public_only,
+        )
+
+    def memory_cards(
+        self,
+        *,
+        issue_id: str | None = None,
+        status: ArtifactCardStatus | None = None,
+    ) -> tuple[ArtifactCard, ...]:
+        """Build compact artifact cards from repository metadata."""
+        return MemorySearchService(self.context).cards(
+            issue_id=issue_id,
+            status=status,
+        )
+
+    def memory_search(
+        self,
+        query: str,
+        *,
+        issue_id: str | None = None,
+        status: ArtifactCardStatus | None = None,
+        max_cards: int = CONTEXT_MAX_CARDS,
+        seed_artifacts: Sequence[str] = (),
+        pinned_artifacts: Sequence[str] = (),
+        include_refuted: bool = False,
+        include_obsolete: bool = False,
+    ) -> RetrievalResult:
+        """Search artifact cards with deterministic local scoring."""
+        return MemorySearchService(self.context).search(
+            query,
+            issue_id=issue_id,
+            status=status,
+            max_cards=max_cards,
+            seed_artifacts=seed_artifacts,
+            pinned_artifacts=pinned_artifacts,
+            include_refuted=include_refuted,
+            include_obsolete=include_obsolete,
+        )
+
+    def create_artifact(
+        self,
+        *,
+        artifact_id: str,
+        artifact_type: ArtifactType,
+        title: str,
+        domain: Sequence[str],
+        status: ArtifactStatus,
+        statement: str,
+        authors: Sequence[str],
+        tags: Sequence[str] = (),
+        depends_on: Sequence[str] = (),
+        supersedes: Sequence[str] = (),
+        created_at: str | None = None,
+    ) -> ArtifactWriteResult:
+        """Create a deterministic draft/pre-accepted artifact YAML record."""
+        return DraftWriteService(self.context).create_artifact(
+            artifact_id=artifact_id,
+            artifact_type=artifact_type,
+            title=title,
+            domain=domain,
+            status=status,
+            statement=statement,
+            authors=authors,
+            tags=tags,
+            depends_on=depends_on,
+            supersedes=supersedes,
+            created_at=created_at,
+        )
+
+    def write_draft_artifact(
+        self,
+        request: DraftArtifactWriteRequest,
+        *,
+        dry_run: bool = False,
+    ) -> ControlledWriteResult:
+        """Write or preview a controlled draft artifact request."""
+        return DraftWriteService(self.context).write_artifact_request(
+            request,
+            dry_run=dry_run,
+        )
+
+    def write_source_note(
+        self,
+        request: Mapping[str, Any],
+        *,
+        dry_run: bool = False,
+    ) -> ControlledWriteResult:
+        """Write or preview a staged draft source note."""
+        return DraftWriteService(self.context).write_source_note(
+            request,
+            dry_run=dry_run,
+        )
+
+    def write_review_request(
+        self,
+        request: Mapping[str, Any],
+        *,
+        dry_run: bool = False,
+    ) -> ControlledWriteResult:
+        """Write or preview a draft informational review request."""
+        return DraftWriteService(self.context).write_review_request(
+            request,
+            dry_run=dry_run,
+        )
+
+    def write_review_request_from_bundle(
+        self,
+        bundle_path: str | Path,
+        *,
+        dry_run: bool = False,
+    ) -> ReviewRequestFromBundleResult:
+        """Generate and write or preview a draft request from a worker bundle."""
+        return DraftWriteService(self.context).write_review_request_from_bundle(
+            bundle_path,
+            dry_run=dry_run,
+        )
+
+    def validate_bundle(self, bundle_path: str | Path) -> WorkerBundleV2:
+        """Load and validate a worker bundle v2 manifest."""
+        return BundleValidationService(self.context).validate(bundle_path)
+
+    def reduce_bundle(
+        self,
+        bundle_path: str | Path,
+        *,
+        reducer_id: str,
+    ) -> ReducerResult:
+        """Validate and reduce a worker bundle v2 manifest."""
+        return BundleValidationService(self.context).reduce(
+            bundle_path,
+            reducer_id=reducer_id,
+        )
+
+    def submit_bundle(
+        self,
+        request: WorkerBundleSubmitRequest,
+        *,
+        dry_run: bool = False,
+    ) -> WorkerBundleSubmitResult:
+        """Validate a worker bundle for review without promotion."""
+        return BundleValidationService(self.context).submit(
+            request,
+            dry_run=dry_run,
+        )
+
+    def promotion_readiness(
+        self,
+        *,
+        artifact_id: str | None = None,
+        issue_id: str | None = None,
+    ) -> PromotionReadinessReport:
+        """Build a read-only promotion-readiness report."""
+        return build_promotion_readiness_report(
+            self.context,
+            artifact_id=artifact_id,
+            issue_id=issue_id,
+        )
+
+
+def open_app(repo_root: str | Path = ".") -> CosheafApp:
+    """Open a repository through the application facade."""
+    return CosheafApp.from_repo_root(repo_root)
+
+
+__all__ = [
+    "CosheafApp",
+    "open_app",
+]

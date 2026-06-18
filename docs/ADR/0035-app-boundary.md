@@ -1,6 +1,6 @@
 # ADR 0035: Application Boundary Before Server And Website Surfaces
 
-Status: proposed
+Status: accepted
 
 Date: 2026-06-19
 
@@ -67,6 +67,14 @@ promotion rules.
   authority boundaries.
 - Promotion and write-heavy surfaces require extra care and should move after
   the read/check facade is stable.
+
+## Implementation Note
+
+Longplan A1.1 adds `cosheaf.app.CosheafApp` and `cosheaf.app.open_app` as the
+initial app facade. The facade delegates to existing services and the read-only
+promotion-readiness reporter. It does not move accepted-promotion writes,
+provider real-run, local command execution, MCP serving, Git/GitHub mutation,
+or CLI rendering into the app layer.
 
 ## Rejected Options
 

@@ -4,6 +4,17 @@
 
 ### Active And Planned Interfaces
 
+- Application facade is implemented under `cosheaf.app`. The Python surface
+  defines `CosheafApp` and `open_app`. `CosheafApp` exposes use-case methods
+  for workspace info, repository validation, artifact-file validation,
+  gatekeeper runs, context build/show, memory cards/search, controlled draft
+  artifact writes, controlled source-note writes, controlled review-request
+  writes, WorkerBundle validate/submit/reduce, review-request generation from
+  WorkerBundle, and read-only promotion-readiness reports. The facade delegates
+  to existing services and read-only domain functions. It is not a new
+  knowledge authority and does not grant proof, source metadata, human review,
+  verifier pass, gate pass, accepted status, accepted theorem/refutation
+  status, or promotion authority.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI

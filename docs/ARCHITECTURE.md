@@ -330,6 +330,22 @@ can be converted to the public `ErrorResult` DTO. CLI commands may continue to
 render the human-readable error text, while provider, MCP, or agent-facing
 callers can use the structured code/remediation/blocking fields.
 
+### Application Layer
+
+Provides `cosheaf.app` as the stable Python use-case boundary above existing
+services. The initial facade is intentionally thin: `CosheafApp` and
+`open_app` delegate to the existing service and read-only domain functions for
+workspace info, repository and artifact validation, gate runs, context
+build/show, memory cards/search, controlled draft writes, controlled
+source-note and review-request writes, WorkerBundle validation/submit/reduce,
+and read-only promotion-readiness reports.
+
+The app layer is not a new authority source. It does not change CLI command
+names, artifact schemas, accepted-promotion semantics, human-review policy,
+verifier semantics, or gate behavior. Future server, website, MCP, and forge
+surfaces should call `cosheaf.app` instead of importing Typer command
+functions or shelling out to the CLI.
+
 ### CLI Layer
 
 Provides public commands for validation, gate execution, graph inspection,
@@ -353,7 +369,7 @@ KB roots.
 The intended module dependency direction is:
 
 ```text
-core -> config -> storage -> graph -> gates -> verification -> agent -> services -> cli
+core -> config -> storage -> graph -> gates -> verification -> agent -> services -> app -> cli
 ```
 
 Lower-level modules must not import higher-level modules. Public interface changes must be recorded in `context/INTERFACE_REGISTRY.md`.
