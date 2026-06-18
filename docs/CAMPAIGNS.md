@@ -27,12 +27,21 @@ cosheaf campaign scorecard <campaign-id> --json
 cosheaf campaign finalize <campaign-id> --json
 ```
 
-The current C.1 external-operator protocol surface is:
+The C.1 external-operator protocol surface is:
 
 ```bash
 cosheaf campaign next <campaign-id> --json
 cosheaf campaign export-task <campaign-id> --out <path> --json
 cosheaf campaign import-result <campaign-id> --input-json <path> --json
+```
+
+The current D.1 budget-controller surface is:
+
+```bash
+cosheaf campaign pause <campaign-id> --json
+cosheaf campaign resume <campaign-id> --json
+cosheaf campaign scan <campaign-id> --json
+cosheaf campaign run <campaign-id> --max-attempts <n> --json
 ```
 
 `campaign start` creates one runtime campaign record. Optional flags include
@@ -81,6 +90,26 @@ accepted-status or accepted-refutation overclaims, hidden reasoning fields, and
 public-mode private references. If no reviewable draft is created, the result
 must carry explicit failures or remaining gaps.
 
+`campaign pause` records a human pause by setting campaign status to `paused`
+and appending a bounded runtime event. `campaign resume` only resumes a paused
+campaign; it does not clear blocked or budget-exhausted campaigns.
+
+`campaign scan` scans JSON/JSONL sidecars under
+`.cosheaf/campaigns/<campaign-id>/` for accepted-write references, accepted or
+refutation authority overclaims, human-review claims, verifier/gate pass
+claims, promotion claims, hidden reasoning, secrets, raw provider payloads,
+public-mode private references, invalid runtime JSON, and repeated failures
+beyond the configured campaign budget. It writes
+`.cosheaf/campaigns/<campaign-id>/scan.json` and exits nonzero when blocking
+findings exist.
+
+`campaign run` is a deterministic controller pass. It calls the campaign scan,
+applies stop policies for pause state, unsafe runtime output, repeated
+failures, max attempts, and max draft outputs, and updates campaign status to
+`running`, `blocked`, or `budget_exhausted` when appropriate. It always reports
+`shell_commands_performed=false`, `provider_calls_performed=false`, and
+`accepted_write_performed=false`.
+
 ## Runtime Layout
 
 Campaign runtime records are ignored sidecars:
@@ -91,6 +120,7 @@ Campaign runtime records are ignored sidecars:
 .cosheaf/campaigns/<campaign-id>/operator-results/<attempt-id>.json
 .cosheaf/campaigns/<campaign-id>/scorecard.json
 .cosheaf/campaigns/<campaign-id>/events.jsonl
+.cosheaf/campaigns/<campaign-id>/scan.json
 ```
 
 These files are not YAML lifecycle artifacts and are not accepted knowledge.
@@ -140,13 +170,22 @@ The C.1 operator protocol adds:
 - `CampaignAuthorityClaims`; and
 - `CampaignOperatorImportResult`.
 
+The D.1 controller adds:
+
+- `CampaignScanFinding`;
+- `CampaignScanResult`;
+- `CampaignRunResult`;
+- `pause_campaign`;
+- `resume_campaign`;
+- `scan_campaign`; and
+- `run_campaign`.
+
 ## Non-Goals
 
 The current implementation does not provide:
 
-- campaign runner loops;
-- budget-controller execution;
-- campaign scanner or handoff reports;
+- provider-backed or shell-backed campaign runner loops;
+- campaign review handoff reports;
 - `cosheaf eval campaign`;
 - hosted provider integration;
 - arbitrary shell execution;

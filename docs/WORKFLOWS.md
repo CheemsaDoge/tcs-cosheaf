@@ -43,6 +43,10 @@ cosheaf campaign finalize <campaign-id> --json
 cosheaf campaign next <campaign-id> --json
 cosheaf campaign export-task <campaign-id> --out <path> --json
 cosheaf campaign import-result <campaign-id> --input-json <path> --json
+cosheaf campaign pause <campaign-id> --json
+cosheaf campaign resume <campaign-id> --json
+cosheaf campaign scan <campaign-id> --json
+cosheaf campaign run <campaign-id> --max-attempts <n> --json
 ```
 
 Current behavior:
@@ -122,6 +126,16 @@ Current behavior:
   Imported operator results remain review context only and do not create
   proof, source metadata, human review, verifier/gate pass, accepted status,
   accepted refutation, or promotion authority.
+- `campaign pause/resume/scan/run` implements the D.1 deterministic campaign
+  budget controller. `pause` records human pause state; `resume` only resumes
+  paused campaigns; `scan` writes
+  `.cosheaf/campaigns/<campaign-id>/scan.json` and fails closed on blocking
+  authority, accepted-write, private-leak, secret, hidden-reasoning,
+  provider-payload, invalid-JSON, or repeated-failure findings; and `run`
+  applies stop policies for pauses, unsafe runtime output, repeated failures,
+  max attempts, and max draft outputs. It does not execute shell commands,
+  call hosted providers, create human review, write accepted KB content, or
+  grant verifier/gate/promotion authority.
 
 The current implementation lives under:
 
@@ -183,11 +197,13 @@ Campaign runtime records are also ignored sidecars:
 .cosheaf/campaigns/<campaign-id>/operator-results/<attempt-id>.json
 .cosheaf/campaigns/<campaign-id>/scorecard.json
 .cosheaf/campaigns/<campaign-id>/events.jsonl
+.cosheaf/campaigns/<campaign-id>/scan.json
 ```
 
 Campaign records and scorecards are not source-of-truth YAML artifacts and are
 not accepted knowledge. The current campaign surface does not yet include
-campaign runner loops, scanner/handoff reports, or campaign evals.
+provider-backed or shell-backed campaign runner loops, campaign handoff
+reports, or campaign evals.
 
 ## Downstream Status
 

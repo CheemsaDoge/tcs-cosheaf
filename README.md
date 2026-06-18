@@ -21,13 +21,15 @@ proof, review, gate, verifier, source metadata, accepted-status, or promotion
 authority.
 
 The current development line is V16 / `v0.11.0` External AI Operator Harness +
-Bounded Multi-Run Campaigns. The current branch adds the C.1 external operator
-protocol v2 surface on top of the B.1 campaign model core: bounded
-`operator_task_v2` exports, structured `operator_result_v2` imports, and
-`cosheaf campaign next/export-task/import-result` CLI commands under ignored
-`.cosheaf/campaigns/` paths. Campaign and operator output is review context
-only and does not create proof, source metadata, human review, verifier pass,
-gate pass, accepted status, accepted refutation, or promotion authority.
+Bounded Multi-Run Campaigns. The current branch adds the D.1 campaign runner
+budget controller on top of the B.1 model core and C.1 external-operator
+protocol: `cosheaf campaign pause/resume/scan/run` with deterministic budget
+checks, pause handling, repeated-failure blocking, and runtime-output scanning
+under ignored `.cosheaf/campaigns/` paths. The controller does not execute
+shell commands or call hosted providers. Campaign and operator output is review
+context only and does not create proof, source metadata, human review,
+verifier pass, gate pass, accepted status, accepted refutation, or promotion
+authority.
 
 The `v0.10.0` release does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, Lean semantic alignment, human review, accepted
@@ -222,6 +224,14 @@ Implemented:
   validates `operator_result_v2`, rejects authority overclaims, unsafe paths,
   accepted KB writes, and public-mode private leaks, then records a runtime
   campaign attempt. These packets remain review context only.
+- V16 campaign runner budget-controller development surfaces:
+  `cosheaf campaign pause/resume` records human pause state, `cosheaf campaign
+  scan` writes a deterministic runtime scan report under
+  `.cosheaf/campaigns/<campaign-id>/scan.json`, and `cosheaf campaign run`
+  applies stop policies for attempt budgets, draft-output budgets, repeated
+  failures, pauses, and unsafe runtime output. `run` is a controller pass only:
+  it does not execute shell commands, call providers, create human review, or
+  write accepted knowledge.
 
 Planned or incomplete:
 
@@ -229,8 +239,8 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- V16 campaign runner, pause/resume, scanner, handoff, eval, downstream demo,
-  public KB policy guard, and `v0.11.0` release closeout.
+- V16 campaign handoff, eval, downstream demo, public KB policy guard, and
+  `v0.11.0` release closeout.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.

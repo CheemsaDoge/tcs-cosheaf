@@ -3,6 +3,45 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V16 Phase D.1 campaign runner budget controller - 2026-06-18
+
+Issue #452 adds the third implementation increment for
+`v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns` on branch
+`campaign-runner-budget-controller`.
+
+The current surface extends the Phase B.1 campaign runtime and Phase C.1
+external-operator protocol with:
+
+- `CampaignScanFinding`, `CampaignScanResult`, and `CampaignRunResult`
+  runtime DTOs;
+- `pause_campaign` and `resume_campaign` service helpers;
+- `scan_campaign`, which scans `.cosheaf/campaigns/<campaign-id>/` JSON/JSONL
+  runtime sidecars and writes `.cosheaf/campaigns/<campaign-id>/scan.json`;
+- `run_campaign`, which calls the scanner and applies stop policies for human
+  pause, unsafe runtime output, repeated failures, max attempts, and max draft
+  outputs;
+- `cosheaf campaign pause <campaign-id> --json`;
+- `cosheaf campaign resume <campaign-id> --json`;
+- `cosheaf campaign scan <campaign-id> --json`; and
+- `cosheaf campaign run <campaign-id> --max-attempts <n> --json`.
+
+The scanner blocks accepted-write references, accepted-status/refutation
+overclaims, human-review claims, verifier/gate pass claims, promotion claims,
+hidden reasoning, secrets, raw provider payloads, public-mode private
+references, invalid runtime JSON, and repeated failures beyond the configured
+budget. Blocking scan findings make `campaign scan --json` exit nonzero.
+
+`campaign run` is a deterministic controller pass only. It records
+`shell_commands_performed=false`, `provider_calls_performed=false`, and
+`accepted_write_performed=false`; it does not execute shell commands, call
+hosted providers, create human review, write accepted KB content, mutate
+verifier results, mark gate pass, or grant promotion authority.
+
+This task does not implement campaign handoff reports, `cosheaf eval campaign`,
+downstream campaign demos, public KB policy guards, hosted provider
+integration, arbitrary shell execution, accepted KB writes, human-review
+creation, or promotion semantics.
+
 ## V16 Phase C.1 external operator protocol v2 - 2026-06-18
 
 Issue #450 adds the second implementation increment for
