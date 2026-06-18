@@ -26,6 +26,10 @@
   informational only. `AgentAccessStatus.SKIPPED` remains distinct from
   `AgentAccessStatus.PASS`; skipped, unavailable, and inconclusive states are
   not pass states.
+- The validate/gate CLI group is registered from `cosheaf.validation_cli` and
+  delegates repository validation and gatekeeper runs to `cosheaf.app.open_app`.
+  Public command names and JSON DTOs remain `cosheaf validate`,
+  `cosheaf gate`, and `cosheaf gate run`.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI

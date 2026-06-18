@@ -359,6 +359,9 @@ Provides public commands for validation, gate execution, graph inspection,
 context generation, workspace inspection, lifecycle artifact writes, and
 verifier invocation.
 
+The validate/gate command group lives in `cosheaf.validation_cli` and calls the
+`cosheaf.app` facade for repository validation and gatekeeper runs.
+
 CLI commands now call typed service functions for workspace inspection,
 repository and artifact validation, gate execution, context-pack generation,
 memory card/search operations, task operations, and draft artifact creation.

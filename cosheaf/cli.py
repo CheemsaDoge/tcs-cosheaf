@@ -199,7 +199,6 @@ from cosheaf.services import (
     DraftWriteServiceError,
     FailureLogFromBundlePlanResult,
     FailureLogFromBundleWriteResult,
-    GateService,
     MemorySearchService,
     ServiceError,
     TaskService,
@@ -215,12 +214,10 @@ from cosheaf.services.models import (
     ContextPolicyMode,
     DraftArtifactWriteRequest,
     ErrorResult,
-    GateRunResult,
     KbRootPolicy,
     ModelCallResult,
     ProviderConsent,
     ProviderContextPreview,
-    ValidateResult,
     WorkerBundleSubmitRequest,
 )
 from cosheaf.services.models import (
@@ -238,6 +235,11 @@ from cosheaf.strategy.storage import (
     load_strategy_plan,
     update_strategy_plan_from_run,
     write_strategy_plan,
+)
+from cosheaf.validation_cli import (
+    gate_app,
+    register_validation_commands,
+    run_validation,
 )
 from cosheaf.verification.counterexample_evidence import (
     CHECKED_COUNTEREXAMPLE_AUTHORITY_NOTICE,
@@ -287,10 +289,6 @@ interface_app = typer.Typer(
     add_completion=False,
     help="Public interface discovery commands.",
     no_args_is_help=True,
-)
-gate_app = typer.Typer(
-    add_completion=False,
-    help="Gatekeeper commands.",
 )
 context_app = typer.Typer(
     add_completion=False,
@@ -755,33 +753,7 @@ def workspace_info(
         )
 
 
-@app.command()
-def validate(
-    repo_root: Path = typer.Option(
-        Path("."),
-        "--repo-root",
-        help="Repository root to validate.",
-    ),
-    debug: bool = typer.Option(
-        False,
-        "--debug",
-        help="Show tracebacks for unexpected validation errors.",
-    ),
-    json_output: bool = typer.Option(
-        False,
-        "--json",
-        help="Emit deterministic JSON instead of text output.",
-    ),
-) -> None:
-    """Validate repository YAML records and implemented invariants."""
-    context = RepoContext(repo_root)
-    _run_validation(
-        report_factory=lambda: ValidationService(context).validate_repository(),
-        success_message="Validation passed",
-        failure_message="Validation failed",
-        debug=debug,
-        json_output=json_output,
-    )
+register_validation_commands(app)
 
 
 @artifact_app.command("validate")
@@ -800,7 +772,7 @@ def artifact_validate(
 ) -> None:
     """Validate one artifact YAML file with file-local checks."""
     context = RepoContext(repo_root)
-    _run_validation(
+    run_validation(
         report_factory=lambda: ValidationService(context).validate_artifact_file(path),
         success_message="Artifact validation passed",
         failure_message="Artifact validation failed",
@@ -2777,72 +2749,6 @@ def graph_show(
         raise typer.Exit(code=1) from None
 
     _print_dependency_graph(console, graph)
-
-
-@gate_app.callback(invoke_without_command=True)
-def gate(
-    ctx: typer.Context,
-    repo_root: Path = typer.Option(
-        Path("."),
-        "--repo-root",
-        help="Repository root to gate.",
-    ),
-    persist_review: bool = typer.Option(
-        False,
-        "--persist-review",
-        help="Also persist reports under reviews/gatekeeper/.",
-    ),
-    pr_checklist: Path | None = typer.Option(
-        None,
-        "--pr-checklist",
-        help="Local PR checklist markdown file to validate with G8.",
-    ),
-    json_output: bool = typer.Option(
-        False,
-        "--json",
-        help="Emit deterministic JSON instead of text output.",
-    ),
-) -> None:
-    """Run the gatekeeper when no gate subcommand is provided."""
-    if ctx.invoked_subcommand is None:
-        _run_gatekeeper_cli(
-            repo_root=repo_root,
-            persist_review=persist_review,
-            pr_checklist=pr_checklist,
-            json_output=json_output,
-        )
-
-
-@gate_app.command("run")
-def gate_run(
-    repo_root: Path = typer.Option(
-        Path("."),
-        "--repo-root",
-        help="Repository root to gate.",
-    ),
-    persist_review: bool = typer.Option(
-        False,
-        "--persist-review",
-        help="Also persist reports under reviews/gatekeeper/.",
-    ),
-    pr_checklist: Path | None = typer.Option(
-        None,
-        "--pr-checklist",
-        help="Local PR checklist markdown file to validate with G8.",
-    ),
-    json_output: bool = typer.Option(
-        False,
-        "--json",
-        help="Emit deterministic JSON instead of text output.",
-    ),
-) -> None:
-    """Run gatekeeper checks and write JSON/Markdown reports."""
-    _run_gatekeeper_cli(
-        repo_root=repo_root,
-        persist_review=persist_review,
-        pr_checklist=pr_checklist,
-        json_output=json_output,
-    )
 
 
 @context_app.command("build")
@@ -5116,53 +5022,6 @@ def task_run(
         raise typer.Exit(code=1)
 
 
-def _run_validation(
-    *,
-    report_factory: Callable[[], ValidationReport],
-    success_message: str,
-    failure_message: str,
-    debug: bool,
-    json_output: bool = False,
-) -> None:
-    console = Console(width=120)
-    try:
-        report = report_factory()
-    except Exception:
-        if json_output and not debug:
-            _emit_error(
-                ErrorResult(
-                    code="validation_unexpected_error",
-                    message="Unexpected validation error.",
-                    remediation="Rerun without --json and with --debug for traceback.",
-                    blocking=True,
-                )
-            )
-            raise typer.Exit(code=2) from None
-        if debug:
-            console.print_exception()
-        else:
-            console.print(
-                "[bold red]Unexpected validation error.[/bold red] "
-                "Rerun with --debug for traceback."
-            )
-        raise typer.Exit(code=2) from None
-
-    if json_output:
-        _emit_model(_validation_report_to_result(report))
-        if not report.ok:
-            raise typer.Exit(code=1)
-        return
-
-    _print_validation_report(
-        console=console,
-        report=report,
-        success_message=success_message,
-        failure_message=failure_message,
-    )
-    if not report.ok:
-        raise typer.Exit(code=1)
-
-
 def _emit_json(payload: dict[str, Any] | list[Any]) -> None:
     typer.echo(json.dumps(payload, ensure_ascii=True, indent=2))
 
@@ -6064,62 +5923,6 @@ def _failure_log_bundle_write_payload(
     }
 
 
-def _validation_report_to_result(report: ValidationReport) -> ValidateResult:
-    return ValidateResult(
-        ok=report.ok,
-        checked_count=report.checked_count,
-        failures=[_validation_failure_to_error(failure) for failure in report.failures],
-    )
-
-
-def _validation_failure_to_error(failure: Any) -> ErrorResult:
-    return ErrorResult(
-        code="validation_failed",
-        message=f"{failure.gate}: {failure.message}",
-        remediation="Fix the referenced YAML record and rerun validation.",
-        blocking=True,
-        related_path=_valid_related_path(failure.source_path),
-        related_artifact=_valid_related_artifact(failure.artifact_id),
-        details={"gate": failure.gate},
-    )
-
-
-def _gate_run_to_result(
-    context: RepoContext,
-    result: GatekeeperRunResult,
-) -> GateRunResult:
-    return GateRunResult(
-        verdict=result.report.verdict,
-        report_json_path=repo_relative_posix(context.repo_root, result.json_path),
-        report_markdown_path=repo_relative_posix(
-            context.repo_root,
-            result.markdown_path,
-        ),
-        blocking_issues=[
-            _gate_issue_to_error(issue) for issue in result.report.blocking_issues
-        ],
-        nonblocking_issues=[
-            _gate_issue_to_error(issue) for issue in result.report.nonblocking_issues
-        ],
-    )
-
-
-def _gate_issue_to_error(issue: Any) -> ErrorResult:
-    return ErrorResult(
-        code="gate_issue",
-        message=f"{issue.gate_id} {issue.gate_name}: {issue.message}",
-        remediation="Fix the gate issue and rerun `cosheaf gate run`.",
-        blocking=issue.severity == "blocking",
-        related_path=_valid_related_path(issue.source_path),
-        related_artifact=_valid_related_artifact(issue.artifact_id),
-        details={
-            "gate_id": issue.gate_id,
-            "gate_name": issue.gate_name,
-            "severity": issue.severity,
-        },
-    )
-
-
 def _context_build_to_result(
     context: RepoContext,
     result: Any,
@@ -6215,73 +6018,6 @@ def _valid_related_artifact(value: str | None) -> str | None:
         return validate_artifact_id(value.strip())
     except ValueError:
         return None
-
-
-def _print_validation_report(
-    *,
-    console: Console,
-    report: ValidationReport,
-    success_message: str,
-    failure_message: str,
-) -> None:
-    if report.ok:
-        console.print(
-            f"[bold green]{success_message}[/bold green]: "
-            f"checked {report.checked_count} YAML record(s)."
-        )
-        return
-
-    console.print(
-        f"[bold red]{failure_message}[/bold red]: "
-        f"{len(report.failures)} failure(s) across "
-        f"{report.checked_count} loaded YAML record(s)."
-    )
-    for failure in report.failures:
-        source_path = failure.source_path or "-"
-        artifact_id = failure.artifact_id or "-"
-        console.print(
-            f"- {failure.gate} | {source_path} | {artifact_id} | {failure.message}"
-        )
-
-
-def _run_gatekeeper_cli(
-    repo_root: Path,
-    persist_review: bool,
-    pr_checklist: Path | None,
-    json_output: bool = False,
-) -> None:
-    console = Console(width=120)
-    context = RepoContext(repo_root)
-    result = GateService(context).run(
-        persist_review=persist_review,
-        pr_checklist_path=pr_checklist,
-    )
-    if json_output:
-        _emit_model(_gate_run_to_result(context, result))
-        if result.report.blocking_issues:
-            raise typer.Exit(code=1)
-        return
-
-    _print_gatekeeper_result(console, result)
-    if result.report.blocking_issues:
-        raise typer.Exit(code=1)
-
-
-def _print_gatekeeper_result(
-    console: Console,
-    result: GatekeeperRunResult,
-) -> None:
-    report = result.report
-    console.print(f"Gate verdict: {report.verdict}")
-    console.print(f"JSON report: {result.json_path}")
-    console.print(f"Markdown report: {result.markdown_path}")
-    for issue in report.blocking_issues:
-        source_path = issue.source_path or "-"
-        artifact_id = issue.artifact_id or "-"
-        console.print(
-            f"- {issue.gate_id} {issue.gate_name} | "
-            f"{source_path} | {artifact_id} | {issue.message}"
-        )
 
 
 def _print_dependency_graph(console: Console, graph: DependencyGraph) -> None:

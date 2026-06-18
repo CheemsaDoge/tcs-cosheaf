@@ -1,12 +1,20 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
+import pytest
 import yaml  # type: ignore[import-untyped]
 from typer.testing import CliRunner
 
+import cosheaf.validation_cli as validation_cli
 from cosheaf.cli import app
 from cosheaf.core.artifact import BaseArtifact
+from cosheaf.gates.gatekeeper import (
+    GatekeeperReport,
+    GatekeeperRunResult,
+    ValidationReport,
+)
 from cosheaf.storage.loader import load_artifacts
 from cosheaf.storage.repo import RepoContext
 
@@ -60,6 +68,65 @@ def test_validate_passes_on_repository_examples() -> None:
     assert result.exit_code == 0
     assert "Validation passed" in result.output
     assert "scaffold-only" not in result.output
+
+
+def test_validate_and_gate_cli_route_through_app_facade(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+
+    class FakeApp:
+        def __init__(self, repo_root: str | Path) -> None:
+            self.context = RepoContext(Path(repo_root))
+
+        def validate_repository(self) -> ValidationReport:
+            calls.append("validate_repository")
+            return ValidationReport(records=(), failures=())
+
+        def run_gate(
+            self,
+            *,
+            persist_review: bool = False,
+            pr_checklist_path: str | Path | None = None,
+            timestamp: str | None = None,
+        ) -> GatekeeperRunResult:
+            calls.append(
+                f"run_gate:{persist_review}:{pr_checklist_path}:{timestamp}"
+            )
+            return GatekeeperRunResult(
+                report=GatekeeperReport(
+                    verdict="pass",
+                    blocking_issues=(),
+                    nonblocking_issues=(),
+                    summary={"records_checked": 0},
+                    started_at="2026-06-19T00:00:00Z",
+                    ended_at="2026-06-19T00:00:00Z",
+                    gates=(),
+                ),
+                json_path=tmp_path / ".cosheaf" / "reports" / "gate.json",
+                markdown_path=tmp_path / ".cosheaf" / "reports" / "gate.md",
+            )
+
+    def fake_open_app(repo_root: str | Path = ".") -> FakeApp:
+        return FakeApp(repo_root)
+
+    monkeypatch.setattr(validation_cli, "open_app", fake_open_app)
+
+    validate_result = runner.invoke(
+        app,
+        ["validate", "--repo-root", str(tmp_path), "--json"],
+    )
+    gate_result = runner.invoke(
+        app,
+        ["gate", "run", "--repo-root", str(tmp_path), "--json"],
+    )
+
+    assert validate_result.exit_code == 0
+    assert json.loads(validate_result.output)["checked_count"] == 0
+    assert gate_result.exit_code == 0
+    assert json.loads(gate_result.output)["verdict"] == "pass"
+    assert calls == ["validate_repository", "run_gate:False:None:None"]
 
 
 def test_repository_examples_and_pilots_are_model_valid() -> None:
