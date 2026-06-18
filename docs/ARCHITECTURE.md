@@ -410,6 +410,29 @@ previews/actions, and shared `ErrorResult` serialization. The DTOs reuse the
 existing agent-access model base and keep accepted-write and human-review
 authority unavailable through app requests.
 
+### Website Layer
+
+The website layer is a human interface over sanitized Cosheaf export data. It
+is documented in [Website Scope And Data Contract](WEBSITE.md) and governed by
+[ADR 0037](ADR/0037-website-human-interface.md).
+
+The first website release is read-only. It may visualize workspace metadata,
+artifact cards, issues, dependency graph summaries, gate summaries, context-pack
+summaries, static report summaries, and authority-boundary notices. Repository
+YAML, JSON sidecars, and generated reports remain the source of truth, while
+CLI and `cosheaf.app` remain the machine/oracle interfaces.
+
+Public demo exports must exclude private source notes, private unpublished
+artifacts unless explicitly demo-only, API keys, tokens, raw provider prompts
+with private context, and hidden reviewer identity. Future authenticated write
+actions must call a backend, which calls `cosheaf.app` or `cosheaf.forge`.
+Frontend code must not own GitHub credentials or call GitHub APIs directly with
+user tokens.
+
+Website output does not grant proof, source metadata, human review, verifier
+pass, gate pass, accepted status, accepted theorem/refutation status, or
+promotion authority.
+
 ### CLI Layer
 
 Provides public commands for validation, gate execution, graph inspection,
