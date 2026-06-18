@@ -7,12 +7,12 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.11.0 External Operator Campaigns release candidate**.
-Package metadata records `0.11.0`. The public `v0.11.0` tag, GitHub release,
-post-tag release smoke, and downstream pin alignment are future publication
-closeout work, not part of this RC.
+Current status: **v0.11.0 External Operator Campaigns published release**.
+Package metadata records `0.11.0`. The public `v0.11.0` tag and GitHub
+release are published, post-tag release smoke passed, and downstream
+workspace-template/public-KB pins are aligned to `@v0.11.0`.
 
-The `v0.11.0` release candidate packages the V16 bounded campaign line:
+The `v0.11.0` release packages the V16 bounded campaign line:
 durable campaign sidecars under `.cosheaf/campaigns/`, lifecycle commands,
 external `operator_task_v2` / result packet flow, deterministic budget
 controller commands, `cosheaf campaign handoff <campaign-id> --out <dir>
@@ -24,11 +24,10 @@ scorecard, scan, packet, and eval output is review context only and does not
 create proof, source metadata, human review, verifier pass, gate pass,
 accepted status, accepted refutation, or promotion authority.
 
-The latest published release remains `v0.10.0` at
-<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.10.0> until Phase
-F.2 publishes `v0.11.0`.
+The latest published release is `v0.11.0`:
+<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.11.0>.
 
-The `v0.11.0` release candidate does not add production autonomy, hosted-provider defaults,
+The `v0.11.0` release does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, Lean semantic alignment, human review, accepted
 writes, verifier passes without real checker evidence, gate-pass authority,
 source metadata authority, accepted theorem/refutation authority, or promotion
@@ -42,7 +41,9 @@ hosted-provider gateway surfaces, `v0.2.2` provider transport hardening,
 `v0.3.0` Checked Evidence + Research Run Loop, `v0.4.0` Strategy Planner +
 Research Task Graph, `v0.5.0` Operator MCP + Codex Application Layer,
 `v0.6.0` Operator Session + Review Handoff, `v0.7.0` Bounded Research Loop +
-Attempt Memory, and `v0.8.0` Deterministic Execution Kernel + Librarian + FSM.
+Attempt Memory, `v0.8.0` Deterministic Execution Kernel + Librarian + FSM,
+`v0.9.0` Reviewable Research Workflow MVP, and `v0.10.0` Cross-Check Evidence
++ Checker Registry.
 The repository has working
 Python scaffolding, typed artifact models, filesystem loading, validation,
 dependency graph indexing, workspace-aware KB root loading, artifact lifecycle
@@ -391,9 +392,8 @@ repositories that need Bounded Research Loop + Attempt Memory surfaces can pin
 to `v0.7.0`; deterministic execution-kernel surfaces can pin to `v0.8.0`; and
 the initial reviewable-workflow release line can pin to `v0.9.0`. Downstream
 repositories that need the V15 checker registry and cross-check evidence
-surfaces can pin to `v0.10.0`. The `v0.11.0` campaign line is currently a
-release candidate; downstream active pins remain at `v0.10.0` until the public
-`v0.11.0` tag, release, and post-tag smoke land in Phase F.2.
+surfaces can pin to `v0.10.0`. Downstream repositories that need the V16
+bounded campaign surfaces can pin to `v0.11.0`.
 
 ## Development Commands
 

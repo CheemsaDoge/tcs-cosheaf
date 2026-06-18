@@ -4,10 +4,10 @@ This checklist records the current three-repository release state for the
 framework package, public KB, and workspace template. It is not a
 production-readiness claim.
 
-The latest published framework release is `v0.10.0` Cross-Check Evidence +
-Checker Registry. The public `v0.10.0` tag and GitHub release are published,
-post-tag release smoke from `@v0.10.0` passed, and downstream
-workspace-template/public KB pins are aligned to `@v0.10.0`.
+The latest published framework release is `v0.11.0` External Operator
+Campaigns. The public `v0.11.0` tag and GitHub release are published, post-tag
+release smoke from `@v0.11.0` passed, and downstream workspace-template/public
+KB pins are aligned to `@v0.11.0`.
 
 Published baseline summary:
 
@@ -34,6 +34,9 @@ Published baseline summary:
 - `v0.10.0` packages checker registry, checker sidecars, workflow
   cross-check/evidence/gap reports, checker/cross-check eval coverage, and
   downstream policy/demo closeout.
+- `v0.11.0` packages bounded external-operator campaigns, campaign
+  task/result packets, deterministic campaign controller checks, campaign
+  handoff/eval surfaces, and downstream campaign demo/policy closeout.
 
 ## Scope
 
@@ -41,11 +44,11 @@ Published baseline summary:
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
 - Current framework package metadata version:
-  `0.10.0`.
+  `0.11.0`.
 - Latest published framework release:
-  `v0.10.0`.
+  `v0.11.0`.
 - Current published tag:
-  `v0.10.0`.
+  `v0.11.0`.
 - Current downstream dependency baseline for formal-link metadata:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.1.1`.
 - Intended downstream dependency for local-MVP workflows:
@@ -80,6 +83,39 @@ Published baseline summary:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.9.0`.
 - Downstream dependency for Cross-Check Evidence + Checker Registry:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.10.0`.
+- Downstream dependency for External Operator Campaigns:
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.11.0`.
+
+## v0.11.0 Published Release Baseline
+
+`docs/releases/v0.11.0.md` is the published release note for External Operator
+Campaigns. Phase F.1 prepared package metadata and status docs in issue #456 /
+PR #457. Phase F.2 published the tag and release, ran post-tag release smoke,
+and aligned downstream pins in issue #458 plus workspace-template PR #91 and
+public KB PR #105.
+
+- [x] Campaign lifecycle commands are present:
+  `cosheaf campaign start`, `show`, `append-attempt`, `scorecard`, and
+  `finalize`.
+- [x] External operator task/result packet commands are present:
+  `cosheaf campaign next`, `export-task`, and `import-result`.
+- [x] Deterministic campaign controller commands are present:
+  `cosheaf campaign pause`, `resume`, `scan`, and `run`.
+- [x] Campaign handoff and eval surfaces are present:
+  `cosheaf campaign handoff` and `cosheaf eval campaign --json`.
+- [x] Campaign records, packets, scorecards, scans, handoffs, and eval reports
+  remain review context only.
+- [x] Package metadata records `0.11.0`.
+- [x] Public `v0.11.0` tag and GitHub release are published.
+- [x] Post-tag release smoke from `@v0.11.0` passed and installed
+  `tcs-cosheaf==0.11.0`.
+- [x] Workspace-template pins moved to `@v0.11.0` in PR #91.
+- [x] Public KB CI/docs pins moved to `@v0.11.0` in PR #105.
+- [x] No production autonomy, hosted-provider default, automatic theorem
+  proving, Lean semantic alignment, human-review creation, accepted-write,
+  verifier-pass, gate-pass, source-metadata, accepted theorem/refutation, or
+  promotion authority is introduced.
+- [x] Publication closeout records tag/release/smoke/downstream pin evidence.
 
 ## v0.10.0 Published Release Baseline
 
