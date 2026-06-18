@@ -1,19 +1,22 @@
-# Forge Planning And Local Git Actions
+# Forge Planning, Local Git, And GitHub Actions
 
 `cosheaf.forge` is the boundary for local git and GitHub workflow planning.
 Forge builds typed preview and action DTOs that can be used by the CLI, app
-facade, and future server surfaces. GitHub-facing surfaces are still dry-run
-only. Local git branch and commit actions are available only behind explicit
-`--confirm`.
+facade, and future server surfaces. Previews are dry-run only. Local git
+branch/commit actions and GitHub issue/PR creation are available only behind
+explicit `--confirm`.
 
 ## Commands
 
 ```bash
 cosheaf forge status --json
 cosheaf forge issue preview --from issues/open/<issue-id>.yaml --json
+cosheaf forge issue create --from issues/open/<issue-id>.yaml --confirm --json
 cosheaf forge pr preview --base main --head <branch> --json
+cosheaf forge pr create --base main --head <branch> --draft --confirm --json
 cosheaf forge branch create <branch> --confirm --json
 cosheaf forge commit --message <message> --confirm --json
+cosheaf forge sync --json
 ```
 
 All commands also accept `--repo-root <path>` for tests and explicit operator
@@ -59,13 +62,44 @@ Local git actions report:
 These commands never push, create a pull request, call GitHub, read tokens, or
 store credentials.
 
+## Confirmed GitHub Actions
+
+`forge issue create --from <path> --confirm` creates a GitHub issue from one
+repository-local issue YAML record through the external `gh` command. It writes
+the returned GitHub issue URL into the local issue record's `external_links`
+when possible. It keeps the local issue `status` unchanged and never treats the
+GitHub issue as artifact review, verifier evidence, gate evidence, accepted
+status, refutation, or promotion evidence.
+
+`forge pr create --base <base> --head <head> --draft --confirm` creates a
+GitHub pull request through `gh pr create`. It does not push the branch and does
+not close or accept any local issue or artifact. Because Cosheaf has no local PR
+record, PR linking is limited to the returned URL in the action result.
+
+GitHub actions use credentials outside the repository, such as the user's
+authenticated `gh` state or token environment variables supported by `gh`.
+Forge does not read token values, write token files, or persist credentials in
+the repository. The `ForgeCredentialProvider` protocol is reserved for future
+server-provided credentials.
+
+GitHub action results report:
+
+- `action_performed: true`
+- `network_calls_performed: true`
+- `github_writes_performed: true`
+- `github_issue_created` or `github_pr_created`
+- `git_writes_performed: false`
+- `push_performed: false`
+- `local_issue_closed: false`
+
+`forge sync --json` is read-only in A4.3. It returns a typed action result
+without calling `git`, `gh`, the network, or mutating repository files. Future
+sync behavior may reconcile local issue links and remote metadata, but it must
+remain separate from accepted-artifact authority.
+
 ## Authority Boundary
 
 Forge output is planning context only. It does not grant human review, verifier
 pass, gate pass, accepted knowledge, accepted refutation, source metadata, or
 promotion authority. A closed local issue, a GitHub issue, a GitHub PR, or a
 merged PR must not be treated as accepted artifact evidence.
-
-Future GitHub-write forge actions must be separate tasks, require explicit
-confirmation, avoid token persistence, and preserve the existing accepted
-promotion protocol.

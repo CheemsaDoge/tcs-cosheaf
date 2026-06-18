@@ -84,6 +84,39 @@ def forge_issue_preview(
     )
 
 
+@forge_issue_app.command("create")
+def forge_issue_create(
+    source_path: Path = typer.Option(
+        ...,
+        "--from",
+        help="Repository-local issue YAML path.",
+    ),
+    confirm: bool = typer.Option(
+        False,
+        "--confirm",
+        help="Confirm the GitHub issue write.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Create a GitHub issue from a local issue file with confirmation."""
+    _emit_action_or_exit(
+        lambda: ForgeService(RepoContext(repo_root)).github_issue_create(
+            source_path,
+            confirm=confirm,
+        ),
+        json_output=json_output,
+    )
+
+
 @forge_pr_app.command("preview")
 def forge_pr_preview(
     base: str = typer.Option(
@@ -112,6 +145,51 @@ def forge_pr_preview(
         lambda: ForgeService(RepoContext(repo_root)).pr_preview(
             base=base,
             head=head,
+        ),
+        json_output=json_output,
+    )
+
+
+@forge_pr_app.command("create")
+def forge_pr_create(
+    base: str = typer.Option(
+        ...,
+        "--base",
+        help="Base branch for the GitHub PR.",
+    ),
+    head: str = typer.Option(
+        ...,
+        "--head",
+        help="Head branch for the GitHub PR.",
+    ),
+    draft: bool = typer.Option(
+        False,
+        "--draft",
+        help="Create the GitHub PR as a draft.",
+    ),
+    confirm: bool = typer.Option(
+        False,
+        "--confirm",
+        help="Confirm the GitHub PR write.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Create a GitHub PR with explicit confirmation."""
+    _emit_action_or_exit(
+        lambda: ForgeService(RepoContext(repo_root)).github_pr_create(
+            base=base,
+            head=head,
+            draft=draft,
+            confirm=confirm,
         ),
         json_output=json_output,
     )
@@ -175,6 +253,26 @@ def forge_commit(
     )
 
 
+@forge_app.command("sync")
+def forge_sync(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Show read-only forge sync status."""
+    _emit_action_or_exit(
+        lambda: ForgeService(RepoContext(repo_root)).sync(),
+        json_output=json_output,
+    )
+
+
 def _emit_preview_or_exit(
     run: Callable[[], ForgePreviewResult],
     *,
@@ -223,7 +321,7 @@ def _emit_action_or_exit(
         error = ErrorResult(
             code=exc.code,
             message=str(exc),
-            remediation="Fix the local git state or pass explicit confirmation.",
+            remediation="Fix the forge action inputs, local state, or GitHub state.",
             blocking=True,
         )
         if json_output:
@@ -241,8 +339,14 @@ def _emit_action_or_exit(
     console.print(
         f"- git_writes_performed: {str(payload.get('git_writes_performed')).lower()}"
     )
-    console.print("- network_calls_performed: false")
-    console.print("- github_writes_performed: false")
+    console.print(
+        f"- network_calls_performed: "
+        f"{str(payload.get('network_calls_performed')).lower()}"
+    )
+    console.print(
+        f"- github_writes_performed: "
+        f"{str(payload.get('github_writes_performed')).lower()}"
+    )
 
 
 __all__ = ["forge_app"]

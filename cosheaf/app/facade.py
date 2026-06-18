@@ -177,6 +177,38 @@ class CosheafApp:
         """Run validation/gate and create one local git commit."""
         return ForgeService(self.context).commit(message=message, confirm=confirm)
 
+    def forge_github_issue_create(
+        self,
+        source_path: str | Path,
+        *,
+        confirm: bool,
+    ) -> ForgeActionResult:
+        """Create a GitHub issue from a local issue file with confirmation."""
+        return ForgeService(self.context).github_issue_create(
+            source_path,
+            confirm=confirm,
+        )
+
+    def forge_github_pr_create(
+        self,
+        *,
+        base: str,
+        head: str,
+        draft: bool = False,
+        confirm: bool,
+    ) -> ForgeActionResult:
+        """Create a GitHub PR with explicit confirmation."""
+        return ForgeService(self.context).github_pr_create(
+            base=base,
+            head=head,
+            draft=draft,
+            confirm=confirm,
+        )
+
+    def forge_sync(self) -> ForgeActionResult:
+        """Return read-only forge sync status."""
+        return ForgeService(self.context).sync()
+
     def memory_cards(
         self,
         *,

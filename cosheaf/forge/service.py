@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from pydantic import ValidationError
@@ -18,6 +19,7 @@ from cosheaf.forge.models import (
 from cosheaf.services import GateService, ValidationService
 from cosheaf.storage.loader import IssueRecord, LoadError, load_yaml_file
 from cosheaf.storage.repo import RepoContext
+from cosheaf.storage.writer import write_yaml_deterministic
 
 
 class ForgePreviewError(ValueError):
@@ -47,26 +49,9 @@ class ForgeService:
 
     def issue_preview(self, source_path: str | Path) -> ForgePreviewResult:
         """Preview GitHub issue creation from a repository-local issue file."""
-        relative_path = _repo_local_input_path(source_path)
-        absolute_path = self.context.resolve(relative_path)
-        _ensure_inside_repo(self.context, absolute_path)
-        if not absolute_path.exists():
-            raise ForgePreviewError(
-                f"issue source path does not exist: {relative_path}"
-            )
-
-        try:
-            loaded = load_yaml_file(self.context, absolute_path)
-        except (LoadError, ValidationError, ValueError) as exc:
-            raise ForgePreviewError(str(exc)) from exc
-        if not isinstance(loaded.record, IssueRecord):
-            raise ForgePreviewError(
-                f"forge issue preview requires an issue record: {relative_path}"
-            )
-
-        issue = loaded.record
+        loaded_path, issue = _load_issue_file(self.context, source_path)
         plan = GitHubIssuePlan(
-            source_path=loaded.source_path.as_posix(),
+            source_path=loaded_path.as_posix(),
             issue_id=issue.id,
             title=issue.title,
             body=issue.summary,
@@ -98,6 +83,101 @@ class ForgeService:
                 ),
             ),
         )
+
+    def github_issue_create(
+        self,
+        source_path: str | Path,
+        *,
+        confirm: bool,
+    ) -> ForgeActionResult:
+        """Create a GitHub issue from local issue YAML through gh."""
+        if not confirm:
+            raise ForgeActionError(
+                "forge_confirm_required",
+                "forge issue create requires --confirm",
+            )
+        loaded_path, issue = _load_issue_file_for_action(self.context, source_path)
+        args = [
+            "issue",
+            "create",
+            "--title",
+            issue.title,
+            "--body",
+            issue.summary,
+        ]
+        for label in issue.labels:
+            args.extend(["--label", label])
+        url = _run_gh(self.context, *args)
+        updated_links = _unique_strings([*issue.external_links, url])
+        updated = IssueRecord.model_validate(
+            {
+                **issue.model_dump(mode="json"),
+                "updated_at": _now_utc(),
+                "external_links": updated_links,
+            }
+        )
+        write_yaml_deterministic(
+            self.context.resolve(loaded_path),
+            _issue_yaml_data(updated),
+        )
+        return ForgeActionResult(
+            action="github_issue_create",
+            action_performed=True,
+            network_calls_performed=True,
+            github_writes_performed=True,
+            github_issue_created=True,
+            github_issue_url=url,
+            source_path=loaded_path.as_posix(),
+            issue_id=issue.id,
+        )
+
+    def github_pr_create(
+        self,
+        *,
+        base: str,
+        head: str,
+        draft: bool,
+        confirm: bool,
+    ) -> ForgeActionResult:
+        """Create a GitHub PR through gh."""
+        normalized_base = _git_ref(base, "base")
+        normalized_head = _git_ref(head, "head")
+        if not confirm:
+            raise ForgeActionError(
+                "forge_confirm_required",
+                "forge pr create requires --confirm",
+            )
+        title = f"Merge {normalized_head} into {normalized_base}"
+        body = f"Forge-created PR for {normalized_head} into {normalized_base}."
+        args = [
+            "pr",
+            "create",
+            "--base",
+            normalized_base,
+            "--head",
+            normalized_head,
+            "--title",
+            title,
+            "--body",
+            body,
+        ]
+        if draft:
+            args.append("--draft")
+        url = _run_gh(self.context, *args)
+        return ForgeActionResult(
+            action="github_pr_create",
+            action_performed=True,
+            network_calls_performed=True,
+            github_writes_performed=True,
+            github_pr_created=True,
+            github_pr_url=url,
+            base=normalized_base,
+            head=normalized_head,
+        )
+
+    def sync(self) -> ForgeActionResult:
+        """Return a read-only sync placeholder for future link reconciliation."""
+        return ForgeActionResult(action="sync")
 
     def create_branch(self, branch: str, *, confirm: bool) -> ForgeActionResult:
         """Create and switch to a local branch after explicit confirmation."""
@@ -184,6 +264,37 @@ def _repo_local_input_path(path: str | Path) -> Path:
     return Path(normalized)
 
 
+def _load_issue_file(
+    context: RepoContext,
+    path: str | Path,
+) -> tuple[Path, IssueRecord]:
+    relative_path = _repo_local_input_path(path)
+    absolute_path = context.resolve(relative_path)
+    _ensure_inside_repo(context, absolute_path)
+    if not absolute_path.exists():
+        raise ForgePreviewError(f"issue source path does not exist: {relative_path}")
+
+    try:
+        loaded = load_yaml_file(context, absolute_path)
+    except (LoadError, ValidationError, ValueError) as exc:
+        raise ForgePreviewError(str(exc)) from exc
+    if not isinstance(loaded.record, IssueRecord):
+        raise ForgePreviewError(
+            f"forge issue preview requires an issue record: {relative_path}"
+        )
+    return loaded.source_path, loaded.record
+
+
+def _load_issue_file_for_action(
+    context: RepoContext,
+    path: str | Path,
+) -> tuple[Path, IssueRecord]:
+    try:
+        return _load_issue_file(context, path)
+    except ForgePreviewError as exc:
+        raise ForgeActionError("forge_invalid_input", str(exc)) from exc
+
+
 def _ensure_inside_repo(context: RepoContext, path: Path) -> None:
     try:
         path.resolve().relative_to(context.repo_root.resolve())
@@ -228,6 +339,23 @@ def _run_git(context: RepoContext, *args: str) -> subprocess.CompletedProcess[st
     return result
 
 
+def _run_gh(context: RepoContext, *args: str) -> str:
+    result = subprocess.run(
+        ["gh", *args],
+        cwd=context.repo_root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        message = result.stderr.strip() or result.stdout.strip() or "gh command failed"
+        raise ForgeActionError("forge_github_failed", message)
+    output = result.stdout.strip()
+    if not output:
+        raise ForgeActionError("forge_github_failed", "gh did not return a URL")
+    return output.splitlines()[0].strip()
+
+
 def _git_status(context: RepoContext) -> tuple[str, ...]:
     output = _run_git(context, "status", "--porcelain=v1").stdout
     return tuple(line for line in output.splitlines() if line)
@@ -245,6 +373,33 @@ def _ambiguous_dirty_lines(status: tuple[str, ...]) -> tuple[str, ...]:
         elif len(line) > 1 and line[1] != " ":
             ambiguous.append(f"unstaged {line[3:]}")
     return tuple(ambiguous)
+
+
+def _now_utc() -> datetime:
+    return datetime.now(UTC).replace(microsecond=0)
+
+
+def _unique_strings(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        normalized = value.strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        result.append(normalized)
+    return result
+
+
+def _issue_yaml_data(issue: IssueRecord) -> dict[str, object]:
+    data = issue.model_dump(mode="json", exclude={"severity"})
+    if data.get("parent_issue") is None:
+        data.pop("parent_issue", None)
+    if data.get("close_reason") is None:
+        data.pop("close_reason", None)
+    if data.get("external_links") == []:
+        data.pop("external_links", None)
+    return data
 
 
 __all__ = ["ForgeActionError", "ForgePreviewError", "ForgeService"]
