@@ -120,7 +120,7 @@ This ADR does not approve:
 - [x] Add the operator session leak scanner.
 - [x] Add handoff bundle build/show commands.
 - [x] Add handoff export to `reviews/operator/`.
-- [ ] Add downstream workspace-template and public KB policy integration.
-- [ ] Add deterministic ecosystem smoke rows.
-- [ ] Prepare and publish a conservative `v0.6.0` release only after implementation,
+- [x] Add downstream workspace-template and public KB policy integration.
+- [x] Add deterministic ecosystem smoke rows.
+- [x] Prepare and publish a conservative `v0.6.0` release only after implementation,
   downstream smoke, and release verification pass.
