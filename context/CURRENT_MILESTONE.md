@@ -2,11 +2,11 @@
 
 Milestone: **V18 / v1.0.0 AI Math Collaborator MVP**
 
-Status: **V18 Phase E.1 security, authority, and benchmark release audit**
+Status: **V18 Phase F.1 v1.0.0 release candidate**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V18.md
 
-Current package version: `0.12.0`
+Current package version: `1.0.0`
 
 Latest published release:
 <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.12.0>
@@ -18,9 +18,9 @@ Math Collaborator MVP scope.
 
 Current focus:
 
-- land V18 Phase E.1 `v100-security-authority-benchmark-audit`: release audit,
-  authority-boundary audit, and benchmark baseline docs;
-- prepare for V18 Phase F release-candidate metadata and ecosystem smoke;
+- land V18 Phase F.1 `release-v100-readiness-and-rc`: package metadata,
+  release notes, release-candidate docs, benchmark, and ecosystem smoke;
+- prepare for V18 Phase F.2 publication closeout after RC verification;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -32,8 +32,17 @@ Planned V18 surface:
 - canonical workspace-template AI math collaborator demo (C.1, landed in
   workspace-template PR #95);
 - documentation and operator packaging (D.1, landed);
-- security, authority, and benchmark release audit (E.1, current);
-- `v1.0.0` release candidate and publication closeout.
+- security, authority, and benchmark release audit (E.1, landed);
+- `v1.0.0` release candidate and publication closeout (F.1 current).
+
+Current V18 F.1 surface:
+
+- package metadata and `cosheaf.__version__` record `1.0.0`;
+- `docs/releases/v1.0.0.md` records the release-candidate scope and
+  authority boundary;
+- the public `v1.0.0` tag and GitHub release are not published yet; and
+- downstream workspace-template/public KB pins remain on `v0.12.0` until
+  publication closeout.
 
 Frozen v1.0.0 scope:
 

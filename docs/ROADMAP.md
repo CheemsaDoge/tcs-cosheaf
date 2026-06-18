@@ -15,7 +15,7 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V18 release audit
+## Active Development Focus: V18 release candidate
 
 The public `v0.12.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
@@ -30,10 +30,11 @@ collaborator MVP. It is polish, demo, documentation, audit, and release work;
 it is not another broad feature-expansion line.
 
 V18 Phase A scope freeze, Phase B CLI/API polish, the workspace-template
-canonical AI math collaborator demo, and Phase D documentation/operator
-packaging have landed. The current focus is Phase E security, authority, and
-benchmark audit. `cosheaf interface list --json` records the stable v1.0 CLI
-surface, while `cosheaf research-run ...` is the preferred research-run root
+canonical AI math collaborator demo, Phase D documentation/operator packaging,
+and Phase E security/authority/benchmark audit have landed. The current focus
+is Phase F release-candidate metadata, ecosystem smoke, and publication
+closeout. `cosheaf interface list --json` records the stable v1.0 CLI surface,
+while `cosheaf research-run ...` is the preferred research-run root
 command and `cosheaf run ...` remains compatibility behavior. Broad new
 runtime features are deferred until after v1.0.0 unless they fix a release
 blocker.
@@ -62,7 +63,7 @@ The planned implementation phases are:
 - CLI/API polish and deprecation cleanup (landed);
 - canonical workspace-template AI math collaborator demo (landed);
 - documentation and operator packaging (landed);
-- security, authority, and benchmark release audit (current);
+- security, authority, and benchmark release audit (landed);
 - conservative `v1.0.0` release metadata and publication closeout.
 
 This line will not add autonomous theorem proving, automatic accepted
