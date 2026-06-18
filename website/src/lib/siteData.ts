@@ -57,13 +57,24 @@ export interface ArtifactCard {
 export interface IssueSummary {
   id: string;
   title: string;
+  type: string;
   status: string;
   scope: string;
   severity: string;
   summary: string;
   labels: string[];
   related_artifacts: string[];
+  related_sources: string[];
   demo_fixture: boolean;
+}
+
+export interface ContextPackSummary {
+  issue_id: string;
+  card_count: number;
+  public_only: boolean;
+  private_context_included: boolean;
+  demo_private_context_included: boolean;
+  related_artifacts: string[];
 }
 
 export interface GraphNode {
@@ -130,6 +141,10 @@ export interface GatesPayload extends SiteExportPayload {
   report_paths: string[];
 }
 
+export interface ContextPacksPayload extends SiteExportPayload {
+  context_packs: ContextPackSummary[];
+}
+
 export interface AuthorityBoundariesPayload extends SiteExportPayload {
   website_is_authority: boolean;
   export_is_source_of_truth: boolean;
@@ -149,7 +164,7 @@ export interface SiteData {
   issues: IssuesPayload;
   graph: GraphPayload;
   gates: GatesPayload;
-  context_packs: SiteExportPayload;
+  context_packs: ContextPacksPayload;
   reports: SiteExportPayload;
   authority_boundaries: AuthorityBoundariesPayload;
 }
@@ -161,7 +176,7 @@ const data: SiteData = {
   issues: issuesPayload as IssuesPayload,
   graph: graphPayload as GraphPayload,
   gates: gatesPayload as GatesPayload,
-  context_packs: contextPacksPayload as SiteExportPayload,
+  context_packs: contextPacksPayload as ContextPacksPayload,
   reports: reportsPayload as SiteExportPayload,
   authority_boundaries: authorityBoundariesPayload as AuthorityBoundariesPayload
 };
@@ -172,6 +187,67 @@ export async function loadSiteData(): Promise<SiteData> {
 
 export function artifactById(id: string): ArtifactCard | undefined {
   return data.artifacts.artifacts.find((artifact) => artifact.id === id);
+}
+
+export function issueById(id: string): IssueSummary | undefined {
+  return data.issues.issues.find((issue) => issue.id === id);
+}
+
+export function contextPackForIssue(id: string): ContextPackSummary | undefined {
+  return data.context_packs.context_packs.find((pack) => pack.issue_id === id);
+}
+
+export interface ArtifactFilter {
+  status?: string;
+  type?: string;
+  domain?: string;
+}
+
+export function filterArtifacts(
+  artifacts: ArtifactCard[],
+  filter: ArtifactFilter
+): ArtifactCard[] {
+  return artifacts.filter((artifact) => {
+    const statusMatch = !filter.status || artifact.status === filter.status;
+    const typeMatch = !filter.type || artifact.type === filter.type;
+    const domainMatch = !filter.domain || artifact.domain.includes(filter.domain);
+    return statusMatch && typeMatch && domainMatch;
+  });
+}
+
+export function uniqueSorted(values: string[]): string[] {
+  return [...new Set(values)].sort((left, right) => left.localeCompare(right));
+}
+
+export function artifactHref(id: string): string {
+  return `/artifacts/${encodeURIComponent(id)}/`;
+}
+
+export function issueHref(id: string): string {
+  return `/issues/${encodeURIComponent(id)}/`;
+}
+
+export function contextHref(issueId: string): string {
+  return `/context/${encodeURIComponent(issueId)}/`;
+}
+
+export function statusExplanation(status: string): string {
+  if (status === "accepted") {
+    return "Accepted status must still come from repository records and promotion policy, not the website.";
+  }
+  if (status === "draft") {
+    return "Draft means review context only; it is not accepted knowledge.";
+  }
+  if (status === "not_run") {
+    return "Not checked: no verifier or gate pass is implied.";
+  }
+  if (status === "skipped") {
+    return "Skipped is not pass.";
+  }
+  if (status === "requested") {
+    return "Review requested is not human-reviewed or accepted.";
+  }
+  return "Website badges are display context only.";
 }
 
 export function statusTone(status: string): "neutral" | "warning" | "good" {

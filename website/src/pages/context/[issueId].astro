@@ -1,0 +1,63 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import {
+  artifactById,
+  artifactHref,
+  contextPackForIssue,
+  issueById,
+  loadSiteData
+} from "../../lib/siteData";
+
+export async function getStaticPaths() {
+  const data = await loadSiteData();
+  return data.context_packs.context_packs.map((pack) => ({
+    params: { issueId: pack.issue_id }
+  }));
+}
+
+const issueId = Astro.params.issueId ?? "";
+const pack = contextPackForIssue(issueId);
+const issue = issueById(issueId);
+if (!pack || !issue) {
+  throw new Error(`Unknown context pack: ${issueId}`);
+}
+---
+
+<BaseLayout title={`Context: ${issue.title}`} eyebrow="Context pack">
+  <section class="split-layout">
+    <article class="panel">
+      <p class="section-kicker">Issue context</p>
+      <h2>{pack.issue_id}</h2>
+      <p>{pack.card_count} cards selected for the demo context pack.</p>
+      <div class="tag-row">
+        <span class="tag">public only: {pack.public_only ? "yes" : "no"}</span>
+        <span class="tag">private context: {pack.private_context_included ? "yes" : "no"}</span>
+        <span class="tag">
+          demo private context: {pack.demo_private_context_included ? "yes" : "no"}
+        </span>
+      </div>
+    </article>
+    <article class="panel">
+      <p class="section-kicker">Authority</p>
+      <h2>Context is not acceptance</h2>
+      <p>
+        This page shows what a reviewer should read. It does not grant human review,
+        verifier pass, gate pass, accepted status, or promotion authority.
+      </p>
+    </article>
+  </section>
+
+  <section class="card-grid">
+    {
+      pack.related_artifacts.map((id) => {
+        const artifact = artifactById(id);
+        return (
+          <article class="info-card">
+            <h2><a href={artifactHref(id)}>{artifact?.title ?? id}</a></h2>
+            <p>{artifact?.summary ?? "Artifact metadata was not exported."}</p>
+          </article>
+        );
+      })
+    }
+  </section>
+</BaseLayout>
