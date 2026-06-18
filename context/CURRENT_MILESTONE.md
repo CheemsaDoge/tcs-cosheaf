@@ -2,7 +2,7 @@
 
 Milestone: **V18 / v1.0.0 AI Math Collaborator MVP**
 
-Status: **V18 Phase F.2 v1.0.0 publication closeout complete**
+Status: **Post-v1.0.0 Longplan B website scope/data-contract planning**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V18.md
 
@@ -17,11 +17,22 @@ complete.
 
 Current focus:
 
+- define the read-only website human-interface boundary and data contract;
 - maintain the published `v1.0.0` AI Math Collaborator MVP baseline;
 - keep downstream workspace-template and public KB pins aligned to `v1.0.0`;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
+
+Post-v1.0.0 Longplan B website work:
+
+- issue #512 / branch `website-product-data-contract` defines the website as a
+  read-only human interface, records the static export data contract, and keeps
+  frontend GitHub credential handling out of scope;
+- `docs/WEBSITE.md` records the website scope, public-demo privacy constraints,
+  static JSON contract, and future backend/app/forge write-action route; and
+- `docs/ADR/0037-website-human-interface.md` records the website authority
+  boundary.
 
 Post-v1.0.0 Longplan A architecture work:
 
