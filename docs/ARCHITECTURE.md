@@ -83,6 +83,23 @@ commands resolve local issue records by ID and use `related_artifacts` to seed
 bounded context, but an issue status is workflow memory only. Closing an issue
 does not accept, refute, review, verify, gate, or promote any artifact.
 
+### Forge Layer
+
+The forge layer is the typed boundary for local git and GitHub workflow
+planning. It is implemented under `cosheaf.forge` and initially exposes
+dry-run previews only: forge status, GitHub issue preview from a local issue
+YAML file, and GitHub PR preview from base/head branch names.
+
+Forge previews do not run `git`, `gh`, or any subprocess. They do not call the
+network, create GitHub issues, create GitHub PRs, commit, push, read or store
+tokens, or write repository files. Preview DTOs explicitly report dry-run
+status and no-write/no-network flags, and each result carries an authority
+warning.
+
+Forge output is workflow planning context only. It does not grant proof, source
+metadata, human review, verifier pass, gate pass, accepted status, accepted
+theorem/refutation status, or promotion authority.
+
 ### Formal Link Layer
 
 Records references from artifacts to external formal declarations, currently
@@ -362,10 +379,10 @@ functions or shelling out to the CLI.
 
 `cosheaf.app.models` exposes stable request/result DTOs for app use cases. The
 initial DTO family covers workspace info, validation, gate runs, context builds,
-draft artifact/source-note writes, review-request writes, and shared
-`ErrorResult` serialization. The DTOs reuse the existing agent-access model base
-and keep accepted-write and human-review authority unavailable through app
-requests.
+draft artifact/source-note writes, review-request writes, forge dry-run
+previews, and shared `ErrorResult` serialization. The DTOs reuse the existing
+agent-access model base and keep accepted-write and human-review authority
+unavailable through app requests.
 
 ### CLI Layer
 
@@ -380,7 +397,8 @@ facade for context build/show operations.
 
 CLI commands now call typed service functions for workspace inspection,
 repository and artifact validation, gate execution, context-pack generation,
-memory card/search operations, task operations, and draft artifact creation.
+memory card/search operations, task operations, forge dry-run previews, and
+draft artifact creation.
 The CLI remains the human and CI oracle: it parses command-line options,
 renders service results, preserves existing exit-code behavior, and keeps
 existing promotion and verifier boundaries intact.
@@ -395,7 +413,7 @@ KB roots.
 The intended module dependency direction is:
 
 ```text
-core -> config -> storage -> graph -> gates -> verification -> agent -> services -> app -> cli
+core -> config -> storage -> graph -> gates -> verification -> agent -> services -> forge -> app -> cli
 ```
 
 Lower-level modules must not import higher-level modules. Public interface changes must be recorded in `context/INTERFACE_REGISTRY.md`.

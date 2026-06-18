@@ -117,6 +117,7 @@ from cosheaf.evals import (
     run_reviewable_workflow_eval_suite,
     run_strategy_planner_eval_suite,
 )
+from cosheaf.forge.cli import forge_app
 from cosheaf.gap_cli import gap_app
 from cosheaf.gates.gatekeeper import (
     GatekeeperRunResult,
@@ -417,6 +418,7 @@ app.add_typer(fsm_app, name="orchestrator-fsm")
 app.add_typer(workflow_app, name="workflow")
 app.add_typer(context_app, name="context")
 app.add_typer(issue_app, name="issue")
+app.add_typer(forge_app, name="forge")
 app.add_typer(task_app, name="task")
 app.add_typer(draft_app, name="draft")
 app.add_typer(bundle_app, name="bundle")
@@ -521,6 +523,12 @@ _STABLE_V1_CLI_SURFACE: tuple[dict[str, str], ...] = (
         "preferred_invocation": "cosheaf issue ...",
         "status": "stable",
         "notes": "Manage repository-local issue YAML without GitHub calls.",
+    },
+    {
+        "command": "forge",
+        "preferred_invocation": "cosheaf forge ...",
+        "status": "stable_dry_run",
+        "notes": "Preview local git and GitHub issue/PR plans without writes.",
     },
     {
         "command": "artifact",
