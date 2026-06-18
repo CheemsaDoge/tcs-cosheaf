@@ -47,6 +47,18 @@
   GitHub actions may create GitHub issues or PRs through `gh`, but perform no
   push, token storage, artifact acceptance, refutation, human review, verifier
   pass, gate pass, or promotion. `forge sync` is read-only in A4.3.
+- Static website export is implemented under `cosheaf.site` and exposed through
+  `cosheaf site export --out <dir>`, optional `--public-only`, optional
+  `--demo`, and the app facade method `export_site_data`. It writes
+  deterministic sanitized JSON sidecars named `site.json`, `workspace.json`,
+  `artifacts.json`, `issues.json`, `graph.json`, `gates.json`,
+  `context_packs.json`, `reports.json`, and
+  `authority_boundaries.json`. Demo mode forces public-only filtering. The
+  export reads repository metadata only and performs no web serving, network
+  call, GitHub action, provider call, gate run, verifier run, context-pack
+  build, accepted write, human review, verifier-result mutation, or promotion.
+  Exported website data is display context only and remains subordinate to
+  repository YAML/JSON source files.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI
@@ -3512,6 +3524,14 @@ working directory.
   scanner findings, and scan reports. They do not authorize accepted writes,
   human review, verifier pass, gate pass, or promotion.
 - `schemas/review.schema.json`: review YAML schema.
+- `schemas/site_export.schema.json`: website export JSON payload schema. It
+  fixes `schema_version: 1`, requires a payload `kind`, enumerates the nine
+  static export kinds, and requires an authority notice. The schema is shared
+  by `site.json`, `workspace.json`, `artifacts.json`, `issues.json`,
+  `graph.json`, `gates.json`, `context_packs.json`, `reports.json`, and
+  `authority_boundaries.json`; those payloads remain deterministic display
+  sidecars and do not grant source-of-truth, human-review, gate, verifier,
+  accepted-status, or promotion authority.
 - `schemas/verifier.schema.json`: verifier result schema.
 - `schemas/verifier_evidence.schema.json`: verifier evidence record v1 schema.
   It serializes verifier output records with stable evidence IDs, optional
