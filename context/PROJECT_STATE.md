@@ -3,6 +3,36 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V17 Phase B.1 memory update policy v1 - 2026-06-18
+
+Issue #462 adds deterministic memory update sidecars from workflow and campaign
+history on branch `memory-update-policy-v1`.
+
+The current surface includes:
+
+- `cosheaf.memory.updates` DTOs for `MemorySignal`, `MemoryEdgeUpdate`,
+  `MemoryWeightStore`, `MemoryUpdatePolicy`, `MemoryUpdateRun`, and explain
+  results;
+- rebuildable update-run sidecars under
+  `.cosheaf/memory/update-runs/<run-id>.json`;
+- aggregate sidecar weights under `.cosheaf/memory/weights.json`;
+- `cosheaf memory update-from-workflow <workflow-id> --json`;
+- `cosheaf memory update-from-campaign <campaign-id> --json`;
+- `cosheaf memory rebuild --json`; and
+- `cosheaf memory explain <artifact-id> --json`.
+
+The v1 policy uses bounded, deterministic signals such as `retrieved`,
+`used_in_plan`, `used_in_attempt`, `used_in_successful_draft`,
+`checker_pass`, `checker_fail`, `gate_blocked`, `review_requested`,
+`human_accept_reference`, `repeat_failure`, and `unsafe_output`.
+
+Memory weights are sidecar guidance only. They do not mutate YAML artifacts,
+write accepted knowledge, create human review, fabricate source metadata,
+mutate verifier results, mark gates as passing, call hosted providers, execute
+shell commands, or promote artifacts. Negative signals such as checker
+failures, gate blockers, repeated failures, and unsafe output are not proof of
+refutation.
+
 ## V17 Phase A.1 post-v0.11.0 audit and kickoff - 2026-06-18
 
 Issue #460 starts the `v0.12.0 Research Memory Learning + Benchmark Suite v1`

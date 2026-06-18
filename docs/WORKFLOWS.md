@@ -49,6 +49,10 @@ cosheaf campaign scan <campaign-id> --json
 cosheaf campaign run <campaign-id> --max-attempts <n> --json
 cosheaf campaign handoff <campaign-id> --out <dir> --json
 cosheaf eval campaign --json
+cosheaf memory update-from-workflow <workflow-id> --json
+cosheaf memory update-from-campaign <campaign-id> --json
+cosheaf memory rebuild --json
+cosheaf memory explain <artifact-id> --json
 ```
 
 Current behavior:
@@ -149,6 +153,12 @@ Current behavior:
   accounting, and operator-contract overclaim rejection. It is regression
   coverage only and does not write accepted knowledge in the caller
   repository.
+- `memory update-from-workflow` and `memory update-from-campaign` convert
+  persisted workflow/campaign history into deterministic update-run sidecars
+  and aggregate weights. `memory rebuild` recreates weights from sidecars, and
+  `memory explain` shows edges touching one artifact ID. Memory weights are
+  guidance only and do not create proof, human review, verifier/gate pass,
+  accepted status, source metadata, or promotion authority.
 
 The current implementation lives under:
 
@@ -161,6 +171,7 @@ cosheaf/workflow/proposal.py
 cosheaf/workflow/handoff.py
 cosheaf/workflow/crosscheck.py
 cosheaf/gap_cli.py
+cosheaf/memory/updates.py
 cosheaf/evals/reviewable_workflow.py
 cosheaf/evals/checker_crosscheck.py
 cosheaf/evals/campaign.py
@@ -212,6 +223,8 @@ Campaign runtime records are also ignored sidecars:
 .cosheaf/campaigns/<campaign-id>/scorecard.json
 .cosheaf/campaigns/<campaign-id>/events.jsonl
 .cosheaf/campaigns/<campaign-id>/scan.json
+.cosheaf/memory/update-runs/<run-id>.json
+.cosheaf/memory/weights.json
 ```
 
 Campaign records and scorecards are not source-of-truth YAML artifacts and are

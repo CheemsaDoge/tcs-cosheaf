@@ -238,6 +238,14 @@ Implemented:
   and operator-contract handling. `cosheaf eval campaign --json` runs
   deterministic temporary campaign fixtures and reports the same boundary
   metrics without writing accepted knowledge in the caller repository.
+- V17 memory update development surfaces: `cosheaf.memory.updates` converts
+  persisted workflow and campaign history into deterministic sidecar weights
+  under `.cosheaf/memory/update-runs/` and `.cosheaf/memory/weights.json`.
+  `cosheaf memory update-from-workflow`, `cosheaf memory
+  update-from-campaign`, `cosheaf memory rebuild`, and `cosheaf memory explain`
+  expose the v1 policy. Memory weights remain sidecar guidance only; they are
+  not proof, source metadata, human review, verifier/gate pass, accepted
+  status, or promotion authority.
 
 Planned or incomplete:
 
@@ -245,8 +253,8 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- `v0.11.0` publication closeout: public tag, GitHub release, post-tag release
-  smoke, and downstream pin alignment.
+- V17 benchmark suite, comparison commands, static reports, and `v0.12.0`
+  release closeout.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
@@ -441,6 +449,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Codex operator runbook](docs/CODEX_OPERATOR_RUNBOOK.md)
 - [Research loops](docs/RESEARCH_LOOPS.md)
 - [Reviewable workflows](docs/WORKFLOWS.md)
+- [Memory updates](docs/MEMORY_UPDATES.md)
 - [Checker registry](docs/CHECKERS.md)
 - [Draft proposals](docs/DRAFT_PROPOSALS.md)
 - [Review handoffs](docs/REVIEW_HANDOFFS.md)

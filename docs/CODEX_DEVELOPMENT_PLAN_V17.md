@@ -2,8 +2,9 @@
 
 Target: `v0.12.0 Research Memory Learning + Benchmark Suite v1`
 
-Status: Phase A kickoff after the published `v0.11.0` External Operator
-Campaigns release and downstream workspace/public-KB pin closeout.
+Status: Phase B.1 memory update policy v1 after the published `v0.11.0`
+External Operator Campaigns release and downstream workspace/public-KB pin
+closeout.
 
 ## Goal
 
@@ -44,8 +45,8 @@ This is operational learning, not model training:
 
 ## Phase Structure
 
-1. Phase A: post-`v0.11.0` audit and V17 landing. Current issue #460.
-2. Phase B: memory update policy v1.
+1. Phase A: post-`v0.11.0` audit and V17 landing. Landed in issue #460.
+2. Phase B: memory update policy v1. Current issue #462.
 3. Phase C: benchmark suite v1.
 4. Phase D: comparative run reports.
 5. Phase E: retrieval/workflow quality reports as static Markdown/JSON.
@@ -99,6 +100,13 @@ Initial CLI:
 Acceptance for Phase B: campaign/workflow history can update deterministic,
 rebuildable sidecar memory without modifying YAML artifacts or creating
 authority over accepted knowledge.
+
+Phase B.1 implementation adds `cosheaf.memory.updates`, JSON sidecars under
+`.cosheaf/memory/update-runs/`, aggregate `.cosheaf/memory/weights.json`, and
+the four CLI commands listed above. It remains a sidecar-only policy surface:
+it does not mutate YAML artifacts, write accepted knowledge, create human
+review, fabricate source metadata, mutate verifier results, mark gates as
+passing, call hosted providers, execute shell commands, or promote artifacts.
 
 ## Phase C Outline
 
