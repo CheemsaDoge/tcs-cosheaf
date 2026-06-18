@@ -2,7 +2,7 @@
 
 Target: `v0.12.0 Research Memory Learning + Benchmark Suite v1`
 
-Status: Phase D.1 comparative run reports after the published `v0.11.0` External
+Status: Phase E.1 static research reports after the published `v0.11.0` External
 Operator Campaigns release and downstream workspace/public-KB pin closeout.
 
 ## Goal
@@ -47,8 +47,9 @@ This is operational learning, not model training:
 1. Phase A: post-`v0.11.0` audit and V17 landing. Landed in issue #460.
 2. Phase B: memory update policy v1. Landed in issue #462.
 3. Phase C: benchmark suite v1. Landed in issue #464.
-4. Phase D: comparative run reports. Current issue #466.
-5. Phase E: retrieval/workflow quality reports as static Markdown/JSON.
+4. Phase D: comparative run reports. Landed in issue #466.
+5. Phase E: retrieval/workflow quality reports as static Markdown/JSON. Current
+   issue #468.
 6. Phase F: `v0.12.0` release candidate and publication closeout.
 
 ## Phase A Scope
@@ -173,6 +174,15 @@ Initial CLI:
 
 Reports are review context only. Public-mode report generation must not leak
 private context.
+
+Phase E.1 implementation adds `cosheaf.reports` and `cosheaf report
+workflow/campaign/benchmark`. It reads existing runtime records and writes
+static report directories containing Markdown summaries plus JSON metrics,
+authority findings, memory changes, checker matrices, and review handoff
+summaries. Reports remain review context only: they do not mutate YAML
+artifacts, write accepted knowledge, create human review, fabricate source
+metadata, mutate verifier results, mark gates as passing, call hosted
+providers, use network access, execute shell commands, or promote artifacts.
 
 ## Phase F Outline
 

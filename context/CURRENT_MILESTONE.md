@@ -2,7 +2,7 @@
 
 Milestone: **V17 / v0.12.0 Research Memory Learning + Benchmark Suite v1**
 
-Status: **V17 Phase D.1 comparative run reports**
+Status: **V17 Phase E.1 static research reports**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V17.md
 
@@ -19,8 +19,8 @@ review reports.
 
 Current focus:
 
-- land V17 Phase D.1 `comparative-run-reports`: side-by-side workflow,
-  campaign, and benchmark comparisons over existing runtime records;
+- land V17 Phase E.1 `static-research-dashboard-reports`: static Markdown/JSON
+  review directories for existing workflow, campaign, and benchmark records;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -30,8 +30,8 @@ Planned V17 surface:
 - post-v0.11.0 audit and V17 plan/ADR (A.1, landed);
 - deterministic memory update policy v1 (B.1, landed);
 - benchmark suite v1 (C.1, landed);
-- comparative workflow/campaign/benchmark reports (D.1, current);
-- static Markdown/JSON research reports; and
+- comparative workflow/campaign/benchmark reports (D.1, landed);
+- static Markdown/JSON research reports (E.1, current);
 - `v0.12.0` release candidate and publication closeout.
 
 Current V17 B.1 surface:
@@ -59,6 +59,13 @@ Current V17 D.1 surface:
 - `cosheaf compare campaigns <before-id> <after-id> --json`; and
 - `cosheaf compare benchmarks <before-id> <after-id> --json`.
 
+Current V17 E.1 surface:
+
+- `cosheaf.reports` static report DTOs and helpers;
+- `cosheaf report workflow <workflow-id> --out <dir> --json`;
+- `cosheaf report campaign <campaign-id> --out <dir> --json`; and
+- `cosheaf report benchmark <run-id> --out <dir> --json`.
+
 V17 non-goals:
 
 - no model training;
@@ -68,9 +75,9 @@ V17 non-goals:
 - no human-review creation;
 - no source-metadata fabrication;
 - no YAML artifact mutation from memory updates;
-- no benchmark/comparison-as-truth or accepted-status claims; and
+- no benchmark/comparison/static-report-as-truth or accepted-status claims; and
 - no accepted-status, accepted theorem/refutation, verifier/gate, or promotion
-  authority from memory, benchmark, or comparison output.
+  authority from memory, benchmark, comparison, or static-report output.
 
 Current V15 surface on the development line:
 

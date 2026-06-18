@@ -4,6 +4,19 @@
 
 ### Active And Planned Interfaces
 
+- Static report DTOs and CLI commands are implemented under `cosheaf.reports`.
+  The Python surface defines `StaticReportSubject`, `StaticReportResult`,
+  `StaticReportError`, `STATIC_REPORT_AUTHORITY_NOTICE`,
+  `write_workflow_report`, `write_campaign_report`, and
+  `write_benchmark_static_report`. The CLI surface is `cosheaf report workflow
+  <workflow-id> --out <dir> --json`, `cosheaf report campaign <campaign-id>
+  --out <dir> --json`, and `cosheaf report benchmark <run-id> --out <dir>
+  --json`, with optional `--public-only`. Report directories contain
+  `summary.md`, `metrics.json`, `authority_findings.json`,
+  `memory_changes.json`, `checker_matrix.json`, and
+  `review_handoff_summary.md`. Static reports are review context only. They do
+  not grant proof, source metadata, human review, verifier pass, gate pass,
+  accepted status, accepted theorem/refutation, or promotion authority.
 - Benchmark suite DTOs, runtime storage, and CLI commands are implemented
   under `cosheaf.benchmark`. The Python surface defines `BenchmarkSuiteName`,
   `BenchmarkComponentName`, `BenchmarkMetrics`, `BenchmarkComponentResult`,

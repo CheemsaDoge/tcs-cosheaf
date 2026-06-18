@@ -14,7 +14,7 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V17 v0.12.0 comparative reports
+## Active Development Focus: V17 v0.12.0 static reports
 
 The public `v0.11.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
@@ -28,10 +28,11 @@ V17 will add deterministic sidecar memory updates, benchmark suite v1,
 comparative reports, and static Markdown/JSON review reports. It must remain
 operational learning rather than model training or a new truth source.
 
-The current implementation focus is comparative reports: existing workflow,
-campaign, and benchmark records can be compared through `cosheaf compare`
-commands. Comparisons are metric-scoped review context and highlight safety
-regressions without claiming a globally better result.
+The current implementation focus is static reports: existing workflow,
+campaign, and benchmark records can be exported through `cosheaf report`
+commands into repository-local Markdown/JSON review directories. These reports
+organize metrics, authority findings, memory changes, checker matrices, and
+review handoff summaries without creating a new truth source.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
@@ -55,8 +56,8 @@ The planned implementation phases are:
 - post-v0.11.0 audit and V17 plan/ADR (landed);
 - deterministic memory update policy v1 (landed);
 - benchmark suite v1 (landed);
-- comparative workflow/campaign/benchmark reports (current);
-- static Markdown/JSON research reports; and
+- comparative workflow/campaign/benchmark reports (landed);
+- static Markdown/JSON research reports (current);
 - conservative `v0.12.0` release metadata and publication closeout.
 
 This line will not train models, mutate YAML artifacts from memory updates,
