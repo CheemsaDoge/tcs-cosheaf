@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { loadSiteData } from "../lib/siteData";
+import { AUTHORITY_GUIDE, loadSiteData } from "../lib/siteData";
 
 const data = await loadSiteData();
 const flags = [
@@ -16,6 +16,22 @@ const flags = [
 ---
 
 <BaseLayout title="Authority Boundaries" eyebrow="Non-authority matrix">
+  <section class="notice-band">
+    <strong>Five-minute boundary</strong>
+    <span>Use the website to inspect context; use repository records and review policy for authority.</span>
+  </section>
+
+  <section class="card-grid compact" aria-label="Authority boundary guide">
+    {
+      AUTHORITY_GUIDE.map((entry) => (
+        <article class="info-card">
+          <h2>{entry.title}</h2>
+          <p>{entry.body}</p>
+        </article>
+      ))
+    }
+  </section>
+
   <section class="boundary-grid">
     {
       flags.map(([label, value]) => (

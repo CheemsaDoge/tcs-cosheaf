@@ -31,6 +31,37 @@ export const ROUTES = [
   { path: "/authority", label: "Authority Boundaries" }
 ] as const;
 
+export const AUTHORITY_GUIDE = [
+  {
+    title: "What Cosheaf is",
+    body: "Cosheaf is a Git-backed workflow for typed research artifacts, review context, evidence records, and reproducible handoff."
+  },
+  {
+    title: "What Cosheaf is not",
+    body: "It is not a hosted prover, a human reviewer, a source of private-public promotion, or a replacement for repository records."
+  },
+  {
+    title: "Why gate pass is not truth",
+    body: "A gate result can unblock or block workflow review, but it does not prove a statement or make an artifact accepted."
+  },
+  {
+    title: "Why AI output is review context",
+    body: "AI output can propose drafts, summaries, or checks for a human to inspect; it cannot become human review by itself."
+  },
+  {
+    title: "Why skipped verifier is not pass",
+    body: "Skipped, unavailable, and not-run verifier states mean no successful check was recorded."
+  },
+  {
+    title: "How public and private KB roots work",
+    body: "Public KB roots are normally readonly and citable; private KB roots are writable overlays for local research and must not leak into public exports."
+  },
+  {
+    title: "How a result becomes accepted",
+    body: "Accepted status comes from repository records, source metadata, validation, gate policy, real human review, and explicit promotion."
+  }
+] as const;
+
 export interface SiteExportPayload {
   schema_version: 1;
   kind: string;

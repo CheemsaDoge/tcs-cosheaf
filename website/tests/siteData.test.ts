@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  AUTHORITY_GUIDE,
   REQUIRED_DATA_FILES,
   ROUTES,
   contextPackForIssue,
@@ -110,5 +111,23 @@ describe("site data contract", () => {
     expect(gateVerdictExplanation({ ...data.gates, verdict: "pass" })).toContain(
       "does not accept"
     );
+  });
+
+  it("covers the authority-boundary guide without overclaiming", () => {
+    expect(AUTHORITY_GUIDE.map((entry) => entry.title)).toEqual([
+      "What Cosheaf is",
+      "What Cosheaf is not",
+      "Why gate pass is not truth",
+      "Why AI output is review context",
+      "Why skipped verifier is not pass",
+      "How public and private KB roots work",
+      "How a result becomes accepted"
+    ]);
+
+    const guideText = AUTHORITY_GUIDE.map((entry) => entry.body).join(" ");
+
+    expect(guideText).not.toMatch(/automatic theorem proving/i);
+    expect(guideText).not.toMatch(/automatic promotion/i);
+    expect(guideText).not.toMatch(/production ready/i);
   });
 });
