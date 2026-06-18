@@ -14,6 +14,7 @@ from cosheaf.agent.context_pack import CONTEXT_MAX_CARDS, ContextPackResult
 from cosheaf.agent.orchestrator_state import ReducerResult
 from cosheaf.agent.worker_bundle_v2 import WorkerBundleV2
 from cosheaf.core.status import ArtifactStatus, ArtifactType
+from cosheaf.forge import ForgePreviewResult, ForgeService
 from cosheaf.gates.gatekeeper import GatekeeperRunResult, ValidationReport
 from cosheaf.gates.promotion_readiness import (
     PromotionReadinessReport,
@@ -155,6 +156,18 @@ class CosheafApp:
     def close_issue(self, issue_id: str, *, reason: str) -> IssueResult:
         """Close a repository-local issue without changing artifact state."""
         return LocalIssueService(self.context).close(issue_id, reason=reason)
+
+    def forge_status(self) -> ForgePreviewResult:
+        """Preview forge status without token lookup or git mutation."""
+        return ForgeService(self.context).status()
+
+    def forge_issue_preview(self, source_path: str | Path) -> ForgePreviewResult:
+        """Preview GitHub issue creation from a repository-local issue file."""
+        return ForgeService(self.context).issue_preview(source_path)
+
+    def forge_pr_preview(self, *, base: str, head: str) -> ForgePreviewResult:
+        """Preview GitHub PR creation without git or GitHub writes."""
+        return ForgeService(self.context).pr_preview(base=base, head=head)
 
     def memory_cards(
         self,
