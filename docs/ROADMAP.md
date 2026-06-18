@@ -1,7 +1,8 @@
 # Roadmap
 
 TCS-Cosheaf has published the V17 / `v0.12.0` Research Memory Learning +
-Benchmark Suite v1 release. Earlier published baselines include the
+Benchmark Suite v1 release and is now freezing the V18 / `v1.0.0` AI Math
+Collaborator MVP scope. Earlier published baselines include the
 `v0.11.0` External AI Operator Harness + Bounded Multi-Run Campaigns release,
 `v0.10.0` Cross-Check Evidence + Checker Registry release,
 `v0.9.0` Reviewable Research Workflow MVP, `v0.8.0` Deterministic Execution
@@ -14,22 +15,22 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: Post-v0.12.0 closeout
+## Active Development Focus: V18 v1.0.0 scope freeze
 
 The public `v0.12.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
-`@v0.12.0`. The V17 kickoff audit, development plan, and ADR are recorded in:
+`@v0.12.0`. V18 freezes the v1.0.0 MVP scope in:
 
-- [`docs/POST_V0110_STATE_AUDIT.md`](POST_V0110_STATE_AUDIT.md);
-- [`docs/CODEX_DEVELOPMENT_PLAN_V17.md`](CODEX_DEVELOPMENT_PLAN_V17.md);
-- [`docs/ADR/0033-research-memory-learning-benchmark-v1.md`](ADR/0033-research-memory-learning-benchmark-v1.md).
+- [`docs/POST_V0120_STATE_AUDIT.md`](POST_V0120_STATE_AUDIT.md);
+- [`docs/CODEX_DEVELOPMENT_PLAN_V18.md`](CODEX_DEVELOPMENT_PLAN_V18.md);
+- [`docs/ADR/0034-v100-ai-math-collaborator-mvp-scope.md`](ADR/0034-v100-ai-math-collaborator-mvp-scope.md).
 
-V17 added deterministic sidecar memory updates, benchmark suite v1,
-comparative reports, and static Markdown/JSON review reports. It remains
-operational learning rather than model training or a new truth source.
+V18 packages the existing safe research harness as a stable AI math
+collaborator MVP. It is polish, demo, documentation, audit, and release work;
+it is not another broad feature-expansion line.
 
-The current implementation focus is publication closeout documentation and
-release-state bookkeeping. No new runtime capability is part of the closeout.
+The current implementation focus is scope freeze. Broad new runtime features
+are deferred until after v1.0.0 unless they fix a release blocker.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
@@ -41,6 +42,27 @@ evidence. They do not write accepted knowledge, create human review, fabricate
 source metadata, mark gate pass, promote artifacts, call hosted providers by
 default, execute arbitrary shell through Cosheaf, train a model, or claim
 automatic theorem proving.
+
+## Planned Release Focus: v1.0.0 AI Math Collaborator MVP
+
+v1.0.0 means a human or external AI operator can take a research issue, run
+Cosheaf, receive context, plan attempts, execute bounded safe local actions,
+record failures/evidence, generate a draft proposal, produce a review handoff,
+and compare the result against benchmark expectations.
+
+The planned implementation phases are:
+
+- post-v0.12.0 audit and v1.0 scope freeze (current);
+- CLI/API polish and deprecation cleanup;
+- canonical workspace-template AI math collaborator demo;
+- documentation and operator packaging;
+- security, authority, and benchmark release audit;
+- conservative `v1.0.0` release metadata and publication closeout.
+
+This line will not add autonomous theorem proving, automatic accepted
+promotion, AI-as-human-review, default hosted provider calls, formal
+semantic-alignment automation, production SaaS, web UI, or multi-user
+permissions.
 
 ## Completed Release Focus: v0.12.0 Research Memory Learning + Benchmark Suite v1
 

@@ -1,10 +1,10 @@
 ﻿# Current Milestone
 
-Milestone: **V17 / v0.12.0 Research Memory Learning + Benchmark Suite v1**
+Milestone: **V18 / v1.0.0 AI Math Collaborator MVP**
 
-Status: **V17 Phase F.2 v0.12.0 publication closeout**
+Status: **V18 Phase A.1 post-v0.12.0 audit and v1.0 scope freeze**
 
-Plan: docs/CODEX_DEVELOPMENT_PLAN_V17.md
+Plan: docs/CODEX_DEVELOPMENT_PLAN_V18.md
 
 Current package version: `0.12.0`
 
@@ -13,25 +13,35 @@ Latest published release:
 
 `v0.12.0` publication closeout status: tag, GitHub release, post-tag release
 smoke, workspace-template pin update, and public KB CI/docs pin update are
-complete. V17 packages deterministic sidecar memory updates, benchmark suite
-v1, comparative reports, and static review reports.
+complete. V18 starts from that published baseline and freezes the v1.0.0 AI
+Math Collaborator MVP scope.
 
 Current focus:
 
-- land V17 Phase F.2 `release-v0120-publication-closeout`: release-state docs
-  for the published v0.12.0 tag, release smoke, and downstream pin updates;
+- land V18 Phase A.1 `post-v0120-v100-scope-freeze`: docs-only state audit,
+  V18 plan, ADR, roadmap, milestone, and project-state updates;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
 
-Planned V17 surface:
+Planned V18 surface:
 
-- post-v0.11.0 audit and V17 plan/ADR (A.1, landed);
-- deterministic memory update policy v1 (B.1, landed);
-- benchmark suite v1 (C.1, landed);
-- comparative workflow/campaign/benchmark reports (D.1, landed);
-- static Markdown/JSON research reports (E.1, landed);
-- `v0.12.0` release candidate and publication closeout.
+- post-v0.12.0 audit and v1.0 scope freeze (A.1, current);
+- CLI/API polish and deprecation cleanup;
+- canonical workspace-template AI math collaborator demo;
+- documentation and operator packaging;
+- security, authority, and benchmark release audit;
+- `v1.0.0` release candidate and publication closeout.
+
+Frozen v1.0.0 scope:
+
+- package existing workflow, checker, gap, campaign, memory, benchmark,
+  compare, and static-report surfaces as a stable MVP;
+- make workspace-template the canonical demo path;
+- keep CLI as the oracle and MCP/skills/provider surfaces optional;
+- defer web UI, default hosted providers, automatic theorem proving,
+  autoformalization, automatic promotion, and multi-user permissions to
+  v1.1+ or later.
 
 Current V17 B.1 surface:
 
@@ -87,6 +97,17 @@ V17 non-goals:
 - no benchmark/comparison/static-report-as-truth or accepted-status claims; and
 - no accepted-status, accepted theorem/refutation, verifier/gate, or promotion
   authority from memory, benchmark, comparison, or static-report output.
+
+V18 non-goals:
+
+- no autonomous AI mathematician;
+- no default hosted LLM runtime;
+- no automatic theorem proving;
+- no automatic accepted promotion;
+- no AI-as-human-review;
+- no production SaaS, web UI, or multi-user permission system; and
+- no broad feature expansion before v1.0.0 release unless it fixes a release
+  blocker.
 
 Current V15 surface on the development line:
 
