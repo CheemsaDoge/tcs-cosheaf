@@ -328,6 +328,79 @@ class CampaignRunResult:
         }
 
 
+@dataclass(frozen=True)
+class CampaignReviewMetrics:
+    """Non-authoritative campaign review/handoff metrics."""
+
+    attempt_count: int
+    unique_direction_count: int
+    repeat_failure_count: int
+    reviewable_draft_count: int
+    checked_evidence_count: int
+    gap_count: int
+    unsafe_output_count: int
+    budget_stop_accuracy: bool
+    operator_contract_validity: bool
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "attempt_count": self.attempt_count,
+            "unique_direction_count": self.unique_direction_count,
+            "repeat_failure_count": self.repeat_failure_count,
+            "reviewable_draft_count": self.reviewable_draft_count,
+            "checked_evidence_count": self.checked_evidence_count,
+            "gap_count": self.gap_count,
+            "unsafe_output_count": self.unsafe_output_count,
+            "budget_stop_accuracy": self.budget_stop_accuracy,
+            "operator_contract_validity": self.operator_contract_validity,
+        }
+
+
+@dataclass(frozen=True)
+class CampaignHandoffResult:
+    """Filesystem write result for one campaign review handoff summary."""
+
+    campaign: ResearchCampaign
+    metrics: CampaignReviewMetrics
+    scan: CampaignScanResult
+    handoff_path: Path
+    accepted_write_performed: Literal[False] = False
+    authority_notice: str = CAMPAIGN_AUTHORITY_NOTICE
+
+    def handoff_to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": 1,
+            "kind": "campaign_handoff",
+            "campaign_id": self.campaign.campaign_id,
+            "issue_id": self.campaign.issue_id,
+            "status": self.campaign.status.value,
+            "generated_at": self.campaign.updated_at.isoformat(),
+            "metrics": self.metrics.to_dict(),
+            "attempts": [
+                _attempt_handoff_summary(attempt)
+                for attempt in self.campaign.attempts
+            ],
+            "risk_findings": [
+                finding.to_dict() for finding in self.campaign.risk_findings
+            ],
+            "scan": self.scan.to_dict(),
+            "limitations": _campaign_handoff_limitations(),
+            "accepted_write_performed": self.accepted_write_performed,
+            "authority_notice": self.authority_notice,
+        }
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": 1,
+            "kind": "campaign_handoff_export",
+            "campaign_id": self.campaign.campaign_id,
+            "handoff_path": self.handoff_path.as_posix(),
+            "accepted_write_performed": self.accepted_write_performed,
+            "authority_notice": self.authority_notice,
+            "handoff": self.handoff_to_dict(),
+        }
+
+
 def start_campaign(
     context: RepoContext,
     *,
@@ -661,6 +734,92 @@ def run_campaign(
     )
 
 
+def build_campaign_review_metrics(
+    campaign: ResearchCampaign,
+    scan: CampaignScanResult,
+) -> CampaignReviewMetrics:
+    """Build deterministic review metrics without granting authority."""
+    directions = [
+        attempt.attempted_direction.strip().lower() for attempt in campaign.attempts
+    ]
+    failure_counts: dict[str, int] = {}
+    checked_evidence: set[str] = set()
+    gaps: set[str] = set()
+    for attempt in campaign.attempts:
+        if attempt.outcome is CampaignAttemptOutcome.FAILURE:
+            key = attempt.attempted_direction.strip().lower()
+            failure_counts[key] = failure_counts.get(key, 0) + 1
+        checked_evidence.update(attempt.check_report_refs)
+        gaps.update(attempt.proof_obligation_refs)
+    expected_budget_exhausted = (
+        len(campaign.attempts) >= campaign.budget.max_attempts
+        or _draft_budget_exhausted(campaign)
+    )
+    budget_stop_accuracy = (
+        campaign.status is CampaignStatus.BUDGET_EXHAUSTED
+    ) == expected_budget_exhausted
+    operator_contract_validity = (
+        not scan.run_blocked
+        and not campaign.accepted_write_performed
+        and not campaign.human_review_created
+        and not campaign.promotion_performed
+        and not campaign.verifier_result_mutated
+        and all(
+            attempt.authority_notice == CAMPAIGN_AUTHORITY_NOTICE
+            for attempt in campaign.attempts
+        )
+    )
+    return CampaignReviewMetrics(
+        attempt_count=len(campaign.attempts),
+        unique_direction_count=len(set(directions)),
+        repeat_failure_count=sum(
+            max(0, count - 1) for count in failure_counts.values()
+        ),
+        reviewable_draft_count=_draft_output_count(campaign),
+        checked_evidence_count=len(checked_evidence),
+        gap_count=len(gaps),
+        unsafe_output_count=scan.blocking_finding_count,
+        budget_stop_accuracy=budget_stop_accuracy,
+        operator_contract_validity=operator_contract_validity,
+    )
+
+
+def build_campaign_handoff(
+    context: RepoContext,
+    campaign_id: str,
+    out: str | Path,
+) -> CampaignHandoffResult:
+    """Write a deterministic campaign review handoff summary."""
+    loaded = load_campaign(context, campaign_id)
+    scan = scan_campaign(context, campaign_id)
+    metrics = build_campaign_review_metrics(loaded.campaign, scan)
+    handoff_path = campaign_handoff_path(out)
+    target = context.resolve(handoff_path)
+    _ensure_repo_local(context, target)
+    result = CampaignHandoffResult(
+        campaign=loaded.campaign,
+        metrics=metrics,
+        scan=scan,
+        handoff_path=handoff_path,
+    )
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        json.dumps(result.handoff_to_dict(), ensure_ascii=True, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    append_campaign_event(
+        context,
+        campaign_id=campaign_id,
+        event_kind="campaign_handoff_exported",
+        payload={
+            "path": handoff_path.as_posix(),
+            "writes_performed": True,
+        },
+    )
+    return result
+
+
 def next_campaign_operator_task(
     context: RepoContext,
     campaign_id: str,
@@ -915,6 +1074,11 @@ def campaign_scan_path(campaign_id: str) -> Path:
     return CAMPAIGN_RUNTIME_ROOT / resolved / "scan.json"
 
 
+def campaign_handoff_path(out: str | Path) -> Path:
+    """Return campaign handoff summary path under one repo-local directory."""
+    return _validate_output_dir_path(out) / "campaign_handoff.json"
+
+
 def campaign_operator_result_path(campaign_id: str, attempt_id: str) -> Path:
     """Return runtime operator result packet path."""
     resolved_campaign = validate_artifact_id(campaign_id.strip())
@@ -948,6 +1112,37 @@ def _write_json(
 ) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(model.to_json(), encoding="utf-8", newline="\n")
+
+
+def _attempt_handoff_summary(attempt: CampaignAttempt) -> dict[str, Any]:
+    return {
+        "attempt_id": attempt.attempt_id,
+        "attempt_number": attempt.attempt_number,
+        "outcome": attempt.outcome.value,
+        "attempted_direction": attempt.attempted_direction,
+        "result_summary": attempt.result_summary,
+        "failure_summary": attempt.failure_summary,
+        "inconclusive_reason": attempt.inconclusive_reason,
+        "blocked_reason": attempt.blocked_reason,
+        "draft_proposal_refs": list(attempt.draft_proposal_refs),
+        "check_report_refs": list(attempt.check_report_refs),
+        "proof_obligation_refs": list(attempt.proof_obligation_refs),
+        "accepted_write_performed": False,
+        "authority_notice": attempt.authority_notice,
+    }
+
+
+def _campaign_handoff_limitations() -> dict[str, bool]:
+    return {
+        "not_proof": True,
+        "not_source_metadata": True,
+        "not_human_review": True,
+        "not_verifier_pass": True,
+        "not_gate_pass": True,
+        "not_accepted_status": True,
+        "not_accepted_refutation": True,
+        "not_promotion_authority": True,
+    }
 
 
 def _allocate_campaign_id(
@@ -1529,6 +1724,36 @@ def _validate_output_path(value: str | Path) -> Path:
     return path
 
 
+def _validate_output_dir_path(value: str | Path) -> Path:
+    normalized = normalize_repo_path(str(value))
+    if not normalized or normalized == ".":
+        raise CampaignError(
+            "campaign handoff output directory must be repository-local",
+            code="invalid_handoff_path",
+            remediation="Pass --out with a repository-local directory path.",
+        )
+    path = Path(normalized)
+    parts = path.parts
+    if (
+        path.is_absolute()
+        or normalized.startswith("../")
+        or normalized == ".."
+        or ".." in parts
+    ):
+        raise CampaignError(
+            "campaign handoff output directory must be repository-local",
+            code="invalid_handoff_path",
+            remediation="Pass --out with a repository-local directory path.",
+        )
+    if normalized.startswith("kb/accepted/") or "/accepted/" in normalized:
+        raise CampaignError(
+            "campaign handoff output directory must not be an accepted KB path",
+            code="accepted_write_forbidden",
+            remediation="Use runtime storage or review-context export paths only.",
+        )
+    return path
+
+
 def _ensure_repo_local(context: RepoContext, target: Path) -> None:
     try:
         target.resolve().relative_to(context.repo_root.resolve())
@@ -1551,6 +1776,8 @@ __all__ = [
     "CAMPAIGN_RUNTIME_ROOT",
     "CAMPAIGN_SCAN_KIND",
     "CampaignAttemptWriteResult",
+    "CampaignHandoffResult",
+    "CampaignReviewMetrics",
     "CampaignRunResult",
     "CampaignScanFinding",
     "CampaignScanResult",
@@ -1559,10 +1786,13 @@ __all__ = [
     "CampaignWriteResult",
     "append_campaign_attempt",
     "append_campaign_event",
+    "build_campaign_handoff",
     "build_campaign_next_result",
     "build_campaign_operator_task",
+    "build_campaign_review_metrics",
     "campaign_attempt_path",
     "campaign_events_path",
+    "campaign_handoff_path",
     "campaign_operator_result_path",
     "campaign_path",
     "campaign_scan_path",

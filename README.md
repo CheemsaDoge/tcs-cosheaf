@@ -21,15 +21,15 @@ proof, review, gate, verifier, source metadata, accepted-status, or promotion
 authority.
 
 The current development line is V16 / `v0.11.0` External AI Operator Harness +
-Bounded Multi-Run Campaigns. The current branch adds the D.1 campaign runner
-budget controller on top of the B.1 model core and C.1 external-operator
-protocol: `cosheaf campaign pause/resume/scan/run` with deterministic budget
-checks, pause handling, repeated-failure blocking, and runtime-output scanning
-under ignored `.cosheaf/campaigns/` paths. The controller does not execute
-shell commands or call hosted providers. Campaign and operator output is review
-context only and does not create proof, source metadata, human review,
-verifier pass, gate pass, accepted status, accepted refutation, or promotion
-authority.
+Bounded Multi-Run Campaigns. The current branch adds the E.1 campaign
+handoff/eval layer on top of the B.1 model core, C.1 external-operator
+protocol, and D.1 budget controller: `cosheaf campaign handoff <campaign-id>
+--out <dir> --json`, `cosheaf eval campaign --json`, default campaign eval
+cases, and a framework ecosystem matrix row. The campaign controller still
+does not execute shell commands or call hosted providers. Campaign, operator,
+handoff, and eval output is review context only and does not create proof,
+source metadata, human review, verifier pass, gate pass, accepted status,
+accepted refutation, or promotion authority.
 
 The `v0.10.0` release does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, Lean semantic alignment, human review, accepted
@@ -232,6 +232,14 @@ Implemented:
   failures, pauses, and unsafe runtime output. `run` is a controller pass only:
   it does not execute shell commands, call providers, create human review, or
   write accepted knowledge.
+- V16 campaign handoff/eval development surfaces:
+  `cosheaf campaign handoff <campaign-id> --out <dir> --json` exports
+  `campaign_handoff.json` review context with attempt summaries, scan
+  findings, and metrics for attempts, unique directions, repeated failures,
+  drafts, checked evidence refs, gaps, unsafe outputs, budget-stop accuracy,
+  and operator-contract handling. `cosheaf eval campaign --json` runs
+  deterministic temporary campaign fixtures and reports the same boundary
+  metrics without writing accepted knowledge in the caller repository.
 
 Planned or incomplete:
 
@@ -239,8 +247,8 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- V16 campaign handoff, eval, downstream demo, public KB policy guard, and
-  `v0.11.0` release closeout.
+- V16 downstream workspace-template campaign demo, public KB campaign-output
+  policy guard, and `v0.11.0` release closeout.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.

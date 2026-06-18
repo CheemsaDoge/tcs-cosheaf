@@ -1,0 +1,9 @@
+cases:
+  - id: case.campaign.reviewable-handoff
+    kind: reviewable_handoff
+  - id: case.campaign.unsafe-output-blocked
+    kind: unsafe_output_blocked
+  - id: case.campaign.budget-stop-accuracy
+    kind: budget_stop_accuracy
+  - id: case.campaign.operator-contract-boundary
+    kind: operator_contract_boundary

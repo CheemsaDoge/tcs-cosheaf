@@ -60,6 +60,7 @@ from cosheaf.core.status import (
     is_preaccepted_status,
 )
 from cosheaf.evals import (
+    DEFAULT_CAMPAIGN_EVAL_CASES,
     DEFAULT_CHECKED_EVIDENCE_RUN_LOOP_EVAL_CASES,
     DEFAULT_CHECKER_CROSSCHECK_EVAL_CASES,
     DEFAULT_CONTEXT_EVAL_CASES,
@@ -68,6 +69,7 @@ from cosheaf.evals import (
     DEFAULT_RETRIEVAL_EVAL_CASES,
     DEFAULT_REVIEWABLE_WORKFLOW_EVAL_CASES,
     DEFAULT_STRATEGY_PLANNER_EVAL_CASES,
+    CampaignEvalError,
     CheckedEvidenceRunLoopEvalError,
     CheckerCrossCheckEvalError,
     ContextEvalError,
@@ -76,6 +78,7 @@ from cosheaf.evals import (
     RetrievalEvalError,
     ReviewableWorkflowEvalError,
     StrategyPlannerEvalError,
+    load_campaign_eval_suite,
     load_checked_evidence_run_loop_eval_suite,
     load_checker_crosscheck_eval_suite,
     load_context_eval_suite,
@@ -84,6 +87,7 @@ from cosheaf.evals import (
     load_retrieval_eval_suite,
     load_reviewable_workflow_eval_suite,
     load_strategy_planner_eval_suite,
+    resolve_campaign_eval_case_path,
     resolve_checked_evidence_run_loop_eval_case_path,
     resolve_checker_crosscheck_eval_case_path,
     resolve_context_eval_case_path,
@@ -92,6 +96,7 @@ from cosheaf.evals import (
     resolve_retrieval_eval_case_path,
     resolve_reviewable_workflow_eval_case_path,
     resolve_strategy_planner_eval_case_path,
+    run_campaign_eval_suite,
     run_checked_evidence_run_loop_eval_suite,
     run_checker_crosscheck_eval_suite,
     run_context_eval_suite,
@@ -2928,6 +2933,70 @@ def memory_search(
             )
             for reason in hit.why_relevant:
                 console.print(f"  why: {reason}")
+
+
+@eval_app.command("campaign")
+def eval_campaign(
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    cases: Path = typer.Option(
+        DEFAULT_CAMPAIGN_EVAL_CASES,
+        "--cases",
+        help="Repository-local YAML campaign eval case file.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text summary.",
+    ),
+) -> None:
+    """Run deterministic campaign handoff/boundary regression cases."""
+    console = Console(width=120, markup=False)
+    try:
+        context = RepoContext(repo_root)
+        case_path = resolve_campaign_eval_case_path(context, cases)
+        suite = load_campaign_eval_suite(case_path)
+        report = run_campaign_eval_suite(context, suite)
+    except CampaignEvalError as exc:
+        console.print(f"Campaign eval failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    if json_output:
+        typer.echo(report.to_json(), nl=False)
+        return
+
+    verdict = "pass" if report.passed else "fail"
+    console.print(f"Campaign eval verdict: {verdict}")
+    console.print(f"- cases: {report.case_count}")
+    console.print(f"- attempt_count: {report.metrics.attempt_count}")
+    console.print(
+        f"- unique_direction_count: {report.metrics.unique_direction_count}"
+    )
+    console.print(f"- repeat_failure_count: {report.metrics.repeat_failure_count}")
+    console.print(
+        f"- reviewable_draft_count: {report.metrics.reviewable_draft_count}"
+    )
+    console.print(
+        f"- checked_evidence_count: {report.metrics.checked_evidence_count}"
+    )
+    console.print(f"- gap_count: {report.metrics.gap_count}")
+    console.print(f"- unsafe_output_count: {report.metrics.unsafe_output_count}")
+    console.print(
+        f"- budget_stop_accuracy: {report.metrics.budget_stop_accuracy:.6f}"
+    )
+    console.print(
+        "- operator_contract_validity: "
+        f"{report.metrics.operator_contract_validity:.6f}"
+    )
+    for case in report.cases:
+        failures = ",".join(case.failures) if case.failures else "-"
+        console.print(f"- {case.id}: passed={str(case.passed).lower()} {failures}")
+
+    if not report.passed:
+        raise typer.Exit(code=1)
 
 
 @eval_app.command("retrieval")
@@ -6500,6 +6569,47 @@ def campaign_scan(
     console.print(f"- authority: {result.authority_notice}")
     if result.run_blocked:
         raise typer.Exit(1)
+
+
+@campaign_app.command("handoff")
+def campaign_handoff(
+    campaign_id: str = typer.Argument(..., help="Campaign ID."),
+    out: Path = typer.Option(
+        ...,
+        "--out",
+        help="Repository-local directory for campaign_handoff.json.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Export a review handoff summary for one campaign."""
+    from cosheaf.campaigns import CampaignError, build_campaign_handoff
+
+    console = Console(width=120, markup=False)
+    try:
+        result = build_campaign_handoff(RepoContext(repo_root), campaign_id, out)
+    except (CampaignError, ValidationError, ValueError) as exc:
+        _exit_with_error(
+            _campaign_error_result(exc),
+            json_output=json_output,
+            console=console,
+        )
+    if json_output:
+        _emit_json(result.to_dict())
+        return
+    console.print(f"Campaign handoff exported: {result.campaign.campaign_id}")
+    console.print(f"- path: {result.handoff_path.as_posix()}")
+    console.print(f"- attempts: {result.metrics.attempt_count}")
+    console.print(f"- unsafe outputs: {result.metrics.unsafe_output_count}")
+    console.print(f"- authority: {result.authority_notice}")
 
 
 @campaign_app.command("run")

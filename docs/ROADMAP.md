@@ -13,7 +13,7 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V16 campaign budget controller
+## Active Development Focus: V16 campaign handoff and eval
 
 The public `v0.10.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
@@ -23,16 +23,15 @@ smoke passed, and downstream workspace-template/public KB pins are aligned to
 - [`docs/CODEX_DEVELOPMENT_PLAN_V16.md`](CODEX_DEVELOPMENT_PLAN_V16.md);
 - [`docs/ADR/0032-external-operator-campaign-harness.md`](ADR/0032-external-operator-campaign-harness.md).
 
-The current V16 implementation step is `campaign-runner-budget-controller`:
-deterministic `campaign pause/resume/scan/run` commands that record human pause
-state, scan runtime sidecars for authority or leakage blockers, and apply
-attempt, draft-output, repeated-failure, unsafe-output, and pause stop
-policies. The earlier `campaign-model-core` step added durable campaign
-models, ignored runtime storage under `.cosheaf/campaigns/`, and
-start/show/append-attempt/scorecard/finalize commands; the C.1
-`external-operator-protocol-v2` step added bounded task/result packets through
-`campaign next/export-task/import-result`. These steps keep campaign and
-operator outputs as review context only.
+The current V16 implementation step is `campaign-eval-and-handoff`:
+deterministic `campaign handoff` export, default campaign eval fixtures,
+`cosheaf eval campaign --json`, and a framework ecosystem matrix row for the
+campaign eval. Earlier V16 steps landed durable campaign models, ignored
+runtime storage under `.cosheaf/campaigns/`,
+start/show/append-attempt/scorecard/finalize commands, bounded task/result
+packets through `campaign next/export-task/import-result`, and deterministic
+`campaign pause/resume/scan/run` budget controls. These steps keep campaign,
+operator, handoff, and eval outputs as review context only.
 
 The V15 implementation line has landed:
 
@@ -48,18 +47,19 @@ The V15 implementation line has landed:
 
 The V15 release is complete. The V16 Phase A kickoff was documentation only.
 Campaign runtime began with the focused Phase B implementation task, continued
-with the Phase C packet protocol, and now has a deterministic Phase D.1 budget
-controller. It must remain bounded sidecar metadata rather than an autonomous
-agent runtime.
+with the Phase C packet protocol, added a deterministic Phase D.1 budget
+controller, and now adds the Phase E.1 framework handoff/eval layer. It must
+remain bounded sidecar metadata rather than an autonomous agent runtime.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
 cross-check reports, gap reports, campaign records, campaign attempts,
-scorecards, scans, and future campaign handoffs are review context only
+scorecards, scans, campaign handoffs, and campaign eval reports are review
+context only
 unless a real checker result explicitly records verifier evidence. They do not
-write accepted knowledge, create human review, fabricate source metadata, mark gate pass,
-promote artifacts, call hosted providers by default, execute arbitrary shell
-through Cosheaf, or claim automatic theorem proving.
+write accepted knowledge, create human review, fabricate source metadata, mark
+gate pass, promote artifacts, call hosted providers by default, execute
+arbitrary shell through Cosheaf, or claim automatic theorem proving.
 
 ## Planned Release Focus: v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns
 
@@ -71,8 +71,8 @@ The planned implementation phases are:
 
 - campaign model and runtime storage (B.1, landed);
 - external operator task/result protocol v2 (C.1, landed);
-- campaign runner, pause/resume, scan, and budget controller (D.1, current);
-- campaign review handoff and deterministic eval;
+- campaign runner, pause/resume, scan, and budget controller (D.1, landed);
+- campaign review handoff and deterministic eval (E.1, current);
 - workspace-template campaign demo and public KB campaign-output policy guard;
 - conservative `v0.11.0` release candidate and publication closeout.
 

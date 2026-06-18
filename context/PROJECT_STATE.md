@@ -3,6 +3,46 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V16 Phase E.1 campaign eval and handoff - 2026-06-18
+
+Issue #454 adds the framework-side review handoff and eval increment for
+`v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns` on branch
+`campaign-eval-and-handoff`.
+
+The current surface extends the Phase B.1 campaign runtime, Phase C.1
+external-operator protocol, and Phase D.1 budget controller with:
+
+- `CampaignReviewMetrics` and `CampaignHandoffResult` runtime DTOs;
+- `build_campaign_review_metrics` and `build_campaign_handoff` service
+  helpers;
+- `campaign_handoff_path`, which resolves explicit review-handoff export
+  targets as `<out>/campaign_handoff.json`;
+- `cosheaf campaign handoff <campaign-id> --out <dir> --json`;
+- `cosheaf.evals.campaign` deterministic campaign eval APIs;
+- default campaign eval cases under `evals/campaign/cases.yaml`;
+- `cosheaf eval campaign --json`; and
+- framework ecosystem matrix row `framework.campaign-eval`.
+
+`campaign handoff` exports deterministic review context to a repository-local
+directory outside accepted KB paths. The handoff includes campaign attempt
+summaries, scan findings, known limitations, and metrics for attempt count,
+unique attempted directions, repeat failures, reviewable drafts, checked
+evidence references, gaps, unsafe output, budget-stop accuracy, and
+operator-contract boundary handling.
+
+`cosheaf eval campaign` runs local temporary fixtures for reviewable handoff
+generation, unsafe-output blocking, budget-stop accounting, and
+operator-contract overclaim rejection. It does not call hosted providers,
+execute shell commands through campaign runtime, require network access, write
+accepted knowledge, create human review, mutate verifier results, mark gate
+pass, or grant promotion authority.
+
+This task does not implement downstream workspace-template campaign demos,
+public KB campaign-output policy guards, hosted provider integration,
+provider-backed or shell-backed campaign loops, accepted KB writes,
+human-review creation, source-metadata fabrication, verifier/gate authority,
+or promotion semantics.
+
 ## V16 Phase D.1 campaign runner budget controller - 2026-06-18
 
 Issue #452 adds the third implementation increment for
