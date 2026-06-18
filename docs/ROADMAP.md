@@ -1,8 +1,8 @@
 # Roadmap
 
 TCS-Cosheaf has published the `v0.10.0` Cross-Check Evidence + Checker
-Registry release and is implementing the V16 / `v0.11.0` External AI Operator
-Harness + Bounded Multi-Run Campaigns line. Earlier published baselines include
+Registry release and is preparing the V16 / `v0.11.0` External AI Operator
+Harness + Bounded Multi-Run Campaigns release candidate. Earlier published baselines include
 `v0.9.0` Reviewable Research Workflow MVP, `v0.8.0` Deterministic Execution
 Kernel + Librarian + FSM, `v0.7.0` Bounded Research Loop + Attempt Memory,
 `v0.6.0` Operator Session + Review Handoff, `v0.5.0` Operator MCP + Codex
@@ -13,7 +13,7 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V16 campaign handoff and eval
+## Active Development Focus: V16 v0.11.0 release candidate
 
 The public `v0.10.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
@@ -23,15 +23,14 @@ smoke passed, and downstream workspace-template/public KB pins are aligned to
 - [`docs/CODEX_DEVELOPMENT_PLAN_V16.md`](CODEX_DEVELOPMENT_PLAN_V16.md);
 - [`docs/ADR/0032-external-operator-campaign-harness.md`](ADR/0032-external-operator-campaign-harness.md).
 
-The current V16 implementation step is `campaign-eval-and-handoff`:
-deterministic `campaign handoff` export, default campaign eval fixtures,
-`cosheaf eval campaign --json`, and a framework ecosystem matrix row for the
-campaign eval. Earlier V16 steps landed durable campaign models, ignored
-runtime storage under `.cosheaf/campaigns/`,
+V16 implementation and downstream closeout have landed: durable campaign
+models, ignored runtime storage under `.cosheaf/campaigns/`,
 start/show/append-attempt/scorecard/finalize commands, bounded task/result
-packets through `campaign next/export-task/import-result`, and deterministic
-`campaign pause/resume/scan/run` budget controls. These steps keep campaign,
-operator, handoff, and eval outputs as review context only.
+packets through `campaign next/export-task/import-result`, deterministic
+`campaign pause/resume/scan/run` budget controls, `campaign handoff`,
+`cosheaf eval campaign --json`, workspace-template `make campaign-demo`, and
+public KB campaign-output policy guard coverage. The current step prepares the
+conservative `v0.11.0` release candidate metadata.
 
 The V15 implementation line has landed:
 
@@ -48,8 +47,9 @@ The V15 implementation line has landed:
 The V15 release is complete. The V16 Phase A kickoff was documentation only.
 Campaign runtime began with the focused Phase B implementation task, continued
 with the Phase C packet protocol, added a deterministic Phase D.1 budget
-controller, and now adds the Phase E.1 framework handoff/eval layer. It must
-remain bounded sidecar metadata rather than an autonomous agent runtime.
+controller, added the Phase E.1 handoff/eval layer, and then landed downstream
+demo/policy coverage. It must remain bounded sidecar metadata rather than an
+autonomous agent runtime.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
@@ -72,9 +72,10 @@ The planned implementation phases are:
 - campaign model and runtime storage (B.1, landed);
 - external operator task/result protocol v2 (C.1, landed);
 - campaign runner, pause/resume, scan, and budget controller (D.1, landed);
-- campaign review handoff and deterministic eval (E.1, current);
-- workspace-template campaign demo and public KB campaign-output policy guard;
-- conservative `v0.11.0` release candidate and publication closeout.
+- campaign review handoff and deterministic eval (E.1, landed);
+- workspace-template campaign demo and public KB campaign-output policy guard
+  (landed);
+- conservative `v0.11.0` release candidate (current) and publication closeout.
 
 This line will not make campaign success proof, source metadata, human review,
 verifier/gate pass, accepted status, accepted theorem/refutation, or promotion
@@ -245,7 +246,8 @@ tests. MCP remains optional and non-blocking.
 
 ## Latest Published Release: v0.10.0
 
-Package metadata and `cosheaf.__version__` record `0.10.0`.
+The published `v0.10.0` tag records package metadata and `cosheaf.__version__`
+as `0.10.0`.
 `docs/releases/v0.10.0.md` records the conservative release scope and
 limitations. The public `v0.10.0` tag and GitHub release are published.
 

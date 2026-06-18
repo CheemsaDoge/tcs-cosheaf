@@ -4,9 +4,12 @@ Target: `v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns`
 
 Status: Phase A has landed after the published `v0.10.0` Cross-Check Evidence +
 Checker Registry release and downstream workspace/public-KB pin closeout. Phase
-B.1 `campaign-model-core`, Phase C.1 `external-operator-protocol-v2`, and
-Phase D.1 `campaign-runner-budget-controller` have landed. Phase E.1
-`campaign-eval-and-handoff` is the current implementation increment.
+B.1 `campaign-model-core`, Phase C.1 `external-operator-protocol-v2`, Phase
+D.1 `campaign-runner-budget-controller`, and Phase E.1
+`campaign-eval-and-handoff` have landed. Downstream workspace-template campaign
+demo and public KB campaign-output policy guard coverage have landed. Phase
+F.1 `release-v0110-readiness-and-rc` is the current release-candidate
+increment.
 
 ## Goal
 
@@ -57,9 +60,12 @@ V16 should not embed a hosted LLM as an internal autonomous system owner.
    `external-operator-protocol-v2` has landed.
 4. Phase D: campaign runner and budget controller. D.1
    `campaign-runner-budget-controller` has landed.
-5. Phase E: campaign review/handoff and eval. E.1 is
-   `campaign-eval-and-handoff`.
-6. Phase F: `v0.11.0` release candidate and publication closeout.
+5. Phase E: campaign review/handoff and eval. E.1
+   `campaign-eval-and-handoff` has landed in issue #454 / PR #455. Downstream
+   workspace-template issue #88 / PR #89 and public KB issue #102 / PR #103
+   completed campaign demo and policy guard coverage.
+6. Phase F: `v0.11.0` release candidate and publication closeout. F.1 is
+   current.
 
 ## Phase A Scope
 
@@ -168,7 +174,7 @@ accepted knowledge.
 Phase E.1 implements the framework-side review handoff and eval surfaces only:
 `campaign handoff`, `eval campaign`, default campaign eval cases, and the
 framework ecosystem matrix row. Downstream workspace-template campaign demo
-and public KB campaign-output policy guards remain follow-up work before the
+and public KB campaign-output policy guard coverage have landed before the
 `v0.11.0` release candidate.
 
 ## Phase F Outline

@@ -2,11 +2,11 @@
 
 Milestone: **V16 / v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns**
 
-Status: **V16 Phase E.1 campaign-eval-and-handoff landing**
+Status: **V16 Phase F.1 v0.11.0 release-candidate readiness**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V16.md
 
-Current package version: `0.10.0`
+Current package version: `0.11.0`
 
 Latest published release:
 <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.10.0>
@@ -15,17 +15,16 @@ Latest published release:
 smoke, workspace-template pin update, and public KB CI pin update are complete.
 The V16 post-`v0.10.0` audit, V16 development plan, ADR 0032, Phase B.1
 campaign model core, Phase C.1 external operator protocol v2, and Phase D.1
-campaign runner budget controller have landed as durable repo memory. The
-current task is the Phase E.1 campaign eval and handoff increment: deterministic
-campaign handoff export, default campaign eval fixtures, and framework
-ecosystem matrix coverage.
+campaign runner budget controller have landed as durable repo memory. Phase
+E.1 campaign eval/handoff, downstream workspace-template campaign demo, and
+public KB campaign-output policy guard coverage have also landed. The current
+task prepares the conservative `v0.11.0` release candidate metadata and
+release note.
 
 Current focus:
 
-- land V16 Phase E.1 `campaign-eval-and-handoff`:
-  `cosheaf campaign handoff`, `cosheaf eval campaign`, default campaign eval
-  cases, the framework campaign-eval ecosystem matrix row, and updated campaign
-  documentation;
+- land V16 Phase F.1 `release-v0110-readiness-and-rc`: package metadata
+  `0.11.0`, `cosheaf.__version__`, release notes, and current-status docs;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -36,9 +35,11 @@ Planned V16 surface:
   runtime paths (B.1, landed);
 - external operator task/result packet v2 (C.1, landed);
 - campaign budget and stop-condition controller (D.1, landed);
-- campaign review handoff reports (E.1, current);
-- deterministic `cosheaf eval campaign --json` (E.1, current); and
-- downstream workspace-template campaign demo plus public KB policy guard.
+- campaign review handoff reports (E.1, landed);
+- deterministic `cosheaf eval campaign --json` (E.1, landed);
+- downstream workspace-template campaign demo plus public KB policy guard
+  (landed); and
+- `v0.11.0` release candidate metadata (F.1, current).
 
 V16 non-goals:
 
@@ -71,6 +72,16 @@ Completed V15 closeout:
 - post-tag release smoke from `@v0.10.0` passed;
 - workspace-template active pins moved to `@v0.10.0` in PR #87;
 - public KB CI/docs pins moved to `@v0.10.0` in PR #101.
+
+Completed V16 implementation and downstream closeout:
+
+- Phase B.1 `campaign-model-core` landed in issue #448 / PR #449;
+- Phase C.1 `external-operator-protocol-v2` landed;
+- Phase D.1 `campaign-runner-budget-controller` landed;
+- Phase E.1 `campaign-eval-and-handoff` landed in issue #454 / PR #455;
+- workspace-template campaign demo landed in downstream issue #88 / PR #89;
+- public KB campaign-output policy guard landed in downstream issue #102 / PR
+  #103.
 
 Completed V14 closeout:
 

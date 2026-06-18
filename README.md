@@ -7,36 +7,33 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.10.0 Cross-Check Evidence + Checker Registry published
-release**. Package metadata records `0.10.0`; the public `v0.10.0` tag and
-GitHub release are published at
-<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.10.0>.
-The `v0.10.0` release packages the V15 checker discipline line: typed local
-checker registry commands, checker-run sidecars, workflow cross-check reports,
-evidence reports, proof/source/formalization gap reports, `cosheaf gap`
-commands, deterministic checker/cross-check eval coverage, downstream
-workspace cross-check demo coverage, and public-KB policy guard coverage.
-These surfaces are review context and regression evidence; they do not change
-proof, review, gate, verifier, source metadata, accepted-status, or promotion
-authority.
+Current status: **v0.11.0 External Operator Campaigns release candidate**.
+Package metadata records `0.11.0`. The public `v0.11.0` tag, GitHub release,
+post-tag release smoke, and downstream pin alignment are future publication
+closeout work, not part of this RC.
 
-The current development line is V16 / `v0.11.0` External AI Operator Harness +
-Bounded Multi-Run Campaigns. The current branch adds the E.1 campaign
-handoff/eval layer on top of the B.1 model core, C.1 external-operator
-protocol, and D.1 budget controller: `cosheaf campaign handoff <campaign-id>
---out <dir> --json`, `cosheaf eval campaign --json`, default campaign eval
-cases, and a framework ecosystem matrix row. The campaign controller still
-does not execute shell commands or call hosted providers. Campaign, operator,
-handoff, and eval output is review context only and does not create proof,
-source metadata, human review, verifier pass, gate pass, accepted status,
-accepted refutation, or promotion authority.
+The `v0.11.0` release candidate packages the V16 bounded campaign line:
+durable campaign sidecars under `.cosheaf/campaigns/`, lifecycle commands,
+external `operator_task_v2` / result packet flow, deterministic budget
+controller commands, `cosheaf campaign handoff <campaign-id> --out <dir>
+--json`, `cosheaf eval campaign --json`, framework campaign-eval smoke
+coverage, workspace-template `make campaign-demo`, and public-KB
+campaign-output policy guard coverage. The campaign controller still does not
+execute shell commands or call hosted providers. Campaign, operator, handoff,
+scorecard, scan, packet, and eval output is review context only and does not
+create proof, source metadata, human review, verifier pass, gate pass,
+accepted status, accepted refutation, or promotion authority.
 
-The `v0.10.0` release does not add production autonomy, hosted-provider defaults,
+The latest published release remains `v0.10.0` at
+<https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.10.0> until Phase
+F.2 publishes `v0.11.0`.
+
+The `v0.11.0` release candidate does not add production autonomy, hosted-provider defaults,
 automatic theorem proving, Lean semantic alignment, human review, accepted
 writes, verifier passes without real checker evidence, gate-pass authority,
 source metadata authority, accepted theorem/refutation authority, or promotion
 authority. Workflow, loop, session, operator, handoff, checker, cross-check,
-gap, and eval records remain review context only.
+gap, campaign, scorecard, packet, and eval records remain review context only.
 
 Earlier published baselines include `v0.1.1` Formal Link Layer support,
 `v0.2.0` deterministic local-MVP workflow, `v0.2.1` CLI-first agent and
@@ -247,8 +244,8 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- V16 downstream workspace-template campaign demo, public KB campaign-output
-  policy guard, and `v0.11.0` release closeout.
+- `v0.11.0` publication closeout: public tag, GitHub release, post-tag release
+  smoke, and downstream pin alignment.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
@@ -394,8 +391,9 @@ repositories that need Bounded Research Loop + Attempt Memory surfaces can pin
 to `v0.7.0`; deterministic execution-kernel surfaces can pin to `v0.8.0`; and
 the initial reviewable-workflow release line can pin to `v0.9.0`. Downstream
 repositories that need the V15 checker registry and cross-check evidence
-surfaces can pin to `v0.10.0`. The workspace-template and public KB active pins
-are aligned to `v0.10.0` after post-tag smoke passed.
+surfaces can pin to `v0.10.0`. The `v0.11.0` campaign line is currently a
+release candidate; downstream active pins remain at `v0.10.0` until the public
+`v0.11.0` tag, release, and post-tag smoke land in Phase F.2.
 
 ## Development Commands
 
