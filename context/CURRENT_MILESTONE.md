@@ -2,11 +2,11 @@
 
 Milestone: **V17 / v0.12.0 Research Memory Learning + Benchmark Suite v1**
 
-Status: **V17 Phase E.1 static research reports**
+Status: **V17 Phase F.1 v0.12.0 release candidate**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V17.md
 
-Current package version: `0.11.0`
+Current package version: `0.12.0`
 
 Latest published release:
 <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.11.0>
@@ -19,8 +19,9 @@ review reports.
 
 Current focus:
 
-- land V17 Phase E.1 `static-research-dashboard-reports`: static Markdown/JSON
-  review directories for existing workflow, campaign, and benchmark records;
+- land V17 Phase F.1 `release-v0120-readiness-and-rc`: package metadata,
+  release notes, and current-status docs for the conservative v0.12.0 release
+  candidate;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
@@ -31,7 +32,7 @@ Planned V17 surface:
 - deterministic memory update policy v1 (B.1, landed);
 - benchmark suite v1 (C.1, landed);
 - comparative workflow/campaign/benchmark reports (D.1, landed);
-- static Markdown/JSON research reports (E.1, current);
+- static Markdown/JSON research reports (E.1, landed);
 - `v0.12.0` release candidate and publication closeout.
 
 Current V17 B.1 surface:
@@ -65,6 +66,14 @@ Current V17 E.1 surface:
 - `cosheaf report workflow <workflow-id> --out <dir> --json`;
 - `cosheaf report campaign <campaign-id> --out <dir> --json`; and
 - `cosheaf report benchmark <run-id> --out <dir> --json`.
+
+Current V17 F.1 surface:
+
+- package metadata and `cosheaf.__version__` record `0.12.0`;
+- `docs/releases/v0.12.0.md` records the release-candidate scope and
+  authority boundary; and
+- tag publication, GitHub release, post-tag release smoke, and downstream pin
+  updates remain Phase F.2 work.
 
 V17 non-goals:
 

@@ -1,8 +1,9 @@
 # Roadmap
 
 TCS-Cosheaf has published the V16 / `v0.11.0` External AI Operator Harness +
-Bounded Multi-Run Campaigns release and is starting V17 / `v0.12.0` Research
-Memory Learning + Benchmark Suite v1. Earlier published baselines include the
+Bounded Multi-Run Campaigns release and is preparing the V17 / `v0.12.0`
+Research Memory Learning + Benchmark Suite v1 release candidate. Earlier
+published baselines include the
 `v0.10.0` Cross-Check Evidence + Checker Registry release,
 `v0.9.0` Reviewable Research Workflow MVP, `v0.8.0` Deterministic Execution
 Kernel + Librarian + FSM, `v0.7.0` Bounded Research Loop + Attempt Memory,
@@ -14,7 +15,7 @@ support baseline. The project is still not production-ready. This roadmap
 records durable direction and named milestones; live issue state belongs in
 GitHub issues.
 
-## Active Development Focus: V17 v0.12.0 static reports
+## Active Development Focus: V17 v0.12.0 release candidate
 
 The public `v0.11.0` tag and GitHub release are published, post-tag release
 smoke passed, and downstream workspace-template/public KB pins are aligned to
@@ -28,11 +29,10 @@ V17 will add deterministic sidecar memory updates, benchmark suite v1,
 comparative reports, and static Markdown/JSON review reports. It must remain
 operational learning rather than model training or a new truth source.
 
-The current implementation focus is static reports: existing workflow,
-campaign, and benchmark records can be exported through `cosheaf report`
-commands into repository-local Markdown/JSON review directories. These reports
-organize metrics, authority findings, memory changes, checker matrices, and
-review handoff summaries without creating a new truth source.
+The current implementation focus is release-candidate closeout: package
+metadata, release notes, milestone docs, and verification records for the
+conservative `v0.12.0` RC. Tag publication, GitHub release, post-tag smoke, and
+downstream pin updates remain separate Phase F.2 work.
 
 The authority boundary is unchanged: workflow records, loop records, task
 packets, operator results, handoffs, eval reports, checker-registry records,
@@ -57,8 +57,8 @@ The planned implementation phases are:
 - deterministic memory update policy v1 (landed);
 - benchmark suite v1 (landed);
 - comparative workflow/campaign/benchmark reports (landed);
-- static Markdown/JSON research reports (current);
-- conservative `v0.12.0` release metadata and publication closeout.
+- static Markdown/JSON research reports (landed);
+- conservative `v0.12.0` release metadata and publication closeout (current).
 
 This line will not train models, mutate YAML artifacts from memory updates,
 make benchmark success accepted status, create human review, grant promotion

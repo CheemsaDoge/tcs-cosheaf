@@ -7,32 +7,27 @@ AI-assisted theoretical computer science. It keeps definitions, claims, proofs,
 constructions, algorithms, reductions, counterexamples, experiments, reviews,
 issues, and verifier evidence in reviewable repository files.
 
-Current status: **v0.11.0 External Operator Campaigns published release**.
-Package metadata records `0.11.0`. The public `v0.11.0` tag and GitHub
-release are published, post-tag release smoke passed, and downstream
-workspace-template/public-KB pins are aligned to `@v0.11.0`.
+Current status: **v0.12.0 Research Memory Learning + Benchmark Suite v1 release
+candidate**. Package metadata records `0.12.0`. The public `v0.12.0` tag,
+GitHub release, post-tag release smoke, and downstream workspace-template/public
+KB pin updates are Phase F.2 work.
 
-The `v0.11.0` release packages the V16 bounded campaign line:
-durable campaign sidecars under `.cosheaf/campaigns/`, lifecycle commands,
-external `operator_task_v2` / result packet flow, deterministic budget
-controller commands, `cosheaf campaign handoff <campaign-id> --out <dir>
---json`, `cosheaf eval campaign --json`, framework campaign-eval smoke
-coverage, workspace-template `make campaign-demo`, and public-KB
-campaign-output policy guard coverage. The campaign controller still does not
-execute shell commands or call hosted providers. Campaign, operator, handoff,
-scorecard, scan, packet, and eval output is review context only and does not
-create proof, source metadata, human review, verifier pass, gate pass,
-accepted status, accepted refutation, or promotion authority.
+The `v0.12.0` release candidate packages the V17 memory and benchmark line:
+deterministic sidecar memory updates under `.cosheaf/memory/`, benchmark suite
+v1, comparative reports, and static Markdown/JSON review reports. Memory
+weights, benchmark runs, comparisons, and static reports remain review context
+or sidecar guidance only and do not create proof, source metadata, human
+review, verifier pass, gate pass, accepted status, accepted refutation, or
+promotion authority.
 
 The latest published release is `v0.11.0`:
 <https://github.com/CheemsaDoge/tcs-cosheaf/releases/tag/v0.11.0>.
 
-The `v0.11.0` release does not add production autonomy, hosted-provider defaults,
-automatic theorem proving, Lean semantic alignment, human review, accepted
-writes, verifier passes without real checker evidence, gate-pass authority,
-source metadata authority, accepted theorem/refutation authority, or promotion
-authority. Workflow, loop, session, operator, handoff, checker, cross-check,
-gap, campaign, scorecard, packet, and eval records remain review context only.
+The `v0.12.0` release candidate does not add production autonomy, hosted-provider
+defaults, model training, automatic correctness improvement, automatic theorem
+proving, Lean semantic alignment, human review, accepted writes, verifier
+passes without real checker evidence, gate-pass authority, source metadata
+authority, accepted theorem/refutation authority, or promotion authority.
 
 Earlier published baselines include `v0.1.1` Formal Link Layer support,
 `v0.2.0` deterministic local-MVP workflow, `v0.2.1` CLI-first agent and
@@ -43,7 +38,7 @@ Research Task Graph, `v0.5.0` Operator MCP + Codex Application Layer,
 `v0.6.0` Operator Session + Review Handoff, `v0.7.0` Bounded Research Loop +
 Attempt Memory, `v0.8.0` Deterministic Execution Kernel + Librarian + FSM,
 `v0.9.0` Reviewable Research Workflow MVP, and `v0.10.0` Cross-Check Evidence
-+ Checker Registry.
++ Checker Registry, and `v0.11.0` External Operator Campaigns.
 The repository has working
 Python scaffolding, typed artifact models, filesystem loading, validation,
 dependency graph indexing, workspace-aware KB root loading, artifact lifecycle
@@ -269,7 +264,7 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- V17 `v0.12.0` release closeout.
+- V17 `v0.12.0` publication closeout.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
@@ -416,7 +411,8 @@ to `v0.7.0`; deterministic execution-kernel surfaces can pin to `v0.8.0`; and
 the initial reviewable-workflow release line can pin to `v0.9.0`. Downstream
 repositories that need the V15 checker registry and cross-check evidence
 surfaces can pin to `v0.10.0`. Downstream repositories that need the V16
-bounded campaign surfaces can pin to `v0.11.0`.
+bounded campaign surfaces can pin to `v0.11.0`. Downstream repositories should
+wait for the `v0.12.0` tag before pinning to the V17 memory/benchmark release.
 
 ## Development Commands
 

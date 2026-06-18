@@ -4,10 +4,11 @@ This checklist records the current three-repository release state for the
 framework package, public KB, and workspace template. It is not a
 production-readiness claim.
 
-The latest published framework release is `v0.11.0` External Operator
-Campaigns. The public `v0.11.0` tag and GitHub release are published, post-tag
-release smoke from `@v0.11.0` passed, and downstream workspace-template/public
-KB pins are aligned to `@v0.11.0`.
+The current framework package metadata is prepared as the `v0.12.0` Research
+Memory Learning + Benchmark Suite v1 release candidate. The latest published
+framework release remains `v0.11.0` External Operator Campaigns; the public
+`v0.12.0` tag, GitHub release, post-tag smoke, and downstream pin alignment are
+future Phase F.2 work.
 
 Published baseline summary:
 
@@ -37,6 +38,8 @@ Published baseline summary:
 - `v0.11.0` packages bounded external-operator campaigns, campaign
   task/result packets, deterministic campaign controller checks, campaign
   handoff/eval surfaces, and downstream campaign demo/policy closeout.
+- `v0.12.0` release-candidate metadata packages deterministic sidecar memory
+  updates, benchmark suite v1, comparative reports, and static review reports.
 
 ## Scope
 
@@ -44,7 +47,7 @@ Published baseline summary:
 - Public knowledge repository: `tcs-kb-public`.
 - User entry point: `tcs-cosheaf-workspace-template`.
 - Current framework package metadata version:
-  `0.11.0`.
+  `0.12.0`.
 - Latest published framework release:
   `v0.11.0`.
 - Current published tag:
@@ -85,6 +88,40 @@ Published baseline summary:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.10.0`.
 - Downstream dependency for External Operator Campaigns:
   `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.11.0`.
+- Intended downstream dependency for Research Memory Learning + Benchmark
+  Suite v1 after publication:
+  `git+https://github.com/CheemsaDoge/tcs-cosheaf.git@v0.12.0`.
+
+## v0.12.0 Release Candidate Baseline
+
+`docs/releases/v0.12.0.md` is the release-candidate note for Research Memory
+Learning + Benchmark Suite v1. Phase F.1 prepares package metadata and status
+docs in issue #470. Phase F.2 must still publish the tag and release, run
+post-tag release smoke, and align downstream pins.
+
+- [x] Memory update commands are present:
+  `cosheaf memory update-from-workflow`, `update-from-campaign`, `rebuild`,
+  and `explain`.
+- [x] Benchmark suite commands are present:
+  `cosheaf benchmark list`, `run`, and `report`.
+- [x] Comparison commands are present:
+  `cosheaf compare workflows`, `campaigns`, and `benchmarks`.
+- [x] Static report commands are present:
+  `cosheaf report workflow`, `campaign`, and `benchmark`.
+- [x] Memory weights, benchmark runs, comparisons, and static reports remain
+  sidecar guidance or review context only.
+- [x] Package metadata records `0.12.0`.
+- [x] Regression benchmark reports `passed: true`, 6 pass, 0 fail, and 3
+  skipped rows with `skipped_rows_are_passes: false`.
+- [ ] Public `v0.12.0` tag and GitHub release are published.
+- [ ] Post-tag release smoke from `@v0.12.0` passed.
+- [ ] Workspace-template pins moved to `@v0.12.0`.
+- [ ] Public KB CI/docs pins moved to `@v0.12.0`.
+- [x] No model training, automatic correctness improvement, production
+  autonomy, hosted-provider default, automatic theorem proving, Lean semantic
+  alignment, human-review creation, accepted-write, verifier-pass, gate-pass,
+  source-metadata, accepted theorem/refutation, or promotion authority is
+  introduced.
 
 ## v0.11.0 Published Release Baseline
 
@@ -551,8 +588,8 @@ smoke, and downstream pin updates.
 
 ### Version And Tag
 
-- [x] `pyproject.toml` records package version `0.10.0`.
-- [x] `cosheaf.__version__` records `0.10.0`.
+- [x] `pyproject.toml` records package version `0.12.0`.
+- [x] `cosheaf.__version__` records `0.12.0`.
 - [x] Remote tag `v0.1.1` exists as the formal-link support baseline.
 - [x] Remote tag `v0.2.0` exists as the local-MVP baseline.
 - [x] Remote tag `v0.2.1` points to the reviewed default-branch merge commit.
@@ -577,6 +614,8 @@ smoke, and downstream pin updates.
 - [x] Remote tag `v0.9.0` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
 - [x] Remote tag `v0.10.0` exists and points through the annotated tag to the
+  reviewed release-candidate main commit.
+- [x] Remote tag `v0.11.0` exists and points through the annotated tag to the
   reviewed release-candidate main commit.
 - [x] Downstream repositories pin to an explicit release tag rather than
   tracking `main`.
@@ -672,8 +711,8 @@ gate output and release notes.
 
 ## Agent Access And Provider Status
 
-Current agent/operator/checker surfaces through the published `v0.10.0`
-release:
+Current agent/operator/checker surfaces through the `v0.12.0` release candidate
+and latest published `v0.11.0` release:
 
 - CLI-first operator workflow with stable JSON output for core read/check
   commands.
@@ -733,6 +772,8 @@ release:
 - Typed checker registry commands, checker-run sidecars, workflow
   cross-check/evidence reports, proof/source/formalization gap reports, and
   checker/cross-check evals.
+- Deterministic sidecar memory updates, benchmark suite v1, comparative
+  reports, and static review reports from the `v0.12.0` RC line.
 
 Boundaries:
 
