@@ -122,6 +122,11 @@ runtime private repository fetch, and no hosted provider call. The rendered
 site is a human interface over exported JSON only; repository files remain the
 source of truth.
 
+Artifact, issue, and context views now include static detail pages generated
+from the fixture data. Artifact filters run in the browser over already-exported
+metadata only. Status badges include authority explanations; missing verifier
+or source data is rendered as not checked or unavailable instead of pass.
+
 ## Future Write Actions
 
 The frontend must not own GitHub credentials or tokens. Future authenticated

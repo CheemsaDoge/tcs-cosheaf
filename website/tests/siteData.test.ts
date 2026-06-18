@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   REQUIRED_DATA_FILES,
   ROUTES,
+  contextPackForIssue,
+  filterArtifacts,
+  issueById,
   loadSiteData
 } from "../src/lib/siteData";
 
@@ -60,5 +63,29 @@ describe("site data contract", () => {
     expect(data.authority_boundaries.frontend_credentials_allowed).toBe(false);
     expect(data.authority_boundaries.skipped_is_pass).toBe(false);
     expect(data.gates.verdict).toBe("not_run");
+  });
+
+  it("filters artifacts by status type and domain", async () => {
+    const data = await loadSiteData();
+
+    expect(
+      filterArtifacts(data.artifacts.artifacts, {
+        status: "draft",
+        type: "definition",
+        domain: "graph-theory"
+      }).map((artifact) => artifact.id)
+    ).toEqual(["definition.graph"]);
+  });
+
+  it("links issues to their context pack and related artifacts", async () => {
+    const issue = issueById("issue.example-private-claim");
+    const contextPack = contextPackForIssue("issue.example-private-claim");
+
+    expect(issue?.related_artifacts).toEqual([
+      "claim.example-private",
+      "definition.graph"
+    ]);
+    expect(contextPack?.public_only).toBe(true);
+    expect(contextPack?.related_artifacts).toEqual(issue?.related_artifacts);
   });
 });

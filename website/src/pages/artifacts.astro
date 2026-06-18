@@ -1,11 +1,45 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { loadSiteData, statusTone } from "../lib/siteData";
+import {
+  artifactHref,
+  loadSiteData,
+  statusExplanation,
+  statusTone,
+  uniqueSorted
+} from "../lib/siteData";
 
 const data = await loadSiteData();
+const artifacts = data.artifacts.artifacts;
+const statuses = uniqueSorted(artifacts.map((artifact) => artifact.status));
+const types = uniqueSorted(artifacts.map((artifact) => artifact.type));
+const domains = uniqueSorted(artifacts.flatMap((artifact) => artifact.domain));
 ---
 
 <BaseLayout title="Artifacts" eyebrow="Safe artifact cards">
+  <section class="filter-panel" aria-label="Artifact filters">
+    <label>
+      Status
+      <select id="status-filter">
+        <option value="">All</option>
+        {statuses.map((status) => <option value={status}>{status}</option>)}
+      </select>
+    </label>
+    <label>
+      Type
+      <select id="type-filter">
+        <option value="">All</option>
+        {types.map((type) => <option value={type}>{type}</option>)}
+      </select>
+    </label>
+    <label>
+      Domain
+      <select id="domain-filter">
+        <option value="">All</option>
+        {domains.map((domain) => <option value={domain}>{domain}</option>)}
+      </select>
+    </label>
+  </section>
+
   <section class="table-panel" aria-label="Artifact list">
     <div class="table-head artifacts">
       <span>Artifact</span>
@@ -14,20 +48,55 @@ const data = await loadSiteData();
       <span>Verifier</span>
     </div>
     {
-      data.artifacts.artifacts.map((artifact) => (
-        <article class="table-row artifacts">
+      artifacts.map((artifact) => (
+        <article
+          class="table-row artifacts artifact-row"
+          data-status={artifact.status}
+          data-type={artifact.type}
+          data-domain={artifact.domain.join(" ")}
+        >
           <div>
-            <strong>{artifact.title}</strong>
+            <a class="row-title" href={artifactHref(artifact.id)}>{artifact.title}</a>
             <code>{artifact.id}</code>
             <p>{artifact.summary}</p>
           </div>
           <span>{artifact.type}</span>
-          <span class:list={["badge", statusTone(artifact.status)]}>{artifact.status}</span>
-          <span class:list={["badge", statusTone(artifact.verifier_state)]}>
+          <span
+            class:list={["badge", statusTone(artifact.status)]}
+            title={statusExplanation(artifact.status)}
+          >
+            {artifact.status}
+          </span>
+          <span
+            class:list={["badge", statusTone(artifact.verifier_state)]}
+            title={statusExplanation(artifact.verifier_state)}
+          >
             {artifact.verifier_state}
           </span>
         </article>
       ))
     }
   </section>
+
+  <script>
+    const selects = [
+      document.querySelector("#status-filter"),
+      document.querySelector("#type-filter"),
+      document.querySelector("#domain-filter")
+    ];
+    const rows = [...document.querySelectorAll(".artifact-row")];
+    const applyFilters = () => {
+      const [status, type, domain] = selects.map((select) => select?.value ?? "");
+      for (const row of rows) {
+        const matches =
+          (!status || row.dataset.status === status) &&
+          (!type || row.dataset.type === type) &&
+          (!domain || row.dataset.domain?.split(" ").includes(domain));
+        row.toggleAttribute("hidden", !matches);
+      }
+    };
+    for (const select of selects) {
+      select?.addEventListener("change", applyFilters);
+    }
+  </script>
 </BaseLayout>

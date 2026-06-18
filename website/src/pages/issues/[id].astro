@@ -1,0 +1,63 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import {
+  artifactById,
+  artifactHref,
+  contextHref,
+  issueById,
+  loadSiteData,
+  statusExplanation
+} from "../../lib/siteData";
+
+export async function getStaticPaths() {
+  const data = await loadSiteData();
+  return data.issues.issues.map((issue) => ({
+    params: { id: issue.id }
+  }));
+}
+
+const id = Astro.params.id ?? "";
+const issue = issueById(id);
+if (!issue) {
+  throw new Error(`Unknown issue: ${id}`);
+}
+---
+
+<BaseLayout title={issue.title} eyebrow="Issue detail">
+  <section class="split-layout">
+    <article class="panel">
+      <p class="section-kicker">{issue.type}</p>
+      <h2>{issue.id}</h2>
+      <p>{issue.summary}</p>
+      <div class="tag-row">
+        <span class="badge warning" title={statusExplanation(issue.status)}>{issue.status}</span>
+        <span class="tag">scope: {issue.scope}</span>
+        <span class="tag">severity: {issue.severity}</span>
+      </div>
+    </article>
+    <article class="panel">
+      <p class="section-kicker">Context</p>
+      <h2>Review packet preview</h2>
+      <p>This static context view is display context only and performs no repository writes.</p>
+      <a class="button-link" href={contextHref(issue.id)}>Open context pack</a>
+    </article>
+  </section>
+
+  <section class="table-panel compact">
+    <div class="table-head graph-table">
+      <span>Related artifact</span>
+      <span>Status</span>
+    </div>
+    {
+      issue.related_artifacts.map((id) => {
+        const artifact = artifactById(id);
+        return (
+          <div class="table-row graph-table">
+            <a class="row-title" href={artifactHref(id)}>{artifact?.title ?? id}</a>
+            <span>{artifact?.status ?? "unavailable"}</span>
+          </div>
+        );
+      })
+    }
+  </section>
+</BaseLayout>
