@@ -21,6 +21,7 @@ SITE_EXPORT_AUTHORITY_NOTICE = (
     "proof, source metadata, human review, verifier pass, gate pass, accepted "
     "status, accepted theorem/refutation status, or promotion authority."
 )
+DEMO_FIXTURE_TAGS = frozenset({"workspace-demo", "site-demo", "demo-only"})
 REQUIRED_SITE_EXPORT_FILES = (
     "site.json",
     "workspace.json",
@@ -88,6 +89,7 @@ def export_site_data(
     exported_artifacts = _exported_artifact_records(
         records,
         public_only=effective_public_only,
+        demo=demo,
     )
     exported_artifact_ids = frozenset(record.id for record in exported_artifacts)
     private_artifact_ids = frozenset(
@@ -100,9 +102,14 @@ def export_site_data(
     issues = _issue_payloads(
         context,
         public_only=effective_public_only,
+        demo=demo,
         exported_artifact_ids=exported_artifact_ids,
     )
-    workspace = _workspace_payload(context, public_only=effective_public_only)
+    workspace = _workspace_payload(
+        context,
+        public_only=effective_public_only,
+        demo=demo,
+    )
 
     payloads = {
         "site.json": _base_payload(
@@ -111,6 +118,7 @@ def export_site_data(
                 "generated_at": SITE_EXPORT_GENERATED_AT,
                 "demo": demo,
                 "public_only": effective_public_only,
+                "demo_private_fixtures_allowed": demo,
                 "source_of_truth": "repository",
                 "sidecar": True,
                 "files": list(REQUIRED_SITE_EXPORT_FILES),
@@ -123,6 +131,7 @@ def export_site_data(
                 "artifacts": artifact_cards,
                 "count": len(artifact_cards),
                 "public_only": effective_public_only,
+                "demo_private_fixtures_allowed": demo,
             },
         ),
         "issues.json": _base_payload(
@@ -160,6 +169,11 @@ def export_site_data(
                         "issue_id": issue["id"],
                         "public_only": effective_public_only,
                         "private_context_included": False,
+                        "demo_private_context_included": any(
+                            issue.get("demo_fixture", False)
+                            for artifact_id in issue["related_artifacts"]
+                            if artifact_id in private_artifact_ids
+                        ),
                         "related_artifacts": issue["related_artifacts"],
                         "card_count": len(issue["related_artifacts"]),
                     }
@@ -212,13 +226,17 @@ def _exported_artifact_records(
     records: tuple[LoadedRecord, ...],
     *,
     public_only: bool,
+    demo: bool,
 ) -> tuple[LoadedRecord, ...]:
     artifacts = [
         record for record in records if isinstance(record.record, BaseArtifact)
     ]
     if public_only:
         artifacts = [
-            record for record in artifacts if not _is_private_artifact(record)
+            record
+            for record in artifacts
+            if not _is_private_artifact(record)
+            or (demo and _is_demo_artifact(record))
         ]
     return tuple(sorted(artifacts, key=lambda record: (record.id, _path(record))))
 
@@ -229,6 +247,7 @@ def _artifact_payload(
     exported_artifact_ids: frozenset[str],
 ) -> dict[str, Any]:
     card = artifact_card_from_loaded_record(record).to_dict()
+    card["demo_fixture"] = _is_demo_artifact(record)
     card["depends_on"] = [
         dependency
         for dependency in card["depends_on"]
@@ -241,13 +260,16 @@ def _issue_payloads(
     context: RepoContext,
     *,
     public_only: bool,
+    demo: bool,
     exported_artifact_ids: frozenset[str],
 ) -> list[dict[str, Any]]:
     issues = []
     for issue in LocalIssueService(context).list().issues:
-        if public_only and issue.scope == "private":
+        demo_fixture = _is_demo_issue(issue)
+        if public_only and issue.scope == "private" and not (demo and demo_fixture):
             continue
         data = issue.model_dump(mode="json")
+        data["demo_fixture"] = demo_fixture
         data["related_artifacts"] = [
             artifact_id
             for artifact_id in issue.related_artifacts
@@ -257,11 +279,17 @@ def _issue_payloads(
     return sorted(issues, key=lambda item: item["id"])
 
 
-def _workspace_payload(context: RepoContext, *, public_only: bool) -> dict[str, Any]:
+def _workspace_payload(
+    context: RepoContext,
+    *,
+    public_only: bool,
+    demo: bool,
+) -> dict[str, Any]:
     config = context.workspace_config
     roots = []
     for root in config.ordered_kb:
-        if public_only and _private_text(root.name, root.path):
+        private_root = _private_text(root.name, root.path)
+        if public_only and private_root and not demo:
             continue
         roots.append(
             {
@@ -269,6 +297,7 @@ def _workspace_payload(context: RepoContext, *, public_only: bool) -> dict[str, 
                 "path": root.path,
                 "readonly": root.readonly,
                 "priority": root.priority,
+                "demo_private_fixtures_allowed": demo and private_root,
             }
         )
     return {
@@ -281,6 +310,7 @@ def _workspace_payload(context: RepoContext, *, public_only: bool) -> dict[str, 
             "accepted_requires_source": config.policy.accepted_requires_source,
         },
         "public_only": public_only,
+        "demo_private_fixtures_allowed": demo,
     }
 
 
@@ -413,6 +443,21 @@ def _is_private_artifact(record: LoadedRecord) -> bool:
         record.kb_root_path.as_posix() if record.kb_root_path else "",
         record.source_path.as_posix(),
     )
+
+
+def _is_demo_artifact(record: LoadedRecord) -> bool:
+    if not isinstance(record.record, BaseArtifact):
+        return False
+    return _has_demo_tags(record.record.tags)
+
+
+def _is_demo_issue(issue: Any) -> bool:
+    labels = getattr(issue, "labels", [])
+    return _has_demo_tags(labels)
+
+
+def _has_demo_tags(values: list[str]) -> bool:
+    return bool(DEMO_FIXTURE_TAGS.intersection(value.lower() for value in values))
 
 
 def _private_text(*values: str) -> bool:

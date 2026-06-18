@@ -78,16 +78,21 @@ cosheaf site export --demo --out .cosheaf/site-data
 ```
 
 `--demo` forces the public-only sanitizer because demo data is intended for
-public builds. The command writes exactly the data-contract files listed above,
-with `schema_version: 1`, deterministic key ordering, and no web framework,
-server, network, provider, GitHub, gate, verifier, or context-build execution.
+public builds, with one explicit exception: private records tagged
+`workspace-demo`, `site-demo`, or `demo-only` may appear as demo fixtures.
+Plain `--public-only` remains strict and excludes private KB records and
+private-scope issues. The command writes exactly the data-contract files listed
+above, with `schema_version: 1`, deterministic key ordering, and no web
+framework, server, network, provider, GitHub, gate, verifier, or context-build
+execution.
 
 The export uses compact artifact cards and issue summaries, not full artifact
 statements or provider prompts. Public-only output excludes private KB roots,
-private-scope issues, private artifact IDs, and private dependency edges. The
-sidecar can be regenerated from repository YAML and is never accepted
-knowledge, human review, verifier evidence, gate evidence, or promotion
-authority.
+private-scope issues, private artifact IDs, and private dependency edges. Demo
+fixture output marks included demo records with `demo_fixture: true` and does
+not export full private artifact statements. The sidecar can be regenerated
+from repository YAML and is never accepted knowledge, human review, verifier
+evidence, gate evidence, or promotion authority.
 
 ## Future Write Actions
 
