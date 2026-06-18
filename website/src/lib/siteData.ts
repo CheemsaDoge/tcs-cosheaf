@@ -250,6 +250,31 @@ export function statusExplanation(status: string): string {
   return "Website badges are display context only.";
 }
 
+export function dependenciesFor(id: string, edges: GraphEdge[]): string[] {
+  return uniqueSorted(
+    edges.filter((edge) => edge.source_id === id).map((edge) => edge.target_id)
+  );
+}
+
+export function dependentsFor(id: string, edges: GraphEdge[]): string[] {
+  return uniqueSorted(
+    edges.filter((edge) => edge.target_id === id).map((edge) => edge.source_id)
+  );
+}
+
+export function gateVerdictExplanation(gates: GatesPayload): string {
+  if (gates.verdict === "not_run") {
+    return "Gate was not run in this static export; no pass is implied.";
+  }
+  if (gates.verdict === "pass") {
+    return "Gate pass may unblock review workflow, but it does not accept artifacts or prove truth.";
+  }
+  if (gates.verdict === "fail" || gates.verdict === "error") {
+    return "Gate result blocks review until the reported issues are resolved.";
+  }
+  return "Gate output is workflow context only, not accepted authority.";
+}
+
 export function statusTone(status: string): "neutral" | "warning" | "good" {
   if (status === "accepted") {
     return "good";

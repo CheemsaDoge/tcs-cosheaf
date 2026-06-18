@@ -1,8 +1,11 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { loadSiteData, statusTone } from "../lib/siteData";
+import { gateVerdictExplanation, loadSiteData, statusTone } from "../lib/siteData";
 
 const data = await loadSiteData();
+const skippedRows = data.gates.gates.filter((row) =>
+  JSON.stringify(row).toLowerCase().includes("skipped")
+);
 ---
 
 <BaseLayout title="Gate Reports" eyebrow="Gate summary">
@@ -14,12 +17,66 @@ const data = await loadSiteData();
           {data.gates.verdict.replace("_", " ")}
         </span>
       </h2>
+      <p>{gateVerdictExplanation(data.gates)}</p>
       <p>{data.gates.note}</p>
     </article>
     <article class="panel">
       <p class="section-kicker">Blocking state</p>
       <h2>{data.gates.blocking_issues.length} blocking issues</h2>
       <p>Skipped, missing, or unavailable checks are rendered separately from pass.</p>
+    </article>
+  </section>
+
+  <section class="metric-grid">
+    <article class="metric-card">
+      <span>Gate rows</span>
+      <strong>{data.gates.gates.length}</strong>
+      <small>exported summaries</small>
+    </article>
+    <article class="metric-card">
+      <span>Skipped</span>
+      <strong>{skippedRows.length}</strong>
+      <small>not pass</small>
+    </article>
+    <article class="metric-card">
+      <span>Warnings</span>
+      <strong>{data.gates.nonblocking_issues.length}</strong>
+      <small>nonblocking issues</small>
+    </article>
+    <article class="metric-card">
+      <span>Reports</span>
+      <strong>{data.gates.report_paths.length}</strong>
+      <small>static references</small>
+    </article>
+  </section>
+
+  <section class="split-layout">
+    <article class="panel">
+      <p class="section-kicker">Failures and warnings</p>
+      <h2>Blocking and nonblocking rows</h2>
+      {
+        data.gates.blocking_issues.length + data.gates.nonblocking_issues.length > 0 ? (
+          <pre class="json-block">{JSON.stringify({
+            blocking: data.gates.blocking_issues,
+            nonblocking: data.gates.nonblocking_issues
+          }, null, 2)}</pre>
+        ) : (
+          <p>No blocking or nonblocking issue rows were exported.</p>
+        )
+      }
+    </article>
+    <article class="panel">
+      <p class="section-kicker">PR checklist gate</p>
+      <h2>Report references</h2>
+      {
+        data.gates.report_paths.length > 0 ? (
+          <div class="related-list">
+            {data.gates.report_paths.map((path) => <span>{path}</span>)}
+          </div>
+        ) : (
+          <p>No PR checklist gate report was exported for this fixture.</p>
+        )
+      }
     </article>
   </section>
 </BaseLayout>

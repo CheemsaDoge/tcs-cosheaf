@@ -4,7 +4,10 @@ import {
   REQUIRED_DATA_FILES,
   ROUTES,
   contextPackForIssue,
+  dependentsFor,
+  dependenciesFor,
   filterArtifacts,
+  gateVerdictExplanation,
   issueById,
   loadSiteData
 } from "../src/lib/siteData";
@@ -87,5 +90,25 @@ describe("site data contract", () => {
     ]);
     expect(contextPack?.public_only).toBe(true);
     expect(contextPack?.related_artifacts).toEqual(issue?.related_artifacts);
+  });
+
+  it("derives dependency and reverse dependency relationships", async () => {
+    const data = await loadSiteData();
+
+    expect(dependenciesFor("claim.example-private", data.graph.edges)).toEqual([
+      "definition.graph"
+    ]);
+    expect(dependentsFor("definition.graph", data.graph.edges)).toEqual([
+      "claim.example-private"
+    ]);
+  });
+
+  it("explains gate verdicts without turning pass into accepted truth", async () => {
+    const data = await loadSiteData();
+
+    expect(gateVerdictExplanation(data.gates)).toContain("not run");
+    expect(gateVerdictExplanation({ ...data.gates, verdict: "pass" })).toContain(
+      "does not accept"
+    );
   });
 });
