@@ -1,10 +1,10 @@
 ﻿# Current Milestone
 
-Milestone: **V16 / v0.11.0 External AI Operator Harness + Bounded Multi-Run Campaigns**
+Milestone: **V17 / v0.12.0 Research Memory Learning + Benchmark Suite v1**
 
-Status: **V16 Phase F.2 v0.11.0 publication closeout**
+Status: **V17 Phase A.1 post-v0.11.0 audit and kickoff**
 
-Plan: docs/CODEX_DEVELOPMENT_PLAN_V16.md
+Plan: docs/CODEX_DEVELOPMENT_PLAN_V17.md
 
 Current package version: `0.11.0`
 
@@ -13,44 +13,39 @@ Latest published release:
 
 `v0.11.0` publication closeout status: tag, GitHub release, post-tag release
 smoke, workspace-template pin update, and public KB CI/docs pin update are
-complete. The V16 post-`v0.10.0` audit, V16 development plan, ADR 0032, Phase
-B.1 campaign model core, Phase C.1 external operator protocol v2, Phase D.1
-campaign runner budget controller, and Phase E.1 campaign eval/handoff have
-landed as durable repo memory. Downstream workspace-template campaign demo and
-public KB campaign-output policy guard coverage have also landed.
+complete. V17 starts from that published baseline and focuses on deterministic
+sidecar memory updates, benchmark suite v1, comparative reports, and static
+review reports.
 
 Current focus:
 
-- land V16 Phase F.2 `release-v0110-publication-closeout`: release-state docs
-  for the published tag, GitHub release, post-tag smoke, and downstream pins;
+- land V17 Phase A.1 `post-v0110-v0120-kickoff`: post-v0.11.0 audit, V17
+  development plan, ADR 0033, roadmap, milestone, and project-state updates;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
 
-Planned V16 surface:
+Planned V17 surface:
 
-- durable campaign records and scorecards under ignored `.cosheaf/campaigns/`
-  runtime paths (B.1, landed);
-- external operator task/result packet v2 (C.1, landed);
-- campaign budget and stop-condition controller (D.1, landed);
-- campaign review handoff reports (E.1, landed);
-- deterministic `cosheaf eval campaign --json` (E.1, landed);
-- downstream workspace-template campaign demo plus public KB policy guard
-  (landed);
-- `v0.11.0` F.1 release metadata (landed); and
-- `v0.11.0` publication closeout: tag, GitHub release, post-tag smoke, and
-  downstream pins (F.2, landed).
+- post-v0.11.0 audit and V17 plan/ADR (A.1, current);
+- deterministic memory update policy v1;
+- benchmark suite v1;
+- comparative workflow/campaign/benchmark reports;
+- static Markdown/JSON research reports; and
+- `v0.12.0` release candidate and publication closeout.
 
-V16 non-goals:
+V17 non-goals:
 
-- no internal autonomous hosted-provider runtime;
+- no model training;
 - no default network, API-key, or model-call requirement;
 - no arbitrary shell execution;
 - no accepted KB write;
 - no human-review creation;
 - no source-metadata fabrication;
+- no YAML artifact mutation from memory updates;
+- no benchmark-as-truth or benchmark-as-accepted-status claims; and
 - no accepted-status, accepted theorem/refutation, verifier/gate, or promotion
-  authority from campaign output.
+  authority from memory or benchmark output.
 
 Current V15 surface on the development line:
 
