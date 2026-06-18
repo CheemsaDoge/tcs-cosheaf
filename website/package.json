@@ -1,0 +1,17 @@
+{
+  "name": "tcs-cosheaf-website",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "astro build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "astro": "^5.16.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  }
+}

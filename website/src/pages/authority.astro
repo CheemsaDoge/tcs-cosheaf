@@ -1,0 +1,33 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { loadSiteData } from "../lib/siteData";
+
+const data = await loadSiteData();
+const flags = [
+  ["Website authority", data.authority_boundaries.website_is_authority],
+  ["Export source of truth", data.authority_boundaries.export_is_source_of_truth],
+  ["Frontend credentials", data.authority_boundaries.frontend_credentials_allowed],
+  ["Skipped is pass", data.authority_boundaries.skipped_is_pass],
+  ["Gate pass is truth", data.authority_boundaries.gate_pass_is_truth],
+  ["Verifier pass is truth", data.authority_boundaries.verifier_pass_is_truth],
+  ["AI output is human review", data.authority_boundaries.ai_output_is_human_review],
+  ["Accepted write performed", data.authority_boundaries.accepted_write_performed]
+];
+---
+
+<BaseLayout title="Authority Boundaries" eyebrow="Non-authority matrix">
+  <section class="boundary-grid">
+    {
+      flags.map(([label, value]) => (
+        <article class="boundary-cell">
+          <span>{label}</span>
+          <strong>{value ? "true" : "false"}</strong>
+        </article>
+      ))
+    }
+  </section>
+
+  <section class="notice-list">
+    {data.authority_boundaries.notices.map((notice) => <p>{notice}</p>)}
+  </section>
+</BaseLayout>

@@ -1,0 +1,21 @@
+{
+  "accepted_write_performed": false,
+  "ai_output_is_human_review": false,
+  "authority_notice": "Website export data is display context only; it is not source of truth, proof, source metadata, human review, verifier pass, gate pass, accepted status, accepted theorem/refutation status, or promotion authority.",
+  "export_is_source_of_truth": false,
+  "frontend_credentials_allowed": false,
+  "gate_pass_is_truth": false,
+  "github_issue_is_accepted_knowledge": false,
+  "kind": "authority_boundaries",
+  "notices": [
+    "Repository YAML/JSON remains source of truth.",
+    "Website pages and exports are display context only.",
+    "Gate, verifier, AI, operator, issue, PR, and report output do not grant accepted authority.",
+    "Skipped verifier or checker output is not pass.",
+    "Lean #check only confirms import/symbol resolution, not semantic alignment."
+  ],
+  "schema_version": 1,
+  "skipped_is_pass": false,
+  "verifier_pass_is_truth": false,
+  "website_is_authority": false
+}

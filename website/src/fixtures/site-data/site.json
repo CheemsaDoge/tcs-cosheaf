@@ -1,0 +1,22 @@
+{
+  "authority_notice": "Website export data is display context only; it is not source of truth, proof, source metadata, human review, verifier pass, gate pass, accepted status, accepted theorem/refutation status, or promotion authority.",
+  "demo": true,
+  "demo_private_fixtures_allowed": true,
+  "files": [
+    "site.json",
+    "workspace.json",
+    "artifacts.json",
+    "issues.json",
+    "graph.json",
+    "gates.json",
+    "context_packs.json",
+    "reports.json",
+    "authority_boundaries.json"
+  ],
+  "generated_at": "1970-01-01T00:00:00Z",
+  "kind": "site",
+  "public_only": true,
+  "schema_version": 1,
+  "sidecar": true,
+  "source_of_truth": "repository"
+}

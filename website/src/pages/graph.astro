@@ -1,0 +1,40 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { loadSiteData } from "../lib/siteData";
+
+const data = await loadSiteData();
+---
+
+<BaseLayout title="Graph" eyebrow="Dependency relationships">
+  <section class="panel">
+    <div class="graph-canvas" aria-label="Artifact dependency graph">
+      {
+        data.graph.nodes.map((node, index) => (
+          <div
+            class:list={["graph-node", index === 0 ? "left-node" : "right-node"]}
+          >
+            <strong>{node.title}</strong>
+            <span>{node.artifact_type}</span>
+            <small>{node.status}</small>
+          </div>
+        ))
+      }
+      <div class="graph-line" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <section class="table-panel compact" aria-label="Graph edges">
+    <div class="table-head graph-table">
+      <span>Source</span>
+      <span>Target</span>
+    </div>
+    {
+      data.graph.edges.map((edge) => (
+        <div class="table-row graph-table">
+          <code>{edge.source_id}</code>
+          <code>{edge.target_id}</code>
+        </div>
+      ))
+    }
+  </section>
+</BaseLayout>

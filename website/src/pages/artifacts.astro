@@ -1,0 +1,33 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { loadSiteData, statusTone } from "../lib/siteData";
+
+const data = await loadSiteData();
+---
+
+<BaseLayout title="Artifacts" eyebrow="Safe artifact cards">
+  <section class="table-panel" aria-label="Artifact list">
+    <div class="table-head artifacts">
+      <span>Artifact</span>
+      <span>Type</span>
+      <span>Status</span>
+      <span>Verifier</span>
+    </div>
+    {
+      data.artifacts.artifacts.map((artifact) => (
+        <article class="table-row artifacts">
+          <div>
+            <strong>{artifact.title}</strong>
+            <code>{artifact.id}</code>
+            <p>{artifact.summary}</p>
+          </div>
+          <span>{artifact.type}</span>
+          <span class:list={["badge", statusTone(artifact.status)]}>{artifact.status}</span>
+          <span class:list={["badge", statusTone(artifact.verifier_state)]}>
+            {artifact.verifier_state}
+          </span>
+        </article>
+      ))
+    }
+  </section>
+</BaseLayout>

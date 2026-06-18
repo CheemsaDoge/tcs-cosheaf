@@ -1,0 +1,25 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { loadSiteData, statusTone } from "../lib/siteData";
+
+const data = await loadSiteData();
+---
+
+<BaseLayout title="Gate Reports" eyebrow="Gate summary">
+  <section class="split-layout">
+    <article class="panel">
+      <p class="section-kicker">Verdict</p>
+      <h2>
+        <span class:list={["badge", statusTone(data.gates.verdict)]}>
+          {data.gates.verdict.replace("_", " ")}
+        </span>
+      </h2>
+      <p>{data.gates.note}</p>
+    </article>
+    <article class="panel">
+      <p class="section-kicker">Blocking state</p>
+      <h2>{data.gates.blocking_issues.length} blocking issues</h2>
+      <p>Skipped, missing, or unavailable checks are rendered separately from pass.</p>
+    </article>
+  </section>
+</BaseLayout>

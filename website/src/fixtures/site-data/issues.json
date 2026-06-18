@@ -1,0 +1,36 @@
+{
+  "authority_notice": "Local issue records are repository workflow memory only; they do not create GitHub issues, accept or refute artifacts, grant human review, run verifiers, pass gates, or promote knowledge.",
+  "count": 1,
+  "issues": [
+    {
+      "authors": [
+        "workspace-user"
+      ],
+      "close_reason": null,
+      "created_at": "2026-06-04T00:00:00Z",
+      "demo_fixture": true,
+      "external_links": [],
+      "id": "issue.example-private-claim",
+      "labels": [
+        "workspace-demo",
+        "private-draft",
+        "graph-theory"
+      ],
+      "parent_issue": null,
+      "related_artifacts": [
+        "claim.example-private",
+        "definition.graph"
+      ],
+      "related_sources": [],
+      "scope": "private",
+      "severity": "low",
+      "status": "open",
+      "summary": "Demonstrate the basic workspace flow with a private draft claim that depends\non artifact id `definition.graph`.\n\nIn a clean template clone, `definition.graph` is provided by the local draft\npublic seed so the offline demo can validate and build context immediately.\nFor real work, mount or check out `tcs-kb-public` as the readonly public KB\nso `definition.graph` resolves to reviewed accepted public knowledge instead\nof the template seed.\n\nAcceptance criteria:\n- Keep `claim.example-private` as `status: draft`.\n- Do not claim novelty or accepted knowledge.\n- Keep the dependency direction private-to-public.\n- Do not promote the private claim or the template public seed.\n- Run `cosheaf workspace info`.\n- Run `cosheaf validate`.\n- Run `cosheaf gate run`.\n- Run `cosheaf gate run --pr-checklist .github/pull_request_template.md`.\n- Run `cosheaf context build issue.example-private-claim` when context-pack\n  tooling is available.",
+      "title": "Explore a private draft claim with public graph context",
+      "type": "issue",
+      "updated_at": "2026-06-04T00:00:00Z"
+    }
+  ],
+  "kind": "issues",
+  "schema_version": 1
+}

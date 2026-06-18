@@ -1,0 +1,28 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { artifactById, loadSiteData } from "../lib/siteData";
+
+const data = await loadSiteData();
+---
+
+<BaseLayout title="Issues" eyebrow="Repository workflow memory">
+  <section class="card-grid">
+    {
+      data.issues.issues.map((issue) => (
+        <article class="info-card wide">
+          <div class="card-heading">
+            <h2>{issue.title}</h2>
+            <span class="badge warning">{issue.status}</span>
+          </div>
+          <p>{issue.summary.split("\n\n")[0]}</p>
+          <div class="related-list">
+            {issue.related_artifacts.map((id) => {
+              const artifact = artifactById(id);
+              return <span>{artifact ? artifact.title : id}</span>;
+            })}
+          </div>
+        </article>
+      ))
+    }
+  </section>
+</BaseLayout>

@@ -1,0 +1,7 @@
+{
+  "authority_notice": "Website export data is display context only; it is not source of truth, proof, source metadata, human review, verifier pass, gate pass, accepted status, accepted theorem/refutation status, or promotion authority.",
+  "kind": "reports",
+  "note": "No static reports are embedded in the site export.",
+  "reports": [],
+  "schema_version": 1
+}

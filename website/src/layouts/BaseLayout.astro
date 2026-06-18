@@ -1,0 +1,68 @@
+---
+import { ROUTES, loadSiteData } from "../lib/siteData";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  eyebrow: string;
+}
+
+const { title, eyebrow } = Astro.props;
+const data = await loadSiteData();
+const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Read-only Cosheaf website over sanitized static export data."
+    />
+    <title>{title} | TCS-Cosheaf</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary navigation">
+        <a class="brand" href="/">
+          <span class="brand-mark" aria-hidden="true">C</span>
+          <span>
+            <strong>Cosheaf</strong>
+            <small>read-only website</small>
+          </span>
+        </a>
+        <nav class="nav-list">
+          {
+            ROUTES.map((route) => (
+              <a
+                href={route.path}
+                class:list={["nav-link", currentPath === route.path && "active"]}
+              >
+                {route.label}
+              </a>
+            ))
+          }
+        </nav>
+        <div class="sidebar-status">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>{data.site.public_only ? "public demo export" : "local export"}</span>
+        </div>
+      </aside>
+      <main class="content">
+        <header class="page-header">
+          <div>
+            <p class="eyebrow">{eyebrow}</p>
+            <h1>{title}</h1>
+          </div>
+          <div class="source-chip">
+            <span>schema v{data.site.schema_version}</span>
+            <strong>{data.workspace.workspace_name}</strong>
+          </div>
+        </header>
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>

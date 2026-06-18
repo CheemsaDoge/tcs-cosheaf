@@ -1,0 +1,18 @@
+{
+  "authority_notice": "Website export data is display context only; it is not source of truth, proof, source metadata, human review, verifier pass, gate pass, accepted status, accepted theorem/refutation status, or promotion authority.",
+  "context_packs": [
+    {
+      "card_count": 2,
+      "demo_private_context_included": true,
+      "issue_id": "issue.example-private-claim",
+      "private_context_included": false,
+      "public_only": true,
+      "related_artifacts": [
+        "claim.example-private",
+        "definition.graph"
+      ]
+    }
+  ],
+  "kind": "context_packs",
+  "schema_version": 1
+}
