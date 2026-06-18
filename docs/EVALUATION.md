@@ -49,6 +49,18 @@ Benchmark runs are persisted under `.cosheaf/benchmark-runs/` and remain
 regression evidence only. Skipped rows are reported separately and are not
 passes.
 
+V17 comparison commands compare existing workflow, campaign, and benchmark
+records without creating new truth:
+
+```bash
+cosheaf compare workflows <before-id> <after-id> --json
+cosheaf compare campaigns <before-id> <after-id> --json
+cosheaf compare benchmarks <before-id> <after-id> --json
+```
+
+Comparison reports are analytical review context only. They show metric deltas
+and safety regressions, but do not prove that one attempt is globally better.
+
 ## Retrieval Eval Cases
 
 Retrieval eval cases are YAML records under `evals/retrieval/`. The default

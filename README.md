@@ -252,6 +252,11 @@ Implemented:
   report <run-id> --out <path> --json`. Benchmark runs are persisted under
   `.cosheaf/benchmark-runs/` and remain regression evidence only, not accepted
   status or promotion authority.
+- V17 comparison development surfaces: `cosheaf.compare` reads existing
+  workflow, campaign, and benchmark records through `cosheaf compare
+  workflows`, `cosheaf compare campaigns`, and `cosheaf compare benchmarks`.
+  Comparison reports are metric-scoped review context only and highlight
+  safety regressions without claiming a globally better result.
 
 Planned or incomplete:
 
@@ -259,7 +264,7 @@ Planned or incomplete:
 - Full SMT backend coverage beyond the minimal optional SMT-LIB invocation path.
 - Full Lean proof-assistant integration beyond optional plain-file and external
   library reference checks.
-- V17 comparison commands, static reports, and `v0.12.0` release closeout.
+- V17 static reports and `v0.12.0` release closeout.
 - Hosted PR checklist source discovery beyond explicit local markdown files.
 - Hosted worker CLI commands.
 - External public KB repository integration beyond local workspace roots.
@@ -456,6 +461,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Reviewable workflows](docs/WORKFLOWS.md)
 - [Memory updates](docs/MEMORY_UPDATES.md)
 - [Benchmarks](docs/BENCHMARKS.md)
+- [Comparisons](docs/COMPARISONS.md)
 - [Checker registry](docs/CHECKERS.md)
 - [Draft proposals](docs/DRAFT_PROPOSALS.md)
 - [Review handoffs](docs/REVIEW_HANDOFFS.md)

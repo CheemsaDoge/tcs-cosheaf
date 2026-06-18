@@ -52,6 +52,12 @@ from cosheaf.benchmark import (
     write_benchmark_report,
 )
 from cosheaf.checkers.cli import checker_app
+from cosheaf.compare import (
+    COMPARE_AUTHORITY_NOTICE,
+    compare_benchmarks,
+    compare_campaigns,
+    compare_workflows,
+)
 from cosheaf.config.workspace import KbRootConfig, WorkspaceConfigError
 from cosheaf.core.artifact import BaseArtifact, is_external_dependency_ref
 from cosheaf.core.ids import validate_artifact_id
@@ -346,6 +352,11 @@ benchmark_app = typer.Typer(
     help="Deterministic benchmark suite commands.",
     no_args_is_help=True,
 )
+compare_app = typer.Typer(
+    add_completion=False,
+    help="Analytical comparison commands.",
+    no_args_is_help=True,
+)
 memory_app = typer.Typer(
     add_completion=False,
     help="Deterministic memory/card commands.",
@@ -413,6 +424,7 @@ app.add_typer(workspace_app, name="workspace")
 app.add_typer(ingest_app, name="ingest")
 app.add_typer(eval_app, name="eval")
 app.add_typer(benchmark_app, name="benchmark")
+app.add_typer(compare_app, name="compare")
 app.add_typer(memory_app, name="memory")
 app.add_typer(mcp_app, name="mcp")
 app.add_typer(provider_app, name="provider")
@@ -3075,6 +3087,75 @@ def benchmark_report(
     console.print(f"- authority: {result.authority_notice}")
 
 
+@compare_app.command("workflows")
+def compare_workflows_cli(
+    before_id: str = typer.Argument(..., help="Earlier workflow ID."),
+    after_id: str = typer.Argument(..., help="Later workflow ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """Compare two workflow records."""
+    _emit_compare_or_exit(
+        lambda: compare_workflows(RepoContext(repo_root), before_id, after_id),
+        json_output=json_output,
+        code="workflow_compare_failed",
+    )
+
+
+@compare_app.command("campaigns")
+def compare_campaigns_cli(
+    before_id: str = typer.Argument(..., help="Earlier campaign ID."),
+    after_id: str = typer.Argument(..., help="Later campaign ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """Compare two campaign records."""
+    _emit_compare_or_exit(
+        lambda: compare_campaigns(RepoContext(repo_root), before_id, after_id),
+        json_output=json_output,
+        code="campaign_compare_failed",
+    )
+
+
+@compare_app.command("benchmarks")
+def compare_benchmarks_cli(
+    before_id: str = typer.Argument(..., help="Earlier benchmark run ID."),
+    after_id: str = typer.Argument(..., help="Later benchmark run ID."),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root to inspect.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text lines.",
+    ),
+) -> None:
+    """Compare two benchmark runs."""
+    _emit_compare_or_exit(
+        lambda: compare_benchmarks(RepoContext(repo_root), before_id, after_id),
+        json_output=json_output,
+        code="benchmark_compare_failed",
+    )
+
+
 @eval_app.command("campaign")
 def eval_campaign(
     repo_root: Path = typer.Option(
@@ -4761,6 +4842,43 @@ def _run_validation(
 
 def _emit_json(payload: dict[str, Any] | list[Any]) -> None:
     typer.echo(json.dumps(payload, ensure_ascii=True, indent=2))
+
+
+def _emit_compare_or_exit(
+    run: Callable[[], Any],
+    *,
+    json_output: bool,
+    code: str,
+) -> None:
+    console = Console(width=120, markup=False)
+    try:
+        result = run()
+    except ValueError as exc:
+        if json_output:
+            _emit_error(
+                ErrorResult(
+                    code=code,
+                    message=str(exc),
+                    remediation="Pass existing workflow, campaign, or benchmark IDs.",
+                    blocking=True,
+                )
+            )
+            raise typer.Exit(code=1) from None
+        console.print(f"Comparison failed: {exc}")
+        raise typer.Exit(code=1) from None
+
+    payload = result.to_dict()
+    if json_output:
+        _emit_json(payload)
+        return
+    console.print(
+        f"Comparison: {payload['subject']} {payload['before_id']} -> "
+        f"{payload['after_id']}"
+    )
+    console.print(
+        f"- safety_regressions: {len(payload.get('safety_regressions', []))}"
+    )
+    console.print(f"- authority: {COMPARE_AUTHORITY_NOTICE}")
 
 
 def _emit_model(model: AgentAccessModel) -> None:

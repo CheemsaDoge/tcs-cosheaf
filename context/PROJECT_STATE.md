@@ -3,6 +3,28 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V17 Phase D.1 comparative run reports - 2026-06-18
+
+Issue #466 adds deterministic comparison reports on branch
+`comparative-run-reports`.
+
+The current surface includes:
+
+- `cosheaf.compare` DTOs and helpers for workflow, campaign, and benchmark
+  comparisons;
+- `cosheaf compare workflows <before-id> <after-id> --json`;
+- `cosheaf compare campaigns <before-id> <after-id> --json`; and
+- `cosheaf compare benchmarks <before-id> <after-id> --json`.
+
+Comparison reports read existing runtime records and emit metric deltas,
+evidence changes, failure-repeat changes, checker/draft-related deltas, and
+explicit safety regressions. They are analytical review context only: they do
+not mutate YAML artifacts, write accepted knowledge, create human review,
+fabricate source metadata, mutate verifier results, mark gates as passing, call
+hosted providers, use network access, execute shell commands, or promote
+artifacts. A newer run is never described as globally better merely because one
+metric improved.
+
 ## V17 Phase C.1 benchmark suite v1 - 2026-06-18
 
 Issue #464 adds deterministic benchmark suite v1 on branch

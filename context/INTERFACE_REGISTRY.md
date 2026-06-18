@@ -19,6 +19,17 @@
   metadata, human review, verifier pass, gate pass, accepted status, accepted
   theorem/refutation, or promotion authority; skipped rows are reported
   separately and are not passes.
+- Comparison DTOs and CLI commands are implemented under `cosheaf.compare`.
+  The Python surface defines `CompareSubject`, `MetricDelta`,
+  `SafetyRegression`, `CompareResult`, `COMPARE_AUTHORITY_NOTICE`,
+  `compare_workflows`, `compare_campaigns`, and `compare_benchmarks`. The CLI
+  surface is `cosheaf compare workflows <before-id> <after-id> --json`,
+  `cosheaf compare campaigns <before-id> <after-id> --json`, and `cosheaf
+  compare benchmarks <before-id> <after-id> --json`. Comparison output is
+  analytical review context only. It reports metric-scoped deltas and safety
+  regressions, but does not grant proof, source metadata, human review,
+  verifier pass, gate pass, accepted status, accepted theorem/refutation, or
+  promotion authority.
 - Memory update DTOs, sidecar storage, and CLI commands are implemented under
   `cosheaf.memory.updates`. The Python surface defines `MemorySignal`,
   `MemoryEdgeUpdate`, `MemoryWeightStore`, `MemoryUpdatePolicy`,
@@ -408,6 +419,18 @@
 - `cosheaf benchmark report <run-id> --out <path> --json`: renders an existing
   benchmark run sidecar to a safe repository-local `.json` or Markdown path.
   Accepted KB targets are rejected. Reports are review context only.
+- `cosheaf compare workflows <before-id> <after-id> --json`: compares two
+  persisted workflow records and reports metric deltas, evidence/action
+  changes, draft-related changes, checker/gate step deltas, and safety
+  regressions. It reads existing runtime files only.
+- `cosheaf compare campaigns <before-id> <after-id> --json`: compares two
+  persisted campaign records and reports attempt, failure-repeat, draft,
+  check-report, proof-obligation, handoff, and safety deltas. It does not run a
+  campaign or write accepted knowledge.
+- `cosheaf compare benchmarks <before-id> <after-id> --json`: compares two
+  persisted benchmark runs and reports benchmark metric deltas, component
+  changes, checker-matrix deltas, and safety regressions. It does not rerun the
+  benchmark suite.
 - `cosheaf memory update-from-workflow <workflow-id> --json`: reads one
   persisted workflow runtime record, writes a deterministic update-run sidecar
   under `.cosheaf/memory/update-runs/`, rebuilds
