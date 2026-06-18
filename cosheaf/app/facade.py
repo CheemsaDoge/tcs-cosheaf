@@ -14,7 +14,7 @@ from cosheaf.agent.context_pack import CONTEXT_MAX_CARDS, ContextPackResult
 from cosheaf.agent.orchestrator_state import ReducerResult
 from cosheaf.agent.worker_bundle_v2 import WorkerBundleV2
 from cosheaf.core.status import ArtifactStatus, ArtifactType
-from cosheaf.forge import ForgePreviewResult, ForgeService
+from cosheaf.forge import ForgeActionResult, ForgePreviewResult, ForgeService
 from cosheaf.gates.gatekeeper import GatekeeperRunResult, ValidationReport
 from cosheaf.gates.promotion_readiness import (
     PromotionReadinessReport,
@@ -168,6 +168,14 @@ class CosheafApp:
     def forge_pr_preview(self, *, base: str, head: str) -> ForgePreviewResult:
         """Preview GitHub PR creation without git or GitHub writes."""
         return ForgeService(self.context).pr_preview(base=base, head=head)
+
+    def forge_branch_create(self, branch: str, *, confirm: bool) -> ForgeActionResult:
+        """Create and switch to a local branch with explicit confirmation."""
+        return ForgeService(self.context).create_branch(branch, confirm=confirm)
+
+    def forge_commit(self, *, message: str, confirm: bool) -> ForgeActionResult:
+        """Run validation/gate and create one local git commit."""
+        return ForgeService(self.context).commit(message=message, confirm=confirm)
 
     def memory_cards(
         self,

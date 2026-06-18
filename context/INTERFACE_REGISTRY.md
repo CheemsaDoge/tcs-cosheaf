@@ -10,11 +10,12 @@
   gatekeeper runs, context build/show, memory cards/search, controlled draft
   artifact writes, controlled source-note writes, controlled review-request
   writes, WorkerBundle validate/submit/reduce, review-request generation from
-  WorkerBundle, read-only promotion-readiness reports, and forge dry-run
-  previews. The facade delegates to existing services and read-only domain
-  functions. It is not a new knowledge authority and does not grant proof,
-  source metadata, human review, verifier pass, gate pass, accepted status,
-  accepted theorem/refutation status, or promotion authority.
+  WorkerBundle, read-only promotion-readiness reports, forge dry-run previews,
+  and confirmed local forge git actions. The facade delegates to existing
+  services, forge services, and read-only domain functions. It is not a new
+  knowledge authority and does not grant proof, source metadata, human review,
+  verifier pass, gate pass, accepted status, accepted theorem/refutation
+  status, or promotion authority.
 - App request/result DTOs are implemented under `cosheaf.app.models` and reuse
   the existing `cosheaf.services.models.AgentAccessModel` base. The Python
   surface defines `WorkspaceInfoRequest` / `WorkspaceInfoResult`,
@@ -33,13 +34,15 @@
 - The context CLI group is registered from `cosheaf.context_cli` and delegates
   context build/show operations to `cosheaf.app.open_app`. Public command names
   and JSON DTOs remain `cosheaf context build` and `cosheaf context show`.
-- Forge dry-run planning is implemented under `cosheaf.forge` and exposed
-  through `cosheaf forge ...` plus the app facade methods `forge_status`,
-  `forge_issue_preview`, and `forge_pr_preview`. The Python surface defines
+- Forge planning and local git actions are implemented under `cosheaf.forge`
+  and exposed through `cosheaf forge ...` plus the app facade methods
+  `forge_status`, `forge_issue_preview`, `forge_pr_preview`,
+  `forge_branch_create`, and `forge_commit`. The Python surface defines
   `ForgeCredentialProvider`, `LocalGitPlan`, `GitHubIssuePlan`, `GitHubPrPlan`,
   `ForgePreviewResult`, `ForgeActionResult`, `ForgeService`, and
-  `ForgePreviewError`. The current forge surface is dry-run only and performs
-  no git writes, GitHub writes, token storage, network calls, subprocess calls,
+  `ForgePreviewError` / `ForgeActionError`. GitHub-facing forge surfaces remain
+  dry-run only. Confirmed local git actions may create local branches or
+  commits, but perform no push, GitHub write, token storage, network call,
   artifact acceptance, refutation, human review, verifier pass, gate pass, or
   promotion.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
@@ -1028,6 +1031,15 @@
 - `cosheaf forge pr preview --base main --head <branch> --json`: emits a
   dry-run `LocalGitPlan` and `GitHubPrPlan`. It does not run `git`, run `gh`,
   push, create a PR, call the network, or mutate repository files.
+- `cosheaf forge branch create <branch> --confirm --json`: refuses to run
+  without `--confirm`, refuses dirty working trees, then creates and switches
+  to a local branch. It does not push, create a PR, call GitHub, read tokens, or
+  change accepted/promotion state.
+- `cosheaf forge commit --message <message> --confirm --json`: refuses to run
+  without `--confirm`, refuses untracked or unstaged ambiguity, requires staged
+  changes, runs repository validation and gatekeeper in-process, and creates
+  one local commit. It does not push, create a PR, call GitHub, read tokens, or
+  change accepted/promotion state.
 - `cosheaf memory cards`: builds deterministic artifact cards from existing
   repository metadata. Default output is compact text lines, not full artifact
   YAML or statements.
@@ -2290,9 +2302,10 @@ These helpers are pure validation, path-formatting, status-classification, or de
   `github_issue`, and `github_pr` plans. It reports
   `network_calls_performed: false`, `git_writes_performed: false`,
   `github_writes_performed: false`, and authority-boundary warning text.
-- `cosheaf.forge.ForgeActionResult`: placeholder result DTO for future explicit
-  forge actions. In the current dry-run task it reports
-  `action_performed: false`.
+- `cosheaf.forge.ForgeActionResult`: result DTO for explicit forge actions. It
+  records `action`, `action_performed`, `git_writes_performed`,
+  `push_performed: false`, `github_pr_created: false`, optional `branch`,
+  optional `commit_hash`, and whether validation/gate ran before a commit.
 - `cosheaf.storage.loader.ReviewRecord`: Pydantic v2 model for review YAML records loaded by storage.
 - `cosheaf.storage.loader.LoadedRecord`: loaded record wrapper with repository-relative `source_path`, typed `record`, and optional KB root metadata (`kb_root_name`, `kb_root_path`, `kb_root_readonly`, `kb_relative_path`).
 

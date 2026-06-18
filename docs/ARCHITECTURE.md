@@ -86,15 +86,23 @@ does not accept, refute, review, verify, gate, or promote any artifact.
 ### Forge Layer
 
 The forge layer is the typed boundary for local git and GitHub workflow
-planning. It is implemented under `cosheaf.forge` and initially exposes
-dry-run previews only: forge status, GitHub issue preview from a local issue
-YAML file, and GitHub PR preview from base/head branch names.
+planning and controlled local git actions. It is implemented under
+`cosheaf.forge` and exposes forge status, GitHub issue preview from a local
+issue YAML file, GitHub PR preview from base/head branch names, confirmed local
+branch creation, and confirmed local commit.
 
 Forge previews do not run `git`, `gh`, or any subprocess. They do not call the
 network, create GitHub issues, create GitHub PRs, commit, push, read or store
 tokens, or write repository files. Preview DTOs explicitly report dry-run
 status and no-write/no-network flags, and each result carries an authority
 warning.
+
+Local git actions are narrower than general shell access. `forge branch create`
+requires `--confirm`, refuses dirty working trees, and creates/switches to a
+local branch. `forge commit` requires `--confirm`, refuses unstaged or
+untracked ambiguity, requires staged changes, runs repository validation and
+gatekeeper in-process, and then creates one local commit. Forge does not push,
+create pull requests, call GitHub, read tokens, or store credentials.
 
 Forge output is workflow planning context only. It does not grant proof, source
 metadata, human review, verifier pass, gate pass, accepted status, accepted
@@ -378,11 +386,11 @@ surfaces should call `cosheaf.app` instead of importing Typer command
 functions or shelling out to the CLI.
 
 `cosheaf.app.models` exposes stable request/result DTOs for app use cases. The
-initial DTO family covers workspace info, validation, gate runs, context builds,
-draft artifact/source-note writes, review-request writes, forge dry-run
-previews, and shared `ErrorResult` serialization. The DTOs reuse the existing
-agent-access model base and keep accepted-write and human-review authority
-unavailable through app requests.
+initial DTO family covers workspace info, validation, gate runs, context
+builds, draft artifact/source-note writes, review-request writes, forge
+previews/actions, and shared `ErrorResult` serialization. The DTOs reuse the
+existing agent-access model base and keep accepted-write and human-review
+authority unavailable through app requests.
 
 ### CLI Layer
 
@@ -397,7 +405,7 @@ facade for context build/show operations.
 
 CLI commands now call typed service functions for workspace inspection,
 repository and artifact validation, gate execution, context-pack generation,
-memory card/search operations, task operations, forge dry-run previews, and
+memory card/search operations, task operations, forge previews/actions, and
 draft artifact creation.
 The CLI remains the human and CI oracle: it parses command-line options,
 renders service results, preserves existing exit-code behavior, and keeps

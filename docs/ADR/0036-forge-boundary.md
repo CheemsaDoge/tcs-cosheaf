@@ -1,4 +1,4 @@
-# ADR 0036: Forge Dry-Run Boundary
+# ADR 0036: Forge Boundary
 
 Status: accepted
 
@@ -11,14 +11,13 @@ issue-driven repository workflow. The framework also has local issue YAML
 records and an application facade that future CLI, MCP, server, and dashboard
 surfaces should share.
 
-Before adding controlled git commits or GitHub issue/PR creation, Cosheaf needs
-a typed planning boundary that can describe intended actions without mutating a
-repository, calling the network, or storing credentials.
+Before adding controlled GitHub issue/PR creation, Cosheaf needs a typed
+boundary that can describe intended actions and run limited local git actions
+without pushing, calling the network, or storing credentials.
 
 ## Decision
 
-Introduce `cosheaf.forge` as the Git/GitHub planning boundary. The first
-implementation is dry-run only and exposes:
+Introduce `cosheaf.forge` as the Git/GitHub workflow boundary. It exposes:
 
 - `ForgeCredentialProvider` protocol for future explicit credential lookup;
 - `LocalGitPlan`;
@@ -33,10 +32,16 @@ The CLI exposes:
 cosheaf forge status --json
 cosheaf forge issue preview --from issues/open/<issue-id>.yaml --json
 cosheaf forge pr preview --base main --head <branch> --json
+cosheaf forge branch create <branch> --confirm --json
+cosheaf forge commit --message <message> --confirm --json
 ```
 
 The app facade exposes corresponding `forge_status`,
-`forge_issue_preview`, and `forge_pr_preview` methods.
+`forge_issue_preview`, `forge_pr_preview`, `forge_branch_create`, and
+`forge_commit` methods.
+
+GitHub-facing forge commands remain dry-run only. Local git branch creation and
+commit are the only confirmed write actions in this ADR.
 
 ## Authority Boundary
 
@@ -48,18 +53,26 @@ refutation, or promotion.
 Every preview result must serialize the dry-run and no-write flags and include
 authority-boundary warning text.
 
+Confirmed local git actions may create a local branch or local commit only
+after `--confirm`. They must not push, create PRs, read or store tokens, or
+change accepted/promotion rules. `forge commit` must refuse untracked or
+unstaged ambiguity, require staged changes, run repository validation and
+gatekeeper first, and stop on validation or gate failure.
+
 ## Consequences
 
 - CLI and future server surfaces can share the same typed forge service.
-- Git/GitHub write behavior remains out of scope until a later task adds
-  explicit confirmation and negative tests.
-- Tests can prove the initial forge path does not shell out or mutate files.
-- Operators still use external git/GitHub tools for real commits, pushes,
-  issues, PRs, and merges until controlled forge actions are implemented.
+- GitHub write behavior remains out of scope until a later task adds explicit
+  confirmation, credentials, and negative tests.
+- Tests prove preview paths do not shell out or mutate files, and local action
+  paths only shell out to local `git`.
+- Operators can use `cosheaf forge` for local branch and commit actions, but
+  still use external tools for pushes, GitHub issues, PRs, and merges until
+  controlled GitHub forge actions are implemented.
 
 ## Rejected Options
 
-- Add `gh` or `git` subprocess calls in the initial forge task.
+- Add `gh` subprocess calls before the GitHub-action task.
 - Read or persist GitHub tokens during dry-run previews.
 - Treat GitHub issue/PR state as artifact review, verifier, gate, or accepted
   knowledge authority.
