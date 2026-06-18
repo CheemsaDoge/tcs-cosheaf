@@ -53,12 +53,14 @@
   deterministic sanitized JSON sidecars named `site.json`, `workspace.json`,
   `artifacts.json`, `issues.json`, `graph.json`, `gates.json`,
   `context_packs.json`, `reports.json`, and
-  `authority_boundaries.json`. Demo mode forces public-only filtering. The
-  export reads repository metadata only and performs no web serving, network
-  call, GitHub action, provider call, gate run, verifier run, context-pack
-  build, accepted write, human review, verifier-result mutation, or promotion.
-  Exported website data is display context only and remains subordinate to
-  repository YAML/JSON source files.
+  `authority_boundaries.json`. Demo mode forces public-only filtering but may
+  include private records explicitly tagged `workspace-demo`, `site-demo`, or
+  `demo-only`; plain `--public-only` remains strict. The export reads
+  repository metadata only and performs no web serving, network call, GitHub
+  action, provider call, gate run, verifier run, context-pack build, accepted
+  write, human review, verifier-result mutation, or promotion. Exported
+  website data is display context only and remains subordinate to repository
+  YAML/JSON source files.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI

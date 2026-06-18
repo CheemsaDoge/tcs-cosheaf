@@ -27,6 +27,7 @@ def _artifact_data(
     title: str,
     status: str = "draft",
     depends_on: list[str] | None = None,
+    tags: list[str] | None = None,
     statement: str = "Full statement must not be exported.",
 ) -> dict[str, Any]:
     return {
@@ -40,7 +41,7 @@ def _artifact_data(
         "authors": ["tester"],
         "depends_on": depends_on or [],
         "supersedes": [],
-        "tags": ["site-export"],
+        "tags": tags or ["site-export"],
         "statement": statement,
         "evidence": [],
         "review": {"state": "requested", "notes": "Fixture review."},
@@ -52,6 +53,7 @@ def _issue_data(
     issue_id: str = "issue.fixture.site-export",
     *,
     scope: str = "public",
+    labels: list[str] | None = None,
     related_artifacts: list[str] | None = None,
 ) -> dict[str, Any]:
     return {
@@ -63,7 +65,7 @@ def _issue_data(
         "created_at": "2026-06-19T00:00:00Z",
         "updated_at": "2026-06-19T00:00:00Z",
         "authors": ["tester"],
-        "labels": ["site-export"],
+        "labels": labels or ["site-export"],
         "related_artifacts": related_artifacts or [],
         "related_sources": [],
         "scope": scope,
@@ -124,10 +126,36 @@ def _fixture_workspace(repo_root: Path) -> None:
     )
     _write_yaml(
         repo_root,
+        "kb/private/draft/claims/demo-private.yaml",
+        _artifact_data(
+            "claim.fixture.site-demo-private",
+            title="Demo private site export claim",
+            status="draft",
+            depends_on=["claim.fixture.site-public"],
+            tags=["workspace-demo"],
+            statement="DEMO PRIVATE STATEMENT SHOULD NOT APPEAR",
+        ),
+    )
+    _write_yaml(
+        repo_root,
         "issues/open/site-export.yaml",
         _issue_data(
             related_artifacts=[
                 "claim.fixture.site-public",
+                "claim.fixture.site-private",
+            ],
+        ),
+    )
+    _write_yaml(
+        repo_root,
+        "issues/open/site-demo.yaml",
+        _issue_data(
+            "issue.fixture.site-demo",
+            scope="private",
+            labels=["workspace-demo"],
+            related_artifacts=[
+                "claim.fixture.site-public",
+                "claim.fixture.site-demo-private",
                 "claim.fixture.site-private",
             ],
         ),
@@ -188,7 +216,40 @@ def test_site_export_public_only_excludes_private_content(tmp_path: Path) -> Non
     )
     assert "PRIVATE SECRET" not in combined
     assert "claim.fixture.site-private" not in combined
+    assert "claim.fixture.site-demo-private" not in combined
     assert "claim.fixture.site-public" in combined
+
+
+def test_site_export_demo_includes_marked_private_fixtures(tmp_path: Path) -> None:
+    _fixture_workspace(tmp_path)
+
+    export_site_data(
+        RepoContext(tmp_path),
+        tmp_path / ".cosheaf/site-data",
+        demo=True,
+    )
+
+    exported = _read_outputs(tmp_path / ".cosheaf/site-data")
+    artifact_ids = {
+        artifact["id"] for artifact in exported["artifacts.json"]["artifacts"]
+    }
+    issues = {
+        issue["id"]: issue for issue in exported["issues.json"]["issues"]
+    }
+    combined = "\n".join(
+        (tmp_path / ".cosheaf/site-data" / name).read_text(encoding="utf-8")
+        for name in REQUIRED_SITE_EXPORT_FILES
+    )
+
+    assert "claim.fixture.site-demo-private" in artifact_ids
+    assert "claim.fixture.site-private" not in artifact_ids
+    assert "PRIVATE SECRET" not in combined
+    assert "DEMO PRIVATE STATEMENT SHOULD NOT APPEAR" not in combined
+    assert issues["issue.fixture.site-demo"]["demo_fixture"] is True
+    assert issues["issue.fixture.site-demo"]["related_artifacts"] == [
+        "claim.fixture.site-public",
+        "claim.fixture.site-demo-private",
+    ]
 
 
 def test_site_export_is_deterministic(tmp_path: Path) -> None:
