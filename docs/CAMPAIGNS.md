@@ -44,7 +44,7 @@ cosheaf campaign scan <campaign-id> --json
 cosheaf campaign run <campaign-id> --max-attempts <n> --json
 ```
 
-The current E.1 review handoff/eval surface is:
+The E.1 review handoff/eval surface is:
 
 ```bash
 cosheaf campaign handoff <campaign-id> --out <dir> --json
@@ -235,15 +235,14 @@ The E.1 handoff/eval layer adds:
 The current implementation does not provide:
 
 - provider-backed or shell-backed campaign runner loops;
-- downstream workspace-template campaign demo;
-- public KB campaign-output policy guards;
 - hosted provider integration;
 - arbitrary shell execution;
 - automatic proof checking; or
 - accepted-artifact promotion.
 
-Those items remain later V16 tasks and must preserve the same authority
-boundary when implemented.
+Workspace-template campaign demo coverage and public KB campaign-output policy
+guard coverage have landed as downstream V16 closeout. Remaining future items
+must preserve the same authority boundary when implemented.
 
 ## Authority Boundary
 

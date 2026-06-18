@@ -3,6 +3,29 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V16 Phase F.1 v0.11.0 release candidate - 2026-06-18
+
+Issue #456 prepares the conservative `v0.11.0 External Operator Campaigns`
+release candidate on branch `release-v0110-readiness-and-rc`.
+
+This release-candidate task updates package metadata and `cosheaf.__version__`
+from `0.10.0` to `0.11.0`, adds `docs/releases/v0.11.0.md`, and aligns
+README, roadmap, milestone, project-state, and V16 plan status after the V16
+campaign implementation and downstream closeout landed.
+
+The RC includes durable campaign sidecars, campaign lifecycle CLI, external
+operator packet v2 flow, deterministic campaign budget controller commands,
+campaign handoff export, deterministic campaign eval, framework campaign eval
+smoke coverage, workspace-template `make campaign-demo`, and public KB
+campaign-output policy guard coverage.
+
+This task does not publish the `v0.11.0` tag or GitHub release, run post-tag
+release smoke, update downstream pins to `@v0.11.0`, add hosted provider
+defaults, add shell-backed campaign execution, change accepted-promotion
+semantics, write accepted KB content, create human review, fabricate source
+metadata, or grant verifier/gate/promotion authority. Those publication
+closeout steps remain Phase F.2.
+
 ## V16 Phase E.1 campaign eval and handoff - 2026-06-18
 
 Issue #454 adds the framework-side review handoff and eval increment for
