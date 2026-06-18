@@ -23,6 +23,14 @@ Current focus:
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
 
+Post-v1.0.0 Longplan A architecture work:
+
+- issue #492 / branch `arch-dependency-audit` records the current CLI,
+  service, DTO, and authority-boundary audit before any refactor;
+- `docs/ARCHITECTURE_REFACTOR_AUDIT.md` is the A0.1 audit artifact; and
+- `docs/ADR/0035-app-boundary.md` proposes `cosheaf.app` as the next stable
+  application-usecase boundary without changing runtime behavior in A0.1.
+
 Planned V18 surface:
 
 - post-v0.12.0 audit and v1.0 scope freeze (A.1, landed);
