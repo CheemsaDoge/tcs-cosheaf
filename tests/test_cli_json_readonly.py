@@ -117,6 +117,42 @@ def test_version_json_is_deterministic() -> None:
     }
 
 
+def test_interface_list_json_documents_stable_surface() -> None:
+    result = runner.invoke(app, ["interface", "list", "--json"])
+
+    assert result.exit_code == 0, result.output
+    payload = _assert_json_output(result.output)
+    assert payload["schema_version"] == 1
+    assert payload["package"] == "tcs-cosheaf"
+    assert payload["version"] == cosheaf.__version__
+    assert payload["target_release"] == "v1.0.0"
+    assert "does not grant proof" in payload["authority_notice"]
+
+    preferred = {
+        item["command"]: item["preferred_invocation"]
+        for item in payload["stable_cli_surface"]
+    }
+    assert preferred["gate"] == "cosheaf gate run"
+    assert preferred["research-run"] == "cosheaf research-run ..."
+    assert preferred["mcp"] == "cosheaf mcp ..."
+
+    aliases = {
+        item["alias"]: item["preferred"] for item in payload["compatibility_aliases"]
+    }
+    assert aliases["cosheaf gate"] == "cosheaf gate run"
+    assert aliases["cosheaf run"] == "cosheaf research-run"
+
+
+def test_research_run_preferred_alias_help() -> None:
+    preferred = runner.invoke(app, ["research-run", "--help"])
+    compatibility = runner.invoke(app, ["run", "--help"])
+
+    assert preferred.exit_code == 0, preferred.output
+    assert compatibility.exit_code == 0, compatibility.output
+    assert "Research-run provenance commands" in preferred.output
+    assert "Research-run provenance commands" in compatibility.output
+
+
 def test_workspace_info_json(tmp_path: Path) -> None:
     _write_repo(tmp_path)
 

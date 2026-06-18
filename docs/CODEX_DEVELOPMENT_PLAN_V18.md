@@ -68,19 +68,22 @@ Experimental/default-off surfaces:
 
 The v1.0 stable user-facing surface is:
 
+- `cosheaf interface list --json` for deterministic CLI surface discovery;
 - `cosheaf workspace`, `validate`, `gate`, `index`, `context`;
 - `cosheaf artifact`, `promotion`;
 - `cosheaf workflow`, `checker`, `gap`;
 - `cosheaf research-loop`, `research-run`;
 - `cosheaf campaign`;
 - `cosheaf memory`, `benchmark`, `compare`, `report`;
-- `cosheaf operator-session`;
+- `cosheaf operator session`;
 - `cosheaf provider` fake/preview/config paths;
 - optional `cosheaf mcp` paths as adapter surfaces, not the oracle.
 
 Compatibility aliases remain until the CLI/API polish task documents or
 deprecates them. `cosheaf gate run` is the preferred gate spelling; `cosheaf
-gate` remains compatibility behavior during the v1.0 line.
+gate` remains compatibility behavior during the v1.0 line. `cosheaf
+research-run` is the preferred research-run provenance spelling; `cosheaf run`
+remains compatibility behavior for existing scripts.
 
 ## Canonical MVP Demo
 

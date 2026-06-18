@@ -26,10 +26,13 @@ record under `.cosheaf/` remains generated output and should not be committed.
 
 ## CLI
 
+`cosheaf research-run` is the preferred v1.0 spelling. `cosheaf run` remains a
+compatibility alias for existing scripts.
+
 Start a run:
 
 ```bash
-cosheaf run start \
+cosheaf research-run start \
   --issue issue.example \
   --operator external \
   --operator-label "Codex CLI" \
@@ -39,7 +42,7 @@ cosheaf run start \
 Append a command record:
 
 ```bash
-cosheaf run append-command \
+cosheaf research-run append-command \
   --run run.issue.example.r20260615.t010000z \
   --input-json command.json \
   --json
@@ -48,13 +51,13 @@ cosheaf run append-command \
 Append artifact and output references:
 
 ```bash
-cosheaf run append-artifact \
+cosheaf research-run append-artifact \
   --run run.issue.example.r20260615.t010000z \
   --artifact claim.example \
   --mode read \
   --json
 
-cosheaf run append-output \
+cosheaf research-run append-output \
   --run run.issue.example.r20260615.t010000z \
   --input-json output.json \
   --json
@@ -63,17 +66,17 @@ cosheaf run append-output \
 Finalize, inspect, export, and plan replay:
 
 ```bash
-cosheaf run finalize \
+cosheaf research-run finalize \
   --run run.issue.example.r20260615.t010000z \
   --status completed \
   --stop-reason "full verification ladder passed" \
   --json
 
-cosheaf run show run.issue.example.r20260615.t010000z --json
-cosheaf run evidence-report --run run.issue.example.r20260615.t010000z --json
-cosheaf run export-review --run run.issue.example.r20260615.t010000z --dry-run --json
-cosheaf run export-review --run run.issue.example.r20260615.t010000z --json
-cosheaf run replay-plan --run run.issue.example.r20260615.t010000z --json
+cosheaf research-run show run.issue.example.r20260615.t010000z --json
+cosheaf research-run evidence-report --run run.issue.example.r20260615.t010000z --json
+cosheaf research-run export-review --run run.issue.example.r20260615.t010000z --dry-run --json
+cosheaf research-run export-review --run run.issue.example.r20260615.t010000z --json
+cosheaf research-run replay-plan --run run.issue.example.r20260615.t010000z --json
 ```
 
 `replay-plan` is read-only. It does not execute commands and does not prove that

@@ -4,6 +4,17 @@
 
 ### Active And Planned Interfaces
 
+- CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
+  `cosheaf interface list --json` and `cosheaf interface list`. It emits a
+  deterministic `schema_version: 1` payload listing the stable v1.0 CLI
+  surface, compatibility aliases, optional adapter surfaces, package version,
+  target release, and an authority notice. `cosheaf research-run ...` is the
+  preferred research-run provenance root command. `cosheaf run ...` remains a
+  compatibility alias for existing scripts. `cosheaf gate run` remains the
+  preferred gate spelling, while `cosheaf gate` remains compatibility
+  behavior. Interface discovery is documentation metadata only and does not
+  grant proof, source metadata, human review, verifier pass, gate pass,
+  accepted status, accepted theorem/refutation status, or promotion authority.
 - Static report DTOs and CLI commands are implemented under `cosheaf.reports`.
   The Python surface defines `StaticReportSubject`, `StaticReportResult`,
   `StaticReportError`, `STATIC_REPORT_AUTHORITY_NOTICE`,
@@ -869,26 +880,26 @@
   repository-local YAML case file.
 - `cosheaf eval strategy-planner --json`: emits deterministic JSON report
   output.
-- `cosheaf run start --issue <issue-id> --operator external --json`: creates
+- `cosheaf research-run start --issue <issue-id> --operator external --json`: creates
   `.cosheaf/runs/<run-id>/run.json` and emits deterministic JSON with
   `accepted_write_performed=false`.
-- `cosheaf run append-command --run <run-id> --input-json <path> --json`:
+- `cosheaf research-run append-command --run <run-id> --input-json <path> --json`:
   appends a sanitized command record to an in-progress research run.
-- `cosheaf run append-artifact --run <run-id> --artifact <artifact-id>
+- `cosheaf research-run append-artifact --run <run-id> --artifact <artifact-id>
   --mode read|touched --json`: records artifact read/touched provenance.
-- `cosheaf run append-output --run <run-id> --input-json <path> --json`:
+- `cosheaf research-run append-output --run <run-id> --input-json <path> --json`:
   appends a repository-local output/reference record.
-- `cosheaf run finalize --run <run-id> --status <status> --stop-reason <text>
+- `cosheaf research-run finalize --run <run-id> --status <status> --stop-reason <text>
   --json`: finalizes an in-progress run with a terminal status.
-- `cosheaf run show <run-id> --json`: shows one runtime research run record.
-- `cosheaf run evidence-report --run <run-id> --json`: emits read-only counts
+- `cosheaf research-run show <run-id> --json`: shows one runtime research run record.
+- `cosheaf research-run evidence-report --run <run-id> --json`: emits read-only counts
   over commands, artifacts, evidence, failure logs, validation, and gate
   reports.
-- `cosheaf run export-review --run <run-id> --dry-run --json`: reports the
+- `cosheaf research-run export-review --run <run-id> --dry-run --json`: reports the
   `reviews/runs/<run-id>.yaml` target without writing.
-- `cosheaf run export-review --run <run-id> --json`: writes a review export
+- `cosheaf research-run export-review --run <run-id> --json`: writes a review export
   under `reviews/runs/`.
-- `cosheaf run replay-plan --run <run-id> --json`: emits a read-only command
+- `cosheaf research-run replay-plan --run <run-id> --json`: emits a read-only command
   replay plan and performs no execution.
 - `cosheaf strategy plan --issue <issue-id> --json`: builds a deterministic
   strategy plan for one issue, writes

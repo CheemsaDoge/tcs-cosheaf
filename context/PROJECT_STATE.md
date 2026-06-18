@@ -3,6 +3,28 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## V18 Phase B.1 CLI/API polish and deprecation cleanup - 2026-06-18
+
+Issue #476 adds a small CLI discoverability cleanup on branch
+`cli-api-polish-deprecation-cleanup`.
+
+This task adds `cosheaf interface list --json` and text `cosheaf interface
+list` output so users and downstream tooling can discover the stable v1.0 CLI
+surface, compatibility aliases, optional adapter surfaces, package version,
+target release, and authority notice without scraping prose documentation.
+
+It also registers `cosheaf research-run ...` as the preferred research-run
+provenance root command while preserving `cosheaf run ...` as a compatibility
+alias for existing scripts. `cosheaf gate run` remains the preferred gate
+spelling, and `cosheaf gate` remains compatibility behavior.
+
+This task does not change schema, verifier behavior, gate semantics,
+promotion policy, accepted-write authority, KB artifacts, provider defaults,
+MCP authority, tags, releases, or package version. Interface discovery is
+documentation metadata only and does not grant proof, source metadata, human
+review, verifier pass, gate pass, accepted status, accepted theorem/refutation
+status, or promotion authority.
+
 ## V18 Phase A.1 post-v0.12.0 audit and v1.0 scope freeze - 2026-06-18
 
 Issue #474 starts the `v1.0.0 AI Math Collaborator MVP` line on branch
