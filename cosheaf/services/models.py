@@ -203,6 +203,12 @@ AGENT_ACCESS_STABLE_ERROR_CODES: tuple[str, ...] = (
 )
 
 
+class WorkspaceInfoRequest(AgentAccessModel):
+    """Request for workspace metadata."""
+
+    include_policy: bool = True
+
+
 class WorkspaceInfoResult(AgentAccessModel):
     """Stable workspace information response for agent callers."""
 
@@ -218,6 +224,19 @@ class WorkspaceInfoResult(AgentAccessModel):
         return _validate_non_empty(value)
 
 
+class ValidateRequest(AgentAccessModel):
+    """Request for repository or single-artifact validation."""
+
+    artifact_path: str | None = None
+
+    @field_validator("artifact_path")
+    @classmethod
+    def _artifact_path(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_repo_local_path(value)
+
+
 class ValidateResult(AgentAccessModel):
     """Stable validation response."""
 
@@ -231,6 +250,28 @@ class ValidateResult(AgentAccessModel):
         if value < 0:
             raise ValueError("checked_count must be non-negative")
         return value
+
+
+class GateRunRequest(AgentAccessModel):
+    """Request to run repository gates."""
+
+    persist_review: bool = False
+    pr_checklist_path: str | None = None
+    timestamp: str | None = None
+
+    @field_validator("pr_checklist_path")
+    @classmethod
+    def _pr_checklist_path(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_repo_local_path(value)
+
+    @field_validator("timestamp")
+    @classmethod
+    def _timestamp(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_non_empty(value)
 
 
 class GateRunResult(AgentAccessModel):
@@ -534,6 +575,144 @@ class DraftArtifactWriteResult(AgentAccessModel):
         return self
 
 
+class SourceNoteWriteRequest(AgentAccessModel):
+    """Request to stage a draft source note."""
+
+    source_id: str
+    kind: str
+    title: str = ""
+    authors: list[str] = Field(default_factory=list)
+    year: int | None = None
+    doi: str = ""
+    arxiv: str = ""
+    url: str = ""
+    theorem_number: str = ""
+    page: str = ""
+    notes: str = ""
+    target_path: str | None = None
+
+    @field_validator("source_id")
+    @classmethod
+    def _source_id(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("kind")
+    @classmethod
+    def _kind(cls, value: str) -> str:
+        return _validate_non_empty(value)
+
+    @field_validator("authors")
+    @classmethod
+    def _authors(cls, values: list[str]) -> list[str]:
+        return _normalize_text_list(values)
+
+    @field_validator("target_path")
+    @classmethod
+    def _target_path(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _validate_repo_local_path(value)
+
+
+class DraftWriteRequest(AgentAccessModel):
+    """Request to write or preview a controlled draft artifact or source note."""
+
+    kind: Literal["artifact", "source_note"] = "artifact"
+    artifact: DraftArtifactWriteRequest | None = None
+    source_note: SourceNoteWriteRequest | None = None
+    dry_run: bool = False
+
+    @model_validator(mode="after")
+    def _exact_payload_for_kind(self) -> DraftWriteRequest:
+        if self.kind == "artifact":
+            if self.artifact is None or self.source_note is not None:
+                raise ValueError("artifact draft writes require only artifact")
+        elif self.source_note is None or self.artifact is not None:
+            raise ValueError("source_note draft writes require only source_note")
+        return self
+
+
+class DraftWriteResult(AgentAccessModel):
+    """Result of a controlled draft artifact or source-note write."""
+
+    kind: Literal["draft_artifact", "source_note"]
+    path: str
+    written_paths: list[str] = Field(default_factory=list)
+    dry_run: bool
+    accepted_write_performed: Literal[False] = False
+    record_id: str
+
+    @field_validator("path")
+    @classmethod
+    def _path(cls, value: str) -> str:
+        return _validate_repo_local_path(value)
+
+    @field_validator("written_paths")
+    @classmethod
+    def _written_paths(cls, values: list[str]) -> list[str]:
+        return [_validate_repo_local_path(value) for value in values]
+
+    @field_validator("record_id")
+    @classmethod
+    def _record_id(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+
+class ReviewRequestWriteRequest(AgentAccessModel):
+    """Request to write or preview a draft informational review request."""
+
+    review_id: str
+    title: str
+    status: Literal["draft"] = "draft"
+    authors: list[str] = Field(default_factory=list)
+    target: str
+    summary: str
+    findings: list[str] = Field(default_factory=list)
+    decision: Literal["informational"] = "informational"
+    dry_run: bool = False
+
+    @field_validator("review_id")
+    @classmethod
+    def _review_id(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("title", "target", "summary")
+    @classmethod
+    def _text(cls, value: str) -> str:
+        return _validate_non_empty(value)
+
+    @field_validator("authors", "findings")
+    @classmethod
+    def _text_list(cls, values: list[str]) -> list[str]:
+        return _normalize_text_list(values)
+
+
+class ReviewRequestWriteResult(AgentAccessModel):
+    """Result of a controlled review-request write."""
+
+    kind: Literal["review_request"] = "review_request"
+    review_id: str
+    path: str
+    written_paths: list[str] = Field(default_factory=list)
+    dry_run: bool
+    accepted_write_performed: Literal[False] = False
+
+    @field_validator("review_id")
+    @classmethod
+    def _review_id(cls, value: str) -> str:
+        return validate_artifact_id(value.strip())
+
+    @field_validator("path")
+    @classmethod
+    def _path(cls, value: str) -> str:
+        return _validate_repo_local_path(value)
+
+    @field_validator("written_paths")
+    @classmethod
+    def _written_paths(cls, values: list[str]) -> list[str]:
+        return [_validate_repo_local_path(value) for value in values]
+
+
 class ProviderConsent(AgentAccessModel):
     """Consent and scope metadata for provider-send flows."""
 
@@ -806,7 +985,10 @@ __all__ = [
     "ContextPolicyMode",
     "DraftArtifactWriteRequest",
     "DraftArtifactWriteResult",
+    "DraftWriteRequest",
+    "DraftWriteResult",
     "ErrorResult",
+    "GateRunRequest",
     "GateRunResult",
     "KbRootPolicy",
     "MemoryRootScope",
@@ -819,7 +1001,12 @@ __all__ = [
     "ProviderContextPreviewItem",
     "ProviderRunRecord",
     "ProviderRunStatus",
+    "ReviewRequestWriteRequest",
+    "ReviewRequestWriteResult",
+    "SourceNoteWriteRequest",
+    "ValidateRequest",
     "ValidateResult",
+    "WorkspaceInfoRequest",
     "WorkspaceInfoResult",
     "WorkerBundleSubmitRequest",
     "WorkerBundleSubmitResult",
