@@ -2,6 +2,7 @@
 import { ROUTES, loadSiteData } from "../lib/siteData";
 import { asLocalizedText, localized, type LocalizedText } from "../lib/i18n";
 import globalStyles from "../styles/global.css?raw";
+import katexStyles from "katex/dist/katex.min.css?raw";
 
 interface Props {
   title: string | LocalizedText;
@@ -40,6 +41,7 @@ const pageTitleZh = `${titleText.zh} | TCS-Cosheaf`;
       content="Cosheaf human governance workbench and static showcase over repository data."
     />
     <style is:inline set:html={globalStyles}></style>
+    <style is:inline set:html={katexStyles}></style>
     <title>{pageTitleZh}</title>
   </head>
   <body data-page-title-en={pageTitleEn} data-page-title-zh={pageTitleZh}>
@@ -224,6 +226,91 @@ const pageTitleZh = `${titleText.zh} | TCS-Cosheaf`;
     </script>
     <script is:inline>
       (() => {
+        const delimiterMessage = (text) => {
+          let inlineOpen = false;
+          let blockOpen = false;
+          for (let index = 0; index < text.length; index += 1) {
+            if (text[index] === "\\" && text[index + 1] === "$") {
+              index += 1;
+              continue;
+            }
+            if (text[index] === "$" && text[index + 1] === "$") {
+              blockOpen = !blockOpen;
+              index += 1;
+              continue;
+            }
+            if (text[index] === "$") {
+              inlineOpen = !inlineOpen;
+            }
+          }
+          if (blockOpen) {
+            return {
+              en: "Check formula delimiters: unmatched $$.",
+              zh: "请检查公式分隔符：$$ 未闭合。"
+            };
+          }
+          if (inlineOpen) {
+            return {
+              en: "Check formula delimiters: unmatched $.",
+              zh: "请检查公式分隔符：$ 未闭合。"
+            };
+          }
+          return null;
+        };
+
+        const activeLanguage = () =>
+          document.documentElement.dataset.lang === "en" ? "en" : "zh";
+
+        const validateMarkdownMathInput = (textarea) => {
+          const feedback = textarea
+            .closest("label")
+            ?.querySelector("[data-markdown-math-feedback]");
+          if (!feedback) {
+            return true;
+          }
+          const message = delimiterMessage(textarea.value);
+          if (!message) {
+            feedback.hidden = true;
+            feedback.textContent = "";
+            feedback.dataset.i18nEn = "";
+            feedback.dataset.i18nZh = "";
+            return true;
+          }
+          feedback.hidden = false;
+          feedback.dataset.i18nEn = message.en;
+          feedback.dataset.i18nZh = message.zh;
+          feedback.textContent = message[activeLanguage()];
+          return false;
+        };
+
+        document
+          .querySelectorAll("textarea")
+          .forEach((textarea) => {
+            if (
+              textarea
+                .closest("label")
+                ?.querySelector("[data-markdown-math-feedback]")
+            ) {
+              textarea.addEventListener("input", () => {
+                validateMarkdownMathInput(textarea);
+              });
+            }
+          });
+
+        document.addEventListener("click", (event) => {
+          const target = event.target instanceof Element ? event.target : null;
+          const previewButton = target?.closest("[data-preview]");
+          if (!previewButton) {
+            return;
+          }
+          previewButton
+            .closest("form")
+            ?.querySelectorAll("textarea")
+            .forEach((textarea) => {
+              validateMarkdownMathInput(textarea);
+            });
+        });
+
         const initPagination = (container, visibleRows) => {
           const rows = Array.from(visibleRows);
           const pageSize = Number(container.getAttribute("data-page-size") || 12);

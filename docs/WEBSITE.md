@@ -248,7 +248,9 @@ fixture data. The rendered banner, primary navigation, and issue workbench
 controls use a lightweight language switcher for English and Simplified
 Chinese, backed by explicit `{ en, zh }` UI copy. Repository artifact and issue
 content is shown as recorded in the repository and is not machine-translated by
-the frontend.
+the frontend. User-authored TCS text may be displayed through the shared
+Markdown/LaTeX renderer, but repository Markdown/YAML remains canonical and the
+rendered HTML is display-only.
 
 The home route is the unified Workbench dashboard. It is an operational
 starting point rather than a product introduction page: it summarizes workspace
@@ -338,7 +340,9 @@ metadata only. Status badges include authority explanations; missing verifier
 or source data is rendered as not checked or unavailable instead of pass.
 Graph and gate pages render dependency, reverse-dependency, neighborhood, gate
 summary, warning, skip, and report-reference views from the same static export.
-Graph edges are explanatory only, and gate pass never implies accepted status.
+Formula-bearing summaries and graph-detail labels use sanitized Markdown/KaTeX
+display where applicable. Graph edges are explanatory only, and gate pass never
+implies accepted status.
 The Authority Boundaries route now includes a short new-user guide covering
 what Cosheaf is, what it is not, why gates/verifiers/AI output are not truth or
 human review, how public/private KB roots are separated, and how accepted

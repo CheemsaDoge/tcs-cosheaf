@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import I18nText from "../components/I18nText.astro";
+import MarkdownRenderer from "../components/MarkdownRenderer.astro";
 import { localized, textFor } from "../lib/i18n";
 import {
   ARTIFACT_PAGE_SIZE,
@@ -98,7 +99,7 @@ const domains = uniqueSorted(artifacts.flatMap((artifact) => artifact.domain));
             <div>
               <a class="row-title" href={artifactHref(artifact.id)}>{artifact.title}</a>
               <code>{artifact.id}</code>
-              <p>{artifact.summary}</p>
+              <MarkdownRenderer content={artifact.summary} />
             </div>
             <span>{artifact.type}</span>
             <span

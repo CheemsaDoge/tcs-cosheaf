@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import I18nText from "../../../components/I18nText.astro";
+import MarkdownMathHint from "../../../components/MarkdownMathHint.astro";
 import { localized } from "../../../lib/i18n";
 import { ISSUE_WORKBENCH_LABELS } from "../../../lib/issueWorkbench";
 import { issueById, issueHref, loadSiteData } from "../../../lib/siteData";
@@ -71,6 +72,7 @@ const canWriteIssues = data.runtime.mode === "live-local";
               <label>
                 <I18nText text={ISSUE_WORKBENCH_LABELS.summary} />
                 <textarea name="summary" rows="5">{issue.summary}</textarea>
+                <MarkdownMathHint />
               </label>
             </fieldset>
             <fieldset class="form-section secondary">

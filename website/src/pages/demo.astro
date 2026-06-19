@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import I18nText from "../components/I18nText.astro";
+import MarkdownRenderer from "../components/MarkdownRenderer.astro";
 import { localized } from "../lib/i18n";
 import {
   PREVIEW_API_BASE,
@@ -22,7 +23,7 @@ const previewRequests = buildPreviewRequests(data);
     <article class="panel">
       <p class="section-kicker"><I18nText text={localized("Demo issue", "演示议题")} /></p>
       <h2>{issue.title}</h2>
-      <p>{issue.summary.split("\n\n")[0]}</p>
+      <MarkdownRenderer content={issue.summary.split("\n\n")[0]} />
       <div class="tag-row">
         {issue.labels.map((label) => <span class="tag">{label}</span>)}
       </div>

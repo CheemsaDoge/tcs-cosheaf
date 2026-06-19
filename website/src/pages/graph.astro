@@ -1,6 +1,7 @@
 ---
 import ForceGraph from "../components/ForceGraph.astro";
 import I18nText from "../components/I18nText.astro";
+import MarkdownRenderer from "../components/MarkdownRenderer.astro";
 import RelationshipTags from "../components/RelationshipTags.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { localized } from "../lib/i18n";
@@ -128,7 +129,7 @@ const nodeLimitNotice =
           }));
           return (
             <article class="info-card paginated-row">
-              <h2><a href={artifactHref(node.artifact_id)}>{node.title}</a></h2>
+              <h2><a href={artifactHref(node.artifact_id)}><MarkdownRenderer content={node.title} inline /></a></h2>
               <p>{node.artifact_id}</p>
               <div class="neighborhood-grid">
                 <div>

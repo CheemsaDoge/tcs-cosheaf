@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import I18nText from "../../../components/I18nText.astro";
+import MarkdownMathHint from "../../../components/MarkdownMathHint.astro";
 import { ARTIFACT_METADATA_LABELS } from "../../../lib/artifactMetadataWorkbench";
 import { PREACCEPTED_ARTIFACT_STATUSES } from "../../../lib/artifactWorkbench";
 import { localized } from "../../../lib/i18n";
@@ -81,6 +82,7 @@ const evidenceKinds = [
               <label>
                 <I18nText text={ARTIFACT_METADATA_LABELS.summary} />
                 <textarea name="summary" rows="6" required></textarea>
+                <MarkdownMathHint />
               </label>
             </fieldset>
             <div class="preview-toolbar">

@@ -1,0 +1,144 @@
+---
+/**
+ * Reusable Markdown + LaTeX renderer component.
+ *
+ * Used across artifact, issue, context, evidence, review, and dashboard surfaces
+ * where user-authored TCS text may contain formulas.
+ *
+ * Props:
+ * - content: plain markdown text with optional LaTeX
+ * - inline: if true, renders without block-level tags (for titles/short text)
+ * - class: additional CSS classes
+ *
+ * Repository files remain plain Markdown/YAML; this component only renders for display.
+ */
+
+import { renderMarkdownWithMath, renderMathOnly } from '../lib/markdownMathRenderer';
+
+export interface Props {
+  content: string;
+  inline?: boolean;
+  class?: string;
+}
+
+const { content, inline = false, class: className = '' } = Astro.props;
+
+// Render based on mode
+const rendered = inline
+  ? renderMathOnly(content)
+  : renderMarkdownWithMath(content);
+---
+
+{inline ? (
+  <span class={`markdown-inline ${className}`} set:html={rendered} />
+) : (
+  <div class={`markdown-content ${className}`} set:html={rendered} />
+)}
+
+<style>
+  /* Markdown content styles */
+  .markdown-content {
+    line-height: 1.6;
+    color: var(--text-color, #1F2421);
+  }
+
+  .markdown-content :global(p) {
+    margin: 0.5em 0;
+  }
+
+  .markdown-content :global(h1),
+  .markdown-content :global(h2),
+  .markdown-content :global(h3),
+  .markdown-content :global(h4),
+  .markdown-content :global(h5),
+  .markdown-content :global(h6) {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    font-weight: 500;
+  }
+
+  .markdown-content :global(code) {
+    background: #F7F4EF;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9em;
+  }
+
+  .markdown-content :global(pre) {
+    background: #F7F4EF;
+    padding: 1em;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 1em 0;
+  }
+
+  .markdown-content :global(pre code) {
+    background: none;
+    padding: 0;
+  }
+
+  .markdown-content :global(a) {
+    color: #C4612F;
+    text-decoration: none;
+  }
+
+  .markdown-content :global(a:hover) {
+    text-decoration: underline;
+  }
+
+  .markdown-content :global(ul),
+  .markdown-content :global(ol) {
+    margin: 0.5em 0;
+    padding-left: 2em;
+  }
+
+  .markdown-content :global(li) {
+    margin: 0.25em 0;
+  }
+
+  .markdown-content :global(blockquote) {
+    border-left: 3px solid #C4612F;
+    padding-left: 1em;
+    margin: 1em 0;
+    color: #5C635D;
+  }
+
+  .markdown-content :global(table) {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+  }
+
+  .markdown-content :global(th),
+  .markdown-content :global(td) {
+    border: 1px solid #E7E1D7;
+    padding: 0.5em;
+    text-align: left;
+  }
+
+  .markdown-content :global(th) {
+    background: #F7F4EF;
+    font-weight: 500;
+  }
+
+  /* KaTeX math styles */
+  .markdown-content :global(.katex-display) {
+    margin: 1em 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .markdown-content :global(.katex) {
+    font-size: 1.1em;
+  }
+
+  /* Inline rendering */
+  .markdown-inline {
+    display: inline;
+  }
+
+  .markdown-inline :global(.katex) {
+    font-size: 1em;
+  }
+</style>

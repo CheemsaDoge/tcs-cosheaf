@@ -1,5 +1,6 @@
 ---
 import I18nText from "./I18nText.astro";
+import MarkdownMathHint from "./MarkdownMathHint.astro";
 import { localized, type LocalizedText } from "../lib/i18n";
 
 interface Props {
@@ -47,6 +48,7 @@ const {
     <label>
       <I18nText text={notesLabel} />
       <textarea name="promotionJustification" rows="4" required></textarea>
+      <MarkdownMathHint />
     </label>
     <div class="preview-toolbar">
       <button class="preview-button secondary" type="button" data-modal-cancel>

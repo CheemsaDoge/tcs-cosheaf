@@ -10,9 +10,15 @@
   "dependencies": {
     "astro": "^5.16.4",
     "d3-force-3d": "^3.0.6",
-    "force-graph": "^1.51.4"
+    "dompurify": "^3.2.2",
+    "force-graph": "^1.51.4",
+    "isomorphic-dompurify": "^2.18.0",
+    "katex": "^0.16.11",
+    "marked": "^15.0.6"
   },
   "devDependencies": {
+    "@types/katex": "^0.16.7",
+    "jsdom": "^29.1.1",
     "typescript": "^5.9.3",
     "vitest": "^4.0.15"
   }

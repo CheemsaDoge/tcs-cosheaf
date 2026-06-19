@@ -2,6 +2,7 @@
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import GateStatusBadge from "../../../components/GateStatusBadge.astro";
 import I18nText from "../../../components/I18nText.astro";
+import MarkdownMathHint from "../../../components/MarkdownMathHint.astro";
 import ReviewChecklist from "../../../components/ReviewChecklist.astro";
 import { localized } from "../../../lib/i18n";
 import {
@@ -128,10 +129,12 @@ const checklistItems = [
             <label>
               <I18nText text={REVIEW_DECISION_LABELS.reviewNotes} />
               <textarea name="reviewNotes" rows="5" required></textarea>
+              <MarkdownMathHint />
             </label>
             <label>
               <I18nText text={REVIEW_DECISION_LABELS.limitations} />
               <textarea name="limitations" rows="3"></textarea>
+              <MarkdownMathHint />
             </label>
             <ReviewChecklist items={checklistItems} />
             <div class="preview-toolbar">
