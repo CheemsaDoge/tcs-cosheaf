@@ -12,6 +12,8 @@ The CLI server binds to `127.0.0.1` and refuses to start unless `--readonly`
 is provided. Read and preview endpoints need no authentication because they
 are loopback-only and non-mutating. Confirmed local issue actions are
 loopback-only local repository writes and require `confirm: true`.
+Confirmed context-build actions are loopback-only runtime writes under
+`context/TASKS/` and require `confirm: true`.
 Authenticated GitHub create endpoints exist for backend integrations that
 instantiate `ReadOnlySiteApi` with a server-side `ForgeCredentialProvider`;
 the default CLI server does not configure one, so confirmed GitHub create
@@ -34,6 +36,9 @@ It does not shell out to the `cosheaf` CLI, run hosted providers, write
 accepted artifacts, promote artifacts, create human review, or run gates as a
 side effect. The local issue workbench slice may write repository-local issue
 YAML after explicit confirmation, through `cosheaf.app`, with audit logging.
+The context workbench slice may build deterministic issue context packs under
+`context/TASKS/` after explicit confirmation, through `cosheaf.app`, with
+audit logging.
 
 Static read-only payloads are generated through the existing website export
 path into a temporary directory outside the repository, then returned as JSON.
@@ -110,6 +115,8 @@ POST /api/issues/<issue_id>/preview-update
 POST /api/issues/<issue_id>/update
 POST /api/issues/<issue_id>/preview-close
 POST /api/issues/<issue_id>/close
+POST /api/context/<issue_id>/preview-build
+POST /api/context/<issue_id>/build
 POST /api/forge/issues/preview
 POST /api/forge/issues/create
 POST /api/forge/prs/preview
@@ -176,6 +183,29 @@ Issue closing moves the issue record to `issues/closed/<issue_id>.yaml` and
 records `close_reason`. It does not change related artifact status, accepted
 state, refuted state, verifier output, gate state, human review, or promotion
 state.
+
+## Context Build Workbench Actions
+
+The B2.4.1 context build endpoints are:
+
+```text
+POST /api/context/<issue_id>/preview-build
+POST /api/context/<issue_id>/build
+GET /api/context/<issue_id>/latest
+```
+
+Preview-build accepts optional `role`, `public_only`, `max_cards`, and
+`max_full_artifacts`, returns the planned `context/TASKS/<issue_id>/` files,
+and writes only a redacted audit entry. It does not build the context pack.
+
+Confirmed build requests must include `confirm: true`. They call
+`CosheafApp.build_context`, write the deterministic context pack under
+`context/TASKS/<issue_id>/`, return the written file list and retrieval audit,
+and append a redacted web-action audit record under
+`.cosheaf/audit/web-actions.jsonl`.
+
+Context packs are retrieval guidance only. They do not create proof, verifier
+pass, gate pass, human review, accepted status, or promotion authority.
 
 ## Target Workbench Action Classes
 

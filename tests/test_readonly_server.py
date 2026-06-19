@@ -265,6 +265,85 @@ def test_live_repository_api_reads_current_repo_state_without_writes(
     assert _repo_file_snapshot(tmp_path) == before
 
 
+def test_context_build_preview_then_confirm_writes_context_pack(
+    tmp_path: Path,
+) -> None:
+    _fixture_workspace(tmp_path)
+    api = ReadOnlySiteApi(open_app(tmp_path))
+    payload = {
+        "role": "orchestrator",
+        "public_only": True,
+        "max_cards": 5,
+        "max_full_artifacts": 0,
+    }
+
+    preview = api.handle(
+        "POST",
+        "/api/context/issue.fixture.readonly-server/preview-build",
+        json.dumps(payload),
+    )
+
+    assert preview.status == 200
+    assert preview.payload["kind"] == "context_build_preview"
+    assert preview.payload["repo_writes_performed"] is False
+    assert "context/TASKS/issue.fixture.readonly-server/CONTEXT.md" in (
+        preview.payload["planned_files"]
+    )
+    assert "context/TASKS/issue.fixture.readonly-server/RETRIEVAL_AUDIT.json" in (
+        preview.payload["planned_files"]
+    )
+    assert "context/TASKS/issue.fixture.readonly-server/COMMANDS.md" in (
+        preview.payload["planned_files"]
+    )
+    assert not (tmp_path / "context" / "TASKS").exists()
+
+    blocked = api.handle(
+        "POST",
+        "/api/context/issue.fixture.readonly-server/build",
+        json.dumps(payload),
+    )
+    assert blocked.status == 400
+    assert blocked.payload["code"] == "confirm_required"
+
+    built = api.handle(
+        "POST",
+        "/api/context/issue.fixture.readonly-server/build",
+        json.dumps({**payload, "confirm": True}),
+    )
+
+    assert built.status == 200
+    assert built.payload["kind"] == "context_build"
+    assert built.payload["repo_writes_performed"] is True
+    assert built.payload["context_pack"]["files"] == preview.payload["planned_files"]
+    assert (
+        tmp_path
+        / "context"
+        / "TASKS"
+        / "issue.fixture.readonly-server"
+        / "CONTEXT.md"
+    ).is_file()
+
+    latest = api.handle(
+        "GET",
+        "/api/context/issue.fixture.readonly-server/latest",
+    )
+    assert latest.status == 200
+    assert latest.payload["context_pack"]["exists"] is True
+    assert latest.payload["context_pack"]["retrieval_audit"]["issue_id"] == (
+        "issue.fixture.readonly-server"
+    )
+
+    entries = _audit_entries(tmp_path)
+    assert [entry["action"] for entry in entries] == [
+        "context.build",
+        "context.build",
+        "context.build",
+    ]
+    assert entries[0]["preview_only"] is True
+    assert entries[1]["result_status"] == "confirm_required"
+    assert entries[2]["repo_writes_performed"] is True
+
+
 def test_preview_endpoints_plan_actions_without_repo_or_github_writes(
     tmp_path: Path,
     monkeypatch: Any,

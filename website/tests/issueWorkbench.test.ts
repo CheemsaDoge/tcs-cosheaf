@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CONTEXT_BUILD_ENDPOINTS,
   ISSUE_ACTION_ENDPOINTS,
   ISSUE_WORKBENCH_LABELS,
+  buildContextBuildPayload,
   buildIssueActionPayload,
   parseDelimitedList
 } from "../src/lib/issueWorkbench";
@@ -31,6 +33,15 @@ describe("issue workbench helpers", () => {
     );
     expect(ISSUE_ACTION_ENDPOINTS.close("issue.fixture.web")).toBe(
       "/api/issues/issue.fixture.web/close"
+    );
+  });
+
+  it("uses the exact B2.4.1 context build endpoints", () => {
+    expect(CONTEXT_BUILD_ENDPOINTS.previewBuild("issue.fixture.web")).toBe(
+      "/api/context/issue.fixture.web/preview-build"
+    );
+    expect(CONTEXT_BUILD_ENDPOINTS.build("issue.fixture.web")).toBe(
+      "/api/context/issue.fixture.web/build"
     );
   });
 
@@ -91,5 +102,38 @@ describe("issue workbench helpers", () => {
     );
 
     expect(payload.confirm).toBe(true);
+  });
+
+  it("builds context payloads without authority-changing fields", () => {
+    expect(
+      buildContextBuildPayload({
+        role: "reviewer",
+        publicOnly: true,
+        maxCards: "12",
+        maxFullArtifacts: "2"
+      })
+    ).toEqual({
+      role: "reviewer",
+      public_only: true,
+      max_cards: 12,
+      max_full_artifacts: 2
+    });
+    expect(
+      buildContextBuildPayload(
+        {
+          role: "",
+          publicOnly: false,
+          maxCards: "not-a-number",
+          maxFullArtifacts: "-1"
+        },
+        { confirm: true }
+      )
+    ).toEqual({
+      role: "orchestrator",
+      public_only: false,
+      max_cards: 20,
+      max_full_artifacts: 0,
+      confirm: true
+    });
   });
 });

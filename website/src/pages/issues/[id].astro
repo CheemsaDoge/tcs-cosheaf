@@ -89,6 +89,92 @@ const canCloseIssue = canWriteIssues && issue.status !== "closed";
     <article class="panel workbench-main">
       <div class="panel-heading">
         <div>
+          <p class="section-kicker"><I18nText text={ISSUE_WORKBENCH_LABELS.buildContext} /></p>
+          <h2><I18nText text={localized("Issue context", "议题上下文")} /></h2>
+        </div>
+      </div>
+      <p class="preview-warning">
+        <I18nText text={ISSUE_WORKBENCH_LABELS.contextGuidance} />
+      </p>
+      {
+        canWriteIssues ? (
+          <form
+            class="workbench-form"
+            data-context-build-form
+            data-mode={data.runtime.mode}
+            data-api-base={data.runtime.api_base}
+            data-issue-id={issue.id}
+            data-output="#context-build-preview"
+            data-latest-output="#context-latest-output"
+          >
+            <label>
+              <I18nText text={localized("Role", "角色")} />
+              <select name="role">
+                <option value="orchestrator">orchestrator</option>
+                <option value="reviewer">reviewer</option>
+                <option value="researcher">researcher</option>
+              </select>
+            </label>
+            <label>
+              <I18nText text={localized("Max cards", "最大卡片数")} />
+              <input name="maxCards" type="number" min="1" max="100" value="20" />
+            </label>
+            <details class="workbench-details">
+              <summary><I18nText text={localized("Advanced options", "高级选项")} /></summary>
+              <label>
+                <I18nText text={localized("Full artifact budget", "完整工件预算")} />
+                <input name="maxFullArtifacts" type="number" min="0" max="20" value="0" />
+              </label>
+            </details>
+            <label class="checkbox-label">
+              <input name="publicOnly" type="checkbox" />
+              <I18nText text={localized("Public only", "仅公开内容")} />
+            </label>
+            <div class="preview-toolbar">
+              <button class="preview-button" type="button" data-preview>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.preview} />
+              </button>
+              <button class="preview-button" type="submit" data-confirm disabled>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.confirm} />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p>
+            <I18nText
+              text={localized(
+                "Context builds require live local mode.",
+                "构建上下文包需要本地实时模式。"
+              )}
+            />
+          </p>
+        )
+      }
+    </article>
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker"><I18nText text={ISSUE_WORKBENCH_LABELS.previewDiff} /></p>
+      <pre
+        class="json-block preview-output"
+        id="context-build-preview"
+        data-i18n-en="Preview a context build before writing it."
+        data-i18n-zh="写入前先预览上下文构建。"
+      >写入前先预览上下文构建。</pre>
+      <details class="workbench-details">
+        <summary><I18nText text={localized("Latest context", "最新上下文")} /></summary>
+        <pre
+          class="json-block preview-output"
+          id="context-latest-output"
+          data-i18n-en="Latest context pack appears here in live local mode."
+          data-i18n-zh="本地实时模式下，最新上下文包会显示在这里。"
+        >本地实时模式下，最新上下文包会显示在这里。</pre>
+      </details>
+    </article>
+  </section>
+
+  <section class="workbench-shell compact">
+    <article class="panel workbench-main">
+      <div class="panel-heading">
+        <div>
           <p class="section-kicker"><I18nText text={ISSUE_WORKBENCH_LABELS.closeIssue} /></p>
           <h2><I18nText text={localized("Close with a reason", "填写关闭原因")} /></h2>
         </div>

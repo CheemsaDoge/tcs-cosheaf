@@ -12,6 +12,7 @@ from tempfile import TemporaryDirectory
 from typing import Any, Literal, cast
 from urllib.parse import unquote, urlparse
 
+from cosheaf.agent.context_pack import PACK_FILENAMES
 from cosheaf.app import CosheafApp
 from cosheaf.core.artifact import BaseArtifact
 from cosheaf.core.ids import validate_artifact_id
@@ -37,6 +38,10 @@ from cosheaf.web_actions import (
 READONLY_SERVER_HOST = "127.0.0.1"
 READONLY_SERVER_PORT = 8765
 READONLY_SERVER_SCHEMA_VERSION = 1
+CONTEXT_AUTHORITY_NOTICE = (
+    "Context packs are retrieval context only; they are not proof, verifier "
+    "pass, gate pass, human review, accepted status, or promotion authority."
+)
 _EXPORT_ENDPOINTS = {
     "/api/workspace": "workspace.json",
     "/api/artifacts": "artifacts.json",
@@ -150,10 +155,12 @@ class ReadOnlySiteApi:
 
     def _handle_post(self, path: str, body: str | bytes) -> ApiResponse:
         issue_action = _parse_issue_action_path(path)
+        context_action = _parse_context_action_path(path)
         if (
             path not in _PREVIEW_ENDPOINTS
             and path not in _CREATE_ENDPOINTS
             and issue_action is None
+            and context_action is None
         ):
             return _error(
                 405,
@@ -179,6 +186,12 @@ class ReadOnlySiteApi:
                     return self._preview_issue_close(issue_id, payload)
                 if action == "close":
                     return self._close_issue(issue_id, payload)
+            if context_action is not None:
+                issue_id, action = context_action
+                if action == "preview-build":
+                    return self._preview_context_build(issue_id, payload)
+                if action == "build":
+                    return self._build_context(issue_id, payload)
             if path == "/api/forge/local-issues/preview":
                 return self._preview_local_issue(payload)
             if path == "/api/forge/issues/preview":
@@ -318,9 +331,7 @@ class ReadOnlySiteApi:
                 "files": files,
                 "retrieval_audit": audit,
                 "authority_notice": (
-                    "Context packs are retrieval context only; they are not "
-                    "proof, verifier pass, gate pass, human review, accepted "
-                    "status, or promotion authority."
+                    CONTEXT_AUTHORITY_NOTICE
                 ),
             },
         )
@@ -699,6 +710,97 @@ class ReadOnlySiteApi:
             ),
         )
 
+    def _preview_context_build(
+        self,
+        issue_id: str,
+        payload: dict[str, Any],
+    ) -> ApiResponse:
+        self.app.show_issue(issue_id)
+        planned_files = _context_pack_planned_files(issue_id)
+        self._write_audit(
+            action="context_build",
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=planned_files,
+            authority_warnings=[CONTEXT_AUTHORITY_NOTICE],
+        )
+        return _preview_response(
+            "context_build_preview",
+            planned_actions=["build issue context pack preview"],
+            planned_files=planned_files,
+            context_pack={
+                "issue_id": issue_id,
+                "role": _context_role(payload),
+                "public_only": _bool(payload, "public_only", default=False),
+                "max_cards": _int(payload, "max_cards", default=20, minimum=1),
+                "max_full_artifacts": _int(
+                    payload,
+                    "max_full_artifacts",
+                    default=0,
+                    minimum=0,
+                ),
+                "authority_notice": CONTEXT_AUTHORITY_NOTICE,
+            },
+            authority_warning=CONTEXT_AUTHORITY_NOTICE,
+            authority_notice=CONTEXT_AUTHORITY_NOTICE,
+        )
+
+    def _build_context(self, issue_id: str, payload: dict[str, Any]) -> ApiResponse:
+        action = "context_build"
+        blocked = self._blocked_confirm(action, payload)
+        if blocked is not None:
+            return blocked
+        result = self.app.build_context(
+            issue_id,
+            role=_context_role(payload),
+            public_only=_bool(payload, "public_only", default=False),
+            max_cards=_int(payload, "max_cards", default=20, minimum=1),
+            max_full_artifacts=_int(
+                payload,
+                "max_full_artifacts",
+                default=0,
+                minimum=0,
+            ),
+        )
+        planned_files = [
+            _repo_relative_or_string(self.app.context.repo_root, path)
+            for path in result.files
+        ]
+        self._write_audit(
+            action=action,
+            result_status="success",
+            explicit_confirm=True,
+            preview_only=False,
+            planned_files=planned_files,
+            repo_writes_performed=True,
+            result={"action_performed": True},
+            authority_warnings=[CONTEXT_AUTHORITY_NOTICE],
+        )
+        return ApiResponse(
+            200,
+            {
+                "schema_version": READONLY_SERVER_SCHEMA_VERSION,
+                "kind": "context_build",
+                "action_performed": True,
+                "repo_writes_performed": True,
+                "git_writes_performed": False,
+                "github_writes_performed": False,
+                "network_calls_performed": False,
+                "audit_logged": True,
+                "planned_files": planned_files,
+                "written_files": planned_files,
+                "context_pack": _context_pack_result_payload(
+                    self.app.context.repo_root,
+                    result.issue_id,
+                    result.task_dir,
+                    result.files,
+                ),
+                "authority_warning": CONTEXT_AUTHORITY_NOTICE,
+                "authority_notice": CONTEXT_AUTHORITY_NOTICE,
+            },
+        )
+
     def _create_github_issue(self, payload: dict[str, Any]) -> ApiResponse:
         action = "github_issue_create"
         source_path = _required_text(payload, "source_path")
@@ -1036,6 +1138,18 @@ def _parse_issue_action_path(path: str) -> tuple[str, str] | None:
     return issue_id, action
 
 
+def _parse_context_action_path(path: str) -> tuple[str, str] | None:
+    if not path.startswith("/api/context/"):
+        return None
+    parts = path.removeprefix("/api/context/").split("/")
+    if len(parts) != 2:
+        return None
+    issue_id, action = parts
+    if not issue_id or action not in {"preview-build", "build"}:
+        return None
+    return issue_id, action
+
+
 def _allowed_cors_origin(origin: str | None) -> bool:
     if not origin:
         return False
@@ -1081,6 +1195,21 @@ def _bool(payload: dict[str, Any], key: str, *, default: bool) -> bool:
     return value
 
 
+def _int(
+    payload: dict[str, Any],
+    key: str,
+    *,
+    default: int,
+    minimum: int,
+) -> int:
+    value = payload.get(key, default)
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{key} must be an integer")
+    if value < minimum:
+        raise ValueError(f"{key} must be at least {minimum}")
+    return value
+
+
 def _text_list(payload: dict[str, Any], key: str) -> list[str]:
     value = payload.get(key, [])
     if not isinstance(value, list):
@@ -1119,6 +1248,33 @@ def _issue_write_args(
     if require_id:
         args["issue_id"] = _required_text(payload, "issue_id")
     return args
+
+
+def _context_role(payload: dict[str, Any]) -> str:
+    return _optional_text(payload, "role") or "orchestrator"
+
+
+def _context_pack_planned_files(issue_id: str) -> list[str]:
+    return [
+        (Path("context") / "TASKS" / issue_id / filename).as_posix()
+        for filename in PACK_FILENAMES
+    ]
+
+
+def _context_pack_result_payload(
+    repo_root: Path,
+    issue_id: str,
+    task_dir: Path,
+    files: tuple[Path, ...],
+) -> dict[str, Any]:
+    return {
+        "issue_id": issue_id,
+        "exists": task_dir.is_dir(),
+        "task_dir": _repo_relative_or_string(repo_root, task_dir),
+        "files": [_repo_relative_or_string(repo_root, path) for path in files],
+        "retrieval_audit": _read_json_file(task_dir / "RETRIEVAL_AUDIT.json"),
+        "authority_notice": CONTEXT_AUTHORITY_NOTICE,
+    }
 
 
 def _preview_response(
@@ -1206,6 +1362,7 @@ def _web_action_kind(action: str) -> WebActionKind:
         "github_pr_preview": WebActionKind.FORGE_PR_CREATE,
         "github_pr_create": WebActionKind.FORGE_PR_CREATE,
         "review_packet_preview": WebActionKind.REVIEW_PACKET_CREATE,
+        "context_build": WebActionKind.CONTEXT_BUILD,
     }
     try:
         return mapping[action]
