@@ -212,6 +212,142 @@ def test_web_artifact_live_payload_includes_editable_text_and_metadata(
     assert artifact["supersedes"] == []
 
 
+def test_web_artifact_source_metadata_preview_then_confirm_appends_source(
+    tmp_path: Path,
+) -> None:
+    _fixture_workspace(tmp_path)
+    api = ReadOnlySiteApi(open_app(tmp_path))
+    artifact_path = tmp_path / "kb/draft/claims/claim.fixture.artifact-workbench.yaml"
+    before = _read_yaml(artifact_path)
+    payload = {
+        "kind": "book",
+        "title": "Graph Theory",
+        "authors": ["Diestel"],
+        "year": 2025,
+        "page": "12",
+        "notes": "Explicit source note from the web.",
+    }
+
+    preview = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.artifact-workbench/preview-source",
+        json.dumps(payload),
+    )
+
+    assert preview.status == 200
+    assert preview.payload["kind"] == "artifact_source_preview"
+    assert preview.payload["dry_run_only"] is True
+    assert preview.payload["repo_writes_performed"] is False
+    assert "Graph Theory" in preview.payload["diff"]
+    assert "Explicit source note from the web." in preview.payload["diff"]
+    assert _read_yaml(artifact_path) == before
+
+    blocked = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.artifact-workbench/source",
+        json.dumps(payload),
+    )
+    assert blocked.status == 400
+    assert blocked.payload["code"] == "confirm_required"
+
+    confirmed = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.artifact-workbench/source",
+        json.dumps({**payload, "confirm": True}),
+    )
+
+    assert confirmed.status == 200
+    assert confirmed.payload["kind"] == "artifact_source"
+    assert confirmed.payload["validation"]["ok"] is True
+    after = _read_yaml(artifact_path)
+    assert after["sources"][:-1] == before["sources"]
+    assert after["sources"][-1]["title"] == "Graph Theory"
+    assert after["review"] == before["review"]
+    entries = _audit_entries(tmp_path)
+    assert entries[-1]["action"] == "source.attach"
+    assert entries[-1]["repo_writes_performed"] is True
+
+
+def test_web_artifact_evidence_preview_then_confirm_appends_evidence(
+    tmp_path: Path,
+) -> None:
+    _fixture_workspace(tmp_path)
+    api = ReadOnlySiteApi(open_app(tmp_path))
+    artifact_path = tmp_path / "kb/draft/claims/claim.fixture.artifact-workbench.yaml"
+    before = _read_yaml(artifact_path)
+    payload = {
+        "kind": "python_checker",
+        "path": "docs/fixture.md",
+        "summary": "Checker command output saved for review.",
+    }
+
+    preview = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.artifact-workbench/preview-evidence",
+        json.dumps(payload),
+    )
+
+    assert preview.status == 200
+    assert preview.payload["kind"] == "artifact_evidence_preview"
+    assert preview.payload["warnings"] == []
+    assert _read_yaml(artifact_path) == before
+
+    confirmed = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.artifact-workbench/evidence",
+        json.dumps({**payload, "confirm": True}),
+    )
+
+    assert confirmed.status == 200
+    assert confirmed.payload["kind"] == "artifact_evidence"
+    assert confirmed.payload["validation"]["ok"] is True
+    after = _read_yaml(artifact_path)
+    assert after["evidence"][:-1] == before["evidence"]
+    assert after["evidence"][-1] == payload
+    assert after["sources"] == before["sources"]
+    entries = _audit_entries(tmp_path)
+    assert entries[-1]["action"] == "evidence.attach"
+
+
+def test_web_artifact_missing_local_evidence_warns_then_validation_refuses(
+    tmp_path: Path,
+) -> None:
+    _fixture_workspace(tmp_path)
+    api = ReadOnlySiteApi(open_app(tmp_path))
+    artifact_path = tmp_path / "kb/draft/claims/claim.fixture.artifact-workbench.yaml"
+    before = _read_yaml(artifact_path)
+    payload = {
+        "kind": "python_checker",
+        "path": "docs/missing-evidence.md",
+        "summary": "Missing local evidence path should not be accepted.",
+    }
+
+    preview = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.artifact-workbench/preview-evidence",
+        json.dumps(payload),
+    )
+
+    assert preview.status == 200
+    assert preview.payload["warnings"] == [
+        "missing local evidence path: docs/missing-evidence.md"
+    ]
+    assert _read_yaml(artifact_path) == before
+
+    refused = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.artifact-workbench/evidence",
+        json.dumps({**payload, "confirm": True}),
+    )
+
+    assert refused.status == 400
+    assert refused.payload["code"] == "artifact_file_validation_failed"
+    assert _read_yaml(artifact_path) == before
+    entries = _audit_entries(tmp_path)
+    assert entries[-1]["result_status"] == "artifact_file_validation_failed"
+    assert entries[-1]["repo_writes_performed"] is False
+
+
 def test_web_artifact_accepted_direct_write_is_refused_and_audited(
     tmp_path: Path,
 ) -> None:

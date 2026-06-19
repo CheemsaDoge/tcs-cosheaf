@@ -50,9 +50,9 @@ CHECK_AUTHORITY_NOTICE = (
     "and gate pass is not accepted status or promotion authority."
 )
 ARTIFACT_WRITE_AUTHORITY_NOTICE = (
-    "Web artifact writes can create or edit draft/pre-accepted records only. "
-    "They do not create accepted knowledge, human review, verifier pass, gate "
-    "pass, or promotion authority."
+    "Web artifact writes can create or edit draft/pre-accepted records and "
+    "attach source/evidence metadata only. They do not create proof, accepted "
+    "knowledge, human review, verifier pass, gate pass, or promotion authority."
 )
 _EXPORT_ENDPOINTS = {
     "/api/workspace": "workspace.json",
@@ -85,6 +85,10 @@ _ISSUE_ACTION_SUFFIXES = {
     "close",
 }
 _ARTIFACT_ACTION_SUFFIXES = {
+    "preview-evidence",
+    "evidence",
+    "preview-source",
+    "source",
     "preview-update",
     "update",
 }
@@ -206,6 +210,14 @@ class ReadOnlySiteApi:
                 return self._create_artifact(payload)
             if artifact_action is not None:
                 artifact_id, action = artifact_action
+                if action == "preview-source":
+                    return self._preview_artifact_source(artifact_id, payload)
+                if action == "source":
+                    return self._add_artifact_source(artifact_id, payload)
+                if action == "preview-evidence":
+                    return self._preview_artifact_evidence(artifact_id, payload)
+                if action == "evidence":
+                    return self._add_artifact_evidence(artifact_id, payload)
                 if action == "preview-update":
                     return self._preview_artifact_update(artifact_id, payload)
                 if action == "update":
@@ -743,6 +755,175 @@ class ReadOnlySiteApi:
         )
         return _artifact_action_response(
             "artifact_update",
+            result,
+            planned_files=[planned_file],
+            diff=_diff_text(
+                before["yaml"],
+                result.yaml_text(),
+                fromfile=planned_file,
+                tofile=planned_file,
+            ),
+            validation=_validation_payload(validation),
+        )
+
+    def _preview_artifact_source(
+        self,
+        artifact_id: str,
+        payload: dict[str, Any],
+    ) -> ApiResponse:
+        action = "source_attach"
+        try:
+            before = _artifact_snapshot(self, artifact_id)
+            result = self.app.preview_append_source_metadata(artifact_id, payload)
+        except DraftWriteServiceError as exc:
+            return self._artifact_error(action, exc)
+        planned_file = result.relative_path.as_posix()
+        self._write_audit(
+            action=action,
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=[planned_file],
+            authority_warnings=[ARTIFACT_WRITE_AUTHORITY_NOTICE],
+        )
+        return _preview_response(
+            "artifact_source_preview",
+            planned_actions=["append source metadata preview"],
+            planned_files=[planned_file],
+            artifact=result.artifact.model_dump(mode="json"),
+            path=planned_file,
+            yaml=result.yaml_text(),
+            diff=_diff_text(
+                before["yaml"],
+                result.yaml_text(),
+                fromfile=planned_file,
+                tofile=planned_file,
+            ),
+            warnings=[],
+            authority_warning=ARTIFACT_WRITE_AUTHORITY_NOTICE,
+            authority_notice=ARTIFACT_WRITE_AUTHORITY_NOTICE,
+        )
+
+    def _add_artifact_source(
+        self,
+        artifact_id: str,
+        payload: dict[str, Any],
+    ) -> ApiResponse:
+        action = "source_attach"
+        blocked = self._blocked_confirm(
+            action,
+            payload,
+            authority_warnings=[ARTIFACT_WRITE_AUTHORITY_NOTICE],
+        )
+        if blocked is not None:
+            return blocked
+        try:
+            before = _artifact_snapshot(self, artifact_id)
+            result = self.app.append_source_metadata(artifact_id, payload)
+        except DraftWriteServiceError as exc:
+            return self._artifact_error(action, exc)
+        planned_file = result.relative_path.as_posix()
+        validation = self.app.validate_artifact_file(result.relative_path)
+        self._write_audit(
+            action=action,
+            result_status="success",
+            explicit_confirm=True,
+            preview_only=False,
+            planned_files=[planned_file],
+            repo_writes_performed=True,
+            result={
+                "action_performed": True,
+                "validation_performed": True,
+            },
+            authority_warnings=[ARTIFACT_WRITE_AUTHORITY_NOTICE],
+        )
+        return _artifact_action_response(
+            "artifact_source",
+            result,
+            planned_files=[planned_file],
+            diff=_diff_text(
+                before["yaml"],
+                result.yaml_text(),
+                fromfile=planned_file,
+                tofile=planned_file,
+            ),
+            validation=_validation_payload(validation),
+        )
+
+    def _preview_artifact_evidence(
+        self,
+        artifact_id: str,
+        payload: dict[str, Any],
+    ) -> ApiResponse:
+        action = "evidence_attach"
+        try:
+            before = _artifact_snapshot(self, artifact_id)
+            result = self.app.preview_append_evidence_metadata(artifact_id, payload)
+        except DraftWriteServiceError as exc:
+            return self._artifact_error(action, exc)
+        planned_file = result.relative_path.as_posix()
+        warnings = _evidence_path_warnings(self, payload)
+        self._write_audit(
+            action=action,
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=[planned_file],
+            authority_warnings=[ARTIFACT_WRITE_AUTHORITY_NOTICE],
+        )
+        return _preview_response(
+            "artifact_evidence_preview",
+            planned_actions=["append evidence metadata preview"],
+            planned_files=[planned_file],
+            artifact=result.artifact.model_dump(mode="json"),
+            path=planned_file,
+            yaml=result.yaml_text(),
+            diff=_diff_text(
+                before["yaml"],
+                result.yaml_text(),
+                fromfile=planned_file,
+                tofile=planned_file,
+            ),
+            warnings=warnings,
+            authority_warning=ARTIFACT_WRITE_AUTHORITY_NOTICE,
+            authority_notice=ARTIFACT_WRITE_AUTHORITY_NOTICE,
+        )
+
+    def _add_artifact_evidence(
+        self,
+        artifact_id: str,
+        payload: dict[str, Any],
+    ) -> ApiResponse:
+        action = "evidence_attach"
+        blocked = self._blocked_confirm(
+            action,
+            payload,
+            authority_warnings=[ARTIFACT_WRITE_AUTHORITY_NOTICE],
+        )
+        if blocked is not None:
+            return blocked
+        try:
+            before = _artifact_snapshot(self, artifact_id)
+            result = self.app.append_evidence_metadata(artifact_id, payload)
+        except DraftWriteServiceError as exc:
+            return self._artifact_error(action, exc)
+        planned_file = result.relative_path.as_posix()
+        validation = self.app.validate_artifact_file(result.relative_path)
+        self._write_audit(
+            action=action,
+            result_status="success",
+            explicit_confirm=True,
+            preview_only=False,
+            planned_files=[planned_file],
+            repo_writes_performed=True,
+            result={
+                "action_performed": True,
+                "validation_performed": True,
+            },
+            authority_warnings=[ARTIFACT_WRITE_AUTHORITY_NOTICE],
+        )
+        return _artifact_action_response(
+            "artifact_evidence",
             result,
             planned_files=[planned_file],
             diff=_diff_text(
@@ -1738,6 +1919,8 @@ def _web_action_kind(action: str) -> WebActionKind:
         "issue_close": WebActionKind.ISSUE_CLOSE,
         "artifact_create": WebActionKind.ARTIFACT_CREATE,
         "artifact_update": WebActionKind.ARTIFACT_UPDATE,
+        "source_attach": WebActionKind.SOURCE_ATTACH,
+        "evidence_attach": WebActionKind.EVIDENCE_ATTACH,
         "github_issue_preview": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_issue_create": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_pr_preview": WebActionKind.FORGE_PR_CREATE,
@@ -1870,6 +2053,28 @@ def _artifact_snapshot(api: ReadOnlySiteApi, artifact_id: str) -> dict[str, Any]
         remediation="Check the artifact id and retry.",
         details={"artifact_id": normalized_id},
     )
+
+
+def _evidence_path_warnings(
+    api: ReadOnlySiteApi,
+    payload: dict[str, Any],
+) -> list[str]:
+    raw_path = str(payload.get("path", "")).strip().replace("\\", "/")
+    if not raw_path or raw_path.lower().startswith("external:"):
+        return []
+    evidence_path = Path(raw_path)
+    resolved = (
+        evidence_path.resolve()
+        if evidence_path.is_absolute()
+        else api.app.context.resolve(evidence_path)
+    )
+    try:
+        resolved.relative_to(api.app.context.repo_root)
+    except ValueError:
+        return [f"evidence path escapes repository: {raw_path}"]
+    if resolved.exists():
+        return []
+    return [f"missing local evidence path: {raw_path}"]
 
 
 def _repo_files_under(repo_root: Path, root: Path) -> list[str]:

@@ -1,0 +1,145 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import I18nText from "../../../components/I18nText.astro";
+import { ARTIFACT_METADATA_LABELS } from "../../../lib/artifactMetadataWorkbench";
+import { PREACCEPTED_ARTIFACT_STATUSES } from "../../../lib/artifactWorkbench";
+import { localized } from "../../../lib/i18n";
+import { artifactById, artifactHref, loadSiteData } from "../../../lib/siteData";
+
+export async function getStaticPaths() {
+  const data = await loadSiteData();
+  return data.artifacts.artifacts.map((artifact) => ({
+    params: { id: artifact.id }
+  }));
+}
+
+const id = Astro.params.id ?? "";
+const data = await loadSiteData();
+const artifact = artifactById(id, data);
+if (!artifact) {
+  throw new Error(`Unknown artifact: ${id}`);
+}
+const canWrite =
+  data.runtime.mode === "live-local" &&
+  PREACCEPTED_ARTIFACT_STATUSES.includes(
+    artifact.status as (typeof PREACCEPTED_ARTIFACT_STATUSES)[number]
+  );
+const sourceKinds = [
+  "paper",
+  "book",
+  "survey",
+  "lecture_note",
+  "website",
+  "internal_note",
+  "other"
+];
+---
+
+<BaseLayout
+  title={localized(`Add source: ${artifact.id}`, `添加来源：${artifact.id}`)}
+  eyebrow={localized("Artifact Workbench", "工件工作台")}
+>
+  <section class="workbench-shell">
+    <article class="panel workbench-main">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker"><I18nText text={localized("Source metadata", "来源元数据")} /></p>
+          <h2><I18nText text={ARTIFACT_METADATA_LABELS.addSource} /></h2>
+        </div>
+        <span class="tag"><I18nText text={localized("Preview first", "先预览")} /></span>
+      </div>
+      <p>
+        <I18nText
+          text={localized(
+            "Source metadata is workflow context until review and promotion.",
+            "来源元数据在审阅和提升前只是工作流上下文。"
+          )}
+        />
+      </p>
+      {
+        canWrite ? (
+          <form
+            class="workbench-form"
+            data-artifact-metadata-form
+            data-action="source"
+            data-artifact-id={artifact.id}
+            data-mode={data.runtime.mode}
+            data-api-base={data.runtime.api_base}
+            data-output="#artifact-source-preview"
+            data-redirect={artifactHref(artifact.id)}
+          >
+            <fieldset class="form-section">
+              <label>
+                <I18nText text={ARTIFACT_METADATA_LABELS.kind} />
+                <select name="kind">
+                  {sourceKinds.map((kind) => <option value={kind}>{kind}</option>)}
+                </select>
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_METADATA_LABELS.title} />
+                <input name="title" required />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_METADATA_LABELS.authors} />
+                <input name="authors" placeholder="Author A, Author B" />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_METADATA_LABELS.year} />
+                <input name="year" type="number" min="1" />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_METADATA_LABELS.notes} />
+                <textarea name="notes" rows="5"></textarea>
+              </label>
+            </fieldset>
+            <fieldset class="form-section secondary">
+              <label>
+                <I18nText text={ARTIFACT_METADATA_LABELS.doi} />
+                <input name="doi" />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_METADATA_LABELS.arxiv} />
+                <input name="arxiv" />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_METADATA_LABELS.url} />
+                <input name="url" type="url" />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_METADATA_LABELS.theoremNumber} />
+                <input name="theoremNumber" />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_METADATA_LABELS.page} />
+                <input name="page" />
+              </label>
+            </fieldset>
+            <div class="preview-toolbar">
+              <button class="preview-button" type="button" data-preview>
+                <I18nText text={ARTIFACT_METADATA_LABELS.preview} />
+              </button>
+              <button class="preview-button" type="submit" data-confirm disabled>
+                <I18nText text={ARTIFACT_METADATA_LABELS.confirm} />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p><I18nText text={localized("Add source metadata in live draft mode only.", "仅实时草稿模式可添加来源元数据。")} /></p>
+        )
+      }
+    </article>
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker"><I18nText text={ARTIFACT_METADATA_LABELS.previewOutput} /></p>
+      <pre
+        class="json-block preview-output"
+        id="artifact-source-preview"
+        data-i18n-en="Preview before writing."
+        data-i18n-zh="写入前先预览。"
+      >写入前先预览。</pre>
+    </article>
+  </section>
+
+  <script>
+    import "../../../lib/artifactMetadataWorkbenchClient";
+  </script>
+</BaseLayout>

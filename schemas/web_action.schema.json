@@ -598,6 +598,7 @@
         "context.build",
         "validate.run",
         "gate.run",
+        "source.attach",
         "evidence.attach",
         "review.packet_create",
         "review.decision_create",

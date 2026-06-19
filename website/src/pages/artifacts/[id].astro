@@ -138,6 +138,12 @@ const relatedIssueItems = relatedIssues.map((issue) => ({
           <a class="button-link secondary" href="/artifacts/create/">
             <I18nText text={localized("New artifact", "新建工件")} />
           </a>
+          <a class="button-link secondary" href={`/artifacts/${encodeURIComponent(artifact.id)}/sources/`}>
+            <I18nText text={localized("Add source", "添加来源")} />
+          </a>
+          <a class="button-link secondary" href={`/artifacts/${encodeURIComponent(artifact.id)}/evidence/`}>
+            <I18nText text={localized("Add evidence", "添加证据")} />
+          </a>
           <a class="button-link secondary" href="/demo/">
             <I18nText text={localized("Review PR path", "审阅 PR 入口")} />
           </a>

@@ -129,6 +129,10 @@ POST /api/artifacts/preview-create
 POST /api/artifacts/create
 POST /api/artifacts/<artifact_id>/preview-update
 POST /api/artifacts/<artifact_id>/update
+POST /api/artifacts/<artifact_id>/preview-source
+POST /api/artifacts/<artifact_id>/source
+POST /api/artifacts/<artifact_id>/preview-evidence
+POST /api/artifacts/<artifact_id>/evidence
 POST /api/context/<issue_id>/preview-build
 POST /api/context/<issue_id>/build
 POST /api/forge/issues/preview
@@ -229,9 +233,38 @@ confirm refusal, refusal such as `accepted_write_forbidden`, and confirmed write
 appends a redacted web-action audit record under
 `.cosheaf/audit/web-actions.jsonl`.
 
-Artifact editor output is draft workflow context only. It does not create proof,
-source metadata, verifier pass, gate pass, human review, accepted status, or
-promotion authority.
+Artifact create/update output is draft workflow context only. It does not
+create proof, source metadata, verifier pass, gate pass, human review, accepted
+status, or promotion authority.
+
+The B2.5.2 source and evidence metadata endpoints are:
+
+```text
+POST /api/artifacts/<artifact_id>/preview-source
+POST /api/artifacts/<artifact_id>/source
+POST /api/artifacts/<artifact_id>/preview-evidence
+POST /api/artifacts/<artifact_id>/evidence
+```
+
+Source metadata requests accept `kind`, `title`, `authors`, `year`, `doi`,
+`arxiv`, `url`, `theorem_number`, `page`, and `notes`. Evidence metadata
+requests accept `kind`, `path`, and `summary`. Confirmed source and evidence
+requests must include `confirm: true`.
+
+Preview-source and preview-evidence return generated YAML and a unified diff
+without writing artifact YAML. Evidence previews also warn when a non-external
+local evidence path is missing or escapes the repository. Confirmed writes
+append to the target artifact's `sources` or `evidence` list, validate the
+artifact file after the write, and roll back the file on validation failure.
+Writes are limited to writable draft/pre-accepted artifacts; accepted,
+terminal, readonly-root, and accepted-path targets are refused and audited.
+Source writes audit as `source.attach`; evidence writes audit as
+`evidence.attach`.
+
+Attached source and evidence metadata are workflow context. They do not create
+proof, verifier pass, gate pass, human review, accepted status, or promotion
+authority; public accepted promotion still requires policy checks, gates, and
+human review.
 
 ## Context Build Workbench Actions
 
