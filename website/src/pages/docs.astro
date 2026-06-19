@@ -2,16 +2,16 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 
 const concepts = [
-  ["Repository source", "YAML and JSON sidecars remain the source of truth."],
-  ["Static export", "The website consumes deterministic sanitized JSON."],
-  ["Artifacts", "Cards expose safe metadata, status, dependencies, and risk flags."],
-  ["Issues", "Issue records organize work; they do not accept knowledge."],
-  ["Context packs", "Context summaries help review but are not authority."],
-  ["Gates", "Gate output can block workflow but does not prove truth."]
+  ["Repository source / 仓库来源", "YAML and JSON sidecars remain the source of truth. / YAML 和 JSON sidecar 仍是事实来源。"],
+  ["Static export / 静态导出", "The website consumes deterministic sanitized JSON. / 网页消费确定性的脱敏 JSON。"],
+  ["Artifacts / 工件", "Cards expose safe metadata, status, dependencies, and risk flags. / 卡片展示安全元数据、状态、依赖和风险标记。"],
+  ["Issues / 议题", "Issue records organize work; they do not accept knowledge. / 议题记录用于组织工作，不接受知识。"],
+  ["Context packs / 上下文包", "Context summaries help review but are not authority. / 上下文摘要帮助审阅，但不是权威。"],
+  ["Gates / 门禁", "Gate output can block workflow but does not prove truth. / 门禁输出可以阻断工作流，但不能证明真理。"]
 ];
 ---
 
-<BaseLayout title="Docs / Concepts" eyebrow="Concept map">
+<BaseLayout title="Docs / Concepts / 文档与概念" eyebrow="Concept map / 概念图">
   <section class="card-grid">
     {
       concepts.map(([title, body]) => (

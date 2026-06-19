@@ -15,34 +15,36 @@ export async function getStaticPaths() {
   }));
 }
 
+const data = await loadSiteData();
 const issueId = Astro.params.issueId ?? "";
-const pack = contextPackForIssue(issueId);
-const issue = issueById(issueId);
+const pack = contextPackForIssue(issueId, data);
+const issue = issueById(issueId, data);
 if (!pack || !issue) {
   throw new Error(`Unknown context pack: ${issueId}`);
 }
 ---
 
-<BaseLayout title={`Context: ${issue.title}`} eyebrow="Context pack">
+<BaseLayout title={`Context / 上下文: ${issue.title}`} eyebrow="Context pack / 上下文包">
   <section class="split-layout">
     <article class="panel">
-      <p class="section-kicker">Issue context</p>
+      <p class="section-kicker">Issue context / 议题上下文</p>
       <h2>{pack.issue_id}</h2>
-      <p>{pack.card_count} cards selected for the demo context pack.</p>
+      <p>{pack.card_count} cards selected for the demo context pack. / 已为演示上下文包选择 {pack.card_count} 张卡片。</p>
       <div class="tag-row">
-        <span class="tag">public only: {pack.public_only ? "yes" : "no"}</span>
-        <span class="tag">private context: {pack.private_context_included ? "yes" : "no"}</span>
+        <span class="tag">public only / 仅公开: {pack.public_only ? "yes / 是" : "no / 否"}</span>
+        <span class="tag">private context / 私有上下文: {pack.private_context_included ? "yes / 是" : "no / 否"}</span>
         <span class="tag">
-          demo private context: {pack.demo_private_context_included ? "yes" : "no"}
+          demo private context / 演示私有上下文: {pack.demo_private_context_included ? "yes / 是" : "no / 否"}
         </span>
       </div>
     </article>
     <article class="panel">
-      <p class="section-kicker">Authority</p>
-      <h2>Context is not acceptance</h2>
+      <p class="section-kicker">Authority / 权限</p>
+      <h2>Context is not acceptance / 上下文不是接受</h2>
       <p>
         This page shows what a reviewer should read. It does not grant human review,
         verifier pass, gate pass, accepted status, or promotion authority.
+        / 此页面展示审阅者应阅读的内容；它不授予人工审阅、验证器通过、门禁通过、accepted 状态或提升权限。
       </p>
     </article>
   </section>
@@ -50,11 +52,11 @@ if (!pack || !issue) {
   <section class="card-grid">
     {
       pack.related_artifacts.map((id) => {
-        const artifact = artifactById(id);
+        const artifact = artifactById(id, data);
         return (
           <article class="info-card">
             <h2><a href={artifactHref(id)}>{artifact?.title ?? id}</a></h2>
-            <p>{artifact?.summary ?? "Artifact metadata was not exported."}</p>
+            <p>{artifact?.summary ?? "Artifact metadata was not exported. / 工件元数据未导出。"}</p>
           </article>
         );
       })

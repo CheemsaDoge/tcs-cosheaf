@@ -227,10 +227,34 @@ cd website && npm test
 cd website && npm run build
 ```
 
-The scaffold has no backend, no repository writes, no GitHub token handling, no
-runtime private repository fetch, and no hosted provider call. The rendered
-site is a human interface over exported JSON only; repository files remain the
-source of truth.
+The scaffold supports three frontend runtime modes:
+
+- `static-demo`: use the committed fixture JSON only.
+- `live-local`: read live repository data from the localhost server.
+- `hosted-workspace`: reserved for future hosted deployments.
+
+`auto` is the default. In Astro development it chooses `live-local`; in static
+builds it chooses `static-demo`. Override the mode with
+`PUBLIC_COSHEAF_RUNTIME_MODE` or `COSHEAF_RUNTIME_MODE`, and override the
+backend URL with `PUBLIC_COSHEAF_API_BASE` or `COSHEAF_API_BASE`. The default
+backend URL is `http://127.0.0.1:8765`.
+
+The frontend live client reads only GET endpoints. It uses an all-or-nothing
+fallback: if any live endpoint is unavailable, the page renders the committed
+fixtures with a visible fallback banner instead of mixing live and fixture
+data. The rendered banner and primary navigation are bilingual in English and
+Simplified Chinese. Repository artifact and issue content is shown as recorded
+in the repository and is not machine-translated by the frontend.
+
+The static build inlines CSS into the generated HTML so `website/dist` pages
+keep the styled UI even when an operator opens an HTML file directly from disk.
+Serving the directory through an HTTP static server or Astro preview remains
+the recommended way to navigate between routes.
+
+The scaffold has no repository writes, no GitHub token handling, no runtime
+private repository fetch from the browser, and no hosted provider call. The
+rendered site is a human interface over exported or live read-only JSON only;
+repository files remain the source of truth.
 
 The static output directory is `website/dist`. The separate `Website build`
 GitHub Actions workflow runs `npm ci`, `npm test`, and `npm run build` under

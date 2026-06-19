@@ -17,13 +17,14 @@ export async function getStaticPaths() {
 }
 
 const id = Astro.params.id ?? "";
-const issue = issueById(id);
+const data = await loadSiteData();
+const issue = issueById(id, data);
 if (!issue) {
   throw new Error(`Unknown issue: ${id}`);
 }
 ---
 
-<BaseLayout title={issue.title} eyebrow="Issue detail">
+<BaseLayout title={issue.title} eyebrow="Issue detail / 议题详情">
   <section class="split-layout">
     <article class="panel">
       <p class="section-kicker">{issue.type}</p>
@@ -31,26 +32,26 @@ if (!issue) {
       <p>{issue.summary}</p>
       <div class="tag-row">
         <span class="badge warning" title={statusExplanation(issue.status)}>{issue.status}</span>
-        <span class="tag">scope: {issue.scope}</span>
-        <span class="tag">severity: {issue.severity}</span>
+        <span class="tag">scope / 范围: {issue.scope}</span>
+        <span class="tag">severity / 严重度: {issue.severity}</span>
       </div>
     </article>
     <article class="panel">
-      <p class="section-kicker">Context</p>
-      <h2>Review packet preview</h2>
-      <p>This static context view is display context only and performs no repository writes.</p>
-      <a class="button-link" href={contextHref(issue.id)}>Open context pack</a>
+      <p class="section-kicker">Context / 上下文</p>
+      <h2>Review packet preview / 审阅包预览</h2>
+      <p>This static context view is display context only and performs no repository writes. / 此静态上下文视图仅作展示，不执行仓库写入。</p>
+      <a class="button-link" href={contextHref(issue.id)}>Open context pack / 打开上下文包</a>
     </article>
   </section>
 
   <section class="table-panel compact">
     <div class="table-head graph-table">
-      <span>Related artifact</span>
-      <span>Status</span>
+      <span>Related artifact / 相关工件</span>
+      <span>Status / 状态</span>
     </div>
     {
       issue.related_artifacts.map((id) => {
-        const artifact = artifactById(id);
+        const artifact = artifactById(id, data);
         return (
           <div class="table-row graph-table">
             <a class="row-title" href={artifactHref(id)}>{artifact?.title ?? id}</a>

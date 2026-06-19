@@ -110,6 +110,23 @@
   repository YAML/JSON source files; it does not create accepted knowledge,
   human review, verifier pass, gate pass, promotion authority, token storage,
   branch push, webhook handling, or a production-readiness claim.
+- Website frontend runtime selection is implemented under `website/src/lib`.
+  `runtimeMode.ts` defines the public frontend modes `static-demo`,
+  `live-local`, and `hosted-workspace`, with `auto` resolving to `live-local`
+  during Astro development and `static-demo` during static builds.
+  `apiClient.ts` reads the live localhost backend through GET-only endpoints
+  when live mode is selected, maps the payloads into the existing `SiteData`
+  shape, and falls back all-at-once to committed fixtures when any live read is
+  unavailable. `loadSiteData(options)` is the frontend orchestration entry
+  point; callers may pass an injected fetcher and timeout for tests. Runtime
+  selection is configured by `PUBLIC_COSHEAF_RUNTIME_MODE` or
+  `COSHEAF_RUNTIME_MODE`, and the backend URL by `PUBLIC_COSHEAF_API_BASE` or
+  `COSHEAF_API_BASE`, defaulting to `http://127.0.0.1:8765`. The rendered
+  website displays a bilingual runtime banner and bilingual primary navigation.
+  Static builds inline website stylesheets so `website/dist/*.html` keeps the
+  styled UI when opened directly as local files. The frontend client does not
+  call write endpoints, store browser credentials, call GitHub, create human
+  review, change gate/verifier state, accept artifacts, or promote knowledge.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI

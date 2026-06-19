@@ -15,37 +15,37 @@ const types = uniqueSorted(artifacts.map((artifact) => artifact.type));
 const domains = uniqueSorted(artifacts.flatMap((artifact) => artifact.domain));
 ---
 
-<BaseLayout title="Artifacts" eyebrow="Safe artifact cards">
-  <section class="filter-panel" aria-label="Artifact filters">
+<BaseLayout title="Artifacts / 工件" eyebrow="Safe artifact cards / 安全工件卡片">
+  <section class="filter-panel" aria-label="Artifact filters / 工件筛选">
     <label>
-      Status
+      Status / 状态
       <select id="status-filter">
-        <option value="">All</option>
+        <option value="">All / 全部</option>
         {statuses.map((status) => <option value={status}>{status}</option>)}
       </select>
     </label>
     <label>
-      Type
+      Type / 类型
       <select id="type-filter">
-        <option value="">All</option>
+        <option value="">All / 全部</option>
         {types.map((type) => <option value={type}>{type}</option>)}
       </select>
     </label>
     <label>
-      Domain
+      Domain / 领域
       <select id="domain-filter">
-        <option value="">All</option>
+        <option value="">All / 全部</option>
         {domains.map((domain) => <option value={domain}>{domain}</option>)}
       </select>
     </label>
   </section>
 
-  <section class="table-panel" aria-label="Artifact list">
+  <section class="table-panel" aria-label="Artifact list / 工件列表">
     <div class="table-head artifacts">
-      <span>Artifact</span>
-      <span>Type</span>
-      <span>Status</span>
-      <span>Verifier</span>
+      <span>Artifact / 工件</span>
+      <span>Type / 类型</span>
+      <span>Status / 状态</span>
+      <span>Verifier / 验证器</span>
     </div>
     {
       artifacts.length > 0 ? (
@@ -78,12 +78,12 @@ const domains = uniqueSorted(artifacts.flatMap((artifact) => artifact.domain));
         ))
       ) : (
         <div class="table-row empty-row">
-          <span>No artifact cards were exported.</span>
+          <span>No artifact cards were exported. / 没有导出工件卡片。</span>
         </div>
       )
     }
     <p class="empty-state" data-filter-empty hidden>
-      No artifacts match the current filters.
+      No artifacts match the current filters. / 没有工件匹配当前筛选条件。
     </p>
   </section>
 
