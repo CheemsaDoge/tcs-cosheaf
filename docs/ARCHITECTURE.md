@@ -410,6 +410,14 @@ previews/actions, and shared `ErrorResult` serialization. The DTOs reuse the
 existing agent-access model base and keep accepted-write and human-review
 authority unavailable through app requests.
 
+`cosheaf.web_actions` adds the B2 Workbench action DTO contract. It defines
+preview and confirm requests, action results, action audit-entry shape,
+machine-readable web-action errors, and repository/git/GitHub/review/
+promotion plan DTOs. These models are re-exported through `cosheaf.app.models`
+and serialized by `schemas/web_action.schema.json`. They do not execute server
+endpoints, write audit logs, write repository files, create human review, or
+promote artifacts by themselves.
+
 ### Server/API Layer
 
 The server/API layer is the controlled bridge between browser-originated human

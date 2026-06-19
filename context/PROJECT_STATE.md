@@ -3,6 +3,38 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.1.1 typed WebAction DTOs - 2026-06-19
+
+Issue #540 adds the typed WebAction DTO foundation on branch
+`web-action-dtos`.
+
+The current surface includes:
+
+- `cosheaf.web_actions.WebActionPreviewRequest`;
+- `cosheaf.web_actions.WebActionConfirmRequest`;
+- `cosheaf.web_actions.WebActionResult`;
+- `cosheaf.web_actions.WebActionAuditEntry`;
+- `cosheaf.web_actions.WebActionError`;
+- `cosheaf.web_actions.RepoWritePlan`;
+- `cosheaf.web_actions.GitWritePlan`;
+- `cosheaf.web_actions.GitHubWritePlan`;
+- `cosheaf.web_actions.ReviewDecisionPlan`;
+- `cosheaf.web_actions.PromotionPlan`;
+- `WebActionKind` and `WebActionMode` enums; and
+- `schemas/web_action.schema.json`.
+
+The DTOs are strict Pydantic v2 models using the existing
+`AgentAccessModel` base. They serialize deterministic `schema_version: 1`
+payloads, reject unknown web actions, keep preview-only results from claiming
+repository/git/GitHub/network side effects, and preserve validation/gate
+summaries, authority warnings, planned files, written files, audit paths, and
+machine-readable errors.
+
+This task does not add server endpoints, audit-log writing, repository writes,
+Git writes, GitHub writes, human-review creation, accepted/refuted/obsolete
+promotion, token handling, hosted auth, or frontend UI changes. Runtime action
+execution remains future B2 work.
+
 ## Longplan B2.0.1 Human Governance Workbench contract - 2026-06-19
 
 Issue #538 defines the B2 website product contract on branch

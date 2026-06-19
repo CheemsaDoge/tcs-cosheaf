@@ -72,6 +72,7 @@ SCHEMA_FILES = [
     "schemas/orchestrator_run.schema.json",
     "schemas/worker_bundle_v2.schema.json",
     "schemas/formal_library.schema.json",
+    "schemas/web_action.schema.json",
     "schemas/agent_access/context_build_request.schema.json",
     "schemas/agent_access/context_build_result.schema.json",
     "schemas/agent_access/create_task_request.schema.json",
