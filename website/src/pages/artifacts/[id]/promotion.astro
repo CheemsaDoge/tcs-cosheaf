@@ -1,0 +1,164 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import I18nText from "../../../components/I18nText.astro";
+import { localized } from "../../../lib/i18n";
+import {
+  PROMOTION_LABELS,
+  PROMOTION_TARGET_STATES
+} from "../../../lib/promotionWorkbench";
+import {
+  artifactById,
+  dependentsFor,
+  dependenciesFor,
+  loadSiteData,
+  statusTone
+} from "../../../lib/siteData";
+
+export async function getStaticPaths() {
+  const data = await loadSiteData();
+  return data.artifacts.artifacts.map((artifact) => ({
+    params: { id: artifact.id }
+  }));
+}
+
+const id = Astro.params.id ?? "";
+const data = await loadSiteData();
+const artifact = artifactById(id, data);
+if (!artifact) {
+  throw new Error(`Unknown artifact: ${id}`);
+}
+const dependencies = dependenciesFor(artifact.id, data.graph.edges);
+const dependents = dependentsFor(artifact.id, data.graph.edges);
+const blockers = [
+  ...(artifact.status === "raw" || artifact.status === "draft"
+    ? [localized("Artifact is still raw or draft.", "工件仍处于 raw 或 draft。")]
+    : []),
+  ...(artifact.review_state !== "human_reviewed" &&
+  artifact.review_state !== "accepted"
+    ? [localized("Human review is not complete.", "尚未完成人工审阅。")]
+    : []),
+  ...(data.gates.verdict !== "pass"
+    ? [localized("Latest gate verdict is not pass.", "最新准入结果不是 pass。")]
+    : [])
+];
+const canPreviewPromotion = data.runtime.mode === "live-local";
+---
+
+<BaseLayout
+  title={localized(`Promotion: ${artifact.id}`, `晋升：${artifact.id}`)}
+  eyebrow={localized("Promotion Workbench", "晋升工作台")}
+>
+  <section class="workbench-shell">
+    <article class="panel workbench-main">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">
+            <I18nText text={PROMOTION_LABELS.promotionReadiness} />
+          </p>
+          <h2><I18nText text={PROMOTION_LABELS.checkPromotion} /></h2>
+        </div>
+        <span class:list={["badge", blockers.length ? "warning" : "good"]}>
+          <I18nText
+            text={blockers.length ? PROMOTION_LABELS.blocked : PROMOTION_LABELS.ready}
+          />
+        </span>
+      </div>
+      <p class="preview-warning">
+        <I18nText text={PROMOTION_LABELS.authorityNotice} />
+      </p>
+
+      <div class="promotion-status-strip">
+        <span class:list={["badge", statusTone(artifact.status)]}>
+          <I18nText text={PROMOTION_LABELS.currentStatus} />: {artifact.status}
+        </span>
+        <span class="tag">
+          <I18nText text={PROMOTION_LABELS.reviewState} />: {artifact.review_state}
+        </span>
+        <span class:list={["badge", statusTone(data.gates.verdict)]}>
+          <I18nText text={PROMOTION_LABELS.gateChecks} />: {data.gates.verdict}
+        </span>
+      </div>
+
+      <div class="promotion-groups">
+        <details class="workbench-details" open>
+          <summary><I18nText text={PROMOTION_LABELS.dependencies} /></summary>
+          <p>{dependencies.length ? dependencies.join(", ") : "none"}</p>
+        </details>
+        <details class="workbench-details" open>
+          <summary><I18nText text={PROMOTION_LABELS.sourceMetadata} /></summary>
+          <p>{artifact.sources.length ? artifact.sources.join(", ") : "none"}</p>
+        </details>
+        <details class="workbench-details" open>
+          <summary><I18nText text={PROMOTION_LABELS.verifierChecks} /></summary>
+          <p>{artifact.verifier_state}</p>
+        </details>
+        <details class="workbench-details" open>
+          <summary><I18nText text={PROMOTION_LABELS.impact} /></summary>
+          <p>{dependents.length ? dependents.join(", ") : "none"}</p>
+        </details>
+        <details class="workbench-details" open>
+          <summary><I18nText text={PROMOTION_LABELS.missingRequirements} /></summary>
+          {
+            blockers.length ? (
+              <ul class="reason-list">
+                {blockers.map((blocker) => (
+                  <li><I18nText text={blocker} /></li>
+                ))}
+              </ul>
+            ) : (
+              <p><I18nText text={localized("No static blockers shown.", "静态摘要未显示阻断项。")} /></p>
+            )
+          }
+        </details>
+      </div>
+
+      {
+        canPreviewPromotion ? (
+          <form
+            class="workbench-form"
+            data-promotion-workbench-form
+            data-mode={data.runtime.mode}
+            data-api-base={data.runtime.api_base}
+            data-artifact-id={artifact.id}
+            data-output="#promotion-readiness-output"
+          >
+            <input name="artifactId" value={artifact.id} type="hidden" />
+            <label>
+              <I18nText text={PROMOTION_LABELS.targetState} />
+              <select name="targetState">
+                {PROMOTION_TARGET_STATES.map((target) => (
+                  <option value={target}>{target}</option>
+                ))}
+              </select>
+            </label>
+            <div class="preview-toolbar">
+              <button class="preview-button" type="button" data-preview>
+                <I18nText text={PROMOTION_LABELS.preview} />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p>
+            <I18nText text={PROMOTION_LABELS.liveLocalRequired} />
+          </p>
+        )
+      }
+    </article>
+
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker">
+        <I18nText text={PROMOTION_LABELS.readinessJson} />
+      </p>
+      <pre
+        class="json-block preview-output"
+        id="promotion-readiness-output"
+        data-i18n-en="Live local mode loads the fresh promotion readiness report here."
+        data-i18n-zh="实时本地模式会在这里加载最新晋升检查报告。"
+      >实时本地模式会在这里加载最新晋升检查报告。</pre>
+    </article>
+  </section>
+
+  <script>
+    import "../../../lib/promotionWorkbenchClient";
+  </script>
+</BaseLayout>

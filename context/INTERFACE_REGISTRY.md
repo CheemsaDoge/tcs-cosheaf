@@ -85,6 +85,7 @@
   server does not configure one. The HTTP surface is localhost JSON endpoints:
   `GET /api/health`, `/api/workspace`, `/api/workspace/live`, `/api/status`,
   `/api/artifacts`, `/api/artifacts/live`, `/api/artifacts/<artifact_id>`,
+  `/api/artifacts/<artifact_id>/promotion-readiness`,
   `/api/issues`, `/api/issues/live`, `/api/issues/<issue_id>`, `/api/graph`,
   `/api/gates`, `/api/gates/latest`, `/api/context/<issue_id>`,
   `/api/context/<issue_id>/latest`, and `/api/audit/recent`, plus preview-only
@@ -106,7 +107,9 @@
   `POST /api/reviews/packets/preview` and
   `/api/reviews/packets/create`, plus human review decision workbench actions
   `POST /api/reviews/decisions/preview` and
-  `/api/reviews/decisions/create`, plus validate/gate workbench actions
+  `/api/reviews/decisions/create`, plus promotion readiness workbench actions
+  `POST /api/artifacts/<artifact_id>/promotion/preview`, plus
+  validate/gate workbench actions
   `POST /api/validate/run` and `POST /api/gate/run`, plus
   authenticated create `POST /api/forge/issues/create` and
   `/api/forge/prs/create`. The server calls `cosheaf.app.open_app` and app
@@ -150,6 +153,14 @@
   the target artifact review state, refuse AI/Codex/agent/provider/model or
   verifier reviewer identities, and never grant accepted status, proof,
   verifier pass, gate pass, accepted-artifact writes, or promotion authority.
+  Promotion readiness workbench endpoints expose advisory readiness reports
+  for one artifact and dry-run promotion previews through
+  `CosheafApp.promotion_readiness`; they evaluate validation, gatekeeper,
+  review state, dependencies, source metadata, and verifier evidence, report
+  skipped verifier output as skipped rather than pass, may write ignored gate
+  reports under `.cosheaf/reports/`, audit previews as `promotion.preview`,
+  and never change artifact status, write accepted/refuted/obsolete artifacts,
+  mutate verifier evidence, or grant promotion authority.
   Validate/gate workbench endpoints call
   `CosheafApp.validate_repository` and `CosheafApp.run_gate`, write redacted
   audit entries, and expose validation plus gate pass/fail/skipped summaries;
@@ -190,9 +201,10 @@
   preview-build/build endpoints with preview-before-confirm, and may call
   localhost validate/gate run endpoints from the gate workbench, and may call
   localhost review decision preview/create endpoints with explicit human
-  confirmation, all with no browser credentials. The frontend does not call
-  GitHub directly, store browser credentials, accept artifacts, change
-  gate/verifier state, or promote knowledge.
+  confirmation, and may call localhost promotion readiness and promotion
+  preview endpoints for advisory checks, all with no browser credentials. The
+  frontend does not call GitHub directly, store browser credentials, accept
+  artifacts, change gate/verifier state, or promote knowledge.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI
