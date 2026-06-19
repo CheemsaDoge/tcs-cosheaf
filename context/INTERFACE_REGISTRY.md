@@ -8,8 +8,9 @@
   defines `CosheafApp` and `open_app`. `CosheafApp` exposes use-case methods
   for workspace info, repository validation, artifact-file validation,
   gatekeeper runs, context build/show, memory cards/search, controlled draft
-  artifact writes, controlled source-note writes, controlled review-request
-  writes, WorkerBundle validate/submit/reduce, review-request generation from
+  artifact create/update writes and previews, controlled source-note writes,
+  controlled review-request writes, WorkerBundle validate/submit/reduce,
+  review-request generation from
   WorkerBundle, repository-local issue preview/create/show/list/update/close
   plus update/close previews,
   read-only promotion-readiness reports, forge dry-run previews, confirmed
@@ -92,7 +93,10 @@
   local issue workbench actions `POST /api/issues/preview-create`,
   `/api/issues/create`, `/api/issues/<issue_id>/preview-update`,
   `/api/issues/<issue_id>/update`, `/api/issues/<issue_id>/preview-close`, and
-  `/api/issues/<issue_id>/close`, plus context build workbench actions
+  `/api/issues/<issue_id>/close`, plus draft artifact workbench actions
+  `POST /api/artifacts/preview-create`, `/api/artifacts/create`,
+  `/api/artifacts/<artifact_id>/preview-update`, and
+  `/api/artifacts/<artifact_id>/update`, plus context build workbench actions
   `POST /api/context/<issue_id>/preview-build` and
   `/api/context/<issue_id>/build`, plus validate/gate workbench actions
   `POST /api/validate/run` and `POST /api/gate/run`, plus
@@ -108,7 +112,13 @@
   issue create/update/close actions through `cosheaf.app`, write redacted
   audit entries under `.cosheaf/audit/web-actions.jsonl`, and never change
   accepted/refuted artifact status, verifier output, gate state, human review,
-  or promotion state. Context build workbench endpoints preview planned
+  or promotion state. Draft artifact workbench endpoints preview and confirm
+  draft/pre-accepted artifact create/update actions through `cosheaf.app`, write
+  redacted audit entries under `.cosheaf/audit/web-actions.jsonl`, validate
+  confirmed writes, refuse direct accepted/refuted/obsolete/superseded writes,
+  refuse readonly KB roots, and never grant proof, source metadata, verifier
+  pass, gate pass, human review, accepted status, or promotion authority.
+  Context build workbench endpoints preview planned
   `context/TASKS/<issue_id>/` files and, only after `confirm: true`, call
   `CosheafApp.build_context` to write ignored runtime context-pack files with
   redacted audit entries. Context packs are retrieval guidance only and do not

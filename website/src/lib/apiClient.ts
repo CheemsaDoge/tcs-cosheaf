@@ -166,9 +166,13 @@ function artifactCard(artifact: Record<string, unknown>): ArtifactCard {
     status: text(artifact.status, "draft"),
     root_scope: text(artifact.kb_root, "workspace"),
     summary: text(artifact.summary, text(artifact.statement, "")),
+    statement:
+      typeof artifact.statement === "string" ? artifact.statement : undefined,
     domain: stringArray(artifact.domain),
+    authors: stringArray(artifact.authors),
     tags: stringArray(artifact.tags),
     depends_on: stringArray(artifact.depends_on),
+    supersedes: stringArray(artifact.supersedes),
     demo_fixture: false,
     verifier_state: "not_run",
     review_state: text(asRecord(artifact.review).state, "requested"),

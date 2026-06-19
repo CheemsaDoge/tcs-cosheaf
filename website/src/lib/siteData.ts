@@ -119,9 +119,12 @@ export interface ArtifactCard {
   status: string;
   root_scope: string;
   summary: string;
+  statement?: string;
   domain: string[];
+  authors: string[];
   tags: string[];
   depends_on: string[];
+  supersedes: string[];
   demo_fixture: boolean;
   verifier_state: string;
   review_state: string;

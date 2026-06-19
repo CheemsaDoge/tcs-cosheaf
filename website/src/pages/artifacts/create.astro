@@ -1,0 +1,134 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import I18nText from "../../components/I18nText.astro";
+import { localized } from "../../lib/i18n";
+import {
+  ARTIFACT_WORKBENCH_LABELS,
+  PREACCEPTED_ARTIFACT_STATUSES
+} from "../../lib/artifactWorkbench";
+import { loadSiteData } from "../../lib/siteData";
+
+const data = await loadSiteData();
+const canWriteArtifacts = data.runtime.mode === "live-local";
+const artifactTypes = [
+  "definition",
+  "claim",
+  "theorem",
+  "conjecture",
+  "proof",
+  "proof_attempt",
+  "construction",
+  "algorithm",
+  "reduction",
+  "counterexample",
+  "experiment"
+];
+---
+
+<BaseLayout
+  title={ARTIFACT_WORKBENCH_LABELS.createArtifact}
+  eyebrow={localized("Artifact Workbench", "工件工作台")}
+>
+  <section class="workbench-shell">
+    <article class="panel workbench-main">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker"><I18nText text={localized("Draft only", "仅草稿")} /></p>
+          <h2><I18nText text={localized("Create artifact", "新建工件")} /></h2>
+        </div>
+        <span class="tag"><I18nText text={localized("Preview first", "先预览")} /></span>
+      </div>
+      {
+        canWriteArtifacts ? (
+          <form
+            class="workbench-form"
+            data-artifact-workbench-form
+            data-action="create"
+            data-mode={data.runtime.mode}
+            data-api-base={data.runtime.api_base}
+            data-output="#artifact-create-preview"
+          >
+            <fieldset class="form-section">
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.artifactId} />
+                <input name="artifactId" required placeholder="claim.example" />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.artifactType} />
+                <select name="artifactType">
+                  {artifactTypes.map((type) => <option value={type}>{type}</option>)}
+                </select>
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.status} />
+                <select name="status">
+                  {PREACCEPTED_ARTIFACT_STATUSES.map((status) => (
+                    <option value={status} selected={status === "draft"}>{status}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.title} />
+                <input name="title" required />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.domain} />
+                <input name="domain" required placeholder="graph theory, complexity" />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.statement} />
+                <textarea name="statement" rows="8" required></textarea>
+              </label>
+            </fieldset>
+            <fieldset class="form-section secondary">
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.authors} />
+                <input name="authors" placeholder="human reviewer" />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.tags} />
+                <input name="tags" placeholder="graph, draft" />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.dependsOn} />
+                <input name="dependsOn" list="artifact-id-options" />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.supersedes} />
+                <input name="supersedes" list="artifact-id-options" />
+              </label>
+            </fieldset>
+            <datalist id="artifact-id-options">
+              {data.artifacts.artifacts.map((artifact) => (
+                <option value={artifact.id}>{artifact.title}</option>
+              ))}
+            </datalist>
+            <div class="preview-toolbar">
+              <button class="preview-button" type="button" data-preview>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.preview} />
+              </button>
+              <button class="preview-button" type="submit" data-confirm disabled>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.confirm} />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p><I18nText text={localized("Create artifacts in live mode only.", "仅实时模式可新建工件。")} /></p>
+        )
+      }
+    </article>
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker"><I18nText text={ARTIFACT_WORKBENCH_LABELS.previewDiff} /></p>
+      <pre
+        class="json-block preview-output"
+        id="artifact-create-preview"
+        data-i18n-en="Preview before writing."
+        data-i18n-zh="写入前先预览。"
+      >写入前先预览。</pre>
+    </article>
+  </section>
+
+  <script>
+    import "../../lib/artifactWorkbenchClient";
+  </script>
+</BaseLayout>

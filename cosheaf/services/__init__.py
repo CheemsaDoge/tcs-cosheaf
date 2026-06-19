@@ -43,7 +43,7 @@ from cosheaf.config.workspace import KbRootConfig
 from cosheaf.core.artifact import BaseArtifact, FailureLogEntry, SourceMetadata
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.paths import lifecycle_artifact_path, normalize_repo_path
-from cosheaf.core.status import ArtifactStatus, ArtifactType
+from cosheaf.core.status import ArtifactStatus, ArtifactType, is_preaccepted_status
 from cosheaf.gates.gatekeeper import (
     GatekeeperRunResult,
     ValidationReport,
@@ -68,7 +68,7 @@ from cosheaf.services.models import (
 )
 from cosheaf.storage.loader import LoadedRecord, LoadError, ReviewRecord, load_artifacts
 from cosheaf.storage.repo import RepoContext
-from cosheaf.storage.writer import write_yaml_deterministic
+from cosheaf.storage.writer import dump_yaml_deterministic, write_yaml_deterministic
 
 
 @dataclass(frozen=True)
@@ -97,6 +97,10 @@ class ArtifactWriteResult:
 
     artifact: BaseArtifact
     relative_path: Path
+
+    def yaml_text(self) -> str:
+        """Return the deterministic YAML for this artifact."""
+        return dump_yaml_deterministic(self.artifact)
 
 
 @dataclass(frozen=True)
@@ -508,6 +512,7 @@ class DraftWriteService:
         depends_on: Sequence[str],
         supersedes: Sequence[str],
         created_at: str | None = None,
+        dry_run: bool = False,
     ) -> ArtifactWriteResult:
         """Create a deterministic draft/pre-accepted artifact YAML record."""
         if not domain:
@@ -524,6 +529,15 @@ class DraftWriteService:
                 remediation=(
                     "Create a draft or pre-accepted artifact first, then use the "
                     "explicit promotion workflow after review and gates pass."
+                ),
+            )
+        if not is_preaccepted_status(status):
+            raise DraftWriteServiceError(
+                "web draft artifact writes cannot target terminal statuses",
+                code="terminal_status_forbidden",
+                remediation=(
+                    "Create or edit draft/pre-accepted artifacts only. Refuted, "
+                    "obsolete, and superseded states require lifecycle workflows."
                 ),
             )
 
@@ -590,16 +604,136 @@ class DraftWriteService:
                 remediation="Fix the draft artifact fields and retry.",
             ) from exc
 
+        result = ArtifactWriteResult(artifact=artifact, relative_path=relative_path)
+        if dry_run:
+            return result
+
         write_yaml_deterministic(target_path, artifact)
         report = validate_artifact_file(self.context, relative_path)
         if report.ok:
-            return ArtifactWriteResult(artifact=artifact, relative_path=relative_path)
+            return result
 
         target_path.unlink(missing_ok=True)
         raise DraftWriteServiceError(
             _format_report_failures(report),
             code="artifact_file_validation_failed",
             remediation="Fix validation failures before writing the draft artifact.",
+        )
+
+    def update_artifact(
+        self,
+        artifact_id: str,
+        *,
+        artifact_type: ArtifactType,
+        title: str,
+        domain: Sequence[str],
+        status: ArtifactStatus,
+        statement: str,
+        authors: Sequence[str],
+        tags: Sequence[str],
+        depends_on: Sequence[str],
+        supersedes: Sequence[str],
+        dry_run: bool = False,
+    ) -> ArtifactWriteResult:
+        """Update editable fields on a draft/pre-accepted artifact in place."""
+        if not domain:
+            raise DraftWriteServiceError(
+                "at least one domain value is required",
+                code="missing_required_domain",
+                remediation="Provide at least one domain for the draft artifact.",
+            )
+        if not is_preaccepted_status(status):
+            raise DraftWriteServiceError(
+                "web artifact updates cannot target accepted or terminal statuses",
+                code="accepted_write_forbidden"
+                if status is ArtifactStatus.ACCEPTED
+                else "terminal_status_forbidden",
+                remediation=(
+                    "Use draft/pre-accepted status here. Accepted and terminal "
+                    "states require review, gates, and lifecycle workflows."
+                ),
+            )
+
+        loaded = _find_unique_artifact(self.context, artifact_id)
+        if loaded.kb_root_readonly:
+            raise DraftWriteServiceError(
+                f"readonly KB root cannot be modified: {loaded.kb_root_name}",
+                code="readonly_kb_root",
+                remediation="Choose an artifact in a writable private KB root.",
+                details={
+                    "kb_root": loaded.kb_root_name or "",
+                    "path": loaded.source_path.as_posix(),
+                },
+            )
+        _reject_accepted_path(loaded.source_path)
+        _ensure_target_writable(self.context, loaded.source_path)
+        artifact = loaded.record
+        if not isinstance(artifact, BaseArtifact):
+            raise AssertionError("unreachable non-artifact update target")
+        if artifact.status is ArtifactStatus.ACCEPTED:
+            raise DraftWriteServiceError(
+                "accepted artifacts cannot be edited by the draft web editor",
+                code="accepted_write_forbidden",
+                remediation=(
+                    "Accepted artifacts require explicit review and promotion "
+                    "workflow changes, not direct web edits."
+                ),
+                details={
+                    "artifact_id": artifact.id,
+                    "path": loaded.source_path.as_posix(),
+                },
+            )
+        if artifact.type is not artifact_type:
+            raise DraftWriteServiceError(
+                "artifact type changes are not supported by this draft editor",
+                code="artifact_type_change_forbidden",
+                remediation=(
+                    "Keep the existing artifact type. Use lifecycle tooling for "
+                    "moves that would change the canonical path."
+                ),
+                details={"artifact_id": artifact.id},
+            )
+
+        payload = artifact.model_dump(mode="json")
+        payload.update(
+            {
+                "type": artifact_type,
+                "title": title,
+                "domain": list(domain),
+                "status": status,
+                "updated_at": datetime.now(UTC).replace(microsecond=0),
+                "authors": list(authors),
+                "depends_on": list(depends_on),
+                "supersedes": list(supersedes),
+                "tags": list(tags),
+                "statement": statement,
+            }
+        )
+        try:
+            updated = BaseArtifact.model_validate(payload)
+        except ValidationError as exc:
+            raise DraftWriteServiceError(
+                _format_pydantic_errors(exc),
+                code="artifact_model_validation_failed",
+                remediation="Fix the draft artifact fields and retry.",
+            ) from exc
+
+        result = ArtifactWriteResult(artifact=updated, relative_path=loaded.source_path)
+        if dry_run:
+            return result
+
+        target_path = self.context.resolve(loaded.source_path)
+        original_text = target_path.read_text(encoding="utf-8")
+        write_yaml_deterministic(target_path, updated)
+        report = validate_artifact_file(self.context, loaded.source_path)
+        if report.ok:
+            return result
+
+        target_path.write_text(original_text, encoding="utf-8", newline="\n")
+        raise DraftWriteServiceError(
+            _format_report_failures(report),
+            code="artifact_file_validation_failed",
+            remediation="Fix validation failures before updating the draft artifact.",
         )
 
     def write_artifact_request(
@@ -1385,6 +1519,13 @@ def _find_unique_artifact_for_failure_log(
     context: RepoContext,
     artifact_id: str,
 ) -> LoadedRecord:
+    return _find_unique_artifact(context, artifact_id)
+
+
+def _find_unique_artifact(
+    context: RepoContext,
+    artifact_id: str,
+) -> LoadedRecord:
     records = _load_records_for_lifecycle(context)
     matches = [record for record in records if record.id == artifact_id]
     if not matches:
@@ -1407,7 +1548,7 @@ def _find_unique_artifact_for_failure_log(
         raise DraftWriteServiceError(
             f"record is not an artifact: {artifact_id}",
             code="artifact_model_validation_failed",
-            remediation="Failure logs can only be attached to lifecycle artifacts.",
+            remediation="Choose a lifecycle artifact id.",
             details={"artifact_id": artifact_id},
         )
     return loaded

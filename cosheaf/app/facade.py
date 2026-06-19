@@ -373,6 +373,92 @@ class CosheafApp:
             created_at=created_at,
         )
 
+    def preview_create_artifact(
+        self,
+        *,
+        artifact_id: str,
+        artifact_type: ArtifactType,
+        title: str,
+        domain: Sequence[str],
+        status: ArtifactStatus,
+        statement: str,
+        authors: Sequence[str],
+        tags: Sequence[str] = (),
+        depends_on: Sequence[str] = (),
+        supersedes: Sequence[str] = (),
+    ) -> ArtifactWriteResult:
+        """Preview a draft/pre-accepted artifact YAML record without writing."""
+        return DraftWriteService(self.context).create_artifact(
+            artifact_id=artifact_id,
+            artifact_type=artifact_type,
+            title=title,
+            domain=domain,
+            status=status,
+            statement=statement,
+            authors=authors,
+            tags=tags,
+            depends_on=depends_on,
+            supersedes=supersedes,
+            dry_run=True,
+        )
+
+    def update_artifact(
+        self,
+        artifact_id: str,
+        *,
+        artifact_type: ArtifactType,
+        title: str,
+        domain: Sequence[str],
+        status: ArtifactStatus,
+        statement: str,
+        authors: Sequence[str],
+        tags: Sequence[str] = (),
+        depends_on: Sequence[str] = (),
+        supersedes: Sequence[str] = (),
+    ) -> ArtifactWriteResult:
+        """Update editable fields on a draft/pre-accepted artifact."""
+        return DraftWriteService(self.context).update_artifact(
+            artifact_id,
+            artifact_type=artifact_type,
+            title=title,
+            domain=domain,
+            status=status,
+            statement=statement,
+            authors=authors,
+            tags=tags,
+            depends_on=depends_on,
+            supersedes=supersedes,
+        )
+
+    def preview_update_artifact(
+        self,
+        artifact_id: str,
+        *,
+        artifact_type: ArtifactType,
+        title: str,
+        domain: Sequence[str],
+        status: ArtifactStatus,
+        statement: str,
+        authors: Sequence[str],
+        tags: Sequence[str] = (),
+        depends_on: Sequence[str] = (),
+        supersedes: Sequence[str] = (),
+    ) -> ArtifactWriteResult:
+        """Preview draft artifact field updates without writing."""
+        return DraftWriteService(self.context).update_artifact(
+            artifact_id,
+            artifact_type=artifact_type,
+            title=title,
+            domain=domain,
+            status=status,
+            statement=statement,
+            authors=authors,
+            tags=tags,
+            depends_on=depends_on,
+            supersedes=supersedes,
+            dry_run=True,
+        )
+
     def write_draft_artifact(
         self,
         request: DraftArtifactWriteRequest,

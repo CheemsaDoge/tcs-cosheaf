@@ -16,6 +16,7 @@ from cosheaf.agent.context_pack import PACK_FILENAMES
 from cosheaf.app import CosheafApp
 from cosheaf.core.artifact import BaseArtifact
 from cosheaf.core.ids import validate_artifact_id
+from cosheaf.core.status import ArtifactStatus, ArtifactType, is_preaccepted_status
 from cosheaf.forge import (
     FORGE_AUTHORITY_WARNING,
     FORGE_PREVIEW_AUTHORITY_WARNING,
@@ -24,8 +25,10 @@ from cosheaf.forge import (
     ForgeCredentialProvider,
 )
 from cosheaf.issues import ISSUE_AUTHORITY_NOTICE, LocalIssueError
+from cosheaf.services import DraftWriteServiceError
 from cosheaf.site import REQUIRED_SITE_EXPORT_FILES, SITE_EXPORT_AUTHORITY_NOTICE
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
+from cosheaf.storage.writer import dump_yaml_deterministic
 from cosheaf.web_actions import (
     WEB_ACTION_AUDIT_PATH,
     WebActionAuditEntry,
@@ -46,6 +49,11 @@ CHECK_AUTHORITY_NOTICE = (
     "Validation and gate output are workflow context only; skipped is not pass, "
     "and gate pass is not accepted status or promotion authority."
 )
+ARTIFACT_WRITE_AUTHORITY_NOTICE = (
+    "Web artifact writes can create or edit draft/pre-accepted records only. "
+    "They do not create accepted knowledge, human review, verifier pass, gate "
+    "pass, or promotion authority."
+)
 _EXPORT_ENDPOINTS = {
     "/api/workspace": "workspace.json",
     "/api/artifacts": "artifacts.json",
@@ -64,6 +72,7 @@ _CREATE_ENDPOINTS = {
     "/api/forge/issues/create",
     "/api/forge/prs/create",
     "/api/issues/create",
+    "/api/artifacts/create",
 }
 _RUN_ENDPOINTS = {
     "/api/validate/run",
@@ -74,6 +83,13 @@ _ISSUE_ACTION_SUFFIXES = {
     "update",
     "preview-close",
     "close",
+}
+_ARTIFACT_ACTION_SUFFIXES = {
+    "preview-update",
+    "update",
+}
+_ARTIFACT_PREVIEW_ENDPOINTS = {
+    "/api/artifacts/preview-create",
 }
 
 
@@ -163,12 +179,15 @@ class ReadOnlySiteApi:
 
     def _handle_post(self, path: str, body: str | bytes) -> ApiResponse:
         issue_action = _parse_issue_action_path(path)
+        artifact_action = _parse_artifact_action_path(path)
         context_action = _parse_context_action_path(path)
         if (
             path not in _PREVIEW_ENDPOINTS
+            and path not in _ARTIFACT_PREVIEW_ENDPOINTS
             and path not in _CREATE_ENDPOINTS
             and path not in _RUN_ENDPOINTS
             and issue_action is None
+            and artifact_action is None
             and context_action is None
         ):
             return _error(
@@ -181,6 +200,16 @@ class ReadOnlySiteApi:
         if isinstance(payload, ApiResponse):
             return payload
         try:
+            if path == "/api/artifacts/preview-create":
+                return self._preview_artifact_create(payload)
+            if path == "/api/artifacts/create":
+                return self._create_artifact(payload)
+            if artifact_action is not None:
+                artifact_id, action = artifact_action
+                if action == "preview-update":
+                    return self._preview_artifact_update(artifact_id, payload)
+                if action == "update":
+                    return self._update_artifact(artifact_id, payload)
             if path == "/api/issues/preview-create":
                 return self._preview_issue_create(payload)
             if path == "/api/issues/create":
@@ -221,6 +250,8 @@ class ReadOnlySiteApi:
             return _error(400, exc.code, "forge action failed; see backend audit")
         except LocalIssueError as exc:
             return _error(400, "issue_action_failed", str(exc))
+        except DraftWriteServiceError as exc:
+            return _error(400, exc.code, str(exc))
         except ValueError as exc:
             return _error(400, "preview_invalid_input", str(exc))
         return _error(404, "not_found", f"Unknown endpoint: {path}")
@@ -553,6 +584,174 @@ class ReadOnlySiteApi:
             ),
             authority_warning=ISSUE_AUTHORITY_NOTICE,
             authority_notice=ISSUE_AUTHORITY_NOTICE,
+        )
+
+    def _preview_artifact_create(self, payload: dict[str, Any]) -> ApiResponse:
+        action = "artifact_create"
+        try:
+            result = self.app.preview_create_artifact(
+                **_artifact_write_args(payload, require_id=True)
+            )
+        except DraftWriteServiceError as exc:
+            return self._artifact_error(action, exc)
+        planned_file = result.relative_path.as_posix()
+        yaml_text = result.yaml_text()
+        self._write_audit(
+            action=action,
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=[planned_file],
+            authority_warnings=[ARTIFACT_WRITE_AUTHORITY_NOTICE],
+        )
+        return _preview_response(
+            "artifact_create_preview",
+            planned_actions=["create draft artifact YAML preview"],
+            planned_files=[planned_file],
+            artifact=result.artifact.model_dump(mode="json"),
+            path=planned_file,
+            yaml=yaml_text,
+            diff=_diff_text(
+                "",
+                yaml_text,
+                fromfile="/dev/null",
+                tofile=planned_file,
+            ),
+            authority_warning=ARTIFACT_WRITE_AUTHORITY_NOTICE,
+            authority_notice=ARTIFACT_WRITE_AUTHORITY_NOTICE,
+        )
+
+    def _create_artifact(self, payload: dict[str, Any]) -> ApiResponse:
+        action = "artifact_create"
+        blocked = self._blocked_confirm(
+            action,
+            payload,
+            authority_warnings=[ARTIFACT_WRITE_AUTHORITY_NOTICE],
+        )
+        if blocked is not None:
+            return blocked
+        try:
+            result = self.app.create_artifact(
+                **_artifact_write_args(payload, require_id=True)
+            )
+        except DraftWriteServiceError as exc:
+            return self._artifact_error(action, exc)
+        planned_file = result.relative_path.as_posix()
+        validation = self.app.validate_artifact_file(result.relative_path)
+        self._write_audit(
+            action=action,
+            result_status="success",
+            explicit_confirm=True,
+            preview_only=False,
+            planned_files=[planned_file],
+            repo_writes_performed=True,
+            result={
+                "action_performed": True,
+                "validation_performed": True,
+            },
+            authority_warnings=[ARTIFACT_WRITE_AUTHORITY_NOTICE],
+        )
+        return _artifact_action_response(
+            "artifact_create",
+            result,
+            planned_files=[planned_file],
+            diff=_diff_text(
+                "",
+                result.yaml_text(),
+                fromfile="/dev/null",
+                tofile=planned_file,
+            ),
+            validation=_validation_payload(validation),
+        )
+
+    def _preview_artifact_update(
+        self,
+        artifact_id: str,
+        payload: dict[str, Any],
+    ) -> ApiResponse:
+        action = "artifact_update"
+        try:
+            before = _artifact_snapshot(self, artifact_id)
+            result = self.app.preview_update_artifact(
+                artifact_id,
+                **_artifact_write_args(payload, require_id=False),
+            )
+        except DraftWriteServiceError as exc:
+            return self._artifact_error(action, exc)
+        planned_file = result.relative_path.as_posix()
+        self._write_audit(
+            action=action,
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=[planned_file],
+            authority_warnings=[ARTIFACT_WRITE_AUTHORITY_NOTICE],
+        )
+        return _preview_response(
+            "artifact_update_preview",
+            planned_actions=["update draft artifact YAML preview"],
+            planned_files=[planned_file],
+            before_artifact=before["artifact"],
+            artifact=result.artifact.model_dump(mode="json"),
+            path=planned_file,
+            yaml=result.yaml_text(),
+            diff=_diff_text(
+                before["yaml"],
+                result.yaml_text(),
+                fromfile=planned_file,
+                tofile=planned_file,
+            ),
+            authority_warning=ARTIFACT_WRITE_AUTHORITY_NOTICE,
+            authority_notice=ARTIFACT_WRITE_AUTHORITY_NOTICE,
+        )
+
+    def _update_artifact(
+        self,
+        artifact_id: str,
+        payload: dict[str, Any],
+    ) -> ApiResponse:
+        action = "artifact_update"
+        blocked = self._blocked_confirm(
+            action,
+            payload,
+            authority_warnings=[ARTIFACT_WRITE_AUTHORITY_NOTICE],
+        )
+        if blocked is not None:
+            return blocked
+        try:
+            before = _artifact_snapshot(self, artifact_id)
+            result = self.app.update_artifact(
+                artifact_id,
+                **_artifact_write_args(payload, require_id=False),
+            )
+        except DraftWriteServiceError as exc:
+            return self._artifact_error(action, exc)
+        planned_file = result.relative_path.as_posix()
+        validation = self.app.validate_artifact_file(result.relative_path)
+        self._write_audit(
+            action=action,
+            result_status="success",
+            explicit_confirm=True,
+            preview_only=False,
+            planned_files=[planned_file],
+            repo_writes_performed=True,
+            result={
+                "action_performed": True,
+                "validation_performed": True,
+            },
+            authority_warnings=[ARTIFACT_WRITE_AUTHORITY_NOTICE],
+        )
+        return _artifact_action_response(
+            "artifact_update",
+            result,
+            planned_files=[planned_file],
+            diff=_diff_text(
+                before["yaml"],
+                result.yaml_text(),
+                fromfile=planned_file,
+                tofile=planned_file,
+            ),
+            validation=_validation_payload(validation),
         )
 
     def _create_issue(self, payload: dict[str, Any]) -> ApiResponse:
@@ -938,6 +1137,8 @@ class ReadOnlySiteApi:
         self,
         action: str,
         payload: dict[str, Any],
+        *,
+        authority_warnings: list[str] | None = None,
     ) -> ApiResponse | None:
         explicit_confirm = payload.get("confirm") is True
         if not explicit_confirm:
@@ -946,10 +1147,24 @@ class ReadOnlySiteApi:
                 result_status="confirm_required",
                 explicit_confirm=False,
                 preview_only=False,
-                authority_warnings=[ISSUE_AUTHORITY_NOTICE],
+                authority_warnings=authority_warnings or [ISSUE_AUTHORITY_NOTICE],
             )
             return _error(400, "confirm_required", "write requires confirm: true")
         return None
+
+    def _artifact_error(
+        self,
+        action: str,
+        exc: DraftWriteServiceError,
+    ) -> ApiResponse:
+        self._write_audit(
+            action=action,
+            result_status=exc.code,
+            explicit_confirm=False,
+            preview_only=False,
+            authority_warnings=[ARTIFACT_WRITE_AUTHORITY_NOTICE],
+        )
+        return _error(400, exc.code, str(exc))
 
     def _blocked_create(
         self,
@@ -1216,6 +1431,18 @@ def _parse_issue_action_path(path: str) -> tuple[str, str] | None:
     return issue_id, action
 
 
+def _parse_artifact_action_path(path: str) -> tuple[str, str] | None:
+    if not path.startswith("/api/artifacts/"):
+        return None
+    parts = path.removeprefix("/api/artifacts/").split("/")
+    if len(parts) != 2:
+        return None
+    artifact_id, action = parts
+    if not artifact_id or action not in _ARTIFACT_ACTION_SUFFIXES:
+        return None
+    return artifact_id, action
+
+
 def _parse_context_action_path(path: str) -> tuple[str, str] | None:
     if not path.startswith("/api/context/"):
         return None
@@ -1328,6 +1555,47 @@ def _issue_write_args(
     return args
 
 
+def _artifact_write_args(
+    payload: dict[str, Any],
+    *,
+    require_id: bool,
+) -> dict[str, Any]:
+    try:
+        artifact_type = ArtifactType(_required_text(payload, "artifact_type"))
+        status = ArtifactStatus(_required_text(payload, "status"))
+    except ValueError as exc:
+        raise DraftWriteServiceError(
+            str(exc),
+            code="artifact_model_validation_failed",
+            remediation="Use a supported artifact type and lifecycle status.",
+        ) from exc
+    if not is_preaccepted_status(status):
+        raise DraftWriteServiceError(
+            "web artifact writes cannot target accepted or terminal statuses",
+            code="accepted_write_forbidden"
+            if status is ArtifactStatus.ACCEPTED
+            else "terminal_status_forbidden",
+            remediation=(
+                "Use draft/pre-accepted statuses only. Accepted, refuted, "
+                "obsolete, and superseded states require lifecycle workflows."
+            ),
+        )
+    args: dict[str, Any] = {
+        "artifact_type": artifact_type,
+        "title": _required_text(payload, "title"),
+        "domain": _text_list(payload, "domain"),
+        "status": status,
+        "statement": _required_text(payload, "statement"),
+        "authors": _text_list(payload, "authors"),
+        "tags": _text_list(payload, "tags"),
+        "depends_on": _text_list(payload, "depends_on"),
+        "supersedes": _text_list(payload, "supersedes"),
+    }
+    if require_id:
+        args["artifact_id"] = _required_text(payload, "artifact_id")
+    return args
+
+
 def _context_role(payload: dict[str, Any]) -> str:
     return _optional_text(payload, "role") or "orchestrator"
 
@@ -1411,6 +1679,39 @@ def _issue_action_response(
     )
 
 
+def _artifact_action_response(
+    kind: str,
+    result: Any,
+    *,
+    planned_files: list[str],
+    diff: str,
+    validation: dict[str, Any],
+) -> ApiResponse:
+    return ApiResponse(
+        200,
+        {
+            "schema_version": READONLY_SERVER_SCHEMA_VERSION,
+            "kind": kind,
+            "action_performed": True,
+            "repo_writes_performed": True,
+            "git_writes_performed": False,
+            "github_writes_performed": False,
+            "network_calls_performed": False,
+            "audit_logged": True,
+            "planned_files": planned_files,
+            "written_files": planned_files,
+            "artifact": result.artifact.model_dump(mode="json"),
+            "path": result.relative_path.as_posix(),
+            "yaml": result.yaml_text(),
+            "diff": diff,
+            "validation": validation,
+            "accepted_write_performed": False,
+            "authority_warning": ARTIFACT_WRITE_AUTHORITY_NOTICE,
+            "authority_notice": ARTIFACT_WRITE_AUTHORITY_NOTICE,
+        },
+    )
+
+
 def _diff_text(
     before: str,
     after: str,
@@ -1435,6 +1736,8 @@ def _web_action_kind(action: str) -> WebActionKind:
         "issue_create": WebActionKind.ISSUE_CREATE,
         "issue_update": WebActionKind.ISSUE_UPDATE,
         "issue_close": WebActionKind.ISSUE_CLOSE,
+        "artifact_create": WebActionKind.ARTIFACT_CREATE,
+        "artifact_update": WebActionKind.ARTIFACT_UPDATE,
         "github_issue_preview": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_issue_create": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_pr_preview": WebActionKind.FORGE_PR_CREATE,
@@ -1542,6 +1845,31 @@ def _artifact_payload(record: LoadedRecord) -> dict[str, Any]:
     if record.kb_relative_path is not None:
         payload["kb_relative_path"] = record.kb_relative_path.as_posix()
     return payload
+
+
+def _artifact_snapshot(api: ReadOnlySiteApi, artifact_id: str) -> dict[str, Any]:
+    normalized_id = validate_artifact_id(artifact_id)
+    loaded = api._live_artifact_records()
+    if isinstance(loaded, ApiResponse):
+        raise DraftWriteServiceError(
+            "cannot load repository records",
+            code="repository_load_failed",
+            remediation="Fix repository load errors before editing artifacts.",
+        )
+    for record in loaded:
+        if record.id == normalized_id:
+            artifact = cast(BaseArtifact, record.record)
+            return {
+                "artifact": artifact.model_dump(mode="json"),
+                "yaml": dump_yaml_deterministic(artifact),
+                "path": record.source_path.as_posix(),
+            }
+    raise DraftWriteServiceError(
+        f"artifact not found: {normalized_id}",
+        code="artifact_not_found",
+        remediation="Check the artifact id and retry.",
+        details={"artifact_id": normalized_id},
+    )
 
 
 def _repo_files_under(repo_root: Path, root: Path) -> list[str]:
