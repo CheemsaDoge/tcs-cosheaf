@@ -135,6 +135,8 @@ POST /api/artifacts/<artifact_id>/preview-evidence
 POST /api/artifacts/<artifact_id>/evidence
 POST /api/context/<issue_id>/preview-build
 POST /api/context/<issue_id>/build
+POST /api/reviews/packets/preview
+POST /api/reviews/packets/create
 POST /api/forge/issues/preview
 POST /api/forge/issues/create
 POST /api/forge/prs/preview
@@ -288,6 +290,34 @@ and append a redacted web-action audit record under
 
 Context packs are retrieval guidance only. They do not create proof, verifier
 pass, gate pass, human review, accepted status, or promotion authority.
+
+## Review Packet Workbench Actions
+
+The B2.6.1 review packet endpoints are:
+
+```text
+POST /api/reviews/packets/preview
+POST /api/reviews/packets/create
+```
+
+Requests accept `issue_id` and optional `artifact_id`. Confirmed create
+requests must include `confirm: true`.
+
+Preview builds a draft informational review packet from issue/artifact context,
+including available artifact statement, dependencies, sources, evidence, known
+failures, latest gate state, reviewer questions, and an authority checklist. It
+uses the controlled review-request service in dry-run mode, plans a
+`reviews/requests/<review-id>.yaml` target, and writes no review YAML.
+
+Confirmed create recomputes the packet and writes one draft informational
+review request under `reviews/requests/` through `CosheafApp` and
+`DraftWriteService.write_review_request`. It audits as `review.packet_create`.
+It does not change artifact review state, mark `human_reviewed`, accept or
+reject artifacts, mutate verifier output, pass gates, or promote knowledge.
+
+Review packets are informational context for human reviewers only. They do not
+create proof, complete human review, grant accepted status, or authorize
+promotion.
 
 ## Validate And Gate Workbench Actions
 

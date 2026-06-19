@@ -61,6 +61,9 @@ const canCloseIssue = canWriteIssues && issue.status !== "closed";
         <a class="button-link secondary" href={contextHref(issue.id)}>
           <I18nText text={localized("Context pack", "上下文包")} />
         </a>
+        <a class="button-link secondary" href={`/issues/${encodeURIComponent(issue.id)}/review-packet/`}>
+          <I18nText text={localized("Review packet", "审阅包")} />
+        </a>
       </div>
       <div class="tag-row">
         <span class="tag"><I18nText text={localized("Scope", "范围")} />: {issue.scope}</span>

@@ -1,0 +1,110 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import I18nText from "../../../components/I18nText.astro";
+import { localized } from "../../../lib/i18n";
+import { REVIEW_PACKET_LABELS } from "../../../lib/reviewPacketWorkbench";
+import {
+  artifactById,
+  artifactHref,
+  loadSiteData
+} from "../../../lib/siteData";
+
+export async function getStaticPaths() {
+  const data = await loadSiteData();
+  return data.artifacts.artifacts.map((artifact) => ({
+    params: { id: artifact.id }
+  }));
+}
+
+const id = Astro.params.id ?? "";
+const data = await loadSiteData();
+const artifact = artifactById(id, data);
+if (!artifact) {
+  throw new Error(`Unknown artifact: ${id}`);
+}
+const relatedIssues = data.issues.issues.filter((issue) =>
+  issue.related_artifacts.includes(artifact.id)
+);
+const canWriteReviews = data.runtime.mode === "live-local" && relatedIssues.length > 0;
+---
+
+<BaseLayout
+  title={localized(`Review packet: ${artifact.id}`, `审阅包：${artifact.id}`)}
+  eyebrow={localized("Review Workbench", "审阅工作台")}
+>
+  <section class="workbench-shell">
+    <article class="panel workbench-main">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">
+            <I18nText text={REVIEW_PACKET_LABELS.reviewPacket} />
+          </p>
+          <h2><I18nText text={REVIEW_PACKET_LABELS.generate} /></h2>
+        </div>
+        <span class="tag"><I18nText text={localized("Preview first", "先预览")} /></span>
+      </div>
+      <p class="preview-warning">
+        <I18nText text={REVIEW_PACKET_LABELS.authorityNotice} />
+      </p>
+      {
+        canWriteReviews ? (
+          <form
+            class="workbench-form"
+            data-review-packet-form
+            data-mode={data.runtime.mode}
+            data-api-base={data.runtime.api_base}
+            data-output="#review-packet-preview"
+            data-redirect={artifactHref(artifact.id)}
+          >
+            <fieldset class="form-section">
+              <label>
+                <I18nText text={REVIEW_PACKET_LABELS.relatedIssue} />
+                <select name="issueId">
+                  {relatedIssues.map((issue) => (
+                    <option value={issue.id}>{issue.title}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <I18nText text={REVIEW_PACKET_LABELS.focusArtifact} />
+                <input name="artifactId" value={artifact.id} readonly />
+              </label>
+            </fieldset>
+            <div class="preview-toolbar">
+              <button class="preview-button" type="button" data-preview>
+                <I18nText text={REVIEW_PACKET_LABELS.preview} />
+              </button>
+              <button class="preview-button" type="submit" data-confirm disabled>
+                <I18nText text={REVIEW_PACKET_LABELS.confirm} />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p>
+            <I18nText
+              text={localized(
+                "Review packet generation needs live local mode and a related issue.",
+                "生成审阅包需要本地实时模式和相关议题。"
+              )}
+            />
+          </p>
+        )
+      }
+    </article>
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker">
+        <I18nText text={REVIEW_PACKET_LABELS.packetPreview} />
+      </p>
+      <pre
+        class="json-block preview-output"
+        id="review-packet-preview"
+        data-i18n-en="Preview a review packet before writing it."
+        data-i18n-zh="写入前先预览审阅包。"
+      >写入前先预览审阅包。</pre>
+    </article>
+  </section>
+
+  <script>
+    import "../../../lib/reviewPacketWorkbenchClient";
+  </script>
+</BaseLayout>
