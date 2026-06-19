@@ -3,6 +3,24 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.9.1 unified Workbench dashboard - 2026-06-20
+
+Issue #572 adds the unified Workbench dashboard on branch
+`web-workbench-dashboard`.
+
+The website home route now acts as the primary Workbench starting point. It
+summarizes workspace health, active issues, draft artifacts needing review,
+promotion-ready versus promotion-blocked artifacts, gate failures, recent
+web/forge action exports, recent GitHub PR links, task-grouped action links,
+and suggested next actions.
+
+The dashboard derives these rows from existing static/live `SiteData` through
+frontend helper logic only. It does not add server endpoints, browser-side
+GitHub credentials, repository writes, accepted knowledge, human-review
+creation, verifier pass, gate-pass authority, promotion authority, or direct
+YAML mutation. Write-class links continue to route to existing Workbench pages
+that use preview-before-confirm and backend/app/forge boundaries.
+
 ## Longplan B2.8.2 PR review status and comments in web - 2026-06-20
 
 Issue #570 adds a read-only PR status workbench on branch
