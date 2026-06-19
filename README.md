@@ -474,6 +474,12 @@ The server binds to localhost, serves read-only website JSON endpoints plus
 preview-only action plans, and does not write repository or GitHub records. See
 [Local Read-Only Server API](docs/SERVER_API.md).
 
+Authenticated website write actions are not implemented yet. Their backend-only
+credential and audit design is recorded in
+[ADR 0038](docs/ADR/0038-website-backend-auth-actions.md): credentials remain
+server-side, the frontend never sees GitHub tokens, and future write endpoints
+must require auth, explicit confirmation, and redacted audit records.
+
 ## Roadmap
 
 The roadmap is tracked in [docs/ROADMAP.md](docs/ROADMAP.md). Live issue state

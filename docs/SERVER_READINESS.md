@@ -5,6 +5,10 @@ The first implemented server surface is the read-only localhost website API in
 [Local Read-Only Server API](SERVER_API.md). It does not implement a web UI,
 hosted provider, public network service, or GitHub mutation path.
 
+The authenticated website action design is recorded in
+[ADR 0038](ADR/0038-website-backend-auth-actions.md). That design is not an
+implemented server endpoint yet.
+
 ## Server Entry Points
 
 Server code should open the repository through `open_app` and then call the app
@@ -45,6 +49,28 @@ planned issue path and record without writing the YAML file.
 Validation and gatekeeper calls remain the same authority boundaries as the
 CLI: skipped is not pass, gate output is not human review, and neither a
 passing gate nor a GitHub workflow state creates accepted knowledge.
+
+## Planned Authenticated Boundary
+
+Future authenticated GitHub issue/PR actions must keep credentials in the
+backend and pass them to forge through a server-side credential provider only
+after explicit confirmation. Frontend code must not store, forward, or inspect
+GitHub tokens.
+
+The planned backend model has six parts:
+
+- GitHub App installation tokens minted server-side from deployment secrets.
+- GitHub user tokens resolved from server-side environment, keyring, OAuth
+  session, or equivalent secret storage.
+- `ForgeCredentialProvider` integration at confirmed action time, never during
+  previews.
+- A repository checkout/cache lease outside public KB roots and outside source
+  control for hosted deployments.
+- Verified webhooks for installation and sync events only, never authority.
+- Redacted append-only audit records for every confirmed action.
+
+These planned surfaces do not create accepted knowledge, human review, verifier
+pass, gate pass, promotion authority, or a production-readiness claim.
 
 ## Regression Coverage
 

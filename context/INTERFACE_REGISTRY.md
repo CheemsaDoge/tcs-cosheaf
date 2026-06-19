@@ -78,6 +78,18 @@
   mutation, gate run, context build side effect, provider call, GitHub action,
   git/gh command, repository write, or CLI subprocess. Server output is display
   context only and remains subordinate to repository YAML/JSON source files.
+- Authenticated website backend action design is recorded in
+  `docs/ADR/0038-website-backend-auth-actions.md` but is not implemented as an
+  endpoint yet. The planned server-only surface keeps GitHub App installation
+  tokens and GitHub user tokens out of the repository and out of frontend code,
+  resolves credentials through a backend `ForgeCredentialProvider`, leases a
+  repository checkout/cache outside public KB roots for hosted deployments,
+  validates webhooks as synchronization input only, and writes redacted
+  append-only audit records for confirmed actions. Planned create endpoints
+  must require authentication and explicit confirmation, must call
+  `cosheaf.app` / `cosheaf.forge` in-process, and must not create accepted
+  knowledge, human review, verifier pass, gate pass, promotion authority,
+  token storage, or a production-readiness claim.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI

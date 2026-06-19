@@ -54,6 +54,16 @@ and the forge authority warning. They do not write repository files, call
 GitHub, run `git` or `gh`, store credentials, run providers, create human
 review, or change accepted/promotion state.
 
+## Future Authenticated Actions
+
+Authenticated create endpoints are not implemented by the local read-only
+server. The required backend-only design is recorded in
+[ADR 0038](ADR/0038-website-backend-auth-actions.md). Future create endpoints
+must keep GitHub credentials server-side, call `cosheaf.app` / `cosheaf.forge`
+in-process, require explicit confirmation, write redacted audit records, and
+return only redacted action metadata. The frontend must never receive GitHub
+tokens or call GitHub APIs directly.
+
 ## Authority Rules
 
 - Website and server output are display context only.
