@@ -1,0 +1,151 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import I18nText from "../../../components/I18nText.astro";
+import { localized } from "../../../lib/i18n";
+import {
+  ARTIFACT_WORKBENCH_LABELS,
+  PREACCEPTED_ARTIFACT_STATUSES
+} from "../../../lib/artifactWorkbench";
+import { artifactById, artifactHref, loadSiteData } from "../../../lib/siteData";
+
+export async function getStaticPaths() {
+  const data = await loadSiteData();
+  return data.artifacts.artifacts.map((artifact) => ({
+    params: { id: artifact.id }
+  }));
+}
+
+const id = Astro.params.id ?? "";
+let data = await loadSiteData();
+let artifact = artifactById(id, data);
+if (!artifact) {
+  const staticData = await loadSiteData({ env: { mode: "static" } });
+  const staticArtifact = artifactById(id, staticData);
+  if (staticArtifact) {
+    data = staticData;
+    artifact = staticArtifact;
+  }
+}
+if (!artifact) {
+  throw new Error(`Unknown artifact: ${id}`);
+}
+const editableStatement = artifact.statement ?? "";
+const canWriteArtifacts =
+  data.runtime.mode === "live-local" &&
+  editableStatement.length > 0 &&
+  PREACCEPTED_ARTIFACT_STATUSES.includes(
+    artifact.status as (typeof PREACCEPTED_ARTIFACT_STATUSES)[number]
+  );
+---
+
+<BaseLayout
+  title={localized(`Edit artifact: ${artifact.id}`, `编辑工件：${artifact.id}`)}
+  eyebrow={localized("Artifact Workbench", "工件工作台")}
+>
+  <section class="workbench-shell">
+    <article class="panel workbench-main">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker"><I18nText text={localized("Draft editor", "草稿编辑")} /></p>
+          <h2><I18nText text={ARTIFACT_WORKBENCH_LABELS.editArtifact} /></h2>
+        </div>
+        <span class="tag"><I18nText text={localized("ID locked", "ID 已锁定")} /></span>
+      </div>
+      {
+        canWriteArtifacts ? (
+          <form
+            class="workbench-form"
+            data-artifact-workbench-form
+            data-action="update"
+            data-mode={data.runtime.mode}
+            data-api-base={data.runtime.api_base}
+            data-output="#artifact-update-preview"
+            data-redirect={artifactHref(artifact.id)}
+          >
+            <fieldset class="form-section">
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.artifactId} />
+                <input name="artifactId" value={artifact.id} readonly />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.artifactType} />
+                <input value={artifact.type} readonly />
+                <input type="hidden" name="artifactType" value={artifact.type} />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.status} />
+                <select name="status">
+                  {PREACCEPTED_ARTIFACT_STATUSES.map((status) => (
+                    <option value={status} selected={status === artifact.status}>{status}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.title} />
+                <input name="title" value={artifact.title} required />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.domain} />
+                <input name="domain" value={artifact.domain.join(", ")} required />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.statement} />
+                <textarea name="statement" rows="8" required>{editableStatement}</textarea>
+              </label>
+            </fieldset>
+            <fieldset class="form-section secondary">
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.authors} />
+                <input name="authors" value={(artifact.authors ?? []).join(", ")} />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.tags} />
+                <input name="tags" value={artifact.tags.join(", ")} />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.dependsOn} />
+                <input name="dependsOn" value={artifact.depends_on.join(", ")} list="artifact-id-options" />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.supersedes} />
+                <input
+                  name="supersedes"
+                  value={(artifact.supersedes ?? []).join(", ")}
+                  list="artifact-id-options"
+                />
+              </label>
+            </fieldset>
+            <datalist id="artifact-id-options">
+              {data.artifacts.artifacts.map((item) => (
+                <option value={item.id}>{item.title}</option>
+              ))}
+            </datalist>
+            <div class="preview-toolbar">
+              <button class="preview-button" type="button" data-preview>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.preview} />
+              </button>
+              <button class="preview-button" type="submit" data-confirm disabled>
+                <I18nText text={ARTIFACT_WORKBENCH_LABELS.confirm} />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p><I18nText text={localized("Edit draft/pre-accepted artifacts in live mode only.", "仅实时模式可编辑草稿或预接受工件。")} /></p>
+        )
+      }
+    </article>
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker"><I18nText text={ARTIFACT_WORKBENCH_LABELS.previewDiff} /></p>
+      <pre
+        class="json-block preview-output"
+        id="artifact-update-preview"
+        data-i18n-en="Preview before writing."
+        data-i18n-zh="写入前先预览。"
+      >写入前先预览。</pre>
+    </article>
+  </section>
+
+  <script>
+    import "../../../lib/artifactWorkbenchClient";
+  </script>
+</BaseLayout>

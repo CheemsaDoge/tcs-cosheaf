@@ -246,11 +246,20 @@ def _artifact_payload(
     *,
     exported_artifact_ids: frozenset[str],
 ) -> dict[str, Any]:
+    artifact = record.record
+    if not isinstance(artifact, BaseArtifact):
+        raise TypeError(f"record is not an artifact: {record.id}")
     card = artifact_card_from_loaded_record(record).to_dict()
+    card["authors"] = artifact.authors
     card["demo_fixture"] = _is_demo_artifact(record)
     card["depends_on"] = [
         dependency
         for dependency in card["depends_on"]
+        if dependency in exported_artifact_ids or dependency.startswith("external:")
+    ]
+    card["supersedes"] = [
+        dependency
+        for dependency in artifact.supersedes
         if dependency in exported_artifact_ids or dependency.startswith("external:")
     ]
     return card

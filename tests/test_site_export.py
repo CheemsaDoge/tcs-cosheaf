@@ -199,6 +199,8 @@ def test_site_export_writes_required_files_and_schema_fields(tmp_path: Path) -> 
     }
     assert "claim.fixture.site-public" in artifacts
     assert "statement" not in artifacts["claim.fixture.site-public"]
+    assert artifacts["claim.fixture.site-public"]["authors"] == ["tester"]
+    assert artifacts["claim.fixture.site-public"]["supersedes"] == []
 
 
 def test_site_export_public_only_excludes_private_content(tmp_path: Path) -> None:

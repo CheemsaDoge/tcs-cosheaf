@@ -132,8 +132,11 @@ const relatedIssueItems = relatedIssues.map((issue) => ({
           />
         </p>
         <div class="preview-toolbar">
-          <a class="button-link" href="/issues/create/">
-            <I18nText text={localized("New artifact change", "新建工件变更")} />
+          <a class="button-link" href={`/artifacts/${encodeURIComponent(artifact.id)}/edit/`}>
+            <I18nText text={localized("Edit artifact", "编辑工件")} />
+          </a>
+          <a class="button-link secondary" href="/artifacts/create/">
+            <I18nText text={localized("New artifact", "新建工件")} />
           </a>
           <a class="button-link secondary" href="/demo/">
             <I18nText text={localized("Review PR path", "审阅 PR 入口")} />

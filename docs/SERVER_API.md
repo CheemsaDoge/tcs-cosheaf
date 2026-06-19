@@ -43,6 +43,10 @@ The context workbench slice may build deterministic issue context packs under
 audit logging.
 The validate/gate workbench slice may run repository validation and gatekeeper
 checks through `cosheaf.app`, with audit logging and no accepted-state changes.
+The artifact draft editor slice may create or update draft/pre-accepted
+lifecycle artifacts after explicit confirmation, through `cosheaf.app`, with
+validation and audit logging. It refuses direct accepted, refuted, obsolete, or
+superseded writes.
 
 Static read-only payloads are generated through the existing website export
 path into a temporary directory outside the repository, then returned as JSON.
@@ -121,6 +125,10 @@ POST /api/issues/<issue_id>/preview-update
 POST /api/issues/<issue_id>/update
 POST /api/issues/<issue_id>/preview-close
 POST /api/issues/<issue_id>/close
+POST /api/artifacts/preview-create
+POST /api/artifacts/create
+POST /api/artifacts/<artifact_id>/preview-update
+POST /api/artifacts/<artifact_id>/update
 POST /api/context/<issue_id>/preview-build
 POST /api/context/<issue_id>/build
 POST /api/forge/issues/preview
@@ -189,6 +197,41 @@ Issue closing moves the issue record to `issues/closed/<issue_id>.yaml` and
 records `close_reason`. It does not change related artifact status, accepted
 state, refuted state, verifier output, gate state, human review, or promotion
 state.
+
+## Draft Artifact Workbench Actions
+
+The B2.5.1 draft artifact editor endpoints are:
+
+```text
+POST /api/artifacts/preview-create
+POST /api/artifacts/create
+POST /api/artifacts/<artifact_id>/preview-update
+POST /api/artifacts/<artifact_id>/update
+```
+
+Create requests accept `artifact_id`, `artifact_type`, `title`, `domain`,
+`status`, `statement`, `authors`, `tags`, `depends_on`, and `supersedes`.
+Update requests accept the same fields except the path artifact ID comes from
+the URL. Confirmed create and update requests must include `confirm: true`.
+
+The web surface is limited to draft/pre-accepted statuses: `raw`, `draft`,
+`locally_tested`, `adversarially_tested`, `machine_checked`, and
+`human_reviewed`. Direct `accepted`, `refuted`, `obsolete`, or `superseded`
+writes are refused and audited. Update keeps the existing artifact type and
+edits the current writable artifact file in place; cross-directory lifecycle
+moves remain lifecycle/promotion workflow responsibilities.
+
+All artifact writes go through `CosheafApp` and `DraftWriteService`. Preview
+responses include planned files, generated YAML, and a unified diff, and write
+no artifact YAML. Confirmed responses include written files, artifact payload,
+generated YAML, diff, validation summary, and authority warnings. Every preview,
+confirm refusal, refusal such as `accepted_write_forbidden`, and confirmed write
+appends a redacted web-action audit record under
+`.cosheaf/audit/web-actions.jsonl`.
+
+Artifact editor output is draft workflow context only. It does not create proof,
+source metadata, verifier pass, gate pass, human review, accepted status, or
+promotion authority.
 
 ## Context Build Workbench Actions
 
