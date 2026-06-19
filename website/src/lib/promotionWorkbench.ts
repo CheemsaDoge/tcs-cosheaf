@@ -27,6 +27,10 @@ export const PROMOTION_LABELS = {
   actor: localized("Actor", "操作人"),
   typedConfirmation: localized("Typed confirmation", "确认短语"),
   requiredConfirmation: localized("Required phrase", "必填短语"),
+  promotionJustification: localized(
+    "Promotion justification",
+    "晋升说明"
+  ),
   readinessJson: localized("Readiness JSON", "就绪度 JSON"),
   promotionPreview: localized("Promotion preview", "晋升预览"),
   authorityNotice: localized(
@@ -56,6 +60,7 @@ export interface PromotionConfirmFormInput {
   targetState: string;
   actor: string;
   typedConfirmation: string;
+  promotionJustification: string;
 }
 
 export interface PromotionConfirmPayload {
@@ -63,6 +68,7 @@ export interface PromotionConfirmPayload {
   target_state: PromotionTargetState;
   actor: string;
   typed_confirmation: string;
+  promotion_justification: string;
   confirm: true;
 }
 
@@ -70,6 +76,7 @@ export interface PromotionConfirmState {
   actor: string;
   targetState: string;
   typedConfirmation: string;
+  promotionJustification: string;
   promotionBlocked: boolean;
   previewLoaded: boolean;
 }
@@ -191,6 +198,7 @@ export function buildPromotionConfirmPayload(
     target_state: targetState as PromotionTargetState,
     actor: input.actor.trim(),
     typed_confirmation: input.typedConfirmation.trim(),
+    promotion_justification: input.promotionJustification.trim(),
     confirm: true
   };
 }
@@ -200,6 +208,9 @@ export function canConfirmPromotion(input: PromotionConfirmState): boolean {
     return false;
   }
   if (!input.actor.trim()) {
+    return false;
+  }
+  if (!input.promotionJustification.trim()) {
     return false;
   }
   return (

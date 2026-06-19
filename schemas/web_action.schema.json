@@ -441,6 +441,18 @@
           "title": "Authority Warnings",
           "type": "array"
         },
+        "operator_notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Operator Notes"
+        },
         "error_code": {
           "anyOf": [
             {

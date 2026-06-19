@@ -48,23 +48,26 @@ describe("promotion workbench helpers", () => {
         artifactId: " claim.fixture.ready ",
         targetState: " accepted ",
         actor: " Ada Reviewer ",
-        typedConfirmation: " PROMOTE TO ACCEPTED "
+        typedConfirmation: " PROMOTE TO ACCEPTED ",
+        promotionJustification: " Reviewed the packet and gate output. "
       })
     ).toEqual({
       artifact_id: "claim.fixture.ready",
       target_state: "accepted",
       actor: "Ada Reviewer",
       typed_confirmation: "PROMOTE TO ACCEPTED",
+      promotion_justification: "Reviewed the packet and gate output.",
       confirm: true
     });
   });
 
-  it("enables confirm only after an unblocked preview and exact phrase", () => {
+  it("enables confirm only after an unblocked preview, exact phrase, and notes", () => {
     expect(
       canConfirmPromotion({
         actor: "Ada Reviewer",
         targetState: "accepted",
         typedConfirmation: "PROMOTE TO ACCEPTED",
+        promotionJustification: "Reviewed by hand.",
         promotionBlocked: false,
         previewLoaded: true
       })
@@ -74,6 +77,7 @@ describe("promotion workbench helpers", () => {
         actor: "Ada Reviewer",
         targetState: "accepted",
         typedConfirmation: "MARK REFUTED",
+        promotionJustification: "Reviewed by hand.",
         promotionBlocked: false,
         previewLoaded: true
       })
@@ -83,6 +87,7 @@ describe("promotion workbench helpers", () => {
         actor: "Ada Reviewer",
         targetState: "accepted",
         typedConfirmation: "PROMOTE TO ACCEPTED",
+        promotionJustification: "Reviewed by hand.",
         promotionBlocked: true,
         previewLoaded: true
       })
@@ -92,6 +97,17 @@ describe("promotion workbench helpers", () => {
         actor: "",
         targetState: "accepted",
         typedConfirmation: "PROMOTE TO ACCEPTED",
+        promotionJustification: "Reviewed by hand.",
+        promotionBlocked: false,
+        previewLoaded: true
+      })
+    ).toBe(false);
+    expect(
+      canConfirmPromotion({
+        actor: "Ada Reviewer",
+        targetState: "accepted",
+        typedConfirmation: "PROMOTE TO ACCEPTED",
+        promotionJustification: " ",
         promotionBlocked: false,
         previewLoaded: true
       })

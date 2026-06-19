@@ -3,6 +3,31 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.9.2 keyboard-light review UX polish - 2026-06-20
+
+Issue #574 adds review and promotion UX guardrails on branch
+`web-review-ux-polish`.
+
+The review and promotion Workbench pages now use lightweight shared components
+for review checklists, dependency impact, gate/verifier status badges,
+promotion reason groups, diff preview, and exact-target confirmation. Human
+review decisions recheck preview state, reviewer identity, non-empty review
+notes, and explicit human confirmation before confirmed writes.
+
+Promotion confirmation now requires a non-empty `promotion_justification` in
+the frontend and backend. The server refuses empty justification before any
+lifecycle write, while keeping the existing typed phrase, actor, validation,
+gate, review, dependency, source-metadata, readonly-root, and path/status
+promotion checks unchanged. Successful promotion confirms record the
+justification in the local web-action audit entry as `operator_notes` and
+return `promotion_justification_recorded: true`; artifact YAML is not used as a
+justification store.
+
+This task does not add browser-side GitHub credentials, direct YAML mutation
+from the frontend, verifier pass authority, gate-pass authority, accepted
+authority from website output, AI-as-reviewer authority, or promotion policy
+bypass.
+
 ## Longplan B2.9.1 unified Workbench dashboard - 2026-06-20
 
 Issue #572 adds the unified Workbench dashboard on branch

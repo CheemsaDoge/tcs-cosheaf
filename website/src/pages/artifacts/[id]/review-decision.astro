@@ -1,6 +1,8 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
+import GateStatusBadge from "../../../components/GateStatusBadge.astro";
 import I18nText from "../../../components/I18nText.astro";
+import ReviewChecklist from "../../../components/ReviewChecklist.astro";
 import { localized } from "../../../lib/i18n";
 import {
   HUMAN_REVIEW_DECISION_OPTIONS,
@@ -9,7 +11,8 @@ import {
 import {
   artifactById,
   artifactHref,
-  loadSiteData
+  loadSiteData,
+  statusTone
 } from "../../../lib/siteData";
 
 export async function getStaticPaths() {
@@ -26,6 +29,29 @@ if (!artifact) {
   throw new Error(`Unknown artifact: ${id}`);
 }
 const canWriteReviews = data.runtime.mode === "live-local";
+const checklistItems = [
+  {
+    name: "dependenciesChecked",
+    label: REVIEW_DECISION_LABELS.dependenciesChecked
+  },
+  {
+    name: "sourcesChecked",
+    label: REVIEW_DECISION_LABELS.sourcesChecked
+  },
+  {
+    name: "evidenceChecked",
+    label: REVIEW_DECISION_LABELS.evidenceChecked
+  },
+  {
+    name: "gateStateAcknowledged",
+    label: REVIEW_DECISION_LABELS.gateStateAcknowledged
+  },
+  {
+    name: "explicitHumanConfirmation",
+    label: REVIEW_DECISION_LABELS.humanConfirmation,
+    required: true
+  }
+];
 ---
 
 <BaseLayout
@@ -46,6 +72,18 @@ const canWriteReviews = data.runtime.mode === "live-local";
       <p class="preview-warning">
         <I18nText text={REVIEW_DECISION_LABELS.authorityNotice} />
       </p>
+      <div class="status-strip">
+        <GateStatusBadge
+          label={REVIEW_DECISION_LABELS.gateStateAcknowledged}
+          status={data.gates.verdict}
+          tone={statusTone(data.gates.verdict)}
+        />
+        <GateStatusBadge
+          label={REVIEW_DECISION_LABELS.reviewDecision}
+          status={artifact.review_state}
+          tone={statusTone(artifact.review_state)}
+        />
+      </div>
       {
         canWriteReviews ? (
           <form
@@ -95,28 +133,7 @@ const canWriteReviews = data.runtime.mode === "live-local";
               <I18nText text={REVIEW_DECISION_LABELS.limitations} />
               <textarea name="limitations" rows="3"></textarea>
             </label>
-            <fieldset class="form-section">
-              <label class="checkbox-label">
-                <input name="dependenciesChecked" type="checkbox" />
-                <I18nText text={REVIEW_DECISION_LABELS.dependenciesChecked} />
-              </label>
-              <label class="checkbox-label">
-                <input name="sourcesChecked" type="checkbox" />
-                <I18nText text={REVIEW_DECISION_LABELS.sourcesChecked} />
-              </label>
-              <label class="checkbox-label">
-                <input name="evidenceChecked" type="checkbox" />
-                <I18nText text={REVIEW_DECISION_LABELS.evidenceChecked} />
-              </label>
-              <label class="checkbox-label">
-                <input name="gateStateAcknowledged" type="checkbox" />
-                <I18nText text={REVIEW_DECISION_LABELS.gateStateAcknowledged} />
-              </label>
-            </fieldset>
-            <label class="checkbox-label">
-              <input name="explicitHumanConfirmation" type="checkbox" required />
-              <I18nText text={REVIEW_DECISION_LABELS.humanConfirmation} />
-            </label>
+            <ReviewChecklist items={checklistItems} />
             <div class="preview-toolbar">
               <button class="preview-button" type="button" data-preview>
                 <I18nText text={REVIEW_DECISION_LABELS.preview} />

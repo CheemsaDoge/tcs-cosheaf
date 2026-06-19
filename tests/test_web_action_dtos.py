@@ -107,10 +107,12 @@ def test_web_action_errors_and_audit_entries_are_strict() -> None:
         planned_files=["issues/open/issue.fixture.web-action.yaml"],
         written_files=["issues/open/issue.fixture.web-action.yaml"],
         authority_warnings=["Repository files remain the source of truth."],
+        operator_notes="Reviewed by hand.",
         errors=[error],
     )
 
     assert audit.to_dict()["timestamp"] == "2026-06-19T00:00:00Z"
+    assert audit.to_dict()["operator_notes"] == "Reviewed by hand."
     assert audit.to_dict()["errors"][0]["code"] == "confirm_required"
 
     with pytest.raises(ValidationError):

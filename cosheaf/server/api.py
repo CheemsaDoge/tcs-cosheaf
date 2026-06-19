@@ -1027,6 +1027,22 @@ class ReadOnlySiteApi:
                 "typed_confirmation_required",
                 f'typed_confirmation must exactly match "{required}"',
             )
+        justification = payload.get("promotion_justification")
+        if not isinstance(justification, str) or not justification.strip():
+            self._write_audit(
+                action=action,
+                result_status="promotion_justification_required",
+                explicit_confirm=True,
+                preview_only=False,
+                actor=actor,
+                authority_warnings=[PROMOTION_AUTHORITY_NOTICE],
+            )
+            return _error(
+                400,
+                "promotion_justification_required",
+                "promotion_justification must be a non-empty string",
+            )
+        promotion_justification = justification.strip()
         try:
             result = self.app.promote_artifact(
                 normalized_id,
@@ -1060,6 +1076,7 @@ class ReadOnlySiteApi:
                 "gate_performed": True,
             },
             authority_warnings=[PROMOTION_AUTHORITY_NOTICE],
+            operator_notes=promotion_justification,
         )
         return ApiResponse(
             200,
@@ -1093,6 +1110,7 @@ class ReadOnlySiteApi:
                 "path": result.new_relative_path.as_posix(),
                 "accepted_write_performed": result.accepted_write_performed,
                 "promotion_performed": result.promotion_performed,
+                "promotion_justification_recorded": True,
                 "authority_warning": PROMOTION_AUTHORITY_NOTICE,
                 "authority_notice": PROMOTION_AUTHORITY_NOTICE,
             },
@@ -2086,6 +2104,7 @@ class ReadOnlySiteApi:
         branch: str | None = None,
         result: dict[str, Any] | None = None,
         authority_warnings: list[str] | None = None,
+        operator_notes: str | None = None,
         actor: str = "local.web",
     ) -> None:
         result = result or {}
@@ -2140,6 +2159,7 @@ class ReadOnlySiteApi:
                 credential_provider=credential_provider,
                 result_status=result_status,
                 authority_warnings=authority_warnings or [FORGE_AUTHORITY_WARNING],
+                operator_notes=operator_notes,
                 error_code=error_code,
                 errors=errors,
             ),

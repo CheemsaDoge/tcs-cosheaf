@@ -1,0 +1,60 @@
+---
+import I18nText from "./I18nText.astro";
+import { localized, type LocalizedText } from "../lib/i18n";
+
+interface Props {
+  title: LocalizedText;
+  artifactId: string;
+  targetState: string;
+  requiredPhrase: string;
+  notesLabel: LocalizedText;
+  confirmLabel: LocalizedText;
+}
+
+const {
+  title,
+  artifactId,
+  targetState,
+  requiredPhrase,
+  notesLabel,
+  confirmLabel
+} = Astro.props;
+---
+
+<section class="confirmation-modal" data-confirmation-modal hidden>
+  <div class="confirmation-scrim" data-modal-cancel></div>
+  <div class="confirmation-dialog" role="dialog" aria-modal="true">
+    <div class="confirmation-head">
+      <h2><I18nText text={title} /></h2>
+      <button type="button" data-modal-cancel>
+        <I18nText text={localized("Close", "关闭")} />
+      </button>
+    </div>
+    <dl class="confirmation-target">
+      <div>
+        <dt><I18nText text={localized("Artifact", "工件")} /></dt>
+        <dd>{artifactId}</dd>
+      </div>
+      <div>
+        <dt><I18nText text={localized("Target state", "目标状态")} /></dt>
+        <dd data-modal-target-state>{targetState}</dd>
+      </div>
+      <div>
+        <dt><I18nText text={localized("Required phrase", "必填短语")} /></dt>
+        <dd data-modal-required-phrase>{requiredPhrase}</dd>
+      </div>
+    </dl>
+    <label>
+      <I18nText text={notesLabel} />
+      <textarea name="promotionJustification" rows="4" required></textarea>
+    </label>
+    <div class="preview-toolbar">
+      <button class="preview-button secondary" type="button" data-modal-cancel>
+        <I18nText text={localized("Cancel", "取消")} />
+      </button>
+      <button class="preview-button danger" type="button" data-modal-confirm disabled>
+        <I18nText text={confirmLabel} />
+      </button>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,16 @@
+---
+import I18nText from "./I18nText.astro";
+import type { LocalizedText } from "../lib/i18n";
+
+interface Props {
+  label: LocalizedText;
+  status: string;
+  tone?: "good" | "warning" | "bad" | "neutral";
+}
+
+const { label, status, tone = "neutral" } = Astro.props;
+---
+
+<span class:list={["status-badge", `tone-${tone}`]}>
+  <I18nText text={label} />: {status || "not checked"}
+</span>

@@ -1,0 +1,23 @@
+---
+import I18nText from "./I18nText.astro";
+import { localized } from "../lib/i18n";
+
+interface Props {
+  dependencies: string[];
+  dependents: string[];
+}
+
+const { dependencies, dependents } = Astro.props;
+const none = localized("none", "无");
+---
+
+<div class="dependency-impact">
+  <div>
+    <strong><I18nText text={localized("Dependencies", "依赖项")} /></strong>
+    <p>{dependencies.length ? dependencies.join(", ") : none.zh}</p>
+  </div>
+  <div>
+    <strong><I18nText text={localized("Used by", "被使用于")} /></strong>
+    <p>{dependents.length ? dependents.join(", ") : none.zh}</p>
+  </div>
+</div>

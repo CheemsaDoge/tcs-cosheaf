@@ -1,6 +1,11 @@
 ---
 import BaseLayout from "../../../layouts/BaseLayout.astro";
+import ConfirmationModal from "../../../components/ConfirmationModal.astro";
+import DependencyImpact from "../../../components/DependencyImpact.astro";
+import DiffViewer from "../../../components/DiffViewer.astro";
+import GateStatusBadge from "../../../components/GateStatusBadge.astro";
 import I18nText from "../../../components/I18nText.astro";
+import PromotionReasonGroups from "../../../components/PromotionReasonGroups.astro";
 import { localized } from "../../../lib/i18n";
 import {
   PROMOTION_LABELS,
@@ -29,6 +34,7 @@ if (!artifact) {
 }
 const dependencies = dependenciesFor(artifact.id, data.graph.edges);
 const dependents = dependentsFor(artifact.id, data.graph.edges);
+const none = localized("none", "无");
 const blockers = [
   ...(artifact.status === "raw" || artifact.status === "draft"
     ? [localized("Artifact is still raw or draft.", "工件仍处于 raw 或 draft。")]
@@ -40,6 +46,26 @@ const blockers = [
   ...(data.gates.verdict !== "pass"
     ? [localized("Latest gate verdict is not pass.", "最新准入结果不是 pass。")]
     : [])
+];
+const promotionGroups = [
+  {
+    label: PROMOTION_LABELS.dependencies,
+    items: dependencies.length ? dependencies : [none]
+  },
+  {
+    label: PROMOTION_LABELS.sourceMetadata,
+    items: artifact.sources.length ? artifact.sources : [none]
+  },
+  {
+    label: PROMOTION_LABELS.verifierChecks,
+    items: [artifact.verifier_state || none]
+  },
+  {
+    label: PROMOTION_LABELS.missingRequirements,
+    items: blockers.length
+      ? blockers
+      : [localized("No static blockers shown.", "静态摘要未显示阻断项。")]
+  }
 ];
 const canPreviewPromotion = data.runtime.mode === "live-local";
 ---
@@ -68,49 +94,25 @@ const canPreviewPromotion = data.runtime.mode === "live-local";
       </p>
 
       <div class="promotion-status-strip">
-        <span class:list={["badge", statusTone(artifact.status)]}>
-          <I18nText text={PROMOTION_LABELS.currentStatus} />: {artifact.status}
-        </span>
-        <span class="tag">
-          <I18nText text={PROMOTION_LABELS.reviewState} />: {artifact.review_state}
-        </span>
-        <span class:list={["badge", statusTone(data.gates.verdict)]}>
-          <I18nText text={PROMOTION_LABELS.gateChecks} />: {data.gates.verdict}
-        </span>
+        <GateStatusBadge
+          label={PROMOTION_LABELS.currentStatus}
+          status={artifact.status}
+          tone={statusTone(artifact.status)}
+        />
+        <GateStatusBadge
+          label={PROMOTION_LABELS.reviewState}
+          status={artifact.review_state}
+          tone={statusTone(artifact.review_state)}
+        />
+        <GateStatusBadge
+          label={PROMOTION_LABELS.gateChecks}
+          status={data.gates.verdict}
+          tone={statusTone(data.gates.verdict)}
+        />
       </div>
 
-      <div class="promotion-groups">
-        <details class="workbench-details" open>
-          <summary><I18nText text={PROMOTION_LABELS.dependencies} /></summary>
-          <p>{dependencies.length ? dependencies.join(", ") : "none"}</p>
-        </details>
-        <details class="workbench-details" open>
-          <summary><I18nText text={PROMOTION_LABELS.sourceMetadata} /></summary>
-          <p>{artifact.sources.length ? artifact.sources.join(", ") : "none"}</p>
-        </details>
-        <details class="workbench-details" open>
-          <summary><I18nText text={PROMOTION_LABELS.verifierChecks} /></summary>
-          <p>{artifact.verifier_state}</p>
-        </details>
-        <details class="workbench-details" open>
-          <summary><I18nText text={PROMOTION_LABELS.impact} /></summary>
-          <p>{dependents.length ? dependents.join(", ") : "none"}</p>
-        </details>
-        <details class="workbench-details" open>
-          <summary><I18nText text={PROMOTION_LABELS.missingRequirements} /></summary>
-          {
-            blockers.length ? (
-              <ul class="reason-list">
-                {blockers.map((blocker) => (
-                  <li><I18nText text={blocker} /></li>
-                ))}
-              </ul>
-            ) : (
-              <p><I18nText text={localized("No static blockers shown.", "静态摘要未显示阻断项。")} /></p>
-            )
-          }
-        </details>
-      </div>
+      <DependencyImpact dependencies={dependencies} dependents={dependents} />
+      <PromotionReasonGroups groups={promotionGroups} />
 
       {
         canPreviewPromotion ? (
@@ -121,6 +123,7 @@ const canPreviewPromotion = data.runtime.mode === "live-local";
             data-api-base={data.runtime.api_base}
             data-artifact-id={artifact.id}
             data-output="#promotion-readiness-output"
+            data-diff-output="#promotion-diff-output"
             data-required-confirmation="#promotion-required-confirmation"
           >
             <input name="artifactId" value={artifact.id} type="hidden" />
@@ -148,10 +151,18 @@ const canPreviewPromotion = data.runtime.mode === "live-local";
               <button class="preview-button" type="button" data-preview>
                 <I18nText text={PROMOTION_LABELS.preview} />
               </button>
-              <button class="preview-button danger" type="submit" data-confirm disabled>
+              <button class="preview-button danger" type="button" data-confirm disabled>
                 <I18nText text={PROMOTION_LABELS.confirm} />
               </button>
             </div>
+            <ConfirmationModal
+              title={PROMOTION_LABELS.confirm}
+              artifactId={artifact.id}
+              targetState="accepted"
+              requiredPhrase="PROMOTE TO ACCEPTED"
+              notesLabel={PROMOTION_LABELS.promotionJustification}
+              confirmLabel={PROMOTION_LABELS.confirm}
+            />
           </form>
         ) : (
           <p>
@@ -171,6 +182,10 @@ const canPreviewPromotion = data.runtime.mode === "live-local";
         data-i18n-en="Preview output appears here."
         data-i18n-zh="预览结果会显示在这里。"
       >预览结果会显示在这里。</pre>
+      <DiffViewer
+        id="promotion-diff-output"
+        title={localized("YAML diff", "YAML 差异")}
+      />
     </article>
   </section>
 

@@ -1,7 +1,8 @@
 import {
   REVIEW_DECISION_ENDPOINTS,
   type HumanReviewDecision,
-  buildReviewDecisionPayload
+  buildReviewDecisionPayload,
+  canConfirmReviewDecision
 } from "./reviewDecisionWorkbench";
 
 function formText(form: HTMLFormElement, name: string): string {
@@ -63,13 +64,26 @@ for (const form of document.querySelectorAll<HTMLFormElement>(
   const confirmButton = form.querySelector<HTMLButtonElement>("[data-confirm]");
   const previewButton = form.querySelector<HTMLButtonElement>("[data-preview]");
   const redirect = form.dataset.redirect;
+  let previewLoaded = false;
   if (form.dataset.mode !== "live-local") {
     continue;
   }
 
+  function refreshConfirmState(): void {
+    if (confirmButton) {
+      confirmButton.disabled = !canConfirmReviewDecision({
+        previewLoaded,
+        reviewer: formText(form, "reviewer"),
+        reviewNotes: formText(form, "reviewNotes"),
+        explicitHumanConfirmation: formChecked(form, "explicitHumanConfirmation")
+      });
+    }
+  }
+
   previewButton?.addEventListener("click", async () => {
     previewButton.disabled = true;
-    confirmButton?.setAttribute("disabled", "true");
+    previewLoaded = false;
+    refreshConfirmState();
     try {
       const preview = await postJson(
         apiBase,
@@ -77,17 +91,29 @@ for (const form of document.querySelectorAll<HTMLFormElement>(
         decisionPayload(form)
       );
       setOutput(output, preview);
-      confirmButton?.removeAttribute("disabled");
+      previewLoaded = true;
     } catch (error) {
       setOutput(output, { error: error instanceof Error ? error.message : error });
     } finally {
       previewButton.disabled = false;
+      refreshConfirmState();
     }
   });
 
+  form.addEventListener("input", refreshConfirmState);
+  refreshConfirmState();
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (confirmButton?.disabled) {
+    if (
+      !canConfirmReviewDecision({
+        previewLoaded,
+        reviewer: formText(form, "reviewer"),
+        reviewNotes: formText(form, "reviewNotes"),
+        explicitHumanConfirmation: formChecked(form, "explicitHumanConfirmation")
+      })
+    ) {
+      refreshConfirmState();
       return;
     }
     confirmButton?.setAttribute("disabled", "true");
