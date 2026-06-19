@@ -64,6 +64,11 @@ REVIEW_DECISION_AUTHORITY_NOTICE = (
     "review state. They do not create accepted status, gate pass, verifier "
     "pass, or promotion authority. AI/Codex cannot be recorded as reviewer."
 )
+PROMOTION_AUTHORITY_NOTICE = (
+    "Promotion readiness and preview output are advisory workflow context. "
+    "They do not write accepted artifacts, change artifact status, pass gates, "
+    "mutate verifier evidence, or grant promotion authority."
+)
 _EXPORT_ENDPOINTS = {
     "/api/workspace": "workspace.json",
     "/api/artifacts": "artifacts.json",
@@ -179,6 +184,11 @@ class ReadOnlySiteApi:
             return self._live_issue_payload(path.removeprefix("/api/issues/"))
         if path == "/api/artifacts/live":
             return self._live_artifacts_payload()
+        artifact_promotion = _parse_artifact_promotion_path(path)
+        if artifact_promotion is not None:
+            artifact_id, action = artifact_promotion
+            if action == "readiness":
+                return self._artifact_promotion_readiness(artifact_id)
         if path.startswith("/api/artifacts/"):
             return self._live_artifact_payload(path.removeprefix("/api/artifacts/"))
         if path.startswith("/api/context/") and path.endswith("/latest"):
@@ -198,6 +208,7 @@ class ReadOnlySiteApi:
     def _handle_post(self, path: str, body: str | bytes) -> ApiResponse:
         issue_action = _parse_issue_action_path(path)
         artifact_action = _parse_artifact_action_path(path)
+        artifact_promotion = _parse_artifact_promotion_path(path)
         context_action = _parse_context_action_path(path)
         if (
             path not in _PREVIEW_ENDPOINTS
@@ -206,6 +217,7 @@ class ReadOnlySiteApi:
             and path not in _RUN_ENDPOINTS
             and issue_action is None
             and artifact_action is None
+            and artifact_promotion is None
             and context_action is None
         ):
             return _error(
@@ -236,6 +248,10 @@ class ReadOnlySiteApi:
                     return self._preview_artifact_update(artifact_id, payload)
                 if action == "update":
                     return self._update_artifact(artifact_id, payload)
+            if artifact_promotion is not None:
+                artifact_id, action = artifact_promotion
+                if action == "preview":
+                    return self._preview_artifact_promotion(artifact_id, payload)
             if path == "/api/issues/preview-create":
                 return self._preview_issue_create(payload)
             if path == "/api/issues/create":
@@ -381,6 +397,30 @@ class ReadOnlySiteApi:
             404,
             "artifact_not_found",
             f"No lifecycle artifact exists for: {normalized_id}",
+        )
+
+    def _artifact_promotion_readiness(self, artifact_id: str) -> ApiResponse:
+        try:
+            normalized_id = validate_artifact_id(artifact_id)
+            report = self.app.promotion_readiness(artifact_id=normalized_id)
+        except ValueError as exc:
+            return _error(400, "promotion_readiness_failed", str(exc))
+        payload = report.to_dict()
+        if not payload["artifacts"] and any(
+            reason["code"] == "artifact_not_found" for reason in payload["reasons"]
+        ):
+            return _error(
+                404,
+                "artifact_not_found",
+                f"No lifecycle artifact exists for: {normalized_id}",
+            )
+        return _live_response(
+            "promotion_readiness",
+            promotion_readiness=payload,
+            ready=payload["ready"],
+            accepted_write_performed=False,
+            promotion_performed=False,
+            authority_notice=PROMOTION_AUTHORITY_NOTICE,
         )
 
     def _live_context_latest_payload(self, issue_id: str) -> ApiResponse:
@@ -763,6 +803,54 @@ class ReadOnlySiteApi:
                 "authority_warning": REVIEW_DECISION_AUTHORITY_NOTICE,
                 "authority_notice": REVIEW_DECISION_AUTHORITY_NOTICE,
             },
+        )
+
+    def _preview_artifact_promotion(
+        self,
+        artifact_id: str,
+        payload: dict[str, Any],
+    ) -> ApiResponse:
+        action = "promotion_preview"
+        normalized_id = validate_artifact_id(artifact_id)
+        target_state = _promotion_target_state(payload.get("target_state", "accepted"))
+        report = self.app.promotion_readiness(artifact_id=normalized_id)
+        readiness = report.to_dict()
+        missing = _promotion_missing_requirements(readiness)
+        blocked = bool(missing)
+        summary = (
+            "ready for promotion"
+            if not blocked
+            else f"blocked by {len(missing)} missing requirement(s)"
+        )
+        promotion_plan = {
+            "artifact_id": normalized_id,
+            "target_state": target_state,
+            "readiness_summary": summary,
+            "validation_required": True,
+            "gate_required": True,
+            "human_review_required": True,
+            "promotion_performed": False,
+        }
+        self._write_audit(
+            action=action,
+            result_status="preview_blocked" if blocked else "preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=[],
+            authority_warnings=[PROMOTION_AUTHORITY_NOTICE],
+        )
+        return _preview_response(
+            "promotion_preview",
+            planned_actions=[f"preview {target_state} promotion readiness"],
+            planned_files=[],
+            promotion_plan=promotion_plan,
+            promotion_readiness=readiness,
+            promotion_blocked=blocked,
+            missing_requirements=missing,
+            accepted_write_performed=False,
+            promotion_performed=False,
+            authority_warning=PROMOTION_AUTHORITY_NOTICE,
+            authority_notice=PROMOTION_AUTHORITY_NOTICE,
         )
 
     def _preview_issue_create(self, payload: dict[str, Any]) -> ApiResponse:
@@ -1818,6 +1906,21 @@ def _parse_artifact_action_path(path: str) -> tuple[str, str] | None:
     return artifact_id, action
 
 
+def _parse_artifact_promotion_path(path: str) -> tuple[str, str] | None:
+    if not path.startswith("/api/artifacts/"):
+        return None
+    parts = path.removeprefix("/api/artifacts/").split("/")
+    if len(parts) == 2:
+        artifact_id, action = parts
+        if artifact_id and action == "promotion-readiness":
+            return artifact_id, "readiness"
+    if len(parts) == 3:
+        artifact_id, group, action = parts
+        if artifact_id and group == "promotion" and action == "preview":
+            return artifact_id, "preview"
+    return None
+
+
 def _parse_context_action_path(path: str) -> tuple[str, str] | None:
     if not path.startswith("/api/context/"):
         return None
@@ -1909,6 +2012,27 @@ def _scope(value: object) -> Literal["private", "public"]:
     if normalized not in {"private", "public"}:
         raise ValueError("scope must be private or public")
     return cast(Literal["private", "public"], normalized)
+
+
+def _promotion_target_state(value: object) -> str:
+    target_state = str(value).strip()
+    if target_state not in {"accepted", "refuted", "obsolete"}:
+        raise ValueError("target_state must be accepted, refuted, or obsolete")
+    return target_state
+
+
+def _promotion_missing_requirements(readiness: dict[str, Any]) -> list[dict[str, Any]]:
+    reasons: list[dict[str, Any]] = []
+    for reason in readiness.get("reasons", []):
+        if isinstance(reason, dict) and reason.get("severity") == "blocking":
+            reasons.append(reason)
+    for artifact in readiness.get("artifacts", []):
+        if not isinstance(artifact, dict):
+            continue
+        for reason in artifact.get("reasons", []):
+            if isinstance(reason, dict) and reason.get("severity") == "blocking":
+                reasons.append(reason)
+    return reasons
 
 
 def _issue_write_args(
@@ -2284,6 +2408,7 @@ def _web_action_kind(action: str) -> WebActionKind:
         "evidence_attach": WebActionKind.EVIDENCE_ATTACH,
         "review_packet_create": WebActionKind.REVIEW_PACKET_CREATE,
         "review_decision_create": WebActionKind.REVIEW_DECISION_CREATE,
+        "promotion_preview": WebActionKind.PROMOTION_PREVIEW,
         "github_issue_preview": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_issue_create": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_pr_preview": WebActionKind.FORGE_PR_CREATE,

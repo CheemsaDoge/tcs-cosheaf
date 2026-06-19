@@ -150,6 +150,9 @@ const relatedIssueItems = relatedIssues.map((issue) => ({
           <a class="button-link secondary" href={`/artifacts/${encodeURIComponent(artifact.id)}/review-decision/`}>
             <I18nText text={localized("Record review", "记录审阅")} />
           </a>
+          <a class="button-link secondary" href={`/artifacts/${encodeURIComponent(artifact.id)}/promotion/`}>
+            <I18nText text={localized("Check promotion", "检查晋升")} />
+          </a>
           <a class="button-link secondary" href="/demo/">
             <I18nText text={localized("Review PR path", "审阅 PR 入口")} />
           </a>

@@ -787,6 +787,33 @@ p {
   margin-top: 0.75rem;
 }
 
+.promotion-status-strip,
+.promotion-groups,
+.reason-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.promotion-status-strip {
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+  padding: 0.75rem 0;
+}
+
+.reason-list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.reason-list li {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .workbench-shell {
   align-items: start;
   display: grid;

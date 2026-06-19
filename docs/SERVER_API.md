@@ -107,6 +107,7 @@ GET /api/status
 GET /api/artifacts
 GET /api/artifacts/live
 GET /api/artifacts/<artifact_id>
+GET /api/artifacts/<artifact_id>/promotion-readiness
 GET /api/issues
 GET /api/issues/live
 GET /api/issues/<issue_id>
@@ -139,6 +140,7 @@ POST /api/reviews/packets/preview
 POST /api/reviews/packets/create
 POST /api/reviews/decisions/preview
 POST /api/reviews/decisions/create
+POST /api/artifacts/<artifact_id>/promotion/preview
 POST /api/forge/issues/preview
 POST /api/forge/issues/create
 POST /api/forge/prs/preview
@@ -163,6 +165,10 @@ Live endpoints return `source_of_truth: "repository"` and an authority notice:
   YAML records.
 - `/api/artifacts/live` and `/api/artifacts/<artifact_id>` read lifecycle
   artifact YAML records.
+- `/api/artifacts/<artifact_id>/promotion-readiness` returns a live advisory
+  promotion-readiness report from `CosheafApp.promotion_readiness`; it runs
+  validation and gatekeeper checks and may write ignored gate reports under
+  `.cosheaf/reports/`, but it writes no lifecycle artifacts.
 - `/api/context/<issue_id>/latest` reads an existing
   `context/TASKS/<issue_id>/` pack when present. It does not build one.
 - `/api/gates/latest` reads the latest existing
@@ -351,6 +357,32 @@ Human review decision endpoints refuse AI, Codex, agent, provider, model, or
 verifier identities as reviewers. They audit as `review.decision_create`. They
 do not set artifact `status: accepted`, pass gates, mutate verifier evidence,
 promote knowledge, or write accepted artifacts.
+
+## Promotion Readiness Workbench Actions
+
+The B2.7.1 promotion readiness endpoints are:
+
+```text
+GET /api/artifacts/<artifact_id>/promotion-readiness
+POST /api/artifacts/<artifact_id>/promotion/preview
+```
+
+The GET endpoint returns `PromotionReadinessReport.to_dict()` under
+`promotion_readiness`, plus `ready`, `accepted_write_performed: false`, and
+`promotion_performed: false`. It evaluates current repository records through
+the existing promotion-readiness service, including validation, gatekeeper
+state, dependency status, review state, source metadata requirements, and
+verifier evidence. Skipped verifier output is reported as skipped, never pass.
+
+Promotion preview requests accept `target_state` as `accepted`, `refuted`, or
+`obsolete`. Preview returns a dry-run `promotion_plan`, the readiness report,
+`promotion_blocked`, and `missing_requirements`. It writes no lifecycle YAML,
+does not run `git` or `gh`, and audits as `promotion.preview`.
+
+Promotion readiness and preview output are advisory workflow context. They do
+not change artifact status, write accepted/refuted/obsolete artifacts, pass
+gates, mutate verifier evidence, or grant promotion authority. Confirmed
+promotion remains a later lifecycle workflow.
 
 ## Validate And Gate Workbench Actions
 
