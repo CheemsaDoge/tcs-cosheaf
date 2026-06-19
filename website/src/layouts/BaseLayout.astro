@@ -10,28 +10,35 @@ interface Props {
 const { title, eyebrow } = Astro.props;
 const data = await loadSiteData();
 const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/";
+const runtime = data.runtime;
+const runtimeLabel = runtime?.label ?? "Static demo mode / 静态演示模式";
+const runtimeDetail = runtime?.fallback
+  ? `Fallback / 回退：${runtime.fallback_reason ?? "backend unavailable"}`
+  : runtime?.mode === "static-demo"
+    ? "Fixture JSON / 静态 JSON"
+    : runtime?.api_base ?? "http://127.0.0.1:8765";
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="zh-Hans">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Read-only Cosheaf website over sanitized static export data."
+      content="Cosheaf human governance workbench and static showcase over repository data. / Cosheaf 人类治理工作台和仓库数据静态展示。"
     />
     <title>{title} | TCS-Cosheaf</title>
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Skip to content</a>
+    <a class="skip-link" href="#main-content">Skip to content / 跳到内容</a>
     <div class="app-shell">
-      <aside class="sidebar" aria-label="Primary navigation">
+      <aside class="sidebar" aria-label="Primary navigation / 主导航">
         <a class="brand" href="/">
           <span class="brand-mark" aria-hidden="true">C</span>
           <span>
             <strong>Cosheaf</strong>
-            <small>read-only website</small>
+            <small>governance workbench / 治理工作台</small>
           </span>
         </a>
         <nav class="nav-list">
@@ -49,10 +56,17 @@ const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/";
         </nav>
         <div class="sidebar-status">
           <span class="status-dot" aria-hidden="true"></span>
-          <span>{data.site.public_only ? "public demo export" : "local export"}</span>
+          <span>{runtime?.label_zh ?? "静态演示模式"}</span>
         </div>
       </aside>
       <main class="content" id="main-content" tabindex="-1">
+        <aside
+          class:list={["runtime-banner", runtime?.fallback && "warning"]}
+          aria-label="Runtime mode / 运行模式"
+        >
+          <strong>{runtimeLabel}</strong>
+          <span>{runtimeDetail}</span>
+        </aside>
         <header class="page-header">
           <div>
             <p class="eyebrow">{eyebrow}</p>

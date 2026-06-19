@@ -18,7 +18,7 @@ export async function getStaticPaths() {
 
 const data = await loadSiteData();
 const id = Astro.params.id ?? "";
-const artifact = artifactById(id);
+const artifact = artifactById(id, data);
 if (!artifact) {
   throw new Error(`Unknown artifact: ${id}`);
 }
@@ -27,7 +27,7 @@ const relatedIssues = data.issues.issues.filter((issue) =>
 );
 ---
 
-<BaseLayout title={artifact.title} eyebrow="Artifact detail">
+<BaseLayout title={artifact.title} eyebrow="Artifact detail / 工件详情">
   <section class="split-layout">
     <article class="panel">
       <p class="section-kicker">{artifact.type}</p>
@@ -38,47 +38,47 @@ const relatedIssues = data.issues.issues.filter((issue) =>
           {artifact.status}
         </span>
         <span class:list={["badge", statusTone(artifact.verifier_state)]} title={statusExplanation(artifact.verifier_state)}>
-          verifier: {artifact.verifier_state}
+          verifier / 验证器: {artifact.verifier_state}
         </span>
-        <span class="tag">review: {artifact.review_state}</span>
-        <span class="tag">scope: {artifact.root_scope}</span>
+        <span class="tag">review / 审阅: {artifact.review_state}</span>
+        <span class="tag">scope / 范围: {artifact.root_scope}</span>
       </div>
     </article>
 
     <article class="panel">
-      <p class="section-kicker">Safe links</p>
-      <h2>Sources and evidence</h2>
+      <p class="section-kicker">Safe links / 安全链接</p>
+      <h2>Sources and evidence / 来源与证据</h2>
       {
         artifact.sources.length > 0 ? (
           <div class="related-list">
             {artifact.sources.map((source) => <span>{source}</span>)}
           </div>
         ) : (
-          <p>No safe source links were exported for this demo fixture.</p>
+          <p>No safe source links were exported for this demo fixture. / 此演示夹具没有导出安全来源链接。</p>
         )
       }
-      <p>Verifier state is exported as `{artifact.verifier_state}` and does not imply pass.</p>
+      <p>Verifier state is exported as `{artifact.verifier_state}` and does not imply pass. / 验证器状态导出为 `{artifact.verifier_state}`，不暗示通过。</p>
     </article>
   </section>
 
   <section class="card-grid">
     <article class="info-card">
-      <h2>Dependencies</h2>
+      <h2>Dependencies / 依赖</h2>
       <div class="related-list">
         {
           artifact.depends_on.length > 0
             ? artifact.depends_on.map((dep) => <a href={artifactHref(dep)}>{dep}</a>)
-            : <span>none</span>
+            : <span>none / 无</span>
         }
       </div>
     </article>
     <article class="info-card">
-      <h2>Related issues</h2>
+      <h2>Related issues / 相关议题</h2>
       <div class="related-list">
         {
           relatedIssues.length > 0
             ? relatedIssues.map((issue) => <a href={issueHref(issue.id)}>{issue.title}</a>)
-            : <span>none</span>
+            : <span>none / 无</span>
         }
       </div>
     </article>

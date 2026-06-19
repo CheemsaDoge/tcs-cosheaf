@@ -222,9 +222,39 @@ p {
   text-align: right;
 }
 
+.runtime-banner {
+  align-items: center;
+  background: var(--teal-soft);
+  border: 1px solid rgba(15, 118, 110, 0.3);
+  border-radius: 8px;
+  color: var(--teal);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 0.72rem 0.9rem;
+}
+
+.runtime-banner.warning {
+  background: var(--amber-soft);
+  border-color: rgba(184, 107, 0, 0.3);
+  color: var(--amber);
+}
+
+.runtime-banner span {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.runtime-banner strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .content,
 .page-header,
 .source-chip,
+.runtime-banner,
 .panel,
 .info-card,
 .table-panel,
@@ -771,9 +801,15 @@ p {
 
   .content {
     padding: 1rem;
+    overflow-x: hidden;
+  }
+
+  .content > * {
+    max-width: calc(100vw - 2rem);
   }
 
   .page-header,
+  .runtime-banner,
   .notice-band,
   .card-heading {
     align-items: stretch;
@@ -782,6 +818,16 @@ p {
 
   .source-chip {
     text-align: left;
+  }
+
+  .runtime-banner strong,
+  h1 {
+    max-width: 100%;
+    word-break: break-all;
+  }
+
+  h1 {
+    font-size: 1.75rem;
   }
 
   .metric-grid,

@@ -17,27 +17,27 @@ const showGraphConnector = shouldDrawGraphConnector(
 );
 const nodeLimitNotice =
   layoutMode === "empty"
-    ? "No dependency graph nodes were exported."
+    ? "No dependency graph nodes were exported. / 没有导出依赖图谱节点。"
     : data.graph.nodes.length > 25
-      ? `Showing ${data.graph.nodes.length} nodes as a navigable list for readability.`
-      : "This graph is an explanatory map, not proof or accepted authority.";
+      ? `Showing ${data.graph.nodes.length} nodes as a navigable list for readability. / 为便于阅读，${data.graph.nodes.length} 个节点以可导航列表显示。`
+      : "This graph is an explanatory map, not proof or accepted authority. / 此图谱只是解释性地图，不是证明或 accepted 权威。";
 ---
 
-<BaseLayout title="Graph" eyebrow="Dependency relationships">
+<BaseLayout title="Graph / 图谱" eyebrow="Dependency relationships / 依赖关系">
   <section class="notice-band">
-    <strong>Graph boundary</strong>
+    <strong>Graph boundary / 图谱边界</strong>
     <span>{nodeLimitNotice}</span>
   </section>
 
   <section class="panel">
     {
       layoutMode === "empty" ? (
-        <p class="empty-state">No graph nodes were exported.</p>
+        <p class="empty-state">No graph nodes were exported. / 没有导出图谱节点。</p>
       ) : (
         <div
           class:list={["graph-canvas", layoutMode === "list" && "graph-canvas-list"]}
           role="img"
-          aria-label="Artifact dependency graph"
+          aria-label="Artifact dependency graph / 工件依赖图谱"
         >
           {
             data.graph.nodes.map((node, index) => (
@@ -60,10 +60,10 @@ const nodeLimitNotice =
     }
   </section>
 
-  <section class="table-panel compact" aria-label="Graph edges">
+  <section class="table-panel compact" aria-label="Graph edges / 图谱边">
     <div class="table-head graph-table">
-      <span>Source</span>
-      <span>Target</span>
+      <span>Source / 源</span>
+      <span>Target / 目标</span>
     </div>
     {
       data.graph.edges.length > 0 ? (
@@ -75,7 +75,7 @@ const nodeLimitNotice =
         ))
       ) : (
         <div class="table-row empty-row">
-          <span>No graph edges were exported.</span>
+          <span>No graph edges were exported. / 没有导出图谱边。</span>
         </div>
       )
     }
@@ -92,26 +92,26 @@ const nodeLimitNotice =
             <p>{node.artifact_id}</p>
             <div class="neighborhood-grid">
               <div>
-                <strong>Depends on</strong>
+                <strong>Depends on / 依赖</strong>
                 <div class="related-list">
                   {deps.length > 0
                     ? deps.map((id) => <a href={artifactHref(id)}>{id}</a>)
-                    : <span>none</span>}
+                    : <span>none / 无</span>}
                 </div>
               </div>
               <div>
-                <strong>Used by</strong>
+                <strong>Used by / 被使用于</strong>
                 <div class="related-list">
                   {revDeps.length > 0
                     ? revDeps.map((id) => <a href={artifactHref(id)}>{id}</a>)
-                    : <span>none</span>}
+                    : <span>none / 无</span>}
                 </div>
               </div>
             </div>
           </article>
         );
       }) : (
-        <p class="empty-state">No graph neighborhoods were exported.</p>
+        <p class="empty-state">No graph neighborhoods were exported. / 没有导出图谱邻域。</p>
       )
     }
   </section>

@@ -15,37 +15,40 @@ const showMiniConnector = shouldDrawGraphConnector(
 );
 ---
 
-<BaseLayout title="Read-only workspace export" eyebrow="Home">
-  <section class="metric-grid" aria-label="Export summary">
+<BaseLayout title="Workspace export / 工作区导出" eyebrow="Home / 首页">
+  <section class="metric-grid" aria-label="Export summary / 导出摘要">
     <article class="metric-card">
-      <span>Artifacts</span>
+      <span>Artifacts / 工件</span>
       <strong>{data.artifacts.count}</strong>
-      <small>{data.artifacts.public_only ? "public/demo-safe export" : "local export"}</small>
+      <small>
+        {data.artifacts.public_only ? "public/demo-safe export / 公开或演示安全导出" : "local export / 本地导出"}
+      </small>
     </article>
     <article class="metric-card">
-      <span>Issues</span>
+      <span>Issues / 议题</span>
       <strong>{data.issues.count}</strong>
-      <small>repository workflow memory</small>
+      <small>repository workflow memory / 仓库工作流记忆</small>
     </article>
     <article class="metric-card">
-      <span>Gate verdict</span>
+      <span>Gate verdict / 门禁结论</span>
       <strong>{data.gates.verdict.replace("_", " ")}</strong>
-      <small>static export did not run gates</small>
+      <small>static export did not run gates / 静态导出未运行门禁</small>
     </article>
     <article class="metric-card">
-      <span>Graph edges</span>
+      <span>Graph edges / 图谱边</span>
       <strong>{data.graph.edges.length}</strong>
-      <small>display context only</small>
+      <small>display context only / 仅作展示上下文</small>
     </article>
   </section>
 
   <section class="split-layout">
     <article class="panel">
-      <p class="section-kicker">Demo workspace</p>
+      <p class="section-kicker">Demo workspace / 演示工作区</p>
       <h2>{data.workspace.workspace_name}</h2>
       <p>
         The scaffold renders the exported sidecar without repository writes,
-        backend calls, provider calls, or GitHub credentials.
+        backend calls, provider calls, or GitHub credentials. / 此界面渲染导出的
+        sidecar 数据，不写仓库、不调用后端或模型服务，也不使用 GitHub 凭据。
       </p>
       <div class="root-list">
         {
@@ -53,7 +56,7 @@ const showMiniConnector = shouldDrawGraphConnector(
             <div class="root-row">
               <span>{root.name}</span>
               <code>{root.path}</code>
-              <strong>{root.readonly ? "readonly" : "writable overlay"}</strong>
+              <strong>{root.readonly ? "readonly / 只读" : "writable overlay / 可写覆盖层"}</strong>
             </div>
           ))
         }
@@ -61,16 +64,16 @@ const showMiniConnector = shouldDrawGraphConnector(
     </article>
 
     <article class="panel graph-preview">
-      <p class="section-kicker">Dependency graph</p>
-      <h2>{edge ? `${edge.source_id} -> ${edge.target_id}` : "No edges"}</h2>
+      <p class="section-kicker">Dependency graph / 依赖图谱</p>
+      <h2>{edge ? `${edge.source_id} -> ${edge.target_id}` : "No edges / 无边"}</h2>
       {
         graphMode === "empty" ? (
-          <p class="empty-state">No graph nodes were exported.</p>
+          <p class="empty-state">No graph nodes were exported. / 没有导出图谱节点。</p>
         ) : (
           <div
             class:list={["mini-graph", graphMode === "list" && "mini-graph-list"]}
             role="img"
-            aria-label="Dependency graph preview"
+            aria-label="Dependency graph preview / 依赖图谱预览"
           >
             {
               data.graph.nodes.map((node, index) => (
@@ -94,7 +97,7 @@ const showMiniConnector = shouldDrawGraphConnector(
   </section>
 
   <section class="notice-band">
-    <strong>Authority boundary</strong>
+    <strong>Authority boundary / 权限边界</strong>
     <span>{data.authority_boundaries.notices[2]}</span>
   </section>
 </BaseLayout>

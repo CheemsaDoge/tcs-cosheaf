@@ -7,6 +7,12 @@ import issuesPayload from "../fixtures/site-data/issues.json";
 import reportsPayload from "../fixtures/site-data/reports.json";
 import sitePayload from "../fixtures/site-data/site.json";
 import workspacePayload from "../fixtures/site-data/workspace.json";
+import { type FetchLike, fetchLiveSiteData } from "./apiClient";
+import {
+  type RuntimeMetadata,
+  type RuntimeModeInput,
+  decideRuntimeMode
+} from "./runtimeMode";
 
 export const REQUIRED_DATA_FILES = [
   "site.json",
@@ -21,44 +27,44 @@ export const REQUIRED_DATA_FILES = [
 ] as const;
 
 export const ROUTES = [
-  { path: "/", label: "Home" },
-  { path: "/docs", label: "Docs / Concepts" },
-  { path: "/demo", label: "Demo" },
-  { path: "/artifacts", label: "Artifacts" },
-  { path: "/issues", label: "Issues" },
-  { path: "/graph", label: "Graph" },
-  { path: "/gates", label: "Gate Reports" },
-  { path: "/authority", label: "Authority Boundaries" }
+  { path: "/", label: "Home / 首页" },
+  { path: "/docs", label: "Docs / 概念" },
+  { path: "/demo", label: "Demo / 演示" },
+  { path: "/artifacts", label: "Artifacts / 工件" },
+  { path: "/issues", label: "Issues / 议题" },
+  { path: "/graph", label: "Graph / 图谱" },
+  { path: "/gates", label: "Gate Reports / 门禁报告" },
+  { path: "/authority", label: "Authority / 权限边界" }
 ] as const;
 
 export const AUTHORITY_GUIDE = [
   {
-    title: "What Cosheaf is",
-    body: "Cosheaf is a Git-backed workflow for typed research artifacts, review context, evidence records, and reproducible handoff."
+    title: "What Cosheaf is / Cosheaf 是什么",
+    body: "Cosheaf is a Git-backed workflow for typed research artifacts, review context, evidence records, and reproducible handoff. / Cosheaf 是基于 Git 的研究工作流，用于管理类型化研究工件、审阅上下文、证据记录和可复现交接。"
   },
   {
-    title: "What Cosheaf is not",
-    body: "It is not a hosted prover, a human reviewer, a source of private-public promotion, or a replacement for repository records."
+    title: "What Cosheaf is not / Cosheaf 不是什么",
+    body: "It is not a hosted prover, a human reviewer, a source of private-public promotion, or a replacement for repository records. / 它不是托管证明器、人工审阅者、私有到公开提升的授权来源，也不能替代仓库记录。"
   },
   {
-    title: "Why gate pass is not truth",
-    body: "A gate result can unblock or block workflow review, but it does not prove a statement or make an artifact accepted."
+    title: "Why gate pass is not truth / 为什么门禁通过不等于真理",
+    body: "A gate result can unblock or block workflow review, but it does not prove a statement or make an artifact accepted. / 门禁结果可以放行或阻断工作流审阅，但不能证明命题，也不能让工件自动成为 accepted。"
   },
   {
-    title: "Why AI output is review context",
-    body: "AI output can propose drafts, summaries, or checks for a human to inspect; it cannot become human review by itself."
+    title: "Why AI output is review context / 为什么 AI 输出只是审阅上下文",
+    body: "AI output can propose drafts, summaries, or checks for a human to inspect; it cannot become human review by itself. / AI 输出可以给人类提供草稿、摘要或检查建议，但不能自己变成人工审阅。"
   },
   {
-    title: "Why skipped verifier is not pass",
-    body: "Skipped, unavailable, and not-run verifier states mean no successful check was recorded."
+    title: "Why skipped verifier is not pass / 为什么 skipped 不是 pass",
+    body: "Skipped, unavailable, and not-run verifier states mean no successful check was recorded. / skipped、unavailable 和 not-run 表示没有成功检查记录，不能当作通过。"
   },
   {
-    title: "How public and private KB roots work",
-    body: "Public KB roots are normally readonly and citable; private KB roots are writable overlays for local research and must not leak into public exports."
+    title: "How public and private KB roots work / 公开与私有 KB 根如何工作",
+    body: "Public KB roots are normally readonly and citable; private KB roots are writable overlays for local research and must not leak into public exports. / 公开 KB 根通常只读且可引用；私有 KB 根是本地研究的可写覆盖层，不能泄露到公开导出。"
   },
   {
-    title: "How a result becomes accepted",
-    body: "Accepted status comes from repository records, source metadata, validation, gate policy, real human review, and explicit promotion."
+    title: "How a result becomes accepted / 结果如何成为 accepted",
+    body: "Accepted status comes from repository records, source metadata, validation, gate policy, real human review, and explicit promotion. / accepted 状态来自仓库记录、来源元数据、验证、门禁策略、真实人工审阅和显式提升。"
   }
 ] as const;
 
@@ -83,6 +89,8 @@ export interface ArtifactCard {
   verifier_state: string;
   review_state: string;
   risk_flags: string[];
+  sources: string[];
+  path: string;
 }
 
 export interface IssueSummary {
@@ -200,9 +208,16 @@ export interface SiteData {
   context_packs: ContextPacksPayload;
   reports: SiteExportPayload;
   authority_boundaries: AuthorityBoundariesPayload;
+  runtime: RuntimeMetadata;
 }
 
-const data: SiteData = {
+export interface LoadSiteDataOptions {
+  env?: RuntimeModeInput;
+  fetcher?: FetchLike;
+  timeoutMs?: number;
+}
+
+const fixtureData: SiteData = {
   site: sitePayload as SitePayload,
   workspace: workspacePayload as WorkspacePayload,
   artifacts: artifactsPayload as ArtifactsPayload,
@@ -211,23 +226,56 @@ const data: SiteData = {
   gates: gatesPayload as GatesPayload,
   context_packs: contextPacksPayload as ContextPacksPayload,
   reports: reportsPayload as SiteExportPayload,
-  authority_boundaries: authorityBoundariesPayload as AuthorityBoundariesPayload
+  authority_boundaries: authorityBoundariesPayload as AuthorityBoundariesPayload,
+  runtime: decideRuntimeMode({ mode: "static" })
 };
 
-export async function loadSiteData(): Promise<SiteData> {
-  return data;
+export async function loadSiteData(
+  options: LoadSiteDataOptions = {}
+): Promise<SiteData> {
+  const runtime = decideRuntimeMode(options.env ?? runtimeEnvFromImportMeta());
+  if (runtime.mode === "static-demo") {
+    return withRuntime(fixtureData, runtime);
+  }
+  try {
+    return await fetchLiveSiteData({
+      apiBase: runtime.api_base,
+      fetcher: options.fetcher,
+      fixtureData,
+      runtime,
+      timeoutMs: options.timeoutMs
+    });
+  } catch (error) {
+    return withRuntime(
+      fixtureData,
+      decideRuntimeMode({
+        mode: "static",
+        apiBase: runtime.api_base,
+        fallbackReason: errorMessage(error)
+      })
+    );
+  }
 }
 
-export function artifactById(id: string): ArtifactCard | undefined {
-  return data.artifacts.artifacts.find((artifact) => artifact.id === id);
+export function artifactById(
+  id: string,
+  source: SiteData = fixtureData
+): ArtifactCard | undefined {
+  return source.artifacts.artifacts.find((artifact) => artifact.id === id);
 }
 
-export function issueById(id: string): IssueSummary | undefined {
-  return data.issues.issues.find((issue) => issue.id === id);
+export function issueById(
+  id: string,
+  source: SiteData = fixtureData
+): IssueSummary | undefined {
+  return source.issues.issues.find((issue) => issue.id === id);
 }
 
-export function contextPackForIssue(id: string): ContextPackSummary | undefined {
-  return data.context_packs.context_packs.find((pack) => pack.issue_id === id);
+export function contextPackForIssue(
+  id: string,
+  source: SiteData = fixtureData
+): ContextPackSummary | undefined {
+  return source.context_packs.context_packs.find((pack) => pack.issue_id === id);
 }
 
 export interface ArtifactFilter {
@@ -266,21 +314,21 @@ export function contextHref(issueId: string): string {
 
 export function statusExplanation(status: string): string {
   if (status === "accepted") {
-    return "Accepted status must still come from repository records and promotion policy, not the website.";
+    return "Accepted status must still come from repository records and promotion policy, not the website. / accepted 状态仍必须来自仓库记录和提升策略，而不是网页显示。";
   }
   if (status === "draft") {
-    return "Draft means review context only; it is not accepted knowledge.";
+    return "Draft means review context only; it is not accepted knowledge. / draft 只是审阅上下文，不是 accepted 知识。";
   }
   if (status === "not_run") {
-    return "Not checked: no verifier or gate pass is implied.";
+    return "Not checked: no verifier or gate pass is implied. / 尚未检查，不暗示验证器或门禁通过。";
   }
   if (status === "skipped") {
-    return "Skipped is not pass.";
+    return "Skipped is not pass. / skipped 不是 pass。";
   }
   if (status === "requested") {
-    return "Review requested is not human-reviewed or accepted.";
+    return "Review requested is not human-reviewed or accepted. / requested 不等于已人工审阅或 accepted。";
   }
-  return "Website badges are display context only.";
+  return "Website badges are display context only. / 网页徽标只是展示上下文。";
 }
 
 export function dependenciesFor(id: string, edges: GraphEdge[]): string[] {
@@ -312,17 +360,42 @@ export function shouldDrawGraphConnector(
   return graphLayoutMode(nodeCount) === "pair" && edgeCount > 0;
 }
 
+function withRuntime(source: SiteData, runtime: RuntimeMetadata): SiteData {
+  return { ...source, runtime };
+}
+
+function runtimeEnvFromImportMeta(): RuntimeModeInput {
+  const env = import.meta.env;
+  const mode =
+    env.PUBLIC_COSHEAF_RUNTIME_MODE ??
+    env.COSHEAF_RUNTIME_MODE ??
+    "auto";
+  const apiBase =
+    env.PUBLIC_COSHEAF_API_BASE ??
+    env.COSHEAF_API_BASE ??
+    undefined;
+  return {
+    mode: String(mode),
+    apiBase: apiBase ? String(apiBase) : undefined,
+    dev: Boolean(env.DEV) && env.MODE !== "test"
+  };
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export function gateVerdictExplanation(gates: GatesPayload): string {
   if (gates.verdict === "not_run") {
-    return "Gate was not run in this static export; no pass is implied.";
+    return "Gate was not run in this static export; no pass is implied. / 此静态导出未运行门禁，不暗示通过。";
   }
   if (gates.verdict === "pass") {
-    return "Gate pass may unblock review workflow, but it does not accept artifacts or prove truth.";
+    return "Gate pass may unblock review workflow, but it does not accept artifacts or prove truth. / 门禁通过可以放行审阅流程，但不会自动接受工件或证明真理。";
   }
   if (gates.verdict === "fail" || gates.verdict === "error") {
-    return "Gate result blocks review until the reported issues are resolved.";
+    return "Gate result blocks review until the reported issues are resolved. / 门禁结果会阻断审阅，直到报告的问题被解决。";
   }
-  return "Gate output is workflow context only, not accepted authority.";
+  return "Gate output is workflow context only, not accepted authority. / 门禁输出只是工作流上下文，不是 accepted 权威。";
 }
 
 export function statusTone(status: string): "neutral" | "warning" | "good" {
