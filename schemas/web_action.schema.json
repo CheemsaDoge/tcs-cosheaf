@@ -132,6 +132,15 @@
           "title": "Readiness Summary",
           "type": "string"
         },
+        "required_confirmation": {
+          "enum": [
+            "PROMOTE TO ACCEPTED",
+            "MARK REFUTED",
+            "MARK OBSOLETE"
+          ],
+          "title": "Required Confirmation",
+          "type": "string"
+        },
         "validation_required": {
           "default": true,
           "title": "Validation Required",
@@ -156,7 +165,8 @@
       "required": [
         "artifact_id",
         "target_state",
-        "readiness_summary"
+        "readiness_summary",
+        "required_confirmation"
       ],
       "title": "PromotionPlan",
       "type": "object"

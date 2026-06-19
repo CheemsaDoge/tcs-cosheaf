@@ -48,6 +48,12 @@ def _write_yaml(repo_root: Path, relative_path: str, data: dict[str, Any]) -> Pa
     return path
 
 
+def _read_yaml(path: Path) -> dict[str, Any]:
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    assert isinstance(data, dict)
+    return data
+
+
 def _audit_entries(repo_root: Path) -> list[dict[str, Any]]:
     audit_path = repo_root / ".cosheaf" / "audit" / "web-actions.jsonl"
     return [
@@ -230,3 +236,206 @@ def test_web_promotion_readiness_displays_required_skipped_verifier_as_blocking(
     assert skipped[0]["status"] == "skipped"
     assert skipped[0]["severity"] == "blocking"
     assert "not a pass" in skipped[0]["message"]
+
+
+def test_web_promotion_preview_includes_target_diff_review_and_confirmation(
+    tmp_path: Path,
+) -> None:
+    source = _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.web-promote.yaml",
+        _artifact_data("claim.fixture.web-promote"),
+    )
+    before = source.read_text(encoding="utf-8")
+    api = ReadOnlySiteApi(open_app(tmp_path))
+
+    response = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.web-promote/promotion/preview",
+        json.dumps(
+            {
+                "target_state": "accepted",
+                "actor": "Ada Reviewer",
+            }
+        ),
+    )
+
+    assert response.status == 200
+    assert response.payload["kind"] == "promotion_preview"
+    assert response.payload["dry_run_only"] is True
+    assert response.payload["promotion_blocked"] is False
+    assert response.payload["promotion_plan"]["target_state"] == "accepted"
+    assert (
+        response.payload["promotion_plan"]["required_confirmation"]
+        == "PROMOTE TO ACCEPTED"
+    )
+    assert response.payload["review_record_preview"] == {
+        "actor": "Ada Reviewer",
+        "artifact_id": "claim.fixture.web-promote",
+        "target_state": "accepted",
+        "existing_review_state": "human_reviewed",
+    }
+    assert response.payload["validation_summary"] == "validation passed"
+    assert response.payload["gate_summary"] == "gate passed"
+    assert "kb/draft/claims/claim.fixture.web-promote.yaml" in response.payload[
+        "planned_files"
+    ]
+    assert "kb/accepted/claims/claim.fixture.web-promote.yaml" in response.payload[
+        "planned_files"
+    ]
+    assert "status: accepted" in response.payload["yaml_diff"]
+    assert source.read_text(encoding="utf-8") == before
+    assert not (
+        tmp_path / "kb" / "accepted" / "claims" / "claim.fixture.web-promote.yaml"
+    ).exists()
+
+
+def test_web_promotion_confirm_requires_typed_confirmation_then_promotes(
+    tmp_path: Path,
+) -> None:
+    source = _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.web-promote.yaml",
+        _artifact_data("claim.fixture.web-promote"),
+    )
+    api = ReadOnlySiteApi(open_app(tmp_path))
+
+    blocked = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.web-promote/promotion/confirm",
+        json.dumps(
+            {
+                "target_state": "accepted",
+                "actor": "Ada Reviewer",
+                "typed_confirmation": "MARK REFUTED",
+                "confirm": True,
+            }
+        ),
+    )
+
+    assert blocked.status == 400
+    assert blocked.payload["code"] == "typed_confirmation_required"
+    assert source.is_file()
+
+    confirmed = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.web-promote/promotion/confirm",
+        json.dumps(
+            {
+                "target_state": "accepted",
+                "actor": "Ada Reviewer",
+                "typed_confirmation": "PROMOTE TO ACCEPTED",
+                "confirm": True,
+            }
+        ),
+    )
+
+    assert confirmed.status == 200
+    assert confirmed.payload["kind"] == "promotion_confirm"
+    assert confirmed.payload["repo_writes_performed"] is True
+    assert confirmed.payload["accepted_write_performed"] is True
+    assert confirmed.payload["promotion_performed"] is True
+    target = tmp_path / "kb" / "accepted" / "claims" / "claim.fixture.web-promote.yaml"
+    assert not source.exists()
+    assert target.is_file()
+    assert _read_yaml(target)["status"] == "accepted"
+
+    entries = _audit_entries(tmp_path)
+    assert entries[-1]["action"] == "promotion.confirm"
+    assert entries[-1]["actor"] == "Ada Reviewer"
+    assert entries[-1]["repo_writes_performed"] is True
+    assert "kb/accepted/claims/claim.fixture.web-promote.yaml" in entries[-1][
+        "written_files"
+    ]
+
+
+def test_web_promotion_confirm_blocks_missing_review(
+    tmp_path: Path,
+) -> None:
+    source = _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.unreviewed.yaml",
+        _artifact_data("claim.fixture.unreviewed", review_state="requested"),
+    )
+    api = ReadOnlySiteApi(open_app(tmp_path))
+
+    response = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.unreviewed/promotion/confirm",
+        json.dumps(
+            {
+                "target_state": "accepted",
+                "actor": "Ada Reviewer",
+                "typed_confirmation": "PROMOTE TO ACCEPTED",
+                "confirm": True,
+            }
+        ),
+    )
+
+    assert response.status == 400
+    assert response.payload["code"] == "promotion_blocked"
+    assert "missing_review" in response.payload["message"]
+    assert source.is_file()
+    assert not (
+        tmp_path / "kb" / "accepted" / "claims" / "claim.fixture.unreviewed.yaml"
+    ).exists()
+
+
+def test_web_promotion_confirm_moves_refuted_through_lifecycle(
+    tmp_path: Path,
+) -> None:
+    source = _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.refute.yaml",
+        _artifact_data("claim.fixture.refute"),
+    )
+    api = ReadOnlySiteApi(open_app(tmp_path))
+
+    response = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.refute/promotion/confirm",
+        json.dumps(
+            {
+                "target_state": "refuted",
+                "actor": "Ada Reviewer",
+                "typed_confirmation": "MARK REFUTED",
+                "confirm": True,
+            }
+        ),
+    )
+
+    assert response.status == 200
+    assert response.payload["accepted_write_performed"] is False
+    assert response.payload["promotion_performed"] is True
+    target = tmp_path / "kb" / "refuted" / "claim.fixture.refute.yaml"
+    assert not source.exists()
+    assert target.is_file()
+    assert _read_yaml(target)["status"] == "refuted"
+
+
+def test_web_promotion_confirm_refuses_ai_actor(
+    tmp_path: Path,
+) -> None:
+    source = _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.ai-actor.yaml",
+        _artifact_data("claim.fixture.ai-actor"),
+    )
+    api = ReadOnlySiteApi(open_app(tmp_path))
+
+    response = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.ai-actor/promotion/confirm",
+        json.dumps(
+            {
+                "target_state": "accepted",
+                "actor": "Codex reviewer",
+                "typed_confirmation": "PROMOTE TO ACCEPTED",
+                "confirm": True,
+            }
+        ),
+    )
+
+    assert response.status == 400
+    assert response.payload["code"] == "promotion_actor_forbidden"
+    assert source.is_file()

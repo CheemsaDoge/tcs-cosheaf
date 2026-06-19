@@ -3,6 +3,33 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.7.2 web promotion actions - 2026-06-20
+
+Issue #566 adds live-local artifact promotion actions on branch
+`web-promotion-actions`.
+
+The current surface includes:
+
+- `CosheafApp.preview_promote_artifact`;
+- `CosheafApp.promote_artifact`;
+- `POST /api/artifacts/<artifact_id>/promotion/preview`;
+- `POST /api/artifacts/<artifact_id>/promotion/confirm`; and
+- frontend helpers for target-state selection, required typed confirmation,
+  actor input, preview, and confirm.
+
+Preview returns readiness context, planned lifecycle files, YAML diff, review
+preview, validation/gate summaries, and the required confirmation phrase
+without writing repository files. Confirm requires `confirm: true`, a non-AI
+human actor, the selected target state, and the exact typed phrase before the
+backend recomputes validation, gate, review, dependency, source-metadata,
+readonly-root, and path/status policy checks.
+
+Successful confirm writes deterministic lifecycle YAML through the app/service
+boundary and appends a `promotion.confirm` audit record using the human actor.
+The website still does not directly mutate YAML, run Git/GitHub promotion
+flows, create human review, mutate verifier evidence, bypass source metadata,
+or make website output an accepted authority.
+
 ## Longplan B2.1.2 web action audit log - 2026-06-19
 
 Issue #542 adds shared web-action audit logging on branch

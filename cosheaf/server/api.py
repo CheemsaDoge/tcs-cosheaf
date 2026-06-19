@@ -25,7 +25,7 @@ from cosheaf.forge import (
     ForgeCredentialProvider,
 )
 from cosheaf.issues import ISSUE_AUTHORITY_NOTICE, LocalIssueError
-from cosheaf.services import DraftWriteServiceError
+from cosheaf.services import PROMOTION_CONFIRMATION_PHRASES, DraftWriteServiceError
 from cosheaf.site import REQUIRED_SITE_EXPORT_FILES, SITE_EXPORT_AUTHORITY_NOTICE
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
 from cosheaf.storage.writer import dump_yaml_deterministic
@@ -252,6 +252,8 @@ class ReadOnlySiteApi:
                 artifact_id, action = artifact_promotion
                 if action == "preview":
                     return self._preview_artifact_promotion(artifact_id, payload)
+                if action == "confirm":
+                    return self._confirm_artifact_promotion(artifact_id, payload)
             if path == "/api/issues/preview-create":
                 return self._preview_issue_create(payload)
             if path == "/api/issues/create":
@@ -813,6 +815,7 @@ class ReadOnlySiteApi:
         action = "promotion_preview"
         normalized_id = validate_artifact_id(artifact_id)
         target_state = _promotion_target_state(payload.get("target_state", "accepted"))
+        actor = _optional_text(payload, "actor") or "local.web"
         report = self.app.promotion_readiness(artifact_id=normalized_id)
         readiness = report.to_dict()
         missing = _promotion_missing_requirements(readiness)
@@ -826,31 +829,167 @@ class ReadOnlySiteApi:
             "artifact_id": normalized_id,
             "target_state": target_state,
             "readiness_summary": summary,
+            "required_confirmation": _promotion_required_confirmation(target_state),
             "validation_required": True,
             "gate_required": True,
             "human_review_required": True,
             "promotion_performed": False,
         }
+        planned_files: list[str] = []
+        yaml_diff = ""
+        review_record_preview: dict[str, Any] = {}
+        validation_summary = None
+        gate_summary = None
+        if not blocked:
+            try:
+                result = self.app.preview_promote_artifact(
+                    normalized_id,
+                    target_state=target_state,
+                    actor=actor,
+                )
+            except DraftWriteServiceError as exc:
+                blocked = True
+                missing = [
+                    {
+                        "code": exc.code,
+                        "severity": "blocking",
+                        "message": str(exc),
+                    }
+                ]
+                promotion_plan["readiness_summary"] = "blocked by promotion policy"
+            else:
+                planned_files = [path.as_posix() for path in result.planned_files]
+                yaml_diff = result.yaml_diff
+                review_record_preview = result.review_record_preview()
+                validation_summary = result.validation_summary
+                gate_summary = result.gate_summary
         self._write_audit(
             action=action,
             result_status="preview_blocked" if blocked else "preview",
             explicit_confirm=False,
             preview_only=True,
-            planned_files=[],
+            planned_files=planned_files,
             authority_warnings=[PROMOTION_AUTHORITY_NOTICE],
         )
         return _preview_response(
             "promotion_preview",
             planned_actions=[f"preview {target_state} promotion readiness"],
-            planned_files=[],
+            planned_files=planned_files,
             promotion_plan=promotion_plan,
             promotion_readiness=readiness,
             promotion_blocked=blocked,
             missing_requirements=missing,
+            yaml_diff=yaml_diff,
+            review_record_preview=review_record_preview,
+            validation_summary=validation_summary,
+            gate_summary=gate_summary,
             accepted_write_performed=False,
             promotion_performed=False,
             authority_warning=PROMOTION_AUTHORITY_NOTICE,
             authority_notice=PROMOTION_AUTHORITY_NOTICE,
+        )
+
+    def _confirm_artifact_promotion(
+        self,
+        artifact_id: str,
+        payload: dict[str, Any],
+    ) -> ApiResponse:
+        action = "promotion_confirm"
+        normalized_id = validate_artifact_id(artifact_id)
+        target_state = _promotion_target_state(payload.get("target_state", "accepted"))
+        actor = _required_text(payload, "actor")
+        blocked = self._blocked_confirm(
+            action,
+            payload,
+            authority_warnings=[PROMOTION_AUTHORITY_NOTICE],
+        )
+        if blocked is not None:
+            return blocked
+        required = _promotion_required_confirmation(target_state)
+        typed = _required_text(payload, "typed_confirmation")
+        if typed != required:
+            self._write_audit(
+                action=action,
+                result_status="typed_confirmation_required",
+                explicit_confirm=True,
+                preview_only=False,
+                actor=actor,
+                authority_warnings=[PROMOTION_AUTHORITY_NOTICE],
+            )
+            return _error(
+                400,
+                "typed_confirmation_required",
+                f'typed_confirmation must exactly match "{required}"',
+            )
+        try:
+            result = self.app.promote_artifact(
+                normalized_id,
+                target_state=target_state,
+                actor=actor,
+            )
+        except DraftWriteServiceError as exc:
+            self._write_audit(
+                action=action,
+                result_status=exc.code,
+                explicit_confirm=True,
+                preview_only=False,
+                actor=actor,
+                authority_warnings=[PROMOTION_AUTHORITY_NOTICE],
+            )
+            return _error(400, exc.code, str(exc))
+        planned_files = [path.as_posix() for path in result.planned_files]
+        written_files = [path.as_posix() for path in result.written_paths]
+        self._write_audit(
+            action=action,
+            result_status="success",
+            explicit_confirm=True,
+            preview_only=False,
+            actor=actor,
+            planned_files=planned_files,
+            written_files=written_files,
+            repo_writes_performed=True,
+            result={
+                "action_performed": True,
+                "validation_performed": True,
+                "gate_performed": True,
+            },
+            authority_warnings=[PROMOTION_AUTHORITY_NOTICE],
+        )
+        return ApiResponse(
+            200,
+            {
+                "schema_version": READONLY_SERVER_SCHEMA_VERSION,
+                "kind": "promotion_confirm",
+                "action_performed": True,
+                "repo_writes_performed": True,
+                "git_writes_performed": False,
+                "github_writes_performed": False,
+                "network_calls_performed": False,
+                "audit_logged": True,
+                "planned_files": planned_files,
+                "written_files": written_files,
+                "promotion_plan": {
+                    "artifact_id": normalized_id,
+                    "target_state": target_state,
+                    "readiness_summary": "promotion confirmed",
+                    "required_confirmation": required,
+                    "validation_required": True,
+                    "gate_required": True,
+                    "human_review_required": True,
+                    "promotion_performed": result.promotion_performed,
+                },
+                "review_record_preview": result.review_record_preview(),
+                "validation_summary": result.validation_summary,
+                "gate_summary": result.gate_summary,
+                "yaml_diff": result.yaml_diff,
+                "artifact": result.updated_artifact.model_dump(mode="json"),
+                "old_path": result.old_relative_path.as_posix(),
+                "path": result.new_relative_path.as_posix(),
+                "accepted_write_performed": result.accepted_write_performed,
+                "promotion_performed": result.promotion_performed,
+                "authority_warning": PROMOTION_AUTHORITY_NOTICE,
+                "authority_notice": PROMOTION_AUTHORITY_NOTICE,
+            },
         )
 
     def _preview_issue_create(self, payload: dict[str, Any]) -> ApiResponse:
@@ -1731,12 +1870,14 @@ class ReadOnlySiteApi:
         preview_only: bool,
         credential_provider: str | None = None,
         planned_files: list[str] | None = None,
+        written_files: list[str] | None = None,
         repo_writes_performed: bool = False,
         base: str | None = None,
         head: str | None = None,
         branch: str | None = None,
         result: dict[str, Any] | None = None,
         authority_warnings: list[str] | None = None,
+        actor: str = "local.web",
     ) -> None:
         result = result or {}
         github_url = result.get("github_issue_url") or result.get("github_pr_url")
@@ -1758,7 +1899,7 @@ class ReadOnlySiteApi:
             self.app.context,
             WebActionAuditEntry(
                 timestamp=datetime.now(UTC).replace(microsecond=0),
-                actor="local.web",
+                actor=actor,
                 action=_web_action_kind(action),
                 mode=WebActionMode.LOCAL,
                 repo_root=str(self.app.context.repo_root),
@@ -1779,7 +1920,11 @@ class ReadOnlySiteApi:
                     result.get("network_calls_performed", False)
                 ),
                 planned_files=planned_files or [],
-                written_files=(planned_files or []) if repo_writes_performed else [],
+                written_files=(
+                    written_files
+                    if written_files is not None
+                    else (planned_files or []) if repo_writes_performed else []
+                ),
                 validation_summary=_performed_summary(result, "validation_performed"),
                 gate_summary=_performed_summary(result, "gate_performed"),
                 github_urls=[github_url] if isinstance(github_url, str) else [],
@@ -1916,8 +2061,8 @@ def _parse_artifact_promotion_path(path: str) -> tuple[str, str] | None:
             return artifact_id, "readiness"
     if len(parts) == 3:
         artifact_id, group, action = parts
-        if artifact_id and group == "promotion" and action == "preview":
-            return artifact_id, "preview"
+        if artifact_id and group == "promotion" and action in {"preview", "confirm"}:
+            return artifact_id, action
     return None
 
 
@@ -2019,6 +2164,10 @@ def _promotion_target_state(value: object) -> str:
     if target_state not in {"accepted", "refuted", "obsolete"}:
         raise ValueError("target_state must be accepted, refuted, or obsolete")
     return target_state
+
+
+def _promotion_required_confirmation(target_state: str) -> str:
+    return PROMOTION_CONFIRMATION_PHRASES[target_state]
 
 
 def _promotion_missing_requirements(readiness: dict[str, Any]) -> list[dict[str, Any]]:
@@ -2409,6 +2558,7 @@ def _web_action_kind(action: str) -> WebActionKind:
         "review_packet_create": WebActionKind.REVIEW_PACKET_CREATE,
         "review_decision_create": WebActionKind.REVIEW_DECISION_CREATE,
         "promotion_preview": WebActionKind.PROMOTION_PREVIEW,
+        "promotion_confirm": WebActionKind.PROMOTION_CONFIRM,
         "github_issue_preview": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_issue_create": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_pr_preview": WebActionKind.FORGE_PR_CREATE,

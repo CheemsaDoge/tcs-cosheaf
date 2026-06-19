@@ -335,3 +335,12 @@ Governance Workbench. Write actions are allowed only when they stay behind the
 server/app/forge boundary, preserve preview-before-confirm, emit redacted
 machine-readable audit logs, and keep repository files as the source of truth.
 They do not make website output a knowledge authority.
+
+The live-local promotion Workbench follows that rule through
+`POST /api/artifacts/<artifact_id>/promotion/preview` and
+`POST /api/artifacts/<artifact_id>/promotion/confirm`. Preview returns the
+target state, readiness, validation/gate summaries, YAML diff, review preview,
+planned files, and required confirmation phrase without writes. Confirm
+requires `confirm: true`, a non-AI human actor, and the exact typed phrase
+before the backend recomputes policy checks and writes lifecycle YAML through
+`cosheaf.app`; the frontend never mutates YAML directly.

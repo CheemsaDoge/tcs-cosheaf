@@ -108,7 +108,8 @@
   `/api/reviews/packets/create`, plus human review decision workbench actions
   `POST /api/reviews/decisions/preview` and
   `/api/reviews/decisions/create`, plus promotion readiness workbench actions
-  `POST /api/artifacts/<artifact_id>/promotion/preview`, plus
+  `POST /api/artifacts/<artifact_id>/promotion/preview` and
+  `/api/artifacts/<artifact_id>/promotion/confirm`, plus
   validate/gate workbench actions
   `POST /api/validate/run` and `POST /api/gate/run`, plus
   authenticated create `POST /api/forge/issues/create` and
@@ -1466,9 +1467,11 @@
   message, remediation, blocking flag, optional related path/artifact, and
   string details.
 - `cosheaf.web_actions.RepoWritePlan`, `GitWritePlan`, `GitHubWritePlan`,
-  `ReviewDecisionPlan`, and `PromotionPlan`: public plan DTOs for future
-  preview/confirm endpoints. They describe intended repository, git, GitHub,
-  human-review, and promotion work without performing it.
+  `ReviewDecisionPlan`, and `PromotionPlan`: public plan DTOs for preview/
+  confirm endpoints. `PromotionPlan` includes the exact
+  `required_confirmation` phrase for accepted/refuted/obsolete promotion. They
+  describe intended repository, git, GitHub, human-review, and promotion work
+  without performing it.
 - `cosheaf.web_actions.WebActionKind` and `WebActionMode`: public enums for
   allowed action names and static/local/hosted modes. Artifact metadata append
   audit actions distinguish `source.attach` from `evidence.attach`; review

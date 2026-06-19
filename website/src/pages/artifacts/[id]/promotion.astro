@@ -121,6 +121,7 @@ const canPreviewPromotion = data.runtime.mode === "live-local";
             data-api-base={data.runtime.api_base}
             data-artifact-id={artifact.id}
             data-output="#promotion-readiness-output"
+            data-required-confirmation="#promotion-required-confirmation"
           >
             <input name="artifactId" value={artifact.id} type="hidden" />
             <label>
@@ -131,9 +132,24 @@ const canPreviewPromotion = data.runtime.mode === "live-local";
                 ))}
               </select>
             </label>
+            <label>
+              <I18nText text={PROMOTION_LABELS.actor} />
+              <input name="actor" autocomplete="name" required />
+            </label>
+            <label>
+              <I18nText text={PROMOTION_LABELS.requiredConfirmation} />
+              <input id="promotion-required-confirmation" readonly value="PROMOTE TO ACCEPTED" />
+            </label>
+            <label>
+              <I18nText text={PROMOTION_LABELS.typedConfirmation} />
+              <input name="typedConfirmation" autocomplete="off" />
+            </label>
             <div class="preview-toolbar">
               <button class="preview-button" type="button" data-preview>
                 <I18nText text={PROMOTION_LABELS.preview} />
+              </button>
+              <button class="preview-button danger" type="submit" data-confirm disabled>
+                <I18nText text={PROMOTION_LABELS.confirm} />
               </button>
             </div>
           </form>
@@ -147,14 +163,14 @@ const canPreviewPromotion = data.runtime.mode === "live-local";
 
     <article class="panel preview-panel workbench-preview">
       <p class="section-kicker">
-        <I18nText text={PROMOTION_LABELS.readinessJson} />
+        <I18nText text={PROMOTION_LABELS.promotionPreview} />
       </p>
       <pre
         class="json-block preview-output"
         id="promotion-readiness-output"
-        data-i18n-en="Live local mode loads the fresh promotion readiness report here."
-        data-i18n-zh="实时本地模式会在这里加载最新晋升检查报告。"
-      >实时本地模式会在这里加载最新晋升检查报告。</pre>
+        data-i18n-en="Preview output appears here."
+        data-i18n-zh="预览结果会显示在这里。"
+      >预览结果会显示在这里。</pre>
     </article>
   </section>
 

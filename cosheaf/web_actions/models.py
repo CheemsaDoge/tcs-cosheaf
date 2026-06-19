@@ -180,6 +180,11 @@ class PromotionPlan(AgentAccessModel):
     artifact_id: str
     target_state: Literal["accepted", "refuted", "obsolete"]
     readiness_summary: str
+    required_confirmation: Literal[
+        "PROMOTE TO ACCEPTED",
+        "MARK REFUTED",
+        "MARK OBSOLETE",
+    ]
     validation_required: bool = True
     gate_required: bool = True
     human_review_required: bool = True
