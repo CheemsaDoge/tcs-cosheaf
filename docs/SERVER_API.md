@@ -46,6 +46,13 @@ forbidden. Browser-side GitHub token storage is forbidden. Server logs,
 responses, audit records, and test fixtures must never expose tokens,
 authorization headers, private keys, or cookies.
 
+The B2.1.1 action DTO contract lives in `cosheaf.web_actions` and
+`schemas/web_action.schema.json`. Future endpoints should use
+`WebActionPreviewRequest`, `WebActionConfirmRequest`, `WebActionResult`,
+`WebActionAuditEntry`, `WebActionError`, and the write-plan DTOs before adding
+new endpoint-specific payloads. The DTOs are a data contract only; B2.1.1 does
+not add write endpoints or audit-log persistence.
+
 Every write-class endpoint must:
 
 - offer a preview request that performs no repository write and no network

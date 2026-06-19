@@ -29,6 +29,16 @@
   informational only. `AgentAccessStatus.SKIPPED` remains distinct from
   `AgentAccessStatus.PASS`; skipped, unavailable, and inconclusive states are
   not pass states.
+- WebAction DTOs are implemented under `cosheaf.web_actions` and re-exported
+  through `cosheaf.app.models`. The Python surface defines
+  `WebActionPreviewRequest`, `WebActionConfirmRequest`, `WebActionResult`,
+  `WebActionAuditEntry`, `WebActionError`, `RepoWritePlan`, `GitWritePlan`,
+  `GitHubWritePlan`, `ReviewDecisionPlan`, `PromotionPlan`,
+  `WebActionKind`, and `WebActionMode`. The JSON Schema surface is
+  `schemas/web_action.schema.json`. These DTOs define stable request/result,
+  plan, error, and audit shapes for future Workbench endpoints only; they do
+  not add endpoint execution, repository writes, Git writes, GitHub writes,
+  human-review creation, promotion, or token handling.
 - The validate/gate CLI group is registered from `cosheaf.validation_cli` and
   delegates repository validation and gatekeeper runs to `cosheaf.app.open_app`.
   Public command names and JSON DTOs remain `cosheaf validate`,
@@ -1324,6 +1334,35 @@
   with provider/model, policy scope, consent, private-context-sent flag,
   status, timestamps, request fingerprint, and optional repository-local log
   path.
+- `cosheaf.web_actions.WebActionPreviewRequest`: public web-action preview
+  request DTO with `schema_version`, allowed `action`, runtime `mode`, optional
+  actor, and string parameters. Preview requests do not authorize writes.
+- `cosheaf.web_actions.WebActionConfirmRequest`: public web-action confirm
+  request DTO with `schema_version`, allowed `action`, runtime `mode`,
+  `preview_plan_hash`, `confirm=true`, optional actor, and string parameters.
+- `cosheaf.web_actions.WebActionResult`: public web-action result DTO with
+  `schema_version`, `action`, `mode`, `preview_only`, `confirm_required`,
+  `confirmed`, `performed`, repository/git/GitHub/network side-effect flags,
+  planned and written files, validation/gate summaries, authority warnings,
+  optional audit path, errors, and optional write/review/promotion plans.
+  Preview-only results validate that no side effect flags or written files are
+  reported.
+- `cosheaf.web_actions.WebActionAuditEntry`: public audit-entry DTO shape for
+  future append-only web-action logging. It records timestamp, actor, action,
+  mode, repo root, preview/confirm/performed flags, planned and written files,
+  validation/gate summaries, authority warnings, and errors. This DTO does not
+  implement audit logging by itself.
+- `cosheaf.web_actions.WebActionError`: public web-action error DTO with code,
+  message, remediation, blocking flag, optional related path/artifact, and
+  string details.
+- `cosheaf.web_actions.RepoWritePlan`, `GitWritePlan`, `GitHubWritePlan`,
+  `ReviewDecisionPlan`, and `PromotionPlan`: public plan DTOs for future
+  preview/confirm endpoints. They describe intended repository, git, GitHub,
+  human-review, and promotion work without performing it.
+- `cosheaf.web_actions.WebActionKind` and `WebActionMode`: public enums for
+  allowed action names and static/local/hosted modes.
+- `schemas/web_action.schema.json`: JSON Schema bundle for the public
+  WebAction DTOs.
 - `cosheaf.research.run.ResearchRunRecord`: strict Pydantic v2 DTO for one
   repository-local research run. It records issue ID, operator kind/label,
   timestamps, status, command records, artifact references, controlled outputs,

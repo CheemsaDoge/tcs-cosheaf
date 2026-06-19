@@ -27,6 +27,12 @@ Current focus:
 
 Post-v1.0.0 Longplan B/B2 website work:
 
+- issue #540 / branch `web-action-dtos` adds the B2.1.1 typed WebAction DTO
+  contract under `cosheaf.web_actions`, re-exported through
+  `cosheaf.app.models`, with `schemas/web_action.schema.json`. This creates
+  request/result/plan/audit/error shapes only; it does not add runtime write
+  endpoints.
+
 - issue #538 / branch `web-governance-workbench-spec` redefines the website
   target as the Human Governance Workbench: website as human research/review/
   governance workspace, CLI as AI/Codex/operator/automation interface, server
