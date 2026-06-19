@@ -59,6 +59,11 @@ REVIEW_PACKET_AUTHORITY_NOTICE = (
     "create proof, mark human review complete, pass gates, set accepted status, "
     "or grant promotion authority."
 )
+REVIEW_DECISION_AUTHORITY_NOTICE = (
+    "Human review decisions record reviewer judgment and may update artifact "
+    "review state. They do not create accepted status, gate pass, verifier "
+    "pass, or promotion authority. AI/Codex cannot be recorded as reviewer."
+)
 _EXPORT_ENDPOINTS = {
     "/api/workspace": "workspace.json",
     "/api/artifacts": "artifacts.json",
@@ -73,6 +78,7 @@ _PREVIEW_ENDPOINTS = {
     "/api/forge/review-packets/preview",
     "/api/issues/preview-create",
     "/api/reviews/packets/preview",
+    "/api/reviews/decisions/preview",
 }
 _CREATE_ENDPOINTS = {
     "/api/forge/issues/create",
@@ -80,6 +86,7 @@ _CREATE_ENDPOINTS = {
     "/api/issues/create",
     "/api/artifacts/create",
     "/api/reviews/packets/create",
+    "/api/reviews/decisions/create",
 }
 _RUN_ENDPOINTS = {
     "/api/validate/run",
@@ -257,6 +264,10 @@ class ReadOnlySiteApi:
                 return self._preview_review_packet(payload)
             if path == "/api/reviews/packets/create":
                 return self._create_review_packet(payload)
+            if path == "/api/reviews/decisions/preview":
+                return self._preview_review_decision(payload)
+            if path == "/api/reviews/decisions/create":
+                return self._create_review_decision(payload)
             if path == "/api/forge/local-issues/preview":
                 return self._preview_local_issue(payload)
             if path == "/api/forge/issues/preview":
@@ -659,6 +670,98 @@ class ReadOnlySiteApi:
                 "review_request": packet["request"],
                 "authority_warning": REVIEW_PACKET_AUTHORITY_NOTICE,
                 "authority_notice": REVIEW_PACKET_AUTHORITY_NOTICE,
+            },
+        )
+
+    def _preview_review_decision(self, payload: dict[str, Any]) -> ApiResponse:
+        action = "review_decision_create"
+        try:
+            result = self.app.write_review_decision(payload, dry_run=True)
+        except DraftWriteServiceError as exc:
+            self._write_audit(
+                action=action,
+                result_status=exc.code,
+                explicit_confirm=False,
+                preview_only=True,
+                authority_warnings=[REVIEW_DECISION_AUTHORITY_NOTICE],
+            )
+            return _error(400, exc.code, str(exc))
+        planned_files = _review_decision_planned_files(result)
+        self._write_audit(
+            action=action,
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=planned_files,
+            authority_warnings=[REVIEW_DECISION_AUTHORITY_NOTICE],
+        )
+        return _preview_response(
+            "review_decision_preview",
+            planned_actions=["record explicit human review decision preview"],
+            planned_files=planned_files,
+            review_decision=result.review,
+            artifact_update=result.artifact.model_dump(mode="json"),
+            artifact_review_state_changed=result.artifact_updated,
+            accepted_write_performed=False,
+            promotion_performed=False,
+            path=result.relative_path.as_posix(),
+            authority_warning=REVIEW_DECISION_AUTHORITY_NOTICE,
+            authority_notice=REVIEW_DECISION_AUTHORITY_NOTICE,
+        )
+
+    def _create_review_decision(self, payload: dict[str, Any]) -> ApiResponse:
+        action = "review_decision_create"
+        blocked = self._blocked_confirm(
+            action,
+            payload,
+            authority_warnings=[REVIEW_DECISION_AUTHORITY_NOTICE],
+        )
+        if blocked is not None:
+            return blocked
+        try:
+            result = self.app.write_review_decision(payload, dry_run=False)
+        except DraftWriteServiceError as exc:
+            self._write_audit(
+                action=action,
+                result_status=exc.code,
+                explicit_confirm=True,
+                preview_only=False,
+                authority_warnings=[REVIEW_DECISION_AUTHORITY_NOTICE],
+            )
+            return _error(400, exc.code, str(exc))
+        planned_files = _review_decision_planned_files(result)
+        self._write_audit(
+            action=action,
+            result_status="success",
+            explicit_confirm=True,
+            preview_only=False,
+            planned_files=planned_files,
+            repo_writes_performed=True,
+            result={"action_performed": True},
+            authority_warnings=[REVIEW_DECISION_AUTHORITY_NOTICE],
+        )
+        return ApiResponse(
+            200,
+            {
+                "schema_version": READONLY_SERVER_SCHEMA_VERSION,
+                "kind": "review_decision_create",
+                "action_performed": True,
+                "repo_writes_performed": True,
+                "git_writes_performed": False,
+                "github_writes_performed": False,
+                "network_calls_performed": False,
+                "audit_logged": True,
+                "planned_files": planned_files,
+                "written_files": [path.as_posix() for path in result.written_paths],
+                "path": result.relative_path.as_posix(),
+                "review_id": result.record_id,
+                "review_decision": result.review,
+                "artifact": result.artifact.model_dump(mode="json"),
+                "artifact_review_state_changed": result.artifact_updated,
+                "accepted_write_performed": False,
+                "promotion_performed": False,
+                "authority_warning": REVIEW_DECISION_AUTHORITY_NOTICE,
+                "authority_notice": REVIEW_DECISION_AUTHORITY_NOTICE,
             },
         )
 
@@ -1868,6 +1971,13 @@ def _artifact_write_args(
     return args
 
 
+def _review_decision_planned_files(result: Any) -> list[str]:
+    planned = [result.relative_path.as_posix()]
+    if result.artifact_updated:
+        planned.append(result.artifact_relative_path.as_posix())
+    return planned
+
+
 def _build_review_packet(
     api: ReadOnlySiteApi,
     payload: dict[str, Any],
@@ -2173,11 +2283,13 @@ def _web_action_kind(action: str) -> WebActionKind:
         "source_attach": WebActionKind.SOURCE_ATTACH,
         "evidence_attach": WebActionKind.EVIDENCE_ATTACH,
         "review_packet_create": WebActionKind.REVIEW_PACKET_CREATE,
+        "review_decision_create": WebActionKind.REVIEW_DECISION_CREATE,
         "github_issue_preview": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_issue_create": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_pr_preview": WebActionKind.FORGE_PR_CREATE,
         "github_pr_create": WebActionKind.FORGE_PR_CREATE,
         "review_packet_preview": WebActionKind.REVIEW_PACKET_CREATE,
+        "review_decision_preview": WebActionKind.REVIEW_DECISION_CREATE,
         "context_build": WebActionKind.CONTEXT_BUILD,
         "validate_run": WebActionKind.VALIDATE_RUN,
         "gate_run": WebActionKind.GATE_RUN,

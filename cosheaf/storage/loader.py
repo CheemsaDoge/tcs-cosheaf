@@ -135,7 +135,18 @@ class ReviewRecord(BaseModel):
     target: str
     summary: str
     findings: list[str] = Field(default_factory=list)
-    decision: Literal["approve", "request_changes", "reject", "informational"]
+    decision: Literal[
+        "approve",
+        "request_changes",
+        "reject",
+        "informational",
+        "accept_for_private_use",
+        "accept_for_public_candidate",
+        "changes_requested",
+        "keep_draft",
+        "refute_candidate",
+        "mark_obsolete",
+    ]
 
     @field_validator("id", "target")
     @classmethod

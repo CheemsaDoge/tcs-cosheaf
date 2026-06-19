@@ -35,6 +35,8 @@ from cosheaf.services import (
     DraftWriteService,
     GateService,
     MemorySearchService,
+    ReviewDecisionService,
+    ReviewDecisionWriteResult,
     ReviewRequestFromBundleResult,
     ValidationService,
     WorkspaceInfoResult,
@@ -550,6 +552,18 @@ class CosheafApp:
         """Generate and write or preview a draft request from a worker bundle."""
         return DraftWriteService(self.context).write_review_request_from_bundle(
             bundle_path,
+            dry_run=dry_run,
+        )
+
+    def write_review_decision(
+        self,
+        request: Mapping[str, Any],
+        *,
+        dry_run: bool = False,
+    ) -> ReviewDecisionWriteResult:
+        """Write or preview an explicit human review decision."""
+        return ReviewDecisionService(self.context).write_review_decision(
+            request,
             dry_run=dry_run,
         )
 

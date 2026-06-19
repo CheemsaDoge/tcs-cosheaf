@@ -7,6 +7,7 @@ promotion boundaries as the CLI.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -118,6 +119,20 @@ class ControlledWriteResult:
     dry_run: bool
     accepted_write_performed: bool = False
     record_id: str = ""
+
+
+@dataclass(frozen=True)
+class ReviewDecisionWriteResult:
+    """Result of a human review decision preview or write."""
+
+    review: Mapping[str, Any]
+    artifact: BaseArtifact
+    relative_path: Path
+    artifact_relative_path: Path
+    written_paths: tuple[Path, ...]
+    dry_run: bool
+    record_id: str
+    artifact_updated: bool
 
 
 @dataclass(frozen=True)
@@ -1268,6 +1283,210 @@ class DraftWriteService:
             ) from exc
 
 
+HUMAN_REVIEW_DECISIONS = frozenset(
+    {
+        "accept_for_private_use",
+        "accept_for_public_candidate",
+        "changes_requested",
+        "keep_draft",
+        "refute_candidate",
+        "mark_obsolete",
+    }
+)
+_ARTIFACT_REVIEW_STATE_BY_DECISION = {
+    "accept_for_private_use": "human_reviewed",
+    "accept_for_public_candidate": "human_reviewed",
+    "changes_requested": "changes_requested",
+}
+_FORBIDDEN_REVIEWER_PATTERN = re.compile(
+    r"\b(ai|agent|claude|codex|gemini|gpt|llm|model|provider|verifier)\b",
+    re.IGNORECASE,
+)
+
+
+class ReviewDecisionService:
+    """Service for explicit human review decisions."""
+
+    def __init__(self, context: RepoContext) -> None:
+        self.context = context
+
+    def write_review_decision(
+        self,
+        request: Mapping[str, Any],
+        *,
+        dry_run: bool = False,
+    ) -> ReviewDecisionWriteResult:
+        """Write or preview one human review decision."""
+        artifact_id = _required_text(request, "artifact_id")
+        try:
+            validate_artifact_id(artifact_id)
+        except ValueError as exc:
+            raise DraftWriteServiceError(
+                str(exc),
+                code="invalid_artifact_id",
+                remediation="Use a valid artifact id for the review target.",
+            ) from exc
+        reviewer = _required_text_with_code(
+            request,
+            "reviewer",
+            code="review_reviewer_required",
+            remediation="Provide the human reviewer identity.",
+        )
+        if _FORBIDDEN_REVIEWER_PATTERN.search(reviewer):
+            raise DraftWriteServiceError(
+                "AI, Codex, provider, agent, or verifier output cannot be "
+                "recorded as a human reviewer",
+                code="review_reviewer_forbidden",
+                remediation="Use an explicit human reviewer identity.",
+            )
+        decision = _review_decision_value(request.get("decision"))
+        notes = _required_text_with_code(
+            request,
+            "review_notes",
+            code="review_notes_required",
+            remediation="Record non-empty human review notes.",
+        )
+        scope = _review_scope(request.get("scope", "private"))
+        limitations = str(request.get("limitations", "")).strip()
+        if request.get("explicit_human_confirmation") is not True:
+            raise DraftWriteServiceError(
+                "explicit human review confirmation is required",
+                code="explicit_human_confirmation_required",
+                remediation=(
+                    "Check the box confirming this is a human review decision."
+                ),
+            )
+
+        loaded = _find_unique_artifact(self.context, artifact_id)
+        if loaded.kb_root_readonly:
+            raise DraftWriteServiceError(
+                f"readonly KB root cannot be modified: {loaded.kb_root_name}",
+                code="readonly_kb_root",
+                remediation="Choose an artifact in a writable private KB root.",
+                details={
+                    "kb_root": loaded.kb_root_name or "",
+                    "path": loaded.source_path.as_posix(),
+                },
+            )
+        _reject_accepted_path(loaded.source_path)
+        _ensure_target_writable(self.context, loaded.source_path)
+        artifact = loaded.record
+        if not isinstance(artifact, BaseArtifact):
+            raise AssertionError("unreachable non-artifact review target")
+        if not is_preaccepted_status(artifact.status):
+            raise DraftWriteServiceError(
+                "human review decisions from the web cannot mutate terminal artifacts",
+                code="terminal_status_forbidden",
+                remediation=(
+                    "Record web human reviews on draft/pre-accepted artifacts. "
+                    "Accepted, refuted, obsolete, and superseded changes require "
+                    "the lifecycle/promotion workflow."
+                ),
+            )
+
+        review_id = _review_decision_id(artifact_id)
+        relative_path = _repo_local_staging_path(
+            f"reviews/decisions/{review_id}.yaml"
+        )
+        _reject_accepted_path(relative_path)
+        _ensure_target_writable(self.context, relative_path)
+        target_path = self.context.resolve(relative_path)
+        if target_path.exists():
+            raise DraftWriteServiceError(
+                f"review decision path already exists: {relative_path.as_posix()}",
+                code="review_decision_path_exists",
+                remediation="Retry to generate a fresh review decision id.",
+            )
+
+        now = _now_iso()
+        checks = _review_decision_checks(request)
+        review_payload = {
+            "id": review_id,
+            "type": "review",
+            "title": f"Human review decision: {artifact.title}",
+            "status": "human_reviewed",
+            "created_at": now,
+            "updated_at": now,
+            "authors": [reviewer],
+            "target": artifact.id,
+            "summary": f"{reviewer} recorded {decision} for {artifact.id}.",
+            "findings": _review_decision_findings(
+                decision=decision,
+                notes=notes,
+                scope=scope,
+                limitations=limitations,
+                checks=checks,
+            ),
+            "decision": decision,
+        }
+        try:
+            ReviewRecord.model_validate(review_payload)
+        except ValidationError as exc:
+            raise DraftWriteServiceError(
+                _format_pydantic_errors(exc),
+                code="review_decision_failed",
+                remediation="Fix the human review decision fields and retry.",
+            ) from exc
+
+        updated_artifact = _artifact_after_review_decision(
+            artifact,
+            decision=decision,
+            reviewer=reviewer,
+            notes=notes,
+            limitations=limitations,
+        )
+        artifact_updated = updated_artifact != artifact
+        if dry_run:
+            return ReviewDecisionWriteResult(
+                review=review_payload,
+                artifact=updated_artifact,
+                relative_path=relative_path,
+                artifact_relative_path=loaded.source_path,
+                written_paths=(),
+                dry_run=True,
+                record_id=review_id,
+                artifact_updated=artifact_updated,
+            )
+
+        written_paths = [relative_path]
+        artifact_path = self.context.resolve(loaded.source_path)
+        original_artifact_text = artifact_path.read_text(encoding="utf-8")
+        write_yaml_deterministic(target_path, review_payload)
+        try:
+            _validate_review_decision_file(self.context, relative_path)
+            if artifact_updated:
+                write_yaml_deterministic(artifact_path, updated_artifact)
+                report = validate_artifact_file(self.context, loaded.source_path)
+                if not report.ok:
+                    raise DraftWriteServiceError(
+                        _format_report_failures(report),
+                        code="artifact_file_validation_failed",
+                        remediation=(
+                            "Fix validation failures before recording review state."
+                        ),
+                    )
+                written_paths.append(loaded.source_path)
+        except Exception:
+            target_path.unlink(missing_ok=True)
+            artifact_path.write_text(
+                original_artifact_text,
+                encoding="utf-8",
+                newline="\n",
+            )
+            raise
+
+        return ReviewDecisionWriteResult(
+            review=review_payload,
+            artifact=updated_artifact,
+            relative_path=relative_path,
+            artifact_relative_path=loaded.source_path,
+            written_paths=tuple(written_paths),
+            dry_run=False,
+            record_id=review_id,
+            artifact_updated=artifact_updated,
+        )
+
+
 def _parse_artifact_timestamp(value: str | None) -> datetime:
     if value is None:
         return datetime.now(UTC).replace(microsecond=0)
@@ -1302,6 +1521,114 @@ def _required_text(request: Mapping[str, Any], key: str) -> str:
             remediation=f"Provide a non-empty `{key}` field in the input JSON.",
         )
     return value.strip()
+
+
+def _required_text_with_code(
+    request: Mapping[str, Any],
+    key: str,
+    *,
+    code: str,
+    remediation: str,
+) -> str:
+    value = request.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise DraftWriteServiceError(
+            f"missing required text field: {key}",
+            code=code,
+            remediation=remediation,
+        )
+    return value.strip()
+
+
+def _review_decision_value(value: object) -> str:
+    if not isinstance(value, str):
+        raise DraftWriteServiceError(
+            "review decision must be a string",
+            code="review_decision_invalid",
+            remediation="Choose one of the supported human review decisions.",
+        )
+    normalized = value.strip()
+    if normalized not in HUMAN_REVIEW_DECISIONS:
+        raise DraftWriteServiceError(
+            f"unsupported review decision: {normalized}",
+            code="review_decision_invalid",
+            remediation="Choose one of the supported human review decisions.",
+            details={"decision": normalized},
+        )
+    return normalized
+
+
+def _review_scope(value: object) -> str:
+    normalized = str(value).strip() if value is not None else "private"
+    if normalized not in {"private", "public"}:
+        raise DraftWriteServiceError(
+            "review scope must be private or public",
+            code="review_scope_invalid",
+            remediation="Use scope=private or scope=public.",
+        )
+    return normalized
+
+
+def _review_decision_checks(request: Mapping[str, Any]) -> dict[str, bool]:
+    return {
+        "dependencies_checked": request.get("dependencies_checked") is True,
+        "sources_checked": request.get("sources_checked") is True,
+        "evidence_checked": request.get("evidence_checked") is True,
+        "gate_state_acknowledged": request.get("gate_state_acknowledged") is True,
+    }
+
+
+def _review_decision_findings(
+    *,
+    decision: str,
+    notes: str,
+    scope: str,
+    limitations: str,
+    checks: Mapping[str, bool],
+) -> list[str]:
+    findings = [
+        f"decision={decision}",
+        f"scope={scope}",
+        f"review_notes={notes}",
+        *[f"{key}={value}" for key, value in checks.items()],
+        "authority=human review decision; not accepted status, gate pass, "
+        "verifier pass, or promotion authority",
+    ]
+    if limitations:
+        findings.append(f"limitations={limitations}")
+    return findings
+
+
+def _artifact_after_review_decision(
+    artifact: BaseArtifact,
+    *,
+    decision: str,
+    reviewer: str,
+    notes: str,
+    limitations: str,
+) -> BaseArtifact:
+    next_state = _ARTIFACT_REVIEW_STATE_BY_DECISION.get(decision)
+    if next_state is None:
+        return artifact
+    review_notes = f"{reviewer} recorded {decision}: {notes}"
+    if limitations:
+        review_notes = f"{review_notes} Limitations: {limitations}"
+    payload = artifact.model_dump(mode="json")
+    payload["updated_at"] = datetime.now(UTC).replace(microsecond=0)
+    payload["review"] = {"state": next_state, "notes": review_notes}
+    try:
+        return BaseArtifact.model_validate(payload)
+    except ValidationError as exc:
+        raise DraftWriteServiceError(
+            _format_pydantic_errors(exc),
+            code="artifact_model_validation_failed",
+            remediation="Fix the generated artifact review-state update.",
+        ) from exc
+
+
+def _review_decision_id(artifact_id: str) -> str:
+    timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S%f")
+    return ".".join(["review", "decision", *artifact_id.split("."), timestamp])
 
 
 def _optional_text_list(request: Mapping[str, Any], key: str) -> list[str]:
@@ -1541,6 +1868,27 @@ def _validate_review_request_file(context: RepoContext, relative_path: Path) -> 
             "review requests must remain draft informational records",
             code="human_review_forbidden",
             remediation="Do not mark human review or approval through this command.",
+        )
+
+
+def _validate_review_decision_file(context: RepoContext, relative_path: Path) -> None:
+    raw = _read_yaml_mapping(context, relative_path)
+    try:
+        record = ReviewRecord.model_validate(raw)
+    except ValidationError as exc:
+        raise DraftWriteServiceError(
+            _format_pydantic_errors(exc),
+            code="review_decision_failed",
+            remediation="Fix the human review decision record and retry.",
+        ) from exc
+    if (
+        record.status != "human_reviewed"
+        or record.decision not in HUMAN_REVIEW_DECISIONS
+    ):
+        raise DraftWriteServiceError(
+            "review decisions must be explicit human-reviewed decision records",
+            code="review_decision_failed",
+            remediation="Use the web human review decision workflow.",
         )
 
 
@@ -1861,6 +2209,8 @@ __all__ = [
     "KbRootInfo",
     "MemorySearchService",
     "OrchestratorPlanService",
+    "ReviewDecisionService",
+    "ReviewDecisionWriteResult",
     "ReviewRequestFromBundleResult",
     "ServiceError",
     "TaskService",

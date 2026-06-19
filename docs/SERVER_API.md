@@ -137,6 +137,8 @@ POST /api/context/<issue_id>/preview-build
 POST /api/context/<issue_id>/build
 POST /api/reviews/packets/preview
 POST /api/reviews/packets/create
+POST /api/reviews/decisions/preview
+POST /api/reviews/decisions/create
 POST /api/forge/issues/preview
 POST /api/forge/issues/create
 POST /api/forge/prs/preview
@@ -318,6 +320,37 @@ reject artifacts, mutate verifier output, pass gates, or promote knowledge.
 Review packets are informational context for human reviewers only. They do not
 create proof, complete human review, grant accepted status, or authorize
 promotion.
+
+## Human Review Decision Workbench Actions
+
+The B2.6.2 human review decision endpoints are:
+
+```text
+POST /api/reviews/decisions/preview
+POST /api/reviews/decisions/create
+```
+
+Requests accept `artifact_id`, `reviewer`, `decision`, `review_notes`, `scope`,
+`limitations`, `dependencies_checked`, `sources_checked`, `evidence_checked`,
+`gate_state_acknowledged`, and `explicit_human_confirmation`. Confirmed create
+requests must include `confirm: true`.
+
+Supported decisions are `accept_for_private_use`,
+`accept_for_public_candidate`, `changes_requested`, `keep_draft`,
+`refute_candidate`, and `mark_obsolete`.
+
+Preview validates the requested human review decision, plans one
+`reviews/decisions/<review-id>.yaml` record, reports whether the artifact
+review state would change, and writes no repository files. Confirmed create
+recomputes the decision and writes the review record under `reviews/decisions/`.
+For accepted-private, accepted-public-candidate, and changes-requested
+decisions, the confirmed write may update the target artifact's `review.state`
+according to repository policy.
+
+Human review decision endpoints refuse AI, Codex, agent, provider, model, or
+verifier identities as reviewers. They audit as `review.decision_create`. They
+do not set artifact `status: accepted`, pass gates, mutate verifier evidence,
+promote knowledge, or write accepted artifacts.
 
 ## Validate And Gate Workbench Actions
 

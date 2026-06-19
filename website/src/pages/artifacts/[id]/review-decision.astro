@@ -1,0 +1,157 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import I18nText from "../../../components/I18nText.astro";
+import { localized } from "../../../lib/i18n";
+import {
+  HUMAN_REVIEW_DECISION_OPTIONS,
+  REVIEW_DECISION_LABELS
+} from "../../../lib/reviewDecisionWorkbench";
+import {
+  artifactById,
+  artifactHref,
+  loadSiteData
+} from "../../../lib/siteData";
+
+export async function getStaticPaths() {
+  const data = await loadSiteData();
+  return data.artifacts.artifacts.map((artifact) => ({
+    params: { id: artifact.id }
+  }));
+}
+
+const id = Astro.params.id ?? "";
+const data = await loadSiteData();
+const artifact = artifactById(id, data);
+if (!artifact) {
+  throw new Error(`Unknown artifact: ${id}`);
+}
+const canWriteReviews = data.runtime.mode === "live-local";
+---
+
+<BaseLayout
+  title={localized(`Review decision: ${artifact.id}`, `审阅决策：${artifact.id}`)}
+  eyebrow={localized("Review Workbench", "审阅工作台")}
+>
+  <section class="workbench-shell">
+    <article class="panel workbench-main">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">
+            <I18nText text={REVIEW_DECISION_LABELS.reviewDecision} />
+          </p>
+          <h2><I18nText text={REVIEW_DECISION_LABELS.recordReview} /></h2>
+        </div>
+        <span class="tag"><I18nText text={localized("Human only", "仅限人工")} /></span>
+      </div>
+      <p class="preview-warning">
+        <I18nText text={REVIEW_DECISION_LABELS.authorityNotice} />
+      </p>
+      {
+        canWriteReviews ? (
+          <form
+            class="workbench-form"
+            data-review-decision-form
+            data-mode={data.runtime.mode}
+            data-api-base={data.runtime.api_base}
+            data-output="#review-decision-preview"
+            data-redirect={artifactHref(artifact.id)}
+          >
+            <fieldset class="form-section">
+              <label>
+                <I18nText text={REVIEW_DECISION_LABELS.artifactId} />
+                <input name="artifactId" value={artifact.id} readonly />
+              </label>
+              <label>
+                <I18nText text={REVIEW_DECISION_LABELS.reviewer} />
+                <input name="reviewer" required autocomplete="name" />
+              </label>
+              <label>
+                <I18nText text={REVIEW_DECISION_LABELS.decision} />
+                <select name="decision" required>
+                  {HUMAN_REVIEW_DECISION_OPTIONS.map((option) => (
+                    <option
+                      value={option.value}
+                      data-i18n-en={option.label.en}
+                      data-i18n-zh={option.label.zh}
+                    >
+                      {option.label.zh}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <I18nText text={REVIEW_DECISION_LABELS.scope} />
+                <select name="scope">
+                  <option value="private">private</option>
+                  <option value="public">public</option>
+                </select>
+              </label>
+            </fieldset>
+            <label>
+              <I18nText text={REVIEW_DECISION_LABELS.reviewNotes} />
+              <textarea name="reviewNotes" rows="5" required></textarea>
+            </label>
+            <label>
+              <I18nText text={REVIEW_DECISION_LABELS.limitations} />
+              <textarea name="limitations" rows="3"></textarea>
+            </label>
+            <fieldset class="form-section">
+              <label class="checkbox-label">
+                <input name="dependenciesChecked" type="checkbox" />
+                <I18nText text={REVIEW_DECISION_LABELS.dependenciesChecked} />
+              </label>
+              <label class="checkbox-label">
+                <input name="sourcesChecked" type="checkbox" />
+                <I18nText text={REVIEW_DECISION_LABELS.sourcesChecked} />
+              </label>
+              <label class="checkbox-label">
+                <input name="evidenceChecked" type="checkbox" />
+                <I18nText text={REVIEW_DECISION_LABELS.evidenceChecked} />
+              </label>
+              <label class="checkbox-label">
+                <input name="gateStateAcknowledged" type="checkbox" />
+                <I18nText text={REVIEW_DECISION_LABELS.gateStateAcknowledged} />
+              </label>
+            </fieldset>
+            <label class="checkbox-label">
+              <input name="explicitHumanConfirmation" type="checkbox" required />
+              <I18nText text={REVIEW_DECISION_LABELS.humanConfirmation} />
+            </label>
+            <div class="preview-toolbar">
+              <button class="preview-button" type="button" data-preview>
+                <I18nText text={REVIEW_DECISION_LABELS.preview} />
+              </button>
+              <button class="preview-button" type="submit" data-confirm disabled>
+                <I18nText text={REVIEW_DECISION_LABELS.confirm} />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p>
+            <I18nText
+              text={localized(
+                "Human review decisions require live local mode.",
+                "人工审阅决策需要本地实时模式。"
+              )}
+            />
+          </p>
+        )
+      }
+    </article>
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker">
+        <I18nText text={REVIEW_DECISION_LABELS.previewOutput} />
+      </p>
+      <pre
+        class="json-block preview-output"
+        id="review-decision-preview"
+        data-i18n-en="Preview a human review decision before writing it."
+        data-i18n-zh="写入前先预览人工审阅决策。"
+      >写入前先预览人工审阅决策。</pre>
+    </article>
+  </section>
+
+  <script>
+    import "../../../lib/reviewDecisionWorkbenchClient";
+  </script>
+</BaseLayout>
