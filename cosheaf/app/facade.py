@@ -35,6 +35,8 @@ from cosheaf.services import (
     DraftWriteService,
     GateService,
     MemorySearchService,
+    PromotionActionResult,
+    PromotionActionService,
     ReviewDecisionService,
     ReviewDecisionWriteResult,
     ReviewRequestFromBundleResult,
@@ -565,6 +567,34 @@ class CosheafApp:
         return ReviewDecisionService(self.context).write_review_decision(
             request,
             dry_run=dry_run,
+        )
+
+    def preview_promote_artifact(
+        self,
+        artifact_id: str,
+        *,
+        target_state: str,
+        actor: str = "local.web",
+    ) -> PromotionActionResult:
+        """Preview artifact promotion without writing lifecycle files."""
+        return PromotionActionService(self.context).preview(
+            artifact_id,
+            target_state=target_state,
+            actor=actor,
+        )
+
+    def promote_artifact(
+        self,
+        artifact_id: str,
+        *,
+        target_state: str,
+        actor: str,
+    ) -> PromotionActionResult:
+        """Promote an artifact through server/app policy checks."""
+        return PromotionActionService(self.context).confirm(
+            artifact_id,
+            target_state=target_state,
+            actor=actor,
         )
 
     def validate_bundle(self, bundle_path: str | Path) -> WorkerBundleV2:

@@ -3,9 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   PROMOTION_LABELS,
   buildPromotionPreviewPayload,
+  buildPromotionConfirmPayload,
+  canConfirmPromotion,
   groupPromotionReasons,
+  promotionConfirmEndpoint,
   promotionPreviewEndpoint,
-  promotionReadinessEndpoint
+  promotionReadinessEndpoint,
+  requiredPromotionConfirmation
 } from "../src/lib/promotionWorkbench";
 
 describe("promotion workbench helpers", () => {
@@ -17,6 +21,9 @@ describe("promotion workbench helpers", () => {
     );
     expect(promotionPreviewEndpoint("claim.fixture.ready")).toBe(
       "/api/artifacts/claim.fixture.ready/promotion/preview"
+    );
+    expect(promotionConfirmEndpoint("claim.fixture.ready")).toBe(
+      "/api/artifacts/claim.fixture.ready/promotion/confirm"
     );
   });
 
@@ -30,6 +37,65 @@ describe("promotion workbench helpers", () => {
       artifact_id: "claim.fixture.ready",
       target_state: "accepted"
     });
+  });
+
+  it("builds a confirmed promotion payload with typed human confirmation", () => {
+    expect(requiredPromotionConfirmation("accepted")).toBe("PROMOTE TO ACCEPTED");
+    expect(requiredPromotionConfirmation("refuted")).toBe("MARK REFUTED");
+    expect(requiredPromotionConfirmation("obsolete")).toBe("MARK OBSOLETE");
+    expect(
+      buildPromotionConfirmPayload({
+        artifactId: " claim.fixture.ready ",
+        targetState: " accepted ",
+        actor: " Ada Reviewer ",
+        typedConfirmation: " PROMOTE TO ACCEPTED "
+      })
+    ).toEqual({
+      artifact_id: "claim.fixture.ready",
+      target_state: "accepted",
+      actor: "Ada Reviewer",
+      typed_confirmation: "PROMOTE TO ACCEPTED",
+      confirm: true
+    });
+  });
+
+  it("enables confirm only after an unblocked preview and exact phrase", () => {
+    expect(
+      canConfirmPromotion({
+        actor: "Ada Reviewer",
+        targetState: "accepted",
+        typedConfirmation: "PROMOTE TO ACCEPTED",
+        promotionBlocked: false,
+        previewLoaded: true
+      })
+    ).toBe(true);
+    expect(
+      canConfirmPromotion({
+        actor: "Ada Reviewer",
+        targetState: "accepted",
+        typedConfirmation: "MARK REFUTED",
+        promotionBlocked: false,
+        previewLoaded: true
+      })
+    ).toBe(false);
+    expect(
+      canConfirmPromotion({
+        actor: "Ada Reviewer",
+        targetState: "accepted",
+        typedConfirmation: "PROMOTE TO ACCEPTED",
+        promotionBlocked: true,
+        previewLoaded: true
+      })
+    ).toBe(false);
+    expect(
+      canConfirmPromotion({
+        actor: "",
+        targetState: "accepted",
+        typedConfirmation: "PROMOTE TO ACCEPTED",
+        promotionBlocked: false,
+        previewLoaded: true
+      })
+    ).toBe(false);
   });
 
   it("keeps bilingual labels natural and switchable", () => {

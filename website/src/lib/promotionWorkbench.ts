@@ -22,8 +22,13 @@ export const PROMOTION_LABELS = {
   impact: localized("Impact", "影响"),
   missingRequirements: localized("Missing requirements", "缺失项"),
   preview: localized("Preview promotion", "预览晋升"),
+  confirm: localized("Confirm promotion", "确认晋升"),
   targetState: localized("Target state", "目标状态"),
+  actor: localized("Actor", "操作人"),
+  typedConfirmation: localized("Typed confirmation", "确认短语"),
+  requiredConfirmation: localized("Required phrase", "必填短语"),
   readinessJson: localized("Readiness JSON", "就绪度 JSON"),
+  promotionPreview: localized("Promotion preview", "晋升预览"),
   authorityNotice: localized(
     "Promotion readiness is advisory. It does not write accepted artifacts, pass gates, or grant promotion authority.",
     "晋升检查只是建议，不会写入 accepted 工件、通过准入检查或授予晋升权限。"
@@ -37,11 +42,36 @@ export const PROMOTION_LABELS = {
 export interface PromotionPreviewFormInput {
   artifactId: string;
   targetState: string;
+  actor?: string;
 }
 
 export interface PromotionPreviewPayload {
   artifact_id: string;
   target_state: PromotionTargetState;
+  actor?: string;
+}
+
+export interface PromotionConfirmFormInput {
+  artifactId: string;
+  targetState: string;
+  actor: string;
+  typedConfirmation: string;
+}
+
+export interface PromotionConfirmPayload {
+  artifact_id: string;
+  target_state: PromotionTargetState;
+  actor: string;
+  typed_confirmation: string;
+  confirm: true;
+}
+
+export interface PromotionConfirmState {
+  actor: string;
+  targetState: string;
+  typedConfirmation: string;
+  promotionBlocked: boolean;
+  previewLoaded: boolean;
 }
 
 export interface PromotionReason {
@@ -111,6 +141,26 @@ export function promotionPreviewEndpoint(artifactId: string): string {
   return `/api/artifacts/${encodeURIComponent(artifactId)}/promotion/preview`;
 }
 
+export function promotionConfirmEndpoint(artifactId: string): string {
+  return `/api/artifacts/${encodeURIComponent(artifactId)}/promotion/confirm`;
+}
+
+export function requiredPromotionConfirmation(
+  targetState: string
+): "PROMOTE TO ACCEPTED" | "MARK REFUTED" | "MARK OBSOLETE" {
+  const normalized = targetState.trim();
+  if (normalized === "accepted") {
+    return "PROMOTE TO ACCEPTED";
+  }
+  if (normalized === "refuted") {
+    return "MARK REFUTED";
+  }
+  if (normalized === "obsolete") {
+    return "MARK OBSOLETE";
+  }
+  throw new Error("unsupported promotion target state");
+}
+
 export function buildPromotionPreviewPayload(
   input: PromotionPreviewFormInput
 ): PromotionPreviewPayload {
@@ -118,10 +168,44 @@ export function buildPromotionPreviewPayload(
   if (!PROMOTION_TARGET_STATES.includes(targetState as PromotionTargetState)) {
     throw new Error("unsupported promotion target state");
   }
-  return {
+  const payload: PromotionPreviewPayload = {
     artifact_id: input.artifactId.trim(),
     target_state: targetState as PromotionTargetState
   };
+  const actor = input.actor?.trim();
+  if (actor) {
+    payload.actor = actor;
+  }
+  return payload;
+}
+
+export function buildPromotionConfirmPayload(
+  input: PromotionConfirmFormInput
+): PromotionConfirmPayload {
+  const targetState = input.targetState.trim();
+  if (!PROMOTION_TARGET_STATES.includes(targetState as PromotionTargetState)) {
+    throw new Error("unsupported promotion target state");
+  }
+  return {
+    artifact_id: input.artifactId.trim(),
+    target_state: targetState as PromotionTargetState,
+    actor: input.actor.trim(),
+    typed_confirmation: input.typedConfirmation.trim(),
+    confirm: true
+  };
+}
+
+export function canConfirmPromotion(input: PromotionConfirmState): boolean {
+  if (!input.previewLoaded || input.promotionBlocked) {
+    return false;
+  }
+  if (!input.actor.trim()) {
+    return false;
+  }
+  return (
+    input.typedConfirmation.trim() ===
+    requiredPromotionConfirmation(input.targetState)
+  );
 }
 
 export function groupPromotionReasons(

@@ -141,6 +141,7 @@ POST /api/reviews/packets/create
 POST /api/reviews/decisions/preview
 POST /api/reviews/decisions/create
 POST /api/artifacts/<artifact_id>/promotion/preview
+POST /api/artifacts/<artifact_id>/promotion/confirm
 POST /api/forge/issues/preview
 POST /api/forge/issues/create
 POST /api/forge/prs/preview
@@ -360,11 +361,12 @@ promote knowledge, or write accepted artifacts.
 
 ## Promotion Readiness Workbench Actions
 
-The B2.7.1 promotion readiness endpoints are:
+The B2.7 promotion readiness/action endpoints are:
 
 ```text
 GET /api/artifacts/<artifact_id>/promotion-readiness
 POST /api/artifacts/<artifact_id>/promotion/preview
+POST /api/artifacts/<artifact_id>/promotion/confirm
 ```
 
 The GET endpoint returns `PromotionReadinessReport.to_dict()` under
@@ -375,14 +377,27 @@ state, dependency status, review state, source metadata requirements, and
 verifier evidence. Skipped verifier output is reported as skipped, never pass.
 
 Promotion preview requests accept `target_state` as `accepted`, `refuted`, or
-`obsolete`. Preview returns a dry-run `promotion_plan`, the readiness report,
-`promotion_blocked`, and `missing_requirements`. It writes no lifecycle YAML,
-does not run `git` or `gh`, and audits as `promotion.preview`.
+`obsolete`, plus an optional human `actor`. Preview returns a dry-run
+`promotion_plan` with `required_confirmation`, the readiness report,
+`promotion_blocked`, `missing_requirements`, `planned_files`, `yaml_diff`,
+`review_record_preview`, `validation_summary`, and `gate_summary` when policy
+allows the selected target. It writes no lifecycle YAML, does not run `git` or
+`gh`, and audits as `promotion.preview`.
 
-Promotion readiness and preview output are advisory workflow context. They do
-not change artifact status, write accepted/refuted/obsolete artifacts, pass
-gates, mutate verifier evidence, or grant promotion authority. Confirmed
-promotion remains a later lifecycle workflow.
+Promotion confirm requests require `confirm: true`, a non-empty human `actor`,
+the same `target_state`, and an exact `typed_confirmation` phrase:
+`PROMOTE TO ACCEPTED`, `MARK REFUTED`, or `MARK OBSOLETE`. The server
+recomputes validation, gate, review, dependency, source-metadata, readonly-root,
+and path/status policy checks before writing. Successful confirm writes the
+deterministic lifecycle YAML, moves the source file to the target lifecycle
+path, returns `written_files`, and audits as `promotion.confirm` with the
+human actor. AI/Codex/provider/agent/model/verifier identities are refused as
+promotion actors.
+
+Promotion readiness and preview output are advisory workflow context. Confirmed
+promotion is a repository write through `cosheaf.app` and service-layer policy;
+it does not run `git` or `gh`, mutate verifier evidence, or make website output
+accepted authority by itself.
 
 ## Validate And Gate Workbench Actions
 

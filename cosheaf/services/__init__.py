@@ -11,6 +11,7 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from difflib import unified_diff
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 
@@ -46,10 +47,16 @@ from cosheaf.core.artifact import (
     Evidence,
     FailureLogEntry,
     SourceMetadata,
+    is_external_dependency_ref,
 )
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.paths import lifecycle_artifact_path, normalize_repo_path
-from cosheaf.core.status import ArtifactStatus, ArtifactType, is_preaccepted_status
+from cosheaf.core.status import (
+    ArtifactStatus,
+    ArtifactType,
+    expected_status_for_path,
+    is_preaccepted_status,
+)
 from cosheaf.gates.gatekeeper import (
     GatekeeperRunResult,
     ValidationReport,
@@ -57,6 +64,7 @@ from cosheaf.gates.gatekeeper import (
     validate_artifact_file,
     validate_repository,
 )
+from cosheaf.gates.source_metadata_gate import missing_required_source_metadata
 from cosheaf.memory import (
     ArtifactCard,
     ArtifactCardStatus,
@@ -133,6 +141,46 @@ class ReviewDecisionWriteResult:
     dry_run: bool
     record_id: str
     artifact_updated: bool
+
+
+@dataclass(frozen=True)
+class PromotionActionResult:
+    """Result of a promotion preview or confirmed lifecycle write."""
+
+    artifact: BaseArtifact
+    updated_artifact: BaseArtifact
+    target_state: ArtifactStatus
+    old_status: ArtifactStatus
+    old_relative_path: Path
+    new_relative_path: Path
+    planned_files: tuple[Path, ...]
+    written_paths: tuple[Path, ...]
+    dry_run: bool
+    actor: str
+    yaml_diff: str
+    validation_summary: str
+    gate_summary: str
+
+    @property
+    def accepted_write_performed(self) -> bool:
+        return (
+            not self.dry_run
+            and self.target_state is ArtifactStatus.ACCEPTED
+            and bool(self.written_paths)
+        )
+
+    @property
+    def promotion_performed(self) -> bool:
+        return not self.dry_run and bool(self.written_paths)
+
+    def review_record_preview(self) -> dict[str, str]:
+        """Return the existing review state used by this promotion action."""
+        return {
+            "actor": self.actor,
+            "artifact_id": self.artifact.id,
+            "target_state": self.target_state.value,
+            "existing_review_state": self.artifact.review.state,
+        }
 
 
 @dataclass(frozen=True)
@@ -1487,6 +1535,186 @@ class ReviewDecisionService:
         )
 
 
+PROMOTION_REVIEW_STATES = frozenset({"human_reviewed", "accepted"})
+PROMOTION_TARGET_STATUSES = {
+    "accepted": ArtifactStatus.ACCEPTED,
+    "refuted": ArtifactStatus.REFUTED,
+    "obsolete": ArtifactStatus.OBSOLETE,
+}
+PROMOTION_CONFIRMATION_PHRASES = {
+    "accepted": "PROMOTE TO ACCEPTED",
+    "refuted": "MARK REFUTED",
+    "obsolete": "MARK OBSOLETE",
+}
+_BLOCKING_VERIFIER_STATUSES = frozenset({"fail", "error"})
+
+
+class PromotionActionService:
+    """Service for web-controlled artifact promotion actions."""
+
+    def __init__(self, context: RepoContext) -> None:
+        self.context = context
+
+    def preview(
+        self,
+        artifact_id: str,
+        *,
+        target_state: str,
+        actor: str = "local.web",
+    ) -> PromotionActionResult:
+        """Preview a target-state promotion without writing repository files."""
+        return self._build_result(
+            artifact_id,
+            target_state=target_state,
+            actor=actor,
+            dry_run=True,
+        )
+
+    def confirm(
+        self,
+        artifact_id: str,
+        *,
+        target_state: str,
+        actor: str,
+    ) -> PromotionActionResult:
+        """Execute a target-state promotion through lifecycle policy checks."""
+        return self._build_result(
+            artifact_id,
+            target_state=target_state,
+            actor=actor,
+            dry_run=False,
+        )
+
+    def _build_result(
+        self,
+        artifact_id: str,
+        *,
+        target_state: str,
+        actor: str,
+        dry_run: bool,
+    ) -> PromotionActionResult:
+        actor = _promotion_actor(actor)
+        target_status = _promotion_target_status(target_state)
+        validation_report = validate_repository(self.context)
+        if not validation_report.ok:
+            raise DraftWriteServiceError(
+                "repository validation failed before promotion: "
+                f"{_format_report_failures(validation_report)}",
+                code="promotion_validation_failed",
+                remediation="Fix repository validation failures before promotion.",
+            )
+
+        loaded = _find_unique_promotion_artifact(validation_report.records, artifact_id)
+        artifact = loaded.record
+        if not isinstance(artifact, BaseArtifact):
+            raise AssertionError("unreachable non-artifact promotion target")
+        _ensure_promotion_lifecycle_target(loaded, artifact)
+        _ensure_preterminal_for_promotion(artifact)
+
+        gatekeeper_result = run_gatekeeper(self.context)
+        _ensure_gatekeeper_allows_promotion(gatekeeper_result, artifact.id)
+        _ensure_artifact_reviewed_for_promotion(artifact)
+        if target_status is ArtifactStatus.ACCEPTED:
+            _ensure_promotion_dependencies_accepted(validation_report.records, artifact)
+            _ensure_source_metadata_for_public_promotion(self.context, loaded, artifact)
+
+        updated_artifact = artifact.model_copy(
+            update={
+                "status": target_status,
+                "updated_at": datetime.now(UTC).replace(microsecond=0),
+            }
+        )
+        new_relative_path = _workspace_status_move_path(loaded, artifact, target_status)
+        old_relative_path = loaded.source_path
+        planned_files = tuple(
+            dict.fromkeys(
+                [old_relative_path, new_relative_path],
+            )
+        )
+        source_path = self.context.resolve(old_relative_path)
+        before_text = source_path.read_text(encoding="utf-8")
+        after_text = dump_yaml_deterministic(updated_artifact)
+        result = PromotionActionResult(
+            artifact=artifact,
+            updated_artifact=updated_artifact,
+            target_state=target_status,
+            old_status=artifact.status,
+            old_relative_path=old_relative_path,
+            new_relative_path=new_relative_path,
+            planned_files=planned_files,
+            written_paths=(),
+            dry_run=True,
+            actor=actor,
+            yaml_diff=_unified_diff_text(
+                before_text,
+                after_text,
+                fromfile=old_relative_path.as_posix(),
+                tofile=new_relative_path.as_posix(),
+            ),
+            validation_summary="validation passed",
+            gate_summary=(
+                "gate passed"
+                if gatekeeper_result.report.verdict == "pass"
+                else "gate failed"
+            ),
+        )
+        if dry_run:
+            return result
+
+        self._write_promotion(updated_artifact, old_relative_path, new_relative_path)
+        return PromotionActionResult(
+            artifact=result.artifact,
+            updated_artifact=result.updated_artifact,
+            target_state=result.target_state,
+            old_status=result.old_status,
+            old_relative_path=result.old_relative_path,
+            new_relative_path=result.new_relative_path,
+            planned_files=result.planned_files,
+            written_paths=planned_files,
+            dry_run=False,
+            actor=result.actor,
+            yaml_diff=result.yaml_diff,
+            validation_summary=result.validation_summary,
+            gate_summary=result.gate_summary,
+        )
+
+    def _write_promotion(
+        self,
+        updated_artifact: BaseArtifact,
+        source_relative_path: Path,
+        target_relative_path: Path,
+    ) -> None:
+        source_path = self.context.resolve(source_relative_path)
+        target_path = self.context.resolve(target_relative_path)
+        if target_path.exists() and source_path != target_path:
+            raise DraftWriteServiceError(
+                "target artifact path already exists: "
+                f"{target_relative_path.as_posix()}",
+                code="promotion_target_exists",
+                remediation="Inspect the target lifecycle path before retrying.",
+                details={"path": target_relative_path.as_posix()},
+            )
+
+        original_text = source_path.read_text(encoding="utf-8")
+        write_yaml_deterministic(source_path, updated_artifact)
+        try:
+            if source_path != target_path:
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                source_path.rename(target_path)
+            report = validate_artifact_file(self.context, target_relative_path)
+            if not report.ok:
+                raise DraftWriteServiceError(
+                    _format_report_failures(report),
+                    code="artifact_file_validation_failed",
+                    remediation="Fix validation failures before promotion.",
+                )
+        except Exception:
+            if source_path != target_path and target_path.exists():
+                target_path.rename(source_path)
+            source_path.write_text(original_text, encoding="utf-8", newline="\n")
+            raise
+
+
 def _parse_artifact_timestamp(value: str | None) -> datetime:
     if value is None:
         return datetime.now(UTC).replace(microsecond=0)
@@ -2123,6 +2351,280 @@ def _dedupe_preserving_order(values: Sequence[str]) -> list[str]:
     return result
 
 
+def _promotion_actor(actor: str) -> str:
+    normalized = actor.strip()
+    if not normalized:
+        raise DraftWriteServiceError(
+            "promotion actor is required",
+            code="promotion_actor_required",
+            remediation="Provide the human actor identity confirming promotion.",
+        )
+    if _FORBIDDEN_REVIEWER_PATTERN.search(normalized):
+        raise DraftWriteServiceError(
+            "AI, agent, Claude, Codex, Gemini, GPT, LLM, model, provider, or "
+            "verifier output cannot be recorded as a promotion actor",
+            code="promotion_actor_forbidden",
+            remediation="Use an explicit human actor identity.",
+        )
+    return normalized
+
+
+def _promotion_target_status(target_state: str) -> ArtifactStatus:
+    normalized = target_state.strip()
+    try:
+        return PROMOTION_TARGET_STATUSES[normalized]
+    except KeyError as exc:
+        raise DraftWriteServiceError(
+            "target_state must be accepted, refuted, or obsolete",
+            code="invalid_promotion_target_state",
+            remediation="Choose accepted, refuted, or obsolete.",
+        ) from exc
+
+
+def _find_unique_promotion_artifact(
+    records: tuple[LoadedRecord, ...],
+    artifact_id: str,
+) -> LoadedRecord:
+    try:
+        normalized_id = validate_artifact_id(artifact_id)
+    except ValueError as exc:
+        raise DraftWriteServiceError(
+            str(exc),
+            code="invalid_artifact_id",
+            remediation="Use a valid artifact id for promotion.",
+        ) from exc
+    matches = [record for record in records if record.id == normalized_id]
+    if not matches:
+        raise DraftWriteServiceError(
+            f"artifact not found: {normalized_id}",
+            code="artifact_not_found",
+            remediation="Check the artifact id before promotion.",
+            details={"artifact_id": normalized_id},
+        )
+    if len(matches) > 1:
+        paths = ", ".join(sorted(record.source_path.as_posix() for record in matches))
+        raise DraftWriteServiceError(
+            f"duplicate artifact id {normalized_id}: {paths}",
+            code="repository_load_failed",
+            remediation="Fix duplicate artifact ids before promotion.",
+            details={"artifact_id": normalized_id},
+        )
+    loaded = matches[0]
+    if not isinstance(loaded.record, BaseArtifact):
+        raise DraftWriteServiceError(
+            f"record is not a promotable lifecycle artifact: {normalized_id}",
+            code="promotion_blocked",
+            remediation="Choose a lifecycle artifact id.",
+            details={"artifact_id": normalized_id},
+        )
+    try:
+        lifecycle_artifact_path(
+            loaded.record.type,
+            ArtifactStatus.ACCEPTED,
+            loaded.record.id,
+        )
+    except ValueError as exc:
+        raise DraftWriteServiceError(
+            f"record is not a promotable lifecycle artifact: {normalized_id}",
+            code="promotion_blocked",
+            remediation="Choose a lifecycle artifact type.",
+            details={"artifact_id": normalized_id},
+        ) from exc
+    return loaded
+
+
+def _ensure_promotion_lifecycle_target(
+    loaded: LoadedRecord,
+    artifact: BaseArtifact,
+) -> None:
+    if loaded.kb_relative_path is None:
+        raise DraftWriteServiceError(
+            "promotion is only supported for records under a KB root",
+            code="promotion_blocked",
+            remediation="Move the record under a lifecycle KB root before promotion.",
+            details={"path": loaded.source_path.as_posix()},
+        )
+    _ensure_promotion_path_status_consistent(loaded, artifact)
+    if loaded.kb_root_readonly:
+        raise DraftWriteServiceError(
+            f"readonly KB root cannot be modified: {loaded.kb_root_name}",
+            code="readonly_kb_root",
+            remediation="Choose an artifact in a writable KB root.",
+            details={
+                "kb_root": loaded.kb_root_name or "",
+                "path": loaded.source_path.as_posix(),
+            },
+        )
+
+
+def _ensure_promotion_path_status_consistent(
+    loaded: LoadedRecord,
+    artifact: BaseArtifact,
+) -> None:
+    allowed = expected_status_for_path(_status_path_for_loaded_record(loaded))
+    if artifact.status in allowed:
+        return
+    expected = ", ".join(sorted(status.value for status in allowed))
+    raise DraftWriteServiceError(
+        "status/path mismatch: "
+        f"{loaded.source_path.as_posix()} has status {artifact.status.value}; "
+        f"expected one of {expected}",
+        code="promotion_blocked",
+        remediation="Fix the lifecycle path/status mismatch before promotion.",
+        details={"path": loaded.source_path.as_posix()},
+    )
+
+
+def _ensure_preterminal_for_promotion(artifact: BaseArtifact) -> None:
+    if artifact.status is ArtifactStatus.ACCEPTED:
+        raise DraftWriteServiceError(
+            f"artifact is already accepted: {artifact.id}",
+            code="promotion_blocked",
+            remediation="Choose a pre-accepted artifact for promotion.",
+        )
+    if not is_preaccepted_status(artifact.status):
+        raise DraftWriteServiceError(
+            "only pre-accepted lifecycle artifacts may be promoted: "
+            f"{artifact.id} has status {artifact.status.value}",
+            code="promotion_blocked",
+            remediation="Choose a draft or pre-accepted artifact for promotion.",
+        )
+
+
+def _ensure_gatekeeper_allows_promotion(
+    result: GatekeeperRunResult,
+    artifact_id: str,
+) -> None:
+    target_blockers = _target_verifier_blockers(result, artifact_id)
+    if target_blockers:
+        raise DraftWriteServiceError(
+            "target verifier result blocks promotion: "
+            f"{'; '.join(target_blockers)}",
+            code="promotion_blocked",
+            remediation="Fix failed or errored target verifier results first.",
+        )
+    if result.report.blocking_issues:
+        raise DraftWriteServiceError(
+            "gatekeeper blocking issues prevent promotion: "
+            f"{_format_gatekeeper_blocking_issues(result)}",
+            code="promotion_blocked",
+            remediation="Fix blocking gate issues before promotion.",
+        )
+
+
+def _target_verifier_blockers(
+    result: GatekeeperRunResult,
+    artifact_id: str,
+) -> list[str]:
+    blockers: list[str] = []
+    for gate in result.report.gates:
+        if gate.gate_id != "G6":
+            continue
+        for detail in gate.details:
+            if detail.get("artifact_id") != artifact_id:
+                continue
+            status = detail.get("status")
+            if status not in _BLOCKING_VERIFIER_STATUSES:
+                continue
+            verifier = str(detail.get("verifier", "verifier"))
+            message = str(detail.get("message", "")).strip()
+            rendered = f"{verifier} {status}"
+            if message:
+                rendered = f"{rendered}: {message}"
+            blockers.append(rendered)
+    if blockers:
+        return blockers
+    return [
+        issue.message
+        for issue in result.report.blocking_issues
+        if issue.gate_id == "G6" and issue.artifact_id == artifact_id
+    ]
+
+
+def _format_gatekeeper_blocking_issues(result: GatekeeperRunResult) -> str:
+    return "; ".join(
+        f"{issue.gate_id} | {issue.source_path or '-'} | "
+        f"{issue.artifact_id or '-'} | {issue.message}"
+        for issue in result.report.blocking_issues
+    )
+
+
+def _ensure_artifact_reviewed_for_promotion(artifact: BaseArtifact) -> None:
+    if artifact.review.state in PROMOTION_REVIEW_STATES:
+        return
+    raise DraftWriteServiceError(
+        "missing_review: review.state must be human_reviewed or accepted "
+        f"before promotion; {artifact.id} has {artifact.review.state}",
+        code="promotion_blocked",
+        remediation="Record an explicit human review before promotion.",
+        details={"artifact_id": artifact.id, "review_state": artifact.review.state},
+    )
+
+
+def _ensure_promotion_dependencies_accepted(
+    records: tuple[LoadedRecord, ...],
+    artifact: BaseArtifact,
+) -> None:
+    artifacts_by_id = {
+        record.id: record
+        for record in records
+        if isinstance(record.record, BaseArtifact)
+    }
+    for dependency_id in artifact.depends_on:
+        if is_external_dependency_ref(dependency_id):
+            continue
+        dependency = artifacts_by_id.get(dependency_id)
+        if dependency is None or not isinstance(dependency.record, BaseArtifact):
+            raise DraftWriteServiceError(
+                f"dependency is missing: {dependency_id}",
+                code="promotion_blocked",
+                remediation="Resolve missing dependencies before promotion.",
+                details={"dependency_id": dependency_id},
+            )
+        if dependency.record.status is ArtifactStatus.ACCEPTED:
+            continue
+        raise DraftWriteServiceError(
+            "dependency is not accepted: "
+            f"{dependency_id} has status {dependency.record.status.value} "
+            f"at {dependency.source_path.as_posix()}",
+            code="promotion_blocked",
+            remediation=(
+                "Promote or externalize dependencies before accepted promotion."
+            ),
+            details={"dependency_id": dependency_id},
+        )
+
+
+def _ensure_source_metadata_for_public_promotion(
+    context: RepoContext,
+    loaded: LoadedRecord,
+    artifact: BaseArtifact,
+) -> None:
+    if not context.workspace_config.policy.accepted_requires_source:
+        return
+    if loaded.kb_root_name != "public":
+        return
+    missing = missing_required_source_metadata(artifact)
+    if not missing:
+        return
+    if missing == ("sources",):
+        message = (
+            "missing_source_metadata: accepted public artifact requires source "
+            f"metadata before promotion: {artifact.id}"
+        )
+    else:
+        message = (
+            "missing_source_metadata: accepted public artifact has incomplete "
+            "source metadata before promotion: " + ", ".join(missing)
+        )
+    raise DraftWriteServiceError(
+        message,
+        code="promotion_blocked",
+        remediation="Add reviewed source metadata before public accepted promotion.",
+        details={"artifact_id": artifact.id, "missing": ",".join(missing)},
+    )
+
+
 def _workspace_lifecycle_artifact_path(
     *,
     context: RepoContext,
@@ -2135,6 +2637,42 @@ def _workspace_lifecycle_artifact_path(
         return legacy_path
     root = _default_writable_kb_root(context)
     return Path(root.path) / _strip_legacy_kb_prefix(legacy_path)
+
+
+def _workspace_status_move_path(
+    loaded: LoadedRecord,
+    artifact: BaseArtifact,
+    new_status: ArtifactStatus,
+) -> Path:
+    legacy_path = lifecycle_artifact_path(artifact.type, new_status, artifact.id)
+    if loaded.kb_root_path is None:
+        return legacy_path
+    return loaded.kb_root_path / _strip_legacy_kb_prefix(legacy_path)
+
+
+def _status_path_for_loaded_record(loaded: LoadedRecord) -> str:
+    if loaded.kb_relative_path is None:
+        return loaded.source_path.as_posix()
+    relative = loaded.kb_relative_path.as_posix()
+    return "kb" if not relative else f"kb/{relative}"
+
+
+def _unified_diff_text(
+    before: str,
+    after: str,
+    *,
+    fromfile: str,
+    tofile: str,
+) -> str:
+    return "".join(
+        unified_diff(
+            before.splitlines(keepends=True),
+            after.splitlines(keepends=True),
+            fromfile=fromfile,
+            tofile=tofile,
+            lineterm="",
+        )
+    )
 
 
 def _strip_legacy_kb_prefix(path: Path) -> Path:
@@ -2209,6 +2747,9 @@ __all__ = [
     "KbRootInfo",
     "MemorySearchService",
     "OrchestratorPlanService",
+    "PROMOTION_CONFIRMATION_PHRASES",
+    "PromotionActionResult",
+    "PromotionActionService",
     "ReviewDecisionService",
     "ReviewDecisionWriteResult",
     "ReviewRequestFromBundleResult",
