@@ -175,6 +175,104 @@ class ForgeService:
             head=normalized_head,
         )
 
+    def push(
+        self,
+        *,
+        branch: str | None = None,
+        remote: str = "origin",
+        confirm: bool,
+    ) -> ForgeActionResult:
+        """Push one non-protected branch after explicit confirmation."""
+        if not confirm:
+            raise ForgeActionError(
+                "forge_confirm_required",
+                "forge push requires --confirm",
+            )
+        normalized_remote = _git_ref(remote, "remote")
+        normalized_branch = (
+            _git_ref(branch, "branch")
+            if branch is not None
+            else _current_branch(self.context)
+        )
+        _ensure_unprotected_head(normalized_branch)
+        _run_git(self.context, "push", "-u", normalized_remote, normalized_branch)
+        return ForgeActionResult(
+            action="push",
+            action_performed=True,
+            network_calls_performed=True,
+            git_writes_performed=True,
+            push_performed=True,
+            branch=normalized_branch,
+            head=normalized_branch,
+        )
+
+    def github_pr_submit(
+        self,
+        *,
+        base: str,
+        head: str,
+        draft: bool,
+        confirm: bool,
+        remote: str = "origin",
+    ) -> ForgeActionResult:
+        """Validate, gate, push a branch, and create a GitHub draft PR."""
+        normalized_base = _git_ref(base, "base")
+        normalized_head = _git_ref(head, "head")
+        normalized_remote = _git_ref(remote, "remote")
+        if not confirm:
+            raise ForgeActionError(
+                "forge_confirm_required",
+                "forge pr submit requires --confirm",
+            )
+        _ensure_unprotected_head(normalized_head)
+
+        validation = ValidationService(self.context).validate_repository()
+        if not validation.ok:
+            raise ForgeActionError(
+                "forge_validation_failed",
+                "repository validation failed; fix validation before PR submit",
+            )
+        gate = GateService(self.context).run()
+        if gate.report.verdict != "pass":
+            raise ForgeActionError(
+                "forge_gate_failed",
+                "repository gate failed; fix gate failures before PR submit",
+            )
+
+        _run_git(self.context, "push", "-u", normalized_remote, normalized_head)
+        title = f"Merge {normalized_head} into {normalized_base}"
+        body = f"Forge-created PR for {normalized_head} into {normalized_base}."
+        args = [
+            "pr",
+            "create",
+            "--base",
+            normalized_base,
+            "--head",
+            normalized_head,
+            "--title",
+            title,
+            "--body",
+            body,
+        ]
+        if draft:
+            args.append("--draft")
+        url = _run_gh(self.context, *args)
+        return ForgeActionResult(
+            action="github_pr_submit",
+            action_performed=True,
+            network_calls_performed=True,
+            git_writes_performed=True,
+            github_writes_performed=True,
+            push_performed=True,
+            github_pr_created=True,
+            github_pr_url=url,
+            base=normalized_base,
+            head=normalized_head,
+            branch=normalized_head,
+            validation_performed=True,
+            gate_performed=True,
+        )
+
     def sync(self) -> ForgeActionResult:
         """Return a read-only sync placeholder for future link reconciliation."""
         return ForgeActionResult(action="sync")
@@ -187,6 +285,7 @@ class ForgeService:
                 "forge_confirm_required",
                 "forge branch create requires --confirm",
             )
+        _ensure_unprotected_head(normalized_branch)
         status = _git_status(self.context)
         if status:
             raise ForgeActionError(
@@ -337,6 +436,19 @@ def _run_git(context: RepoContext, *args: str) -> subprocess.CompletedProcess[st
         message = result.stderr.strip() or result.stdout.strip() or "git command failed"
         raise ForgeActionError("forge_git_failed", message)
     return result
+
+
+def _current_branch(context: RepoContext) -> str:
+    branch = _run_git(context, "branch", "--show-current").stdout.strip()
+    return _action_non_empty(branch, "branch")
+
+
+def _ensure_unprotected_head(branch: str) -> None:
+    if branch.lower() in {"main", "master"}:
+        raise ForgeActionError(
+            "forge_protected_branch",
+            "forge refuses to write directly from main or master",
+        )
 
 
 def _run_gh(context: RepoContext, *args: str) -> str:

@@ -214,6 +214,7 @@ and renders the first Longplan B W2.1 routes:
 - Demo
 - Artifacts
 - Issues
+- Forge PR
 - Graph
 - Gate Reports
 - Authority Boundaries
@@ -302,6 +303,16 @@ in-process. Results and failures are redacted and audited under ignored
 effects; they do not write accepted knowledge, create human review, mutate
 verifier/gate state, promote artifacts, store tokens, or claim production
 readiness.
+
+The live-local Forge PR page at `/forge/submit/` uses the same backend-only
+boundary. It exposes the B2.8.1 sequence: create or use a branch, stage files
+outside the browser, commit staged changes after validation/gate, push the
+non-protected branch with explicit confirmation, then create a draft PR with
+explicit confirmation. The page calls only the localhost server endpoints under
+`/api/forge/branch/*`, `/api/forge/commit/*`, `/api/forge/push/*`, and
+`/api/forge/pr/*`; it never stores GitHub tokens or calls GitHub directly.
+When PR creation succeeds, it renders the returned PR URL as the primary
+result link.
 
 Artifact, issue, and context views now include static detail pages generated
 from the fixture data. Artifact filters run in the browser over already-exported

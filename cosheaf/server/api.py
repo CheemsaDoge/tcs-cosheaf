@@ -77,17 +77,25 @@ _EXPORT_ENDPOINTS = {
     "/api/gates": "gates.json",
 }
 _PREVIEW_ENDPOINTS = {
+    "/api/forge/branch/preview",
+    "/api/forge/commit/preview",
     "/api/forge/local-issues/preview",
     "/api/forge/issues/preview",
+    "/api/forge/pr/preview",
     "/api/forge/prs/preview",
+    "/api/forge/push/preview",
     "/api/forge/review-packets/preview",
     "/api/issues/preview-create",
     "/api/reviews/packets/preview",
     "/api/reviews/decisions/preview",
 }
 _CREATE_ENDPOINTS = {
+    "/api/forge/branch/create",
+    "/api/forge/commit/create",
     "/api/forge/issues/create",
+    "/api/forge/pr/create",
     "/api/forge/prs/create",
+    "/api/forge/push/create",
     "/api/issues/create",
     "/api/artifacts/create",
     "/api/reviews/packets/create",
@@ -290,12 +298,28 @@ class ReadOnlySiteApi:
                 return self._preview_local_issue(payload)
             if path == "/api/forge/issues/preview":
                 return self._preview_github_issue(payload)
+            if path == "/api/forge/branch/preview":
+                return self._preview_forge_branch(payload)
+            if path == "/api/forge/commit/preview":
+                return self._preview_forge_commit(payload)
+            if path == "/api/forge/push/preview":
+                return self._preview_forge_push(payload)
+            if path == "/api/forge/pr/preview":
+                return self._preview_github_pr(payload)
             if path == "/api/forge/prs/preview":
                 return self._preview_github_pr(payload)
             if path == "/api/forge/review-packets/preview":
                 return self._preview_forge_review_packet(payload)
+            if path == "/api/forge/branch/create":
+                return self._create_forge_branch(payload)
+            if path == "/api/forge/commit/create":
+                return self._create_forge_commit(payload)
+            if path == "/api/forge/push/create":
+                return self._create_forge_push(payload)
             if path == "/api/forge/issues/create":
                 return self._create_github_issue(payload)
+            if path == "/api/forge/pr/create":
+                return self._submit_github_pr(payload)
             if path == "/api/forge/prs/create":
                 return self._create_github_pr(payload)
         except ForgeActionError as exc:
@@ -580,6 +604,53 @@ class ReadOnlySiteApi:
             planned_files=[source_path],
             forge_preview=result_payload,
             github_issue_plan=result_payload.get("github_issue_plan"),
+        )
+
+    def _preview_forge_branch(self, payload: dict[str, Any]) -> ApiResponse:
+        branch = _required_text(payload, "branch")
+        self._write_audit(
+            action="branch_preview",
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            branch=branch,
+        )
+        return _preview_response(
+            "branch_preview",
+            planned_actions=[f"create and switch branch {branch}"],
+            planned_files=[],
+            branch=branch,
+        )
+
+    def _preview_forge_commit(self, payload: dict[str, Any]) -> ApiResponse:
+        message = _required_text(payload, "message")
+        self._write_audit(
+            action="commit_preview",
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+        )
+        return _preview_response(
+            "commit_preview",
+            planned_actions=["run validation, run gate, commit staged changes"],
+            planned_files=[],
+            commit_message=message,
+        )
+
+    def _preview_forge_push(self, payload: dict[str, Any]) -> ApiResponse:
+        head = _required_text(payload, "head")
+        self._write_audit(
+            action="push_preview",
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            head=head,
+        )
+        return _preview_response(
+            "push_preview",
+            planned_actions=[f"git push -u origin {head}"],
+            planned_files=[],
+            head=head,
         )
 
     def _preview_github_pr(self, payload: dict[str, Any]) -> ApiResponse:
@@ -1680,6 +1751,78 @@ class ReadOnlySiteApi:
             },
         )
 
+    def _create_forge_branch(self, payload: dict[str, Any]) -> ApiResponse:
+        action = "branch_create"
+        branch = _required_text(payload, "branch")
+        blocked = self._blocked_confirm(action, payload)
+        if blocked is not None:
+            return blocked
+        try:
+            result = self.app.forge_branch_create(branch, confirm=True)
+        except ForgeActionError as exc:
+            self._write_action_failure(
+                action=action,
+                result_status=exc.code,
+                planned_files=[],
+                head=branch,
+            )
+            raise
+        return self._action_response(
+            "branch_create",
+            result,
+            planned_files=[],
+            repo_writes_performed=False,
+        )
+
+    def _create_forge_commit(self, payload: dict[str, Any]) -> ApiResponse:
+        action = "commit"
+        message = _required_text(payload, "message")
+        blocked = self._blocked_confirm(action, payload)
+        if blocked is not None:
+            return blocked
+        try:
+            result = self.app.forge_commit(message=message, confirm=True)
+        except ForgeActionError as exc:
+            self._write_action_failure(
+                action=action,
+                result_status=exc.code,
+                planned_files=[],
+            )
+            raise
+        return self._action_response(
+            "commit",
+            result,
+            planned_files=[],
+            repo_writes_performed=False,
+        )
+
+    def _create_forge_push(self, payload: dict[str, Any]) -> ApiResponse:
+        action = "push"
+        head = _required_text(payload, "head")
+        blocked = self._blocked_confirm(action, payload)
+        if blocked is not None:
+            return blocked
+        try:
+            result = self.app.forge_push(
+                branch=head,
+                remote=_optional_text(payload, "remote") or "origin",
+                confirm=True,
+            )
+        except ForgeActionError as exc:
+            self._write_action_failure(
+                action=action,
+                result_status=exc.code,
+                planned_files=[],
+                head=head,
+            )
+            raise
+        return self._action_response(
+            "push",
+            result,
+            planned_files=[],
+            repo_writes_performed=False,
+        )
+
     def _create_github_issue(self, payload: dict[str, Any]) -> ApiResponse:
         action = "github_issue_create"
         source_path = _required_text(payload, "source_path")
@@ -1730,6 +1873,37 @@ class ReadOnlySiteApi:
             raise
         return self._action_response(
             "github_pr_create",
+            result,
+            planned_files=[],
+            repo_writes_performed=False,
+        )
+
+    def _submit_github_pr(self, payload: dict[str, Any]) -> ApiResponse:
+        action = "github_pr_submit"
+        base = _required_text(payload, "base")
+        head = _required_text(payload, "head")
+        blocked = self._blocked_create(action, payload)
+        if blocked is not None:
+            return blocked
+        try:
+            result = self.app.forge_github_pr_submit(
+                base=base,
+                head=head,
+                draft=_bool(payload, "draft", default=True),
+                remote=_optional_text(payload, "remote") or "origin",
+                confirm=True,
+            )
+        except ForgeActionError as exc:
+            self._write_action_failure(
+                action=action,
+                result_status=exc.code,
+                planned_files=[],
+                base=base,
+                head=head,
+            )
+            raise
+        return self._action_response(
+            "github_pr_submit",
             result,
             planned_files=[],
             repo_writes_performed=False,
@@ -2561,8 +2735,15 @@ def _web_action_kind(action: str) -> WebActionKind:
         "promotion_confirm": WebActionKind.PROMOTION_CONFIRM,
         "github_issue_preview": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_issue_create": WebActionKind.ISSUE_PUBLISH_GITHUB,
+        "branch_preview": WebActionKind.FORGE_BRANCH_CREATE,
+        "branch_create": WebActionKind.FORGE_BRANCH_CREATE,
+        "commit_preview": WebActionKind.FORGE_COMMIT_CREATE,
+        "commit": WebActionKind.FORGE_COMMIT_CREATE,
+        "push_preview": WebActionKind.FORGE_PUSH_CREATE,
+        "push": WebActionKind.FORGE_PUSH_CREATE,
         "github_pr_preview": WebActionKind.FORGE_PR_CREATE,
         "github_pr_create": WebActionKind.FORGE_PR_CREATE,
+        "github_pr_submit": WebActionKind.FORGE_PR_CREATE,
         "review_packet_preview": WebActionKind.REVIEW_PACKET_CREATE,
         "review_decision_preview": WebActionKind.REVIEW_DECISION_CREATE,
         "context_build": WebActionKind.CONTEXT_BUILD,

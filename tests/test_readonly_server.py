@@ -494,6 +494,121 @@ def test_preview_endpoints_do_not_use_backend_credentials(tmp_path: Path) -> Non
     assert credentials.calls == 0
 
 
+def test_b281_forge_flow_preview_endpoints_are_read_only(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    def fail_subprocess_run(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("B2.8.1 preview endpoints must not run git or gh")
+
+    monkeypatch.setattr(subprocess, "run", fail_subprocess_run)
+
+    api = ReadOnlySiteApi(open_app(tmp_path))
+    requests = [
+        (
+            "/api/forge/branch/preview",
+            {"branch": "feature.web-pr"},
+            "branch_preview",
+        ),
+        (
+            "/api/forge/commit/preview",
+            {"message": "Add web PR flow"},
+            "commit_preview",
+        ),
+        (
+            "/api/forge/push/preview",
+            {"head": "feature.web-pr"},
+            "push_preview",
+        ),
+        (
+            "/api/forge/pr/preview",
+            {"base": "main", "head": "feature.web-pr"},
+            "github_pr_preview",
+        ),
+    ]
+
+    for endpoint, payload, kind in requests:
+        response = api.handle("POST", endpoint, json.dumps(payload))
+        assert response.status == 200, response.payload
+        assert response.payload["kind"] == kind
+        assert response.payload["dry_run_only"] is True
+        assert response.payload["repo_writes_performed"] is False
+        assert response.payload["git_writes_performed"] is False
+        assert response.payload["github_writes_performed"] is False
+        assert response.payload["network_calls_performed"] is False
+
+
+def test_b281_forge_push_and_pr_submit_endpoints_return_pr_url(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    credentials = _FakeCredentialProvider()
+    calls: list[list[str]] = []
+
+    def fake_subprocess_run(
+        args: list[str],
+        **_kwargs: object,
+    ) -> subprocess.CompletedProcess[str]:
+        calls.append(args)
+        if args[:2] == ["git", "push"]:
+            stdout = ""
+        elif args[:3] == ["gh", "pr", "create"]:
+            stdout = "https://github.com/CheemsaDoge/tcs-cosheaf/pull/1004\n"
+        else:
+            raise AssertionError(f"unexpected subprocess call: {args}")
+        return subprocess.CompletedProcess(
+            args=args,
+            returncode=0,
+            stdout=stdout,
+            stderr="",
+        )
+
+    monkeypatch.setattr(subprocess, "run", fake_subprocess_run)
+
+    api = ReadOnlySiteApi(open_app(tmp_path), credential_provider=credentials)
+    push_response = api.handle(
+        "POST",
+        "/api/forge/push/create",
+        json.dumps({"head": "feature.web-pr", "confirm": True}),
+    )
+    pr_response = api.handle(
+        "POST",
+        "/api/forge/pr/create",
+        json.dumps(
+            {
+                "base": "main",
+                "head": "feature.web-pr",
+                "draft": True,
+                "confirm": True,
+            }
+        ),
+    )
+
+    assert push_response.status == 200, push_response.payload
+    assert push_response.payload["kind"] == "push"
+    assert push_response.payload["forge_action"]["push_performed"] is True
+    assert pr_response.status == 200, pr_response.payload
+    assert pr_response.payload["kind"] == "github_pr_submit"
+    assert pr_response.payload["forge_action"]["validation_performed"] is True
+    assert pr_response.payload["forge_action"]["gate_performed"] is True
+    assert pr_response.payload["forge_action"]["push_performed"] is True
+    assert pr_response.payload["forge_action"]["github_pr_created"] is True
+    assert pr_response.payload["forge_action"]["github_pr_url"].endswith("/pull/1004")
+    assert credentials.calls == 1
+    assert calls[0] == ["git", "push", "-u", "origin", "feature.web-pr"]
+    assert calls[1] == ["git", "push", "-u", "origin", "feature.web-pr"]
+    assert calls[2][:3] == ["gh", "pr", "create"]
+
+    entries = _audit_entries(tmp_path)
+    assert [entry["action"] for entry in entries] == [
+        "forge.push_create",
+        "forge.pr_create",
+    ]
+    assert entries[1]["github_urls"] == [
+        "https://github.com/CheemsaDoge/tcs-cosheaf/pull/1004"
+    ]
+
+
 def test_preview_endpoint_writes_web_action_audit_without_repo_file(
     tmp_path: Path,
 ) -> None:

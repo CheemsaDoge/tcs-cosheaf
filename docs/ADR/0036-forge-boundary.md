@@ -34,19 +34,23 @@ cosheaf forge issue preview --from issues/open/<issue-id>.yaml --json
 cosheaf forge issue create --from issues/open/<issue-id>.yaml --confirm --json
 cosheaf forge pr preview --base main --head <branch> --json
 cosheaf forge pr create --base main --head <branch> --draft --confirm --json
+cosheaf forge pr submit --base main --head <branch> --draft --confirm --json
 cosheaf forge branch create <branch> --confirm --json
 cosheaf forge commit --message <message> --confirm --json
+cosheaf forge push --branch <branch> --confirm --json
 cosheaf forge sync --json
 ```
 
 The app facade exposes corresponding `forge_status`,
 `forge_issue_preview`, `forge_pr_preview`, `forge_branch_create`, and
 `forge_commit` methods, plus `forge_github_issue_create`,
-`forge_github_pr_create`, and `forge_sync`.
+`forge_push`, `forge_github_pr_create`, `forge_github_pr_submit`, and
+`forge_sync`.
 
 Forge previews remain dry-run only. Confirmed actions are limited to local
-branch creation, local commits, GitHub issue creation, and GitHub PR creation.
-`forge sync` is a read-only reconciliation placeholder in A4.3.
+branch creation, local commits, explicit branch pushes, GitHub issue creation,
+and GitHub PR creation/submission. `forge sync` is a read-only reconciliation
+placeholder in A4.3.
 
 ## Authority Boundary
 
@@ -58,18 +62,20 @@ refutation, or promotion.
 Every preview result must serialize the dry-run and no-write flags and include
 authority-boundary warning text.
 
-Confirmed local git actions may create a local branch or local commit only
-after `--confirm`. They must not push, create PRs, read or store tokens, or
-change accepted/promotion rules. `forge commit` must refuse untracked or
-unstaged ambiguity, require staged changes, run repository validation and
-gatekeeper first, and stop on validation or gate failure.
+Confirmed local git actions may create a local branch, local commit, or push a
+non-protected branch only after `--confirm`. Branch creation and push refuse
+`main`/`master`. They must not read or store tokens or change
+accepted/promotion rules. `forge commit` must refuse untracked or unstaged
+ambiguity, require staged changes, run repository validation and gatekeeper
+first, and stop on validation or gate failure.
 
 Confirmed GitHub actions may create a GitHub issue or pull request only after
-`--confirm`. They call the external `gh` command with `shell=False` and rely on
-credentials outside the repository, such as authenticated `gh` state or
-environment tokens supported by `gh`. Forge must not read token values, store
-tokens, push branches, close local issues, or treat GitHub issue/PR/merge state
-as accepted knowledge. When possible, GitHub issue creation links the returned
+`--confirm`. `forge pr submit` additionally runs validation/gate and pushes the
+non-protected head branch before `gh pr create`. GitHub calls use `shell=False`
+and rely on credentials outside the repository, such as authenticated `gh` state
+or environment tokens supported by `gh`. Forge must not read token values, store
+tokens, close local issues, or treat GitHub issue/PR/merge state as accepted
+knowledge. When possible, GitHub issue creation links the returned
 URL into the local issue record's `external_links` while leaving local issue
 status unchanged.
 
