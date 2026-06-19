@@ -10,10 +10,11 @@
   gatekeeper runs, context build/show, memory cards/search, controlled draft
   artifact writes, controlled source-note writes, controlled review-request
   writes, WorkerBundle validate/submit/reduce, review-request generation from
-  WorkerBundle, read-only promotion-readiness reports, forge dry-run previews,
-  confirmed local forge git actions, confirmed GitHub issue/PR actions, and
-  read-only forge sync status. The facade delegates to existing services, forge
-  services, and read-only domain functions. It is not a new knowledge authority
+  WorkerBundle, repository-local issue preview/create/show/list/close,
+  read-only promotion-readiness reports, forge dry-run previews, confirmed
+  local forge git actions, confirmed GitHub issue/PR actions, and read-only
+  forge sync status. The facade delegates to existing services, forge services,
+  and read-only domain functions. It is not a new knowledge authority
   and does not grant proof, source metadata, human review, verifier pass, gate
   pass, accepted status, accepted theorem/refutation status, or promotion
   authority.
@@ -66,13 +67,17 @@
   surface defines `ReadOnlySiteApi`, `ApiResponse`, `make_handler`, and
   `serve_readonly_api`. The HTTP surface is localhost JSON endpoints:
   `GET /api/health`, `/api/workspace`, `/api/artifacts`, `/api/issues`,
-  `/api/graph`, `/api/gates`, and `/api/context/<issue_id>`. The server calls
+  `/api/graph`, `/api/gates`, and `/api/context/<issue_id>`, plus
+  preview-only `POST /api/forge/local-issues/preview`,
+  `/api/forge/issues/preview`, `/api/forge/prs/preview`, and
+  `/api/forge/review-packets/preview`. The server calls
   `cosheaf.app.open_app` and app facade methods in-process, generates website
-  export payloads in a temporary directory outside the repository, and refuses
-  non-GET methods. It performs no accepted writes, promotion, human review,
-  verifier mutation, gate run, context build, provider call, GitHub action, or
-  CLI subprocess. Server output is display context only and remains subordinate
-  to repository YAML/JSON source files.
+  export payloads in a temporary directory outside the repository, returns
+  dry-run preview plans for prospective actions, and supports localhost CORS
+  preflight. It performs no accepted writes, promotion, human review, verifier
+  mutation, gate run, context build side effect, provider call, GitHub action,
+  git/gh command, repository write, or CLI subprocess. Server output is display
+  context only and remains subordinate to repository YAML/JSON source files.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI

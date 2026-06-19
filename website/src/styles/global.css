@@ -493,6 +493,45 @@ p {
   text-align: center;
 }
 
+.preview-panel {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.preview-warning {
+  border-left: 4px solid var(--amber);
+  margin: 0;
+  padding-left: 0.75rem;
+}
+
+.preview-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.preview-button {
+  background: var(--teal-soft);
+  border: 1px solid #bdded9;
+  border-radius: 8px;
+  color: var(--teal);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0.65rem 0.8rem;
+}
+
+.preview-button:hover,
+.preview-button:focus {
+  background: #cce8e4;
+  outline: 2px solid rgba(15, 118, 110, 0.22);
+  outline-offset: 2px;
+}
+
+.preview-output {
+  max-height: 26rem;
+}
+
 .neighborhood-grid {
   display: grid;
   gap: 0.75rem;

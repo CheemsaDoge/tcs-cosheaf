@@ -12,6 +12,11 @@ import {
   issueById,
   loadSiteData
 } from "../src/lib/siteData";
+import {
+  PREVIEW_API_BASE,
+  PREVIEW_AUTHORITY_WARNING,
+  buildPreviewRequests
+} from "../src/lib/previewActions";
 
 describe("site data contract", () => {
   it("defines the required W2.1 routes", () => {
@@ -129,5 +134,33 @@ describe("site data contract", () => {
     expect(guideText).not.toMatch(/automatic theorem proving/i);
     expect(guideText).not.toMatch(/automatic promotion/i);
     expect(guideText).not.toMatch(/production ready/i);
+  });
+
+  it("builds preview-only action requests without write endpoints or tokens", async () => {
+    const data = await loadSiteData();
+    const requests = buildPreviewRequests(data, {
+      base: "main",
+      head: "website-preview-actions"
+    });
+
+    expect(PREVIEW_API_BASE).toBe("http://127.0.0.1:8765");
+    expect(PREVIEW_AUTHORITY_WARNING).toContain("dry-run");
+    expect(requests.map((request) => request.id)).toEqual([
+      "local-issue",
+      "github-issue",
+      "github-pr",
+      "review-packet"
+    ]);
+    expect(requests.map((request) => request.endpoint)).toEqual([
+      "/api/forge/local-issues/preview",
+      "/api/forge/issues/preview",
+      "/api/forge/prs/preview",
+      "/api/forge/review-packets/preview"
+    ]);
+
+    for (const request of requests) {
+      expect(request.method).toBe("POST");
+      expect(JSON.stringify(request.payload)).not.toMatch(/token|confirm|create/i);
+    }
   });
 });

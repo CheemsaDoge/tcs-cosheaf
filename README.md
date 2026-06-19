@@ -470,8 +470,9 @@ For local dynamic preview without cloud auth:
 cosheaf server serve --readonly --port 8765
 ```
 
-The server binds to localhost, serves read-only website JSON endpoints, and
-does not write repository records. See [Local Read-Only Server API](docs/SERVER_API.md).
+The server binds to localhost, serves read-only website JSON endpoints plus
+preview-only action plans, and does not write repository or GitHub records. See
+[Local Read-Only Server API](docs/SERVER_API.md).
 
 ## Roadmap
 
