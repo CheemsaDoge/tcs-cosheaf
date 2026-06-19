@@ -53,6 +53,11 @@ The B2.1.1 action DTO contract lives in `cosheaf.web_actions` and
 new endpoint-specific payloads. The DTOs are a data contract only; B2.1.1 does
 not add write endpoints or audit-log persistence.
 
+B2.1.2 adds the shared append-only web-action audit helper at
+`cosheaf.web_actions.append_web_action_audit`. Current preview and
+authenticated forge create endpoints write redacted machine-readable audit
+entries to ignored runtime JSONL at `.cosheaf/audit/web-actions.jsonl`.
+
 Every write-class endpoint must:
 
 - offer a preview request that performs no repository write and no network
@@ -143,7 +148,7 @@ uses the shared forge service and updates the source issue record's
 `external_links` as the CLI forge path does. Confirmed PR creation calls
 `CosheafApp.forge_github_pr_create`. Both routes return redacted action flags
 and URLs only. Success, auth/confirm refusal, and forge failures are logged to
-ignored runtime JSONL at `.cosheaf/audit/website-forge-actions.jsonl`.
+ignored runtime JSONL at `.cosheaf/audit/web-actions.jsonl`.
 
 These endpoints do not create accepted knowledge, human review, verifier pass,
 gate pass, promotion authority, token storage, branch pushes, production

@@ -4,20 +4,63 @@
       "additionalProperties": false,
       "description": "Planned GitHub issue or pull-request write.",
       "properties": {
-        "schema_version": { "const": 1, "default": 1, "title": "Schema Version", "type": "integer" },
-        "github_action": { "enum": ["issue", "pull_request"], "title": "Github Action", "type": "string" },
-        "title": { "title": "Title", "type": "string" },
-        "body": { "title": "Body", "type": "string" },
-        "labels": { "items": { "type": "string" }, "title": "Labels", "type": "array" },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "github_action": {
+          "enum": [
+            "issue",
+            "pull_request"
+          ],
+          "title": "Github Action",
+          "type": "string"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "labels": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Labels",
+          "type": "array"
+        },
         "result_url": {
-          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "title": "Result Url"
         },
-        "github_writes_performed": { "default": false, "title": "Github Writes Performed", "type": "boolean" },
-        "network_calls_performed": { "default": false, "title": "Network Calls Performed", "type": "boolean" }
+        "github_writes_performed": {
+          "default": false,
+          "title": "Github Writes Performed",
+          "type": "boolean"
+        },
+        "network_calls_performed": {
+          "default": false,
+          "title": "Network Calls Performed",
+          "type": "boolean"
+        }
       },
-      "required": ["github_action", "title", "body"],
+      "required": [
+        "github_action",
+        "title",
+        "body"
+      ],
       "title": "GitHubWritePlan",
       "type": "object"
     },
@@ -25,12 +68,39 @@
       "additionalProperties": false,
       "description": "Planned local git writes.",
       "properties": {
-        "schema_version": { "const": 1, "default": 1, "title": "Schema Version", "type": "integer" },
-        "base": { "default": "", "title": "Base", "type": "string" },
-        "head": { "default": "", "title": "Head", "type": "string" },
-        "branch": { "default": "", "title": "Branch", "type": "string" },
-        "planned_git_commands": { "items": { "type": "string" }, "title": "Planned Git Commands", "type": "array" },
-        "git_writes_performed": { "default": false, "title": "Git Writes Performed", "type": "boolean" }
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "base": {
+          "default": "",
+          "title": "Base",
+          "type": "string"
+        },
+        "head": {
+          "default": "",
+          "title": "Head",
+          "type": "string"
+        },
+        "branch": {
+          "default": "",
+          "title": "Branch",
+          "type": "string"
+        },
+        "planned_git_commands": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Planned Git Commands",
+          "type": "array"
+        },
+        "git_writes_performed": {
+          "default": false,
+          "title": "Git Writes Performed",
+          "type": "boolean"
+        }
       },
       "title": "GitWritePlan",
       "type": "object"
@@ -39,16 +109,55 @@
       "additionalProperties": false,
       "description": "Planned artifact promotion.",
       "properties": {
-        "schema_version": { "const": 1, "default": 1, "title": "Schema Version", "type": "integer" },
-        "artifact_id": { "title": "Artifact Id", "type": "string" },
-        "target_state": { "enum": ["accepted", "refuted", "obsolete"], "title": "Target State", "type": "string" },
-        "readiness_summary": { "title": "Readiness Summary", "type": "string" },
-        "validation_required": { "default": true, "title": "Validation Required", "type": "boolean" },
-        "gate_required": { "default": true, "title": "Gate Required", "type": "boolean" },
-        "human_review_required": { "default": true, "title": "Human Review Required", "type": "boolean" },
-        "promotion_performed": { "default": false, "title": "Promotion Performed", "type": "boolean" }
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "artifact_id": {
+          "title": "Artifact Id",
+          "type": "string"
+        },
+        "target_state": {
+          "enum": [
+            "accepted",
+            "refuted",
+            "obsolete"
+          ],
+          "title": "Target State",
+          "type": "string"
+        },
+        "readiness_summary": {
+          "title": "Readiness Summary",
+          "type": "string"
+        },
+        "validation_required": {
+          "default": true,
+          "title": "Validation Required",
+          "type": "boolean"
+        },
+        "gate_required": {
+          "default": true,
+          "title": "Gate Required",
+          "type": "boolean"
+        },
+        "human_review_required": {
+          "default": true,
+          "title": "Human Review Required",
+          "type": "boolean"
+        },
+        "promotion_performed": {
+          "default": false,
+          "title": "Promotion Performed",
+          "type": "boolean"
+        }
       },
-      "required": ["artifact_id", "target_state", "readiness_summary"],
+      "required": [
+        "artifact_id",
+        "target_state",
+        "readiness_summary"
+      ],
       "title": "PromotionPlan",
       "type": "object"
     },
@@ -56,10 +165,31 @@
       "additionalProperties": false,
       "description": "Planned repository file writes.",
       "properties": {
-        "schema_version": { "const": 1, "default": 1, "title": "Schema Version", "type": "integer" },
-        "planned_files": { "items": { "type": "string" }, "title": "Planned Files", "type": "array" },
-        "written_files": { "items": { "type": "string" }, "title": "Written Files", "type": "array" },
-        "repo_writes_performed": { "default": false, "title": "Repo Writes Performed", "type": "boolean" }
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "planned_files": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Planned Files",
+          "type": "array"
+        },
+        "written_files": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Written Files",
+          "type": "array"
+        },
+        "repo_writes_performed": {
+          "default": false,
+          "title": "Repo Writes Performed",
+          "type": "boolean"
+        }
       },
       "title": "RepoWritePlan",
       "type": "object"
@@ -68,9 +198,20 @@
       "additionalProperties": false,
       "description": "Planned human review decision write.",
       "properties": {
-        "schema_version": { "const": 1, "default": 1, "title": "Schema Version", "type": "integer" },
-        "target_artifact": { "title": "Target Artifact", "type": "string" },
-        "reviewer_identity": { "title": "Reviewer Identity", "type": "string" },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "target_artifact": {
+          "title": "Target Artifact",
+          "type": "string"
+        },
+        "reviewer_identity": {
+          "title": "Reviewer Identity",
+          "type": "string"
+        },
         "decision": {
           "enum": [
             "accept_for_private_use",
@@ -83,11 +224,27 @@
           "title": "Decision",
           "type": "string"
         },
-        "notes_required": { "default": true, "title": "Notes Required", "type": "boolean" },
-        "human_confirmation_required": { "default": true, "title": "Human Confirmation Required", "type": "boolean" },
-        "human_review_recorded": { "default": false, "title": "Human Review Recorded", "type": "boolean" }
+        "notes_required": {
+          "default": true,
+          "title": "Notes Required",
+          "type": "boolean"
+        },
+        "human_confirmation_required": {
+          "default": true,
+          "title": "Human Confirmation Required",
+          "type": "boolean"
+        },
+        "human_review_recorded": {
+          "default": false,
+          "title": "Human Review Recorded",
+          "type": "boolean"
+        }
       },
-      "required": ["target_artifact", "reviewer_identity", "decision"],
+      "required": [
+        "target_artifact",
+        "reviewer_identity",
+        "decision"
+      ],
       "title": "ReviewDecisionPlan",
       "type": "object"
     },
@@ -95,36 +252,215 @@
       "additionalProperties": false,
       "description": "One machine-readable audit record for a web action.",
       "properties": {
-        "schema_version": { "const": 1, "default": 1, "title": "Schema Version", "type": "integer" },
-        "timestamp": { "format": "date-time", "title": "Timestamp", "type": "string" },
-        "actor": { "title": "Actor", "type": "string" },
-        "action": { "$ref": "#/$defs/WebActionKind" },
-        "mode": { "$ref": "#/$defs/WebActionMode" },
-        "repo_root": { "title": "Repo Root", "type": "string" },
-        "preview_only": { "title": "Preview Only", "type": "boolean" },
-        "confirmed": { "title": "Confirmed", "type": "boolean" },
-        "performed": { "title": "Performed", "type": "boolean" },
-        "planned_files": { "items": { "type": "string" }, "title": "Planned Files", "type": "array" },
-        "written_files": { "items": { "type": "string" }, "title": "Written Files", "type": "array" },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        },
+        "actor": {
+          "title": "Actor",
+          "type": "string"
+        },
+        "action": {
+          "$ref": "#/$defs/WebActionKind"
+        },
+        "mode": {
+          "$ref": "#/$defs/WebActionMode"
+        },
+        "repo_root": {
+          "title": "Repo Root",
+          "type": "string"
+        },
+        "branch": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Branch"
+        },
+        "base": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base"
+        },
+        "head": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Head"
+        },
+        "preview_only": {
+          "title": "Preview Only",
+          "type": "boolean"
+        },
+        "confirm_required": {
+          "default": false,
+          "title": "Confirm Required",
+          "type": "boolean"
+        },
+        "confirmed": {
+          "title": "Confirmed",
+          "type": "boolean"
+        },
+        "explicit_confirm": {
+          "default": false,
+          "title": "Explicit Confirm",
+          "type": "boolean"
+        },
+        "performed": {
+          "title": "Performed",
+          "type": "boolean"
+        },
+        "repo_writes_performed": {
+          "default": false,
+          "title": "Repo Writes Performed",
+          "type": "boolean"
+        },
+        "git_writes_performed": {
+          "default": false,
+          "title": "Git Writes Performed",
+          "type": "boolean"
+        },
+        "github_writes_performed": {
+          "default": false,
+          "title": "Github Writes Performed",
+          "type": "boolean"
+        },
+        "network_calls_performed": {
+          "default": false,
+          "title": "Network Calls Performed",
+          "type": "boolean"
+        },
+        "planned_files": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Planned Files",
+          "type": "array"
+        },
+        "written_files": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Written Files",
+          "type": "array"
+        },
         "validation_summary": {
-          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "title": "Validation Summary"
         },
         "gate_summary": {
-          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "title": "Gate Summary"
         },
-        "authority_warnings": { "items": { "type": "string" }, "title": "Authority Warnings", "type": "array" },
+        "github_urls": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Github Urls",
+          "type": "array"
+        },
+        "credential_provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Credential Provider"
+        },
+        "result_status": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Result Status"
+        },
+        "authority_warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Authority Warnings",
+          "type": "array"
+        },
         "error_code": {
-          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "title": "Error Code"
         },
-        "errors": { "items": { "$ref": "#/$defs/WebActionError" }, "title": "Errors", "type": "array" }
+        "errors": {
+          "items": {
+            "$ref": "#/$defs/WebActionError"
+          },
+          "title": "Errors",
+          "type": "array"
+        }
       },
-      "required": ["timestamp", "actor", "action", "mode", "repo_root", "preview_only", "confirmed", "performed"],
+      "required": [
+        "timestamp",
+        "actor",
+        "action",
+        "mode",
+        "repo_root",
+        "preview_only",
+        "confirmed",
+        "performed"
+      ],
       "title": "WebActionAuditEntry",
       "type": "object"
     },
@@ -132,19 +468,53 @@
       "additionalProperties": false,
       "description": "Request to confirm a previously previewed web action.",
       "properties": {
-        "schema_version": { "const": 1, "default": 1, "title": "Schema Version", "type": "integer" },
-        "action": { "$ref": "#/$defs/WebActionKind" },
-        "mode": { "$ref": "#/$defs/WebActionMode" },
-        "preview_plan_hash": { "title": "Preview Plan Hash", "type": "string" },
-        "confirm": { "const": true, "default": true, "title": "Confirm", "type": "boolean" },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "action": {
+          "$ref": "#/$defs/WebActionKind"
+        },
+        "mode": {
+          "$ref": "#/$defs/WebActionMode"
+        },
+        "preview_plan_hash": {
+          "title": "Preview Plan Hash",
+          "type": "string"
+        },
+        "confirm": {
+          "const": true,
+          "default": true,
+          "title": "Confirm",
+          "type": "boolean"
+        },
         "actor": {
-          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "title": "Actor"
         },
-        "parameters": { "additionalProperties": { "type": "string" }, "title": "Parameters", "type": "object" }
+        "parameters": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Parameters",
+          "type": "object"
+        }
       },
-      "required": ["action", "mode", "preview_plan_hash"],
+      "required": [
+        "action",
+        "mode",
+        "preview_plan_hash"
+      ],
       "title": "WebActionConfirmRequest",
       "type": "object"
     },
@@ -152,24 +522,66 @@
       "additionalProperties": false,
       "description": "Machine-readable web action error.",
       "properties": {
-        "schema_version": { "const": 1, "default": 1, "title": "Schema Version", "type": "integer" },
-        "code": { "title": "Code", "type": "string" },
-        "message": { "title": "Message", "type": "string" },
-        "remediation": { "title": "Remediation", "type": "string" },
-        "blocking": { "title": "Blocking", "type": "boolean" },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "remediation": {
+          "title": "Remediation",
+          "type": "string"
+        },
+        "blocking": {
+          "title": "Blocking",
+          "type": "boolean"
+        },
         "related_path": {
-          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "title": "Related Path"
         },
         "related_artifact": {
-          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "title": "Related Artifact"
         },
-        "details": { "additionalProperties": { "type": "string" }, "title": "Details", "type": "object" }
+        "details": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Details",
+          "type": "object"
+        }
       },
-      "required": ["code", "message", "remediation", "blocking"],
+      "required": [
+        "code",
+        "message",
+        "remediation",
+        "blocking"
+      ],
       "title": "WebActionError",
       "type": "object"
     },
@@ -202,7 +614,11 @@
     },
     "WebActionMode": {
       "description": "Runtime mode for web action DTOs.",
-      "enum": ["static", "local", "hosted"],
+      "enum": [
+        "static",
+        "local",
+        "hosted"
+      ],
       "title": "WebActionMode",
       "type": "string"
     },
@@ -210,17 +626,42 @@
       "additionalProperties": false,
       "description": "Request to preview a web action without side effects.",
       "properties": {
-        "schema_version": { "const": 1, "default": 1, "title": "Schema Version", "type": "integer" },
-        "action": { "$ref": "#/$defs/WebActionKind" },
-        "mode": { "$ref": "#/$defs/WebActionMode" },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "action": {
+          "$ref": "#/$defs/WebActionKind"
+        },
+        "mode": {
+          "$ref": "#/$defs/WebActionMode"
+        },
         "actor": {
-          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "title": "Actor"
         },
-        "parameters": { "additionalProperties": { "type": "string" }, "title": "Parameters", "type": "object" }
+        "parameters": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Parameters",
+          "type": "object"
+        }
       },
-      "required": ["action", "mode"],
+      "required": [
+        "action",
+        "mode"
+      ],
       "title": "WebActionPreviewRequest",
       "type": "object"
     },
@@ -228,43 +669,182 @@
       "additionalProperties": false,
       "description": "Result for a previewed or confirmed web action.",
       "properties": {
-        "schema_version": { "const": 1, "default": 1, "title": "Schema Version", "type": "integer" },
-        "action": { "$ref": "#/$defs/WebActionKind" },
-        "mode": { "$ref": "#/$defs/WebActionMode" },
-        "preview_only": { "title": "Preview Only", "type": "boolean" },
-        "confirm_required": { "title": "Confirm Required", "type": "boolean" },
-        "confirmed": { "title": "Confirmed", "type": "boolean" },
-        "performed": { "title": "Performed", "type": "boolean" },
-        "repo_writes_performed": { "default": false, "title": "Repo Writes Performed", "type": "boolean" },
-        "git_writes_performed": { "default": false, "title": "Git Writes Performed", "type": "boolean" },
-        "github_writes_performed": { "default": false, "title": "Github Writes Performed", "type": "boolean" },
-        "network_calls_performed": { "default": false, "title": "Network Calls Performed", "type": "boolean" },
-        "planned_files": { "items": { "type": "string" }, "title": "Planned Files", "type": "array" },
-        "written_files": { "items": { "type": "string" }, "title": "Written Files", "type": "array" },
+        "schema_version": {
+          "const": 1,
+          "default": 1,
+          "title": "Schema Version",
+          "type": "integer"
+        },
+        "action": {
+          "$ref": "#/$defs/WebActionKind"
+        },
+        "mode": {
+          "$ref": "#/$defs/WebActionMode"
+        },
+        "preview_only": {
+          "title": "Preview Only",
+          "type": "boolean"
+        },
+        "confirm_required": {
+          "title": "Confirm Required",
+          "type": "boolean"
+        },
+        "confirmed": {
+          "title": "Confirmed",
+          "type": "boolean"
+        },
+        "performed": {
+          "title": "Performed",
+          "type": "boolean"
+        },
+        "repo_writes_performed": {
+          "default": false,
+          "title": "Repo Writes Performed",
+          "type": "boolean"
+        },
+        "git_writes_performed": {
+          "default": false,
+          "title": "Git Writes Performed",
+          "type": "boolean"
+        },
+        "github_writes_performed": {
+          "default": false,
+          "title": "Github Writes Performed",
+          "type": "boolean"
+        },
+        "network_calls_performed": {
+          "default": false,
+          "title": "Network Calls Performed",
+          "type": "boolean"
+        },
+        "planned_files": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Planned Files",
+          "type": "array"
+        },
+        "written_files": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Written Files",
+          "type": "array"
+        },
         "validation_summary": {
-          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "title": "Validation Summary"
         },
         "gate_summary": {
-          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "title": "Gate Summary"
         },
-        "authority_warnings": { "items": { "type": "string" }, "title": "Authority Warnings", "type": "array" },
+        "authority_warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Authority Warnings",
+          "type": "array"
+        },
         "audit_path": {
-          "anyOf": [{ "type": "string" }, { "type": "null" }],
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "title": "Audit Path"
         },
-        "errors": { "items": { "$ref": "#/$defs/WebActionError" }, "title": "Errors", "type": "array" },
-        "repo_write_plan": { "anyOf": [{ "$ref": "#/$defs/RepoWritePlan" }, { "type": "null" }], "default": null },
-        "git_write_plan": { "anyOf": [{ "$ref": "#/$defs/GitWritePlan" }, { "type": "null" }], "default": null },
-        "github_write_plan": { "anyOf": [{ "$ref": "#/$defs/GitHubWritePlan" }, { "type": "null" }], "default": null },
-        "review_decision_plan": { "anyOf": [{ "$ref": "#/$defs/ReviewDecisionPlan" }, { "type": "null" }], "default": null },
-        "promotion_plan": { "anyOf": [{ "$ref": "#/$defs/PromotionPlan" }, { "type": "null" }], "default": null }
+        "errors": {
+          "items": {
+            "$ref": "#/$defs/WebActionError"
+          },
+          "title": "Errors",
+          "type": "array"
+        },
+        "repo_write_plan": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RepoWritePlan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "git_write_plan": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GitWritePlan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "github_write_plan": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GitHubWritePlan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "review_decision_plan": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReviewDecisionPlan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "promotion_plan": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PromotionPlan"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
       },
-      "required": ["action", "mode", "preview_only", "confirm_required", "confirmed", "performed"],
+      "required": [
+        "action",
+        "mode",
+        "preview_only",
+        "confirm_required",
+        "confirmed",
+        "performed"
+      ],
       "title": "WebActionResult",
       "type": "object"
     }
@@ -272,13 +852,31 @@
   "additionalProperties": false,
   "description": "Schema bundle containing all public WebAction DTOs.",
   "properties": {
-    "schema_version": { "const": 1, "default": 1, "title": "Schema Version", "type": "integer" },
-    "preview_request": { "$ref": "#/$defs/WebActionPreviewRequest" },
-    "confirm_request": { "$ref": "#/$defs/WebActionConfirmRequest" },
-    "result": { "$ref": "#/$defs/WebActionResult" },
-    "audit_entry": { "$ref": "#/$defs/WebActionAuditEntry" }
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "preview_request": {
+      "$ref": "#/$defs/WebActionPreviewRequest"
+    },
+    "confirm_request": {
+      "$ref": "#/$defs/WebActionConfirmRequest"
+    },
+    "result": {
+      "$ref": "#/$defs/WebActionResult"
+    },
+    "audit_entry": {
+      "$ref": "#/$defs/WebActionAuditEntry"
+    }
   },
-  "required": ["preview_request", "confirm_request", "result", "audit_entry"],
+  "required": [
+    "preview_request",
+    "confirm_request",
+    "result",
+    "audit_entry"
+  ],
   "title": "WebActionDtoBundle",
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema",

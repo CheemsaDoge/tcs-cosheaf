@@ -414,9 +414,11 @@ authority unavailable through app requests.
 preview and confirm requests, action results, action audit-entry shape,
 machine-readable web-action errors, and repository/git/GitHub/review/
 promotion plan DTOs. These models are re-exported through `cosheaf.app.models`
-and serialized by `schemas/web_action.schema.json`. They do not execute server
-endpoints, write audit logs, write repository files, create human review, or
-promote artifacts by themselves.
+and serialized by `schemas/web_action.schema.json`. The same package exposes
+`append_web_action_audit` for append-only redacted runtime audit JSONL under
+`.cosheaf/audit/web-actions.jsonl`. The DTOs and audit helper do not execute
+server endpoints, write repository files, create human review, or promote
+artifacts by themselves.
 
 ### Server/API Layer
 

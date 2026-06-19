@@ -89,7 +89,7 @@ def _fixture_workspace(repo_root: Path) -> None:
 
 
 def _audit_entries(repo_root: Path) -> list[dict[str, Any]]:
-    audit_path = repo_root / ".cosheaf" / "audit" / "website-forge-actions.jsonl"
+    audit_path = repo_root / ".cosheaf" / "audit" / "web-actions.jsonl"
     return [
         json.loads(line)
         for line in audit_path.read_text(encoding="utf-8").splitlines()
@@ -236,6 +236,43 @@ def test_preview_endpoints_do_not_use_backend_credentials(tmp_path: Path) -> Non
     assert credentials.calls == 0
 
 
+def test_preview_endpoint_writes_web_action_audit_without_repo_file(
+    tmp_path: Path,
+) -> None:
+    _fixture_workspace(tmp_path)
+    api = ReadOnlySiteApi(open_app(tmp_path))
+
+    response = api.handle(
+        "POST",
+        "/api/forge/local-issues/preview",
+        json.dumps(
+            {
+                "issue_id": "issue.fixture.web-preview",
+                "title": "Preview a local issue",
+                "summary": "Show the exact local issue file before writing.",
+                "authors": ["tester"],
+                "labels": ["website-preview"],
+                "related_artifacts": ["claim.fixture.readonly-server"],
+                "related_sources": [],
+                "scope": "private",
+            }
+        ),
+    )
+
+    assert response.status == 200
+    assert not (tmp_path / "issues/open/issue.fixture.web-preview.yaml").exists()
+    entries = _audit_entries(tmp_path)
+    assert len(entries) == 1
+    assert entries[0]["action"] == "issue.create"
+    assert entries[0]["actor"] == "local.web"
+    assert entries[0]["preview_only"] is True
+    assert entries[0]["confirmed"] is False
+    assert entries[0]["performed"] is False
+    assert entries[0]["planned_files"] == [
+        "issues/open/issue.fixture.web-preview.yaml"
+    ]
+
+
 def test_authenticated_create_endpoints_require_auth_and_confirm(
     tmp_path: Path,
     monkeypatch: Any,
@@ -343,13 +380,13 @@ def test_authenticated_create_endpoints_call_forge_and_write_redacted_audit(
     assert credentials.secret not in response_text
     assert "token" not in response_text.lower()
 
-    audit_path = tmp_path / ".cosheaf" / "audit" / "website-forge-actions.jsonl"
+    audit_path = tmp_path / ".cosheaf" / "audit" / "web-actions.jsonl"
     audit_text = audit_path.read_text(encoding="utf-8")
     assert credentials.secret not in audit_text
     entries = _audit_entries(tmp_path)
     assert [entry["action"] for entry in entries] == [
-        "github_issue_create",
-        "github_pr_create",
+        "issue.publish_github",
+        "forge.pr_create",
     ]
     assert [entry["credential_provider"] for entry in entries] == [
         "fake-provider",
@@ -357,6 +394,14 @@ def test_authenticated_create_endpoints_call_forge_and_write_redacted_audit(
     ]
     assert all(entry["explicit_confirm"] is True for entry in entries)
     assert all(entry["github_writes_performed"] is True for entry in entries)
+    assert entries[0]["github_urls"] == [
+        "https://github.com/CheemsaDoge/tcs-cosheaf/issues/1001"
+    ]
+    assert entries[1]["github_urls"] == [
+        "https://github.com/CheemsaDoge/tcs-cosheaf/pull/1002"
+    ]
+    assert entries[1]["base"] == "main"
+    assert entries[1]["head"] == "website-authenticated-forge-actions"
 
 
 def test_authenticated_create_failures_write_redacted_audit(
@@ -400,7 +445,7 @@ def test_authenticated_create_failures_write_redacted_audit(
 
     entries = _audit_entries(tmp_path)
     assert len(entries) == 1
-    assert entries[0]["action"] == "github_pr_create"
+    assert entries[0]["action"] == "forge.pr_create"
     assert entries[0]["result_status"] == "forge_github_failed"
     assert entries[0]["credential_provider"] == "fake-provider"
     assert entries[0]["explicit_confirm"] is True

@@ -46,10 +46,11 @@ credentials, or change accepted/promotion state.
 Authenticated website create endpoints are limited to GitHub issue and PR
 creation. They require a backend `ForgeCredentialProvider` and explicit
 `confirm: true`, then call the app facade/forge service in-process. They write
-redacted runtime audit records under ignored `.cosheaf/audit/` and return only
-redacted action flags and URLs. They do not create accepted knowledge, human
-review, verifier pass, gate pass, promotion authority, branch pushes, or token
-storage.
+redacted runtime audit records through
+`cosheaf.web_actions.append_web_action_audit` under ignored
+`.cosheaf/audit/web-actions.jsonl` and return only redacted action flags and
+URLs. They do not create accepted knowledge, human review, verifier pass, gate
+pass, promotion authority, branch pushes, or token storage.
 
 Local issue creation through `CosheafApp.create_issue` writes only
 repository-local issue YAML under `issues/open/`. It does not create a GitHub

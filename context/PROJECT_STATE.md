@@ -3,6 +3,35 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.1.2 web action audit log - 2026-06-19
+
+Issue #542 adds shared web-action audit logging on branch
+`web-action-audit-log`.
+
+The current surface includes:
+
+- `cosheaf.web_actions.WEB_ACTION_AUDIT_PATH`;
+- `cosheaf.web_actions.append_web_action_audit`; and
+- ignored runtime audit JSONL at `.cosheaf/audit/web-actions.jsonl`.
+
+`append_web_action_audit` appends `WebActionAuditEntry` records as redacted
+JSONL and returns the repository-relative audit path. The local website server
+now uses the shared logger for preview actions, confirmed forge issue/PR
+actions, missing-confirmation refusals, missing-auth refusals, and forge
+failures.
+
+Audit entries record local actor placeholder `local.web`, typed
+`WebActionKind` values, local mode, repo root, preview/confirm/performed
+flags, planned and written files, validation/gate summaries, GitHub URLs when
+created, optional base/head/branch metadata, result status, authority warnings,
+and structured errors. The logger redacts sensitive keys and common token-like
+strings before append.
+
+This task does not add new write endpoints, frontend UI, human-review
+creation, accepted/refuted/obsolete promotion, hosted auth, browser-side token
+handling, or any new source of accepted authority. Audit records remain
+runtime evidence only.
+
 ## Longplan B2.1.1 typed WebAction DTOs - 2026-06-19
 
 Issue #540 adds the typed WebAction DTO foundation on branch
