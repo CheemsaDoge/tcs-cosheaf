@@ -147,6 +147,7 @@ export interface IssueSummary {
   labels: string[];
   related_artifacts: string[];
   related_sources: string[];
+  external_links?: string[];
   demo_fixture: boolean;
 }
 
@@ -198,6 +199,25 @@ export interface GraphNeighborhood {
   dependents: GraphNode[];
   nodes: GraphNode[];
   edges: GraphEdge[];
+}
+
+export interface WorkbenchDashboardAction {
+  label: LocalizedText;
+  href?: string;
+  meta?: LocalizedText;
+}
+
+export interface WorkbenchDashboard {
+  activeIssues: IssueSummary[];
+  draftReviewArtifacts: ArtifactCard[];
+  promotion: {
+    ready: ArtifactCard[];
+    blocked: ArtifactCard[];
+  };
+  gateFailureCount: number;
+  recentActions: WorkbenchDashboardAction[];
+  recentPrLinks: WorkbenchDashboardAction[];
+  nextActions: WorkbenchDashboardAction[];
 }
 
 export interface SitePayload extends SiteExportPayload {
@@ -509,6 +529,152 @@ export function graphNeighborhoodFor(
     nodes,
     edges
   };
+}
+
+export function buildWorkbenchDashboard(data: SiteData): WorkbenchDashboard {
+  const activeIssues = data.issues.issues.filter(
+    (issue) => !["closed", "done", "resolved"].includes(issue.status)
+  );
+  const draftReviewArtifacts = data.artifacts.artifacts.filter(
+    (artifact) =>
+      artifact.status === "draft" &&
+      !["accepted", "human_reviewed"].includes(artifact.review_state)
+  );
+  const promotionCandidates = data.artifacts.artifacts.filter(
+    (artifact) => artifact.status !== "accepted"
+  );
+  const promotionReady = promotionCandidates.filter((artifact) =>
+    isPromotionReadyArtifact(artifact, data)
+  );
+  const promotionReadyIds = new Set(promotionReady.map((artifact) => artifact.id));
+  const promotionBlocked = promotionCandidates.filter(
+    (artifact) => !promotionReadyIds.has(artifact.id)
+  );
+  const gateFailureCount =
+    (["fail", "error"].includes(data.gates.verdict) ? 1 : 0) +
+    data.gates.blocking_issues.length;
+  const recentPrLinks = data.issues.issues
+    .flatMap((issue) =>
+      (issue.external_links ?? [])
+        .filter((link) => /github\.com\/.+\/pull\//i.test(link))
+        .map((link) => ({
+          label: localized(issue.title, issue.title),
+          href: link,
+          meta: localized("GitHub PR", "GitHub PR")
+        }))
+    )
+    .slice(0, 3);
+
+  return {
+    activeIssues,
+    draftReviewArtifacts,
+    promotion: {
+      ready: promotionReady,
+      blocked: promotionBlocked
+    },
+    gateFailureCount,
+    recentActions: recentReportActions(data.reports),
+    recentPrLinks,
+    nextActions: nextWorkbenchActions(
+      activeIssues,
+      draftReviewArtifacts,
+      promotionReady,
+      data.gates
+    )
+  };
+}
+
+function isPromotionReadyArtifact(
+  artifact: ArtifactCard,
+  data: SiteData
+): boolean {
+  const hasHumanReview = ["accepted", "human_reviewed"].includes(
+    artifact.review_state
+  );
+  const verifierPassed = ["pass", "passed", "success"].includes(
+    artifact.verifier_state
+  );
+  return (
+    hasHumanReview &&
+    verifierPassed &&
+    artifact.sources.length > 0 &&
+    data.gates.verdict === "pass" &&
+    data.gates.blocking_issues.length === 0
+  );
+}
+
+function recentReportActions(
+  reports: SiteExportPayload
+): WorkbenchDashboardAction[] {
+  const rows = reports.reports;
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+  return rows
+    .map((row) => {
+      if (typeof row === "string") {
+        return {
+          label: localized(row, row),
+          meta: localized("Report", "报告")
+        };
+      }
+      if (row && typeof row === "object" && "path" in row) {
+        const path = String((row as { path: unknown }).path);
+        return {
+          label: localized(path, path),
+          meta: localized("Report", "报告")
+        };
+      }
+      return undefined;
+    })
+    .filter((row): row is WorkbenchDashboardAction => Boolean(row))
+    .slice(0, 3);
+}
+
+function nextWorkbenchActions(
+  activeIssues: IssueSummary[],
+  draftArtifacts: ArtifactCard[],
+  readyArtifacts: ArtifactCard[],
+  gates: GatesPayload
+): WorkbenchDashboardAction[] {
+  const actions: WorkbenchDashboardAction[] = [];
+  const issue = activeIssues[0];
+  const draft = draftArtifacts[0];
+  const ready = readyArtifacts[0];
+  if (issue) {
+    actions.push({
+      label: localized("Open active issue", "打开当前议题"),
+      href: issueHref(issue.id),
+      meta: localized(issue.id, issue.id)
+    });
+    actions.push({
+      label: localized("Build issue context", "构建议题上下文"),
+      href: contextHref(issue.id),
+      meta: localized(issue.id, issue.id)
+    });
+  }
+  if (draft) {
+    actions.push({
+      label: localized("Prepare review packet", "准备审阅包"),
+      href: `/artifacts/${encodeURIComponent(draft.id)}/review-packet/`,
+      meta: localized(draft.id, draft.id)
+    });
+  }
+  if (ready) {
+    actions.push({
+      label: localized("Open promotion check", "打开晋升检查"),
+      href: `/artifacts/${encodeURIComponent(ready.id)}/promotion/`,
+      meta: localized(ready.id, ready.id)
+    });
+  }
+  if (gates.verdict !== "pass" || gates.blocking_issues.length > 0) {
+    actions.push({
+      label: localized("Run validation and gate checks", "运行验证和准入检查"),
+      href: "/gates/",
+      meta: localized("Preview before confirmed runs", "确认运行前先预览")
+    });
+  }
+  return actions.slice(0, 5);
 }
 
 function withRuntime(source: SiteData, runtime: RuntimeMetadata): SiteData {

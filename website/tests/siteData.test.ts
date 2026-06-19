@@ -7,6 +7,7 @@ import {
   RELATIONSHIP_INLINE_LIMIT,
   ROUTES,
   artifactById,
+  buildWorkbenchDashboard,
   contextPackForIssue,
   dependentsFor,
   dependenciesFor,
@@ -430,6 +431,63 @@ describe("site data contract", () => {
     expect(data.context_packs.context_packs[0].issue_id).toBe("issue.live");
     expect(data.gates.verdict).toBe("pass");
     expect(artifactById("claim.live", data)?.title).toBe("Live claim");
+  });
+
+  it("derives a compact workbench dashboard from exported state", async () => {
+    const data = await loadSiteData();
+    const dashboard = buildWorkbenchDashboard(data);
+
+    expect(dashboard.activeIssues.map((issue) => issue.id)).toEqual([
+      "issue.example-private-claim"
+    ]);
+    expect(dashboard.draftReviewArtifacts.map((artifact) => artifact.id)).toEqual([
+      "claim.example-private",
+      "definition.graph"
+    ]);
+    expect(dashboard.promotion.ready).toEqual([]);
+    expect(dashboard.promotion.blocked.map((artifact) => artifact.id)).toEqual([
+      "claim.example-private",
+      "definition.graph"
+    ]);
+    expect(dashboard.gateFailureCount).toBe(0);
+    expect(dashboard.recentActions).toEqual([]);
+    expect(dashboard.recentPrLinks).toEqual([]);
+    expect(dashboard.nextActions.map((action) => action.href)).toEqual([
+      "/issues/issue.example-private-claim/",
+      "/context/issue.example-private-claim/",
+      "/artifacts/claim.example-private/review-packet/",
+      "/gates/"
+    ]);
+  });
+
+  it("keeps promotion readiness conservative", async () => {
+    const data = await loadSiteData();
+    const [artifact] = data.artifacts.artifacts;
+    const readyArtifact = {
+      ...artifact,
+      review_state: "human_reviewed",
+      verifier_state: "pass",
+      sources: ["external:source"],
+      status: "draft"
+    };
+    const dashboard = buildWorkbenchDashboard({
+      ...data,
+      artifacts: {
+        ...data.artifacts,
+        artifacts: [readyArtifact],
+        count: 1
+      },
+      gates: {
+        ...data.gates,
+        verdict: "pass",
+        blocking_issues: []
+      }
+    });
+
+    expect(dashboard.promotion.ready.map((item) => item.id)).toEqual([
+      "claim.example-private"
+    ]);
+    expect(dashboard.promotion.blocked).toEqual([]);
   });
 
   it("falls back entirely to fixtures when any live endpoint is unavailable", async () => {

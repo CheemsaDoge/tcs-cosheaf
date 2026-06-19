@@ -208,7 +208,13 @@
   runtime banner, primary navigation, and workbench controls; repository data is
   shown as recorded and is not machine-translated. Static builds inline website
   stylesheets so `website/dist/*.html` keeps the styled UI when opened directly
-  as local files. In live-local mode, the issue workbench frontend may call
+  as local files. `buildWorkbenchDashboard(data)` derives the home Workbench
+  dashboard rows from existing `SiteData`: workspace health, active issues,
+  draft-review queue, promotion ready/blocked counts, gate failures, recent
+  action/PR links, and suggested next actions. This helper is display/navigation
+  logic only and does not add write authority, endpoints, GitHub credentials,
+  accepted status, verifier pass, gate pass, human review, or promotion.
+  In live-local mode, the issue workbench frontend may call
   localhost issue preview/create/update/close endpoints and context
   preview-build/build endpoints with preview-before-confirm, and may call
   localhost validate/gate run endpoints from the gate workbench, and may call

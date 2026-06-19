@@ -209,7 +209,7 @@ The read-only website app lives under `website/`. It is an Astro static site
 that imports the committed demo fixture under `website/src/fixtures/site-data/`
 and renders the first Longplan B W2.1 routes:
 
-- Home
+- Home / Workbench dashboard
 - Docs / Concepts
 - Demo
 - Artifacts
@@ -249,6 +249,15 @@ controls use a lightweight language switcher for English and Simplified
 Chinese, backed by explicit `{ en, zh }` UI copy. Repository artifact and issue
 content is shown as recorded in the repository and is not machine-translated by
 the frontend.
+
+The home route is the unified Workbench dashboard. It is an operational
+starting point rather than a product introduction page: it summarizes workspace
+health, active issues, draft artifacts needing review, promotion-ready and
+promotion-blocked artifacts, gate failures, recent web/forge action exports,
+recent PR links, grouped workflow actions, and suggested next actions. The
+dashboard is derived from the same static/live `SiteData` payloads; it does not
+write repository files or create new authority. Write-class paths still route
+to the existing preview-before-confirm Workbench pages.
 
 The static build inlines CSS into the generated HTML so `website/dist` pages
 keep the styled UI even when an operator opens an HTML file directly from disk.

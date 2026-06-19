@@ -2,37 +2,47 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import I18nText from "../components/I18nText.astro";
 import { localized } from "../lib/i18n";
-import { loadSiteData } from "../lib/siteData";
+import {
+  artifactHref,
+  buildWorkbenchDashboard,
+  loadSiteData,
+  statusTone
+} from "../lib/siteData";
 
 const data = await loadSiteData();
+const dashboard = buildWorkbenchDashboard(data);
+const gateTone =
+  dashboard.gateFailureCount > 0
+    ? "tone-bad"
+    : data.gates.verdict === "pass"
+      ? "tone-good"
+      : "tone-warning";
+const firstIssue = dashboard.activeIssues[0];
+const firstDraft = dashboard.draftReviewArtifacts[0];
+const firstPromotionCandidate =
+  dashboard.promotion.ready[0] ?? dashboard.promotion.blocked[0];
 ---
 
 <BaseLayout
-  title={localized("Workspace", "工作区")}
-  eyebrow={localized("Home", "首页")}
+  title={localized("Workbench", "工作台")}
+  eyebrow={localized("Dashboard", "总览")}
 >
-  <section class="workbench-intro">
+  <section class="dashboard-header">
     <div>
       <p class="section-kicker">
         <I18nText text={localized("Human governance workbench", "人类治理工作台")} />
       </p>
       <h2>{data.workspace.workspace_name}</h2>
-      <p>
-        <I18nText
-          text={localized(
-            "Inspect repository artifacts, issues, dependency context, and gate results from exported Cosheaf state. The repository remains the source of truth.",
-            "从导出的 Cosheaf 状态检查仓库工件、议题、依赖上下文和准入检查结果；仓库记录仍是唯一事实来源。"
-          )}
-        />
-      </p>
     </div>
-    <div class="authority-chip">
-      <strong><I18nText text={localized("Display only", "仅展示")} /></strong>
+    <div class="dashboard-status-line">
+      <span class:list={["status-badge", gateTone]}>
+        {data.gates.verdict.replace("_", " ")}
+      </span>
       <span>
         <I18nText
           text={localized(
-            "This page does not review, verify, accept, or promote artifacts.",
-            "此页面不审阅、不验证、不接受、不晋升工件。"
+            `${dashboard.gateFailureCount} gate failures`,
+            `${dashboard.gateFailureCount} 个准入失败`
           )}
         />
       </span>
@@ -46,45 +56,271 @@ const data = await loadSiteData();
     data-i18n-aria-label-zh="工作区摘要"
   >
     <article class="metric-card">
+      <span><I18nText text={localized("Active issues", "活跃议题")} /></span>
+      <strong>{dashboard.activeIssues.length}</strong>
+    </article>
+    <article class="metric-card">
+      <span><I18nText text={localized("Drafts needing review", "待审草稿")} /></span>
+      <strong>{dashboard.draftReviewArtifacts.length}</strong>
+    </article>
+    <article class="metric-card">
+      <span><I18nText text={localized("Promotion ready", "可晋升")} /></span>
+      <strong>{dashboard.promotion.ready.length}</strong>
+    </article>
+    <article class="metric-card">
+      <span><I18nText text={localized("Promotion blocked", "晋升阻断")} /></span>
+      <strong>{dashboard.promotion.blocked.length}</strong>
+    </article>
+    <article class="metric-card">
       <span><I18nText text={localized("Artifacts", "工件")} /></span>
       <strong>{data.artifacts.count}</strong>
     </article>
-    <article class="metric-card">
-      <span><I18nText text={localized("Issues", "议题")} /></span>
-      <strong>{data.issues.count}</strong>
+  </section>
+
+  <section class="dashboard-layout">
+    <article class="dashboard-panel dashboard-panel-wide">
+      <div class="dashboard-panel-heading">
+        <h2><I18nText text={localized("Work requiring attention", "需要处理的工作")} /></h2>
+        <a class="text-link" href="/issues/">
+          <I18nText text={localized("Issues", "议题")} />
+        </a>
+      </div>
+      <div class="dashboard-list">
+        {
+          dashboard.activeIssues.slice(0, 3).map((issue) => (
+            <a class="dashboard-row" href={`/issues/${encodeURIComponent(issue.id)}/`}>
+              <span>
+                <strong>{issue.title}</strong>
+                <small>{issue.id}</small>
+              </span>
+              <span class="badge warning">{issue.status}</span>
+            </a>
+          ))
+        }
+        {
+          dashboard.activeIssues.length === 0 && (
+            <p class="empty-state">
+              <I18nText text={localized("No active issues.", "没有活跃议题。")} />
+            </p>
+          )
+        }
+      </div>
     </article>
-    <article class="metric-card">
-      <span><I18nText text={localized("Gate", "准入检查")} /></span>
-      <strong>{data.gates.verdict.replace("_", " ")}</strong>
+
+    <article class="dashboard-panel">
+      <div class="dashboard-panel-heading">
+        <h2><I18nText text={localized("Draft review", "草稿审阅")} /></h2>
+        <a class="text-link" href="/artifacts/">
+          <I18nText text={localized("Artifacts", "工件")} />
+        </a>
+      </div>
+      <div class="dashboard-list">
+        {
+          dashboard.draftReviewArtifacts.slice(0, 3).map((artifact) => (
+            <a class="dashboard-row" href={artifactHref(artifact.id)}>
+              <span>
+                <strong>{artifact.title}</strong>
+                <small>{artifact.id}</small>
+              </span>
+              <span class:list={["badge", statusTone(artifact.review_state)]}>
+                {artifact.review_state}
+              </span>
+            </a>
+          ))
+        }
+        {
+          dashboard.draftReviewArtifacts.length === 0 && (
+            <p class="empty-state">
+              <I18nText text={localized("No draft review queue.", "没有待审草稿。")} />
+            </p>
+          )
+        }
+      </div>
     </article>
-    <article class="metric-card">
-      <span><I18nText text={localized("Graph edges", "图谱边")} /></span>
-      <strong>{data.graph.edges.length}</strong>
+
+    <article class="dashboard-panel">
+      <div class="dashboard-panel-heading">
+        <h2><I18nText text={localized("Promotion", "晋升")} /></h2>
+        {
+          firstPromotionCandidate && (
+            <a
+              class="text-link"
+              href={`/artifacts/${encodeURIComponent(firstPromotionCandidate.id)}/promotion/`}
+            >
+              <I18nText text={localized("Check", "检查")} />
+            </a>
+          )
+        }
+      </div>
+      <div class="dashboard-stat-pair">
+        <span>
+          <strong>{dashboard.promotion.ready.length}</strong>
+          <I18nText text={localized("ready", "可晋升")} />
+        </span>
+        <span>
+          <strong>{dashboard.promotion.blocked.length}</strong>
+          <I18nText text={localized("blocked", "阻断")} />
+        </span>
+      </div>
+    </article>
+
+    <article class="dashboard-panel">
+      <div class="dashboard-panel-heading">
+        <h2><I18nText text={localized("Gate failures", "准入失败")} /></h2>
+        <a class="text-link" href="/gates/">
+          <I18nText text={localized("Gate", "准入")} />
+        </a>
+      </div>
+      {
+        dashboard.gateFailureCount > 0 ? (
+          <p>
+            <I18nText
+              text={localized(
+                "Resolve blocking gate rows before review or promotion.",
+                "审阅或晋升前先处理阻断行。"
+              )}
+            />
+          </p>
+        ) : (
+          <p>
+            <I18nText
+              text={localized(
+                "No blocking gate rows exported.",
+                "没有导出的阻断行。"
+              )}
+            />
+          </p>
+        )
+      }
+    </article>
+
+    <article class="dashboard-panel">
+      <div class="dashboard-panel-heading">
+        <h2><I18nText text={localized("Recent actions", "最近操作")} /></h2>
+        <a class="text-link" href="/forge/submit/">
+          <I18nText text={localized("Forge", "Forge")} />
+        </a>
+      </div>
+      <div class="dashboard-list">
+        {
+          dashboard.recentActions.map((action) => (
+            <span class="dashboard-row">
+              <span>
+                <strong><I18nText text={action.label} /></strong>
+                {action.meta && <small><I18nText text={action.meta} /></small>}
+              </span>
+            </span>
+          ))
+        }
+        {
+          dashboard.recentActions.length === 0 && (
+            <p class="empty-state">
+              <I18nText
+                text={localized(
+                  "No web or forge audit rows exported.",
+                  "没有导出的 web 或 forge 审计行。"
+                )}
+              />
+            </p>
+          )
+        }
+      </div>
+    </article>
+
+    <article class="dashboard-panel">
+      <div class="dashboard-panel-heading">
+        <h2><I18nText text={localized("Recent PRs", "最近 PR")} /></h2>
+        <a class="text-link" href="/forge/pr-status/">
+          <I18nText text={localized("PR status", "PR 状态")} />
+        </a>
+      </div>
+      <div class="dashboard-list">
+        {
+          dashboard.recentPrLinks.map((link) => (
+            <a class="dashboard-row" href={link.href}>
+              <span>
+                <strong><I18nText text={link.label} /></strong>
+                {link.meta && <small><I18nText text={link.meta} /></small>}
+              </span>
+            </a>
+          ))
+        }
+        {
+          dashboard.recentPrLinks.length === 0 && (
+            <p class="empty-state">
+              <I18nText
+                text={localized(
+                  "No GitHub PR links exported.",
+                  "没有导出的 GitHub PR 链接。"
+                )}
+              />
+            </p>
+          )
+        }
+      </div>
     </article>
   </section>
 
   <section
-    class="workbench-actions"
-    aria-label="工作台入口"
-    data-i18n-aria-label-en="Workbench actions"
-    data-i18n-aria-label-zh="工作台入口"
+    class="dashboard-action-groups"
+    aria-label="任务操作"
+    data-i18n-aria-label-en="Task actions"
+    data-i18n-aria-label-zh="任务操作"
   >
-    <a class="workbench-action" href="/artifacts/">
-      <strong><I18nText text={localized("Inspect artifacts", "检查工件")} /></strong>
-      <span><I18nText text={localized("Review draft and accepted metadata.", "查看 draft 与 accepted 元数据。")} /></span>
-    </a>
-    <a class="workbench-action" href="/issues/">
-      <strong><I18nText text={localized("Triage issues", "处理议题")} /></strong>
-      <span><I18nText text={localized("Create, edit, and close local issues in live mode.", "在本地实时模式中新建、修改和关闭议题。")} /></span>
-    </a>
-    <a class="workbench-action" href="/graph/">
-      <strong><I18nText text={localized("Explore graph", "探索图谱")} /></strong>
-      <span><I18nText text={localized("Use a draggable dependency graph as context.", "使用可拖拽依赖图谱作为上下文。")} /></span>
-    </a>
-    <a class="workbench-action" href="/gates/">
-      <strong><I18nText text={localized("Check gates", "查看准入检查")} /></strong>
-      <span><I18nText text={localized("Skipped and not-run results stay separate from pass.", "skipped 和 not-run 不会被当作 pass。")} /></span>
-    </a>
+    <div>
+      <strong><I18nText text={localized("Issue -> review", "议题 -> 审阅")} /></strong>
+      <a class="button-link" href={firstIssue ? `/issues/${encodeURIComponent(firstIssue.id)}/` : "/issues/"}>
+        <I18nText text={localized("Open issue", "打开议题")} />
+      </a>
+      <a class="button-link secondary" href={firstIssue ? `/context/${encodeURIComponent(firstIssue.id)}/` : "/issues/"}>
+        <I18nText text={localized("Context", "上下文")} />
+      </a>
+    </div>
+    <div>
+      <strong><I18nText text={localized("Artifact review", "工件审阅")} /></strong>
+      <a class="button-link" href={firstDraft ? `/artifacts/${encodeURIComponent(firstDraft.id)}/review-packet/` : "/artifacts/"}>
+        <I18nText text={localized("Review packet", "审阅包")} />
+      </a>
+      <a class="button-link secondary" href={firstDraft ? `/artifacts/${encodeURIComponent(firstDraft.id)}/review-decision/` : "/artifacts/"}>
+        <I18nText text={localized("Human review", "人工审阅")} />
+      </a>
+    </div>
+    <div>
+      <strong><I18nText text={localized("Gate -> promotion", "准入 -> 晋升")} /></strong>
+      <a class="button-link" href="/gates/">
+        <I18nText text={localized("Validate / gate", "验证 / 准入")} />
+      </a>
+      <a class="button-link secondary" href={firstPromotionCandidate ? `/artifacts/${encodeURIComponent(firstPromotionCandidate.id)}/promotion/` : "/artifacts/"}>
+        <I18nText text={localized("Promotion", "晋升")} />
+      </a>
+    </div>
+    <div>
+      <strong><I18nText text={localized("Branch -> PR", "分支 -> PR")} /></strong>
+      <a class="button-link" href="/forge/submit/">
+        <I18nText text={localized("Forge PR", "Forge PR")} />
+      </a>
+      <a class="button-link secondary" href="/forge/pr-status/">
+        <I18nText text={localized("PR status", "PR 状态")} />
+      </a>
+    </div>
+  </section>
+
+  <section class="dashboard-panel dashboard-next-actions">
+    <div class="dashboard-panel-heading">
+      <h2><I18nText text={localized("Suggested next actions", "建议下一步")} /></h2>
+    </div>
+    <div class="dashboard-list">
+      {
+        dashboard.nextActions.map((action) => (
+          <a class="dashboard-row" href={action.href}>
+            <span>
+              <strong><I18nText text={action.label} /></strong>
+              {action.meta && <small><I18nText text={action.meta} /></small>}
+            </span>
+          </a>
+        ))
+      }
+    </div>
   </section>
 
   <section class="notice-band">
@@ -92,8 +328,8 @@ const data = await loadSiteData();
     <span>
       <I18nText
         text={localized(
-          "Frontend output is context for humans. Accepted status enters only through repository records, source metadata, validation, gate policy, human review, and explicit promotion.",
-          "前端输出只是人类上下文；accepted 状态只能通过仓库记录、source metadata、验证、准入检查策略、人类审阅和显式晋升获得。"
+          "The dashboard is workflow context. Accepted status still requires repository records, source metadata, validation, gate policy, human review, and explicit promotion.",
+          "总览只是工作流上下文；accepted 状态仍需仓库记录、source metadata、验证、准入策略、人工审阅和显式晋升。"
         )}
       />
     </span>
