@@ -12,6 +12,8 @@ from typing import Any, Literal, cast
 from urllib.parse import unquote, urlparse
 
 from cosheaf.app import CosheafApp
+from cosheaf.core.artifact import BaseArtifact
+from cosheaf.core.ids import validate_artifact_id
 from cosheaf.forge import (
     FORGE_AUTHORITY_WARNING,
     FORGE_PREVIEW_AUTHORITY_WARNING,
@@ -19,8 +21,11 @@ from cosheaf.forge import (
     ForgeActionResult,
     ForgeCredentialProvider,
 )
+from cosheaf.issues import ISSUE_AUTHORITY_NOTICE, LocalIssueError
 from cosheaf.site import REQUIRED_SITE_EXPORT_FILES, SITE_EXPORT_AUTHORITY_NOTICE
+from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
 from cosheaf.web_actions import (
+    WEB_ACTION_AUDIT_PATH,
     WebActionAuditEntry,
     WebActionError,
     WebActionKind,
@@ -108,6 +113,25 @@ class ReadOnlySiteApi:
             )
         if path == "/api/health":
             return ApiResponse(200, self._health_payload())
+        if path == "/api/workspace/live":
+            return self._live_workspace_payload()
+        if path == "/api/status":
+            return self._live_status_payload()
+        if path == "/api/issues/live":
+            return self._live_issues_payload()
+        if path.startswith("/api/issues/"):
+            return self._live_issue_payload(path.removeprefix("/api/issues/"))
+        if path == "/api/artifacts/live":
+            return self._live_artifacts_payload()
+        if path.startswith("/api/artifacts/"):
+            return self._live_artifact_payload(path.removeprefix("/api/artifacts/"))
+        if path.startswith("/api/context/") and path.endswith("/latest"):
+            issue_id = path.removeprefix("/api/context/").removesuffix("/latest")
+            return self._live_context_latest_payload(issue_id)
+        if path == "/api/gates/latest":
+            return self._live_gate_latest_payload()
+        if path == "/api/audit/recent":
+            return self._live_audit_recent_payload()
         if path in _EXPORT_ENDPOINTS:
             return ApiResponse(200, self._payload_file(_EXPORT_ENDPOINTS[path]))
         if path.startswith("/api/context/"):
@@ -154,6 +178,183 @@ class ReadOnlySiteApi:
             "repo_root": str(self.app.context.repo_root),
             "authority_notice": SITE_EXPORT_AUTHORITY_NOTICE,
         }
+
+    def _live_workspace_payload(self) -> ApiResponse:
+        return _live_response(
+            "workspace_live",
+            workspace=_workspace_info_payload(self.app.workspace_info()),
+        )
+
+    def _live_status_payload(self) -> ApiResponse:
+        validation = self.app.validate_repository()
+        return _live_response(
+            "repository_status",
+            status="ok" if validation.ok else "validation_failed",
+            workspace=_workspace_info_payload(self.app.workspace_info()),
+            validation=_validation_payload(validation),
+        )
+
+    def _live_issues_payload(self) -> ApiResponse:
+        result = self.app.list_issues()
+        issues = [
+            {
+                **issue.model_dump(mode="json"),
+                "path": path.as_posix(),
+            }
+            for issue, path in zip(result.issues, result.paths, strict=True)
+        ]
+        return _live_response(
+            "issues_live",
+            issues=issues,
+            count=len(issues),
+            authority_notice=ISSUE_AUTHORITY_NOTICE,
+        )
+
+    def _live_issue_payload(self, issue_id: str) -> ApiResponse:
+        try:
+            result = self.app.show_issue(issue_id)
+        except (LocalIssueError, ValueError):
+            return _error(
+                404,
+                "issue_not_found",
+                f"No repository-local issue exists for: {issue_id}",
+            )
+        issue = result.issue.model_dump(mode="json")
+        issue["path"] = result.relative_path.as_posix()
+        return _live_response(
+            "issue_live",
+            issue=issue,
+            authority_notice=result.authority_notice,
+        )
+
+    def _live_artifacts_payload(self) -> ApiResponse:
+        loaded = self._live_artifact_records()
+        if isinstance(loaded, ApiResponse):
+            return loaded
+        artifacts = [_artifact_payload(record) for record in loaded]
+        return _live_response(
+            "artifacts_live",
+            artifacts=artifacts,
+            count=len(artifacts),
+        )
+
+    def _live_artifact_payload(self, artifact_id: str) -> ApiResponse:
+        try:
+            normalized_id = validate_artifact_id(artifact_id)
+        except ValueError:
+            return _error(
+                404,
+                "artifact_not_found",
+                f"No lifecycle artifact exists for: {artifact_id}",
+            )
+        loaded = self._live_artifact_records()
+        if isinstance(loaded, ApiResponse):
+            return loaded
+        for record in loaded:
+            if record.id == normalized_id:
+                return _live_response(
+                    "artifact_live",
+                    artifact=_artifact_payload(record),
+                )
+        return _error(
+            404,
+            "artifact_not_found",
+            f"No lifecycle artifact exists for: {normalized_id}",
+        )
+
+    def _live_context_latest_payload(self, issue_id: str) -> ApiResponse:
+        if not issue_id:
+            return _error(404, "issue_not_found", "No issue id was provided.")
+        try:
+            self.app.show_issue(issue_id)
+        except (LocalIssueError, ValueError):
+            return _error(
+                404,
+                "issue_not_found",
+                f"No repository-local issue exists for: {issue_id}",
+            )
+        task_dir = self.app.context.resolve(Path("context") / "TASKS" / issue_id)
+        files = _repo_files_under(self.app.context.repo_root, task_dir)
+        audit = _read_json_file(task_dir / "RETRIEVAL_AUDIT.json")
+        return _live_response(
+            "context_pack_latest",
+            issue_id=issue_id,
+            context_pack={
+                "exists": task_dir.is_dir(),
+                "task_dir": _repo_relative_or_string(
+                    self.app.context.repo_root,
+                    task_dir,
+                ),
+                "files": files,
+                "retrieval_audit": audit,
+                "authority_notice": (
+                    "Context packs are retrieval context only; they are not "
+                    "proof, verifier pass, gate pass, human review, accepted "
+                    "status, or promotion authority."
+                ),
+            },
+        )
+
+    def _live_gate_latest_payload(self) -> ApiResponse:
+        reports_dir = self.app.context.resolve(Path(".cosheaf") / "reports")
+        candidates = sorted(reports_dir.glob("*-gate-report.json"))
+        if not candidates:
+            return _live_response(
+                "gate_latest",
+                gate_report={
+                    "exists": False,
+                    "path": None,
+                    "report": None,
+                    "verdict": "not_run",
+                    "note": "No gate report exists under .cosheaf/reports.",
+                },
+            )
+        latest = candidates[-1]
+        report = _read_json_file(latest)
+        if report is None:
+            return _error(
+                500,
+                "gate_report_unreadable",
+                "Latest gate report could not be read as JSON.",
+            )
+        return _live_response(
+            "gate_latest",
+            gate_report={
+                "exists": True,
+                "path": _repo_relative_or_string(self.app.context.repo_root, latest),
+                "report": report,
+                "verdict": report.get("verdict"),
+            },
+        )
+
+    def _live_audit_recent_payload(self) -> ApiResponse:
+        audit_path = self.app.context.resolve(WEB_ACTION_AUDIT_PATH)
+        entries = _read_jsonl_file(audit_path)
+        if isinstance(entries, ApiResponse):
+            return entries
+        recent = entries[-50:]
+        return _live_response(
+            "web_action_audit_recent",
+            audit={
+                "exists": audit_path.is_file(),
+                "path": WEB_ACTION_AUDIT_PATH.as_posix(),
+            },
+            entries=recent,
+            count=len(recent),
+        )
+
+    def _live_artifact_records(self) -> tuple[LoadedRecord, ...] | ApiResponse:
+        try:
+            records = tuple(load_artifacts(self.app.context))
+        except LoadError as exc:
+            return _error(
+                500,
+                "repository_load_failed",
+                f"Cannot load repository records: {exc}",
+            )
+        return tuple(
+            record for record in records if isinstance(record.record, BaseArtifact)
+        )
 
     def _context_payload(self, issue_id: str) -> ApiResponse:
         payload = self._payload_file("context_packs.json")
@@ -695,6 +896,118 @@ def _performed_summary(result: dict[str, Any], key: str) -> str | None:
     if result.get(key) is True:
         return "performed"
     return None
+
+
+def _live_response(kind: str, **payload: Any) -> ApiResponse:
+    authority_notice = payload.pop("authority_notice", SITE_EXPORT_AUTHORITY_NOTICE)
+    return ApiResponse(
+        200,
+        {
+            "schema_version": READONLY_SERVER_SCHEMA_VERSION,
+            "kind": kind,
+            "source_of_truth": "repository",
+            "authority_notice": authority_notice,
+            **payload,
+        },
+    )
+
+
+def _workspace_info_payload(info: Any) -> dict[str, Any]:
+    return {
+        "name": info.name,
+        "repo_root": str(info.repo_root),
+        "mode": info.mode,
+        "kb_roots": [
+            {
+                "name": root.name,
+                "path": root.path,
+                "readonly": root.readonly,
+                "priority": root.priority,
+            }
+            for root in info.kb_roots
+        ],
+    }
+
+
+def _validation_payload(report: Any) -> dict[str, Any]:
+    return {
+        "ok": report.ok,
+        "checked_count": report.checked_count,
+        "failures": [
+            {
+                "gate": failure.gate,
+                "source_path": failure.source_path,
+                "artifact_id": failure.artifact_id,
+                "message": failure.message,
+            }
+            for failure in report.failures
+        ],
+    }
+
+
+def _artifact_payload(record: LoadedRecord) -> dict[str, Any]:
+    artifact = cast(BaseArtifact, record.record)
+    payload = artifact.model_dump(mode="json")
+    payload["path"] = record.source_path.as_posix()
+    payload["kb_root"] = record.kb_root_name
+    payload["kb_root_readonly"] = record.kb_root_readonly
+    if record.kb_relative_path is not None:
+        payload["kb_relative_path"] = record.kb_relative_path.as_posix()
+    return payload
+
+
+def _repo_files_under(repo_root: Path, root: Path) -> list[str]:
+    if not root.is_dir():
+        return []
+    return [
+        _repo_relative_or_string(repo_root, path)
+        for path in sorted(root.iterdir())
+        if path.is_file()
+    ]
+
+
+def _read_json_file(path: Path) -> Any:
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _read_jsonl_file(path: Path) -> list[dict[str, Any]] | ApiResponse:
+    if not path.is_file():
+        return []
+    entries: list[dict[str, Any]] = []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return _error(
+            500,
+            "audit_log_unreadable",
+            "Web action audit log could not be read.",
+        )
+    for index, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        try:
+            raw = json.loads(line)
+        except json.JSONDecodeError:
+            return _error(
+                500,
+                "audit_log_unreadable",
+                f"Web action audit log line {index} is not valid JSON.",
+            )
+        if isinstance(raw, dict):
+            entries.append(cast(dict[str, Any], raw))
+    return entries
+
+
+def _repo_relative_or_string(repo_root: Path, path: Path) -> str:
+    try:
+        return path.resolve().relative_to(repo_root.resolve()).as_posix()
+    except ValueError:
+        return str(path)
 
 
 def _error(status: int, code: str, message: str) -> ApiResponse:
