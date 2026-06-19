@@ -27,6 +27,12 @@ const runtimeDetail = runtime?.fallback
         runtime?.api_base ?? "http://127.0.0.1:8765",
         runtime?.api_base ?? "http://127.0.0.1:8765"
       );
+const localActorLine = runtime?.local_actor
+  ? localized(
+      `Local actor: ${runtime.local_actor}`,
+      `本地角色：${runtime.local_actor}`
+    )
+  : null;
 const pageTitleEn = `${titleText.en} | TCS-Cosheaf`;
 const pageTitleZh = `${titleText.zh} | TCS-Cosheaf`;
 ---
@@ -111,6 +117,19 @@ const pageTitleZh = `${titleText.zh} | TCS-Cosheaf`;
           <span data-i18n-en={runtimeDetail.en} data-i18n-zh={runtimeDetail.zh}>
             {runtimeDetail.zh}
           </span>
+          {
+            localActorLine && (
+              <span
+                data-local-actor-is-auth={String(
+                  runtime.local_actor_is_auth ?? false
+                )}
+                data-i18n-en={localActorLine.en}
+                data-i18n-zh={localActorLine.zh}
+              >
+                {localActorLine.zh}
+              </span>
+            )
+          }
         </aside>
         <header class="page-header">
           <div>

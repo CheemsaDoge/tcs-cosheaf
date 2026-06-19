@@ -69,6 +69,10 @@ PROMOTION_AUTHORITY_NOTICE = (
     "They do not write accepted artifacts, change artifact status, pass gates, "
     "mutate verifier evidence, or grant promotion authority."
 )
+LOCAL_ACTOR_NOTICE = (
+    "Local actor records who operated this local Workbench session. It is not "
+    "authentication, authorization, or cryptographic identity."
+)
 _EXPORT_ENDPOINTS = {
     "/api/workspace": "workspace.json",
     "/api/artifacts": "artifacts.json",
@@ -148,10 +152,12 @@ class ReadOnlySiteApi:
         *,
         host: str = READONLY_SERVER_HOST,
         credential_provider: ForgeCredentialProvider | None = None,
+        local_actor: str | None = None,
     ) -> None:
         self.app = app
         self.host = host
         self.credential_provider = credential_provider
+        self.local_actor = _normalize_local_actor(local_actor)
 
     def handle(
         self,
@@ -341,6 +347,10 @@ class ReadOnlySiteApi:
             "readonly": True,
             "host": self.host,
             "repo_root": str(self.app.context.repo_root),
+            "local_actor": self.local_actor,
+            "local_actor_configured": self.local_actor is not None,
+            "local_actor_is_auth": False,
+            "local_actor_notice": LOCAL_ACTOR_NOTICE,
             "authority_notice": SITE_EXPORT_AUTHORITY_NOTICE,
         }
 
@@ -866,6 +876,12 @@ class ReadOnlySiteApi:
         )
         if blocked is not None:
             return blocked
+        actor, actor_blocked = self._require_local_actor(
+            action,
+            authority_warnings=[REVIEW_DECISION_AUTHORITY_NOTICE],
+        )
+        if actor_blocked is not None:
+            return actor_blocked
         try:
             result = self.app.write_review_decision(payload, dry_run=False)
         except DraftWriteServiceError as exc:
@@ -874,6 +890,7 @@ class ReadOnlySiteApi:
                 result_status=exc.code,
                 explicit_confirm=True,
                 preview_only=False,
+                actor=actor,
                 authority_warnings=[REVIEW_DECISION_AUTHORITY_NOTICE],
             )
             return _error(400, exc.code, str(exc))
@@ -883,6 +900,7 @@ class ReadOnlySiteApi:
             result_status="success",
             explicit_confirm=True,
             preview_only=False,
+            actor=actor,
             planned_files=planned_files,
             repo_writes_performed=True,
             result={"action_performed": True},
@@ -921,7 +939,7 @@ class ReadOnlySiteApi:
         action = "promotion_preview"
         normalized_id = validate_artifact_id(artifact_id)
         target_state = _promotion_target_state(payload.get("target_state", "accepted"))
-        actor = _optional_text(payload, "actor") or "local.web"
+        actor = self.local_actor or _optional_text(payload, "actor") or "local.web"
         report = self.app.promotion_readiness(artifact_id=normalized_id)
         readiness = report.to_dict()
         missing = _promotion_missing_requirements(readiness)
@@ -1003,7 +1021,6 @@ class ReadOnlySiteApi:
         action = "promotion_confirm"
         normalized_id = validate_artifact_id(artifact_id)
         target_state = _promotion_target_state(payload.get("target_state", "accepted"))
-        actor = _required_text(payload, "actor")
         blocked = self._blocked_confirm(
             action,
             payload,
@@ -1011,6 +1028,12 @@ class ReadOnlySiteApi:
         )
         if blocked is not None:
             return blocked
+        actor, actor_blocked = self._require_local_actor(
+            action,
+            authority_warnings=[PROMOTION_AUTHORITY_NOTICE],
+        )
+        if actor_blocked is not None:
+            return actor_blocked
         required = _promotion_required_confirmation(target_state)
         typed = _required_text(payload, "typed_confirmation")
         if typed != required:
@@ -1981,6 +2004,32 @@ class ReadOnlySiteApi:
             return _error(400, "confirm_required", "write requires confirm: true")
         return None
 
+    def _require_local_actor(
+        self,
+        action: str,
+        *,
+        authority_warnings: list[str] | None = None,
+    ) -> tuple[str, ApiResponse | None]:
+        actor = self.local_actor
+        if actor is not None:
+            return actor, None
+        self._write_audit(
+            action=action,
+            result_status="local_actor_required",
+            explicit_confirm=True,
+            preview_only=False,
+            authority_warnings=authority_warnings or [LOCAL_ACTOR_NOTICE],
+        )
+        return (
+            "",
+            _error(
+                400,
+                "local_actor_required",
+                "local mode requires server option --local-actor <name> before "
+                "confirming human review or promotion actions",
+            ),
+        )
+
     def _artifact_error(
         self,
         action: str,
@@ -2105,9 +2154,10 @@ class ReadOnlySiteApi:
         result: dict[str, Any] | None = None,
         authority_warnings: list[str] | None = None,
         operator_notes: str | None = None,
-        actor: str = "local.web",
+        actor: str | None = None,
     ) -> None:
         result = result or {}
+        audit_actor = actor or self.local_actor or "local.web"
         github_url = result.get("github_issue_url") or result.get("github_pr_url")
         performed = result_status == "success" and bool(
             result.get("action_performed", False)
@@ -2127,7 +2177,7 @@ class ReadOnlySiteApi:
             self.app.context,
             WebActionAuditEntry(
                 timestamp=datetime.now(UTC).replace(microsecond=0),
-                actor=actor,
+                actor=audit_actor,
                 action=_web_action_kind(action),
                 mode=WebActionMode.LOCAL,
                 repo_root=str(self.app.context.repo_root),
@@ -2239,9 +2289,10 @@ def serve_readonly_api(
     *,
     host: str = READONLY_SERVER_HOST,
     port: int = READONLY_SERVER_PORT,
+    local_actor: str | None = None,
 ) -> None:
     """Serve the read-only local website API until interrupted."""
-    api = ReadOnlySiteApi(app, host=host)
+    api = ReadOnlySiteApi(app, host=host, local_actor=local_actor)
     server = HTTPServer((host, port), make_handler(api))
     try:
         server.serve_forever()
@@ -2822,6 +2873,13 @@ def _web_action_kind(action: str) -> WebActionKind:
 
 def _optional_str(value: object) -> str | None:
     return value if isinstance(value, str) and value.strip() else None
+
+
+def _normalize_local_actor(value: str | None) -> str | None:
+    if value is None:
+        return None
+    normalized = value.strip()
+    return normalized or None
 
 
 def _performed_summary(result: dict[str, Any], key: str) -> str | None:

@@ -298,7 +298,7 @@ def test_web_promotion_confirm_requires_typed_confirmation_then_promotes(
         "kb/draft/claims/claim.fixture.web-promote.yaml",
         _artifact_data("claim.fixture.web-promote"),
     )
-    api = ReadOnlySiteApi(open_app(tmp_path))
+    api = ReadOnlySiteApi(open_app(tmp_path), local_actor="Ada Local")
 
     blocked = api.handle(
         "POST",
@@ -306,7 +306,7 @@ def test_web_promotion_confirm_requires_typed_confirmation_then_promotes(
         json.dumps(
             {
                 "target_state": "accepted",
-                "actor": "Ada Reviewer",
+                "actor": "Payload Reviewer",
                 "typed_confirmation": "MARK REFUTED",
                 "promotion_justification": "Reviewed by hand before promotion.",
                 "confirm": True,
@@ -324,7 +324,7 @@ def test_web_promotion_confirm_requires_typed_confirmation_then_promotes(
         json.dumps(
             {
                 "target_state": "accepted",
-                "actor": "Ada Reviewer",
+                "actor": "Payload Reviewer",
                 "typed_confirmation": "PROMOTE TO ACCEPTED",
                 "promotion_justification": "Reviewed by hand before promotion.",
                 "confirm": True,
@@ -344,12 +344,45 @@ def test_web_promotion_confirm_requires_typed_confirmation_then_promotes(
 
     entries = _audit_entries(tmp_path)
     assert entries[-1]["action"] == "promotion.confirm"
-    assert entries[-1]["actor"] == "Ada Reviewer"
+    assert entries[-1]["actor"] == "Ada Local"
     assert entries[-1]["operator_notes"] == "Reviewed by hand before promotion."
     assert entries[-1]["repo_writes_performed"] is True
     assert "kb/accepted/claims/claim.fixture.web-promote.yaml" in entries[-1][
         "written_files"
     ]
+
+
+def test_web_promotion_confirm_requires_configured_local_actor(
+    tmp_path: Path,
+) -> None:
+    source = _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.missing-local-actor.yaml",
+        _artifact_data("claim.fixture.missing-local-actor"),
+    )
+    api = ReadOnlySiteApi(open_app(tmp_path))
+
+    response = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.missing-local-actor/promotion/confirm",
+        json.dumps(
+            {
+                "target_state": "accepted",
+                "actor": "Payload Reviewer",
+                "typed_confirmation": "PROMOTE TO ACCEPTED",
+                "promotion_justification": "Reviewed by hand before promotion.",
+                "confirm": True,
+            }
+        ),
+    )
+
+    assert response.status == 400
+    assert response.payload["code"] == "local_actor_required"
+    assert source.is_file()
+    entries = _audit_entries(tmp_path)
+    assert entries[-1]["action"] == "promotion.confirm"
+    assert entries[-1]["result_status"] == "local_actor_required"
+    assert entries[-1]["repo_writes_performed"] is False
 
 
 def test_web_promotion_confirm_requires_justification(
@@ -360,7 +393,7 @@ def test_web_promotion_confirm_requires_justification(
         "kb/draft/claims/claim.fixture.web-promote-notes.yaml",
         _artifact_data("claim.fixture.web-promote-notes"),
     )
-    api = ReadOnlySiteApi(open_app(tmp_path))
+    api = ReadOnlySiteApi(open_app(tmp_path), local_actor="Ada Local")
 
     response = api.handle(
         "POST",
@@ -396,7 +429,7 @@ def test_web_promotion_confirm_blocks_missing_review(
         "kb/draft/claims/claim.fixture.unreviewed.yaml",
         _artifact_data("claim.fixture.unreviewed", review_state="requested"),
     )
-    api = ReadOnlySiteApi(open_app(tmp_path))
+    api = ReadOnlySiteApi(open_app(tmp_path), local_actor="Ada Local")
 
     response = api.handle(
         "POST",
@@ -429,7 +462,7 @@ def test_web_promotion_confirm_moves_refuted_through_lifecycle(
         "kb/draft/claims/claim.fixture.refute.yaml",
         _artifact_data("claim.fixture.refute"),
     )
-    api = ReadOnlySiteApi(open_app(tmp_path))
+    api = ReadOnlySiteApi(open_app(tmp_path), local_actor="Ada Local")
 
     response = api.handle(
         "POST",
@@ -462,7 +495,7 @@ def test_web_promotion_confirm_refuses_ai_actor(
         "kb/draft/claims/claim.fixture.ai-actor.yaml",
         _artifact_data("claim.fixture.ai-actor"),
     )
-    api = ReadOnlySiteApi(open_app(tmp_path))
+    api = ReadOnlySiteApi(open_app(tmp_path), local_actor="Codex reviewer")
 
     response = api.handle(
         "POST",
@@ -470,7 +503,7 @@ def test_web_promotion_confirm_refuses_ai_actor(
         json.dumps(
             {
                 "target_state": "accepted",
-                "actor": "Codex reviewer",
+                "actor": "Payload Reviewer",
                 "typed_confirmation": "PROMOTE TO ACCEPTED",
                 "promotion_justification": "Reviewed by hand before promotion.",
                 "confirm": True,

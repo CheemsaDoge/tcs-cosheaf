@@ -71,9 +71,11 @@ files, run validation/gate/context workflows, create local branches/commits,
 and call local GitHub/forge credentials only after preview and explicit
 confirm. All writes must be audited.
 
-Local mode may record a local actor identity, but that identity is not
-cryptographic hosted auth. Human review and promotion actions still require an
-explicit human decision and policy checks.
+Local mode records a configured local actor when the server is started with
+`--local-actor <name>`. That name is displayed in the runtime banner and audit
+logs, but it is not cryptographic hosted auth. Confirmed human review and
+promotion actions are refused when the local actor is missing; they still
+require an explicit human decision and policy checks.
 
 ### Hosted Workbench Mode
 
@@ -239,8 +241,10 @@ builds it chooses `static-demo`. Override the mode with
 backend URL with `PUBLIC_COSHEAF_API_BASE` or `COSHEAF_API_BASE`. The default
 backend URL is `http://127.0.0.1:8765`.
 
-The frontend live client reads live repository GET endpoints and, in live
-local mode, can call local issue workbench action endpoints for previewed and
+The frontend live client reads live repository GET endpoints plus
+`GET /api/health` for runtime metadata. In live local mode, it shows the
+configured local actor in the runtime banner and can call local issue
+workbench action endpoints for previewed and
 confirmed issue create, update, and close operations. It uses an all-or-nothing
 read fallback: if any live read endpoint is unavailable, the page renders the
 committed fixtures with a visible fallback banner instead of mixing live and
@@ -374,8 +378,8 @@ The live-local promotion Workbench follows that rule through
 `POST /api/artifacts/<artifact_id>/promotion/confirm`. Preview returns the
 target state, readiness, validation/gate summaries, YAML diff, review preview,
 planned files, and required confirmation phrase without writes. Confirm
-requires `confirm: true`, a non-AI human actor, the exact typed phrase, and a
-non-empty `promotion_justification` before the backend recomputes policy
-checks and writes lifecycle YAML through `cosheaf.app`; the frontend never
-mutates YAML directly. The promotion justification is recorded in the local
-web-action audit entry as operator notes, not in artifact YAML.
+requires `confirm: true`, a configured server-local actor, the exact typed
+phrase, and a non-empty `promotion_justification` before the backend
+recomputes policy checks and writes lifecycle YAML through `cosheaf.app`; the
+frontend never mutates YAML directly. The promotion justification is recorded
+in the local web-action audit entry as operator notes, not in artifact YAML.

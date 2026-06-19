@@ -548,10 +548,14 @@ _STABLE_V1_CLI_SURFACE: tuple[dict[str, str], ...] = (
     },
     {
         "command": "server",
-        "preferred_invocation": "cosheaf server serve --readonly --port 8765",
+        "preferred_invocation": (
+            "cosheaf server serve --readonly --port 8765 --local-actor <name>"
+        ),
         "status": "stable_readonly_local",
         "notes": (
-            "Serve localhost read-only website JSON APIs through the app facade."
+            "Serve localhost website JSON APIs through the app facade. "
+            "--local-actor is required before confirmed human review or "
+            "promotion actions in local mode."
         ),
     },
     {
