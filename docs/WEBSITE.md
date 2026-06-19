@@ -160,4 +160,12 @@ write actions must call a backend, and the backend must call `cosheaf.app` or
 `cosheaf.forge`. Frontend code must never call GitHub APIs directly with user
 tokens.
 
-Future write actions remain out of scope for the first deployable website.
+The W5.1 backend-auth design is recorded in
+[ADR 0038](ADR/0038-website-backend-auth-actions.md). The future path supports
+GitHub App installation tokens and GitHub user tokens, but both are resolved
+server-side only. Confirmed actions must use a backend credential provider,
+explicit confirmation, repository checkout/cache locking, and redacted audit
+records.
+
+Future write actions remain out of scope for the first deployable website, and
+they are not implemented by the current localhost preview server.
