@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   AUTHORITY_GUIDE,
+  GRAPH_PAGE_SIZE,
   REQUIRED_DATA_FILES,
+  RELATIONSHIP_INLINE_LIMIT,
   ROUTES,
   artifactById,
   contextPackForIssue,
@@ -10,9 +12,12 @@ import {
   dependenciesFor,
   filterArtifacts,
   gateVerdictExplanation,
+  graphNeighborhoodFor,
   graphLayoutMode,
   issueById,
   loadSiteData,
+  paginateItems,
+  relationshipPreview,
   shouldDrawGraphConnector
 } from "../src/lib/siteData";
 import { decideRuntimeMode, runtimeModeLabel } from "../src/lib/runtimeMode";
@@ -24,6 +29,23 @@ import {
 
 describe("site data contract", () => {
   const hasChinese = (value: string) => /\p{Script=Han}/u.test(value);
+  const isLocalizedText = (
+    value: unknown
+  ): value is { en: string; zh: string } =>
+    typeof value === "object" &&
+    value !== null &&
+    "en" in value &&
+    "zh" in value;
+  const expectSwitchableText = (value: unknown) => {
+    expect(isLocalizedText(value)).toBe(true);
+    if (!isLocalizedText(value)) {
+      return;
+    }
+    expect(value.en).not.toContain(" / ");
+    expect(value.zh).not.toContain(" / ");
+    expect(hasChinese(value.zh)).toBe(true);
+    expect(hasChinese(value.en)).toBe(false);
+  };
 
   it("defines the required W2.1 routes", () => {
     expect(ROUTES.map((route) => route.path)).toEqual([
@@ -126,58 +148,99 @@ describe("site data contract", () => {
     ]);
   });
 
-  it("chooses graph layouts that do not overlap multi-node exports", () => {
+  it("chooses force graph layouts instead of card-list graph fallbacks", () => {
     expect(graphLayoutMode(0)).toBe("empty");
-    expect(graphLayoutMode(1)).toBe("list");
-    expect(graphLayoutMode(2)).toBe("pair");
-    expect(graphLayoutMode(3)).toBe("list");
+    expect(graphLayoutMode(1)).toBe("force");
+    expect(graphLayoutMode(2)).toBe("force");
+    expect(graphLayoutMode(3)).toBe("force");
 
-    expect(shouldDrawGraphConnector(2, 1)).toBe(true);
+    expect(shouldDrawGraphConnector(2, 1)).toBe(false);
     expect(shouldDrawGraphConnector(2, 0)).toBe(false);
     expect(shouldDrawGraphConnector(3, 2)).toBe(false);
+  });
+
+  it("limits inline relationship tags and exposes the hidden remainder", () => {
+    const relationships = ["a", "b", "c", "d", "e", "f"];
+    const preview = relationshipPreview(relationships);
+
+    expect(RELATIONSHIP_INLINE_LIMIT).toBeGreaterThanOrEqual(3);
+    expect(RELATIONSHIP_INLINE_LIMIT).toBeLessThanOrEqual(5);
+    expect(preview.visible).toEqual(["a", "b", "c", "d"]);
+    expect(preview.hidden).toEqual(["e", "f"]);
+    expect(preview.hiddenCount).toBe(2);
+    expect(relationshipPreview(["only"]).hiddenCount).toBe(0);
+  });
+
+  it("paginates large UI collections without dropping source order", () => {
+    const items = Array.from({ length: GRAPH_PAGE_SIZE + 3 }, (_, index) => index);
+
+    expect(paginateItems(items, 1, GRAPH_PAGE_SIZE)).toEqual({
+      items: items.slice(0, GRAPH_PAGE_SIZE),
+      page: 1,
+      pageCount: 2,
+      total: GRAPH_PAGE_SIZE + 3
+    });
+    expect(paginateItems(items, 99, GRAPH_PAGE_SIZE).items).toEqual(
+      items.slice(GRAPH_PAGE_SIZE)
+    );
+  });
+
+  it("builds a one-hop artifact dependency graph around the selected artifact", async () => {
+    const data = await loadSiteData();
+    const neighborhood = graphNeighborhoodFor("definition.graph", data.graph);
+
+    expect(neighborhood.center?.artifact_id).toBe("definition.graph");
+    expect(neighborhood.dependencies).toEqual([]);
+    expect(neighborhood.dependents.map((node) => node.artifact_id)).toEqual([
+      "claim.example-private"
+    ]);
+    expect(neighborhood.nodes.map((node) => node.artifact_id)).toEqual([
+      "definition.graph",
+      "claim.example-private"
+    ]);
+    expect(neighborhood.edges).toEqual([
+      { source_id: "claim.example-private", target_id: "definition.graph" }
+    ]);
   });
 
   it("explains gate verdicts without turning pass into accepted truth", async () => {
     const data = await loadSiteData();
 
-    expect(gateVerdictExplanation(data.gates)).toContain("not run");
-    expect(gateVerdictExplanation({ ...data.gates, verdict: "pass" })).toContain(
-      "does not accept"
-    );
+    expect(gateVerdictExplanation(data.gates).en).toContain("not run");
+    expect(
+      gateVerdictExplanation({ ...data.gates, verdict: "pass" }).en
+    ).toContain("does not accept");
   });
 
   it("covers the authority-boundary guide without overclaiming", () => {
-    expect(AUTHORITY_GUIDE.map((entry) => entry.title)).toEqual([
-      "What Cosheaf is / Cosheaf 是什么",
-      "What Cosheaf is not / Cosheaf 不是什么",
-      "Why gate pass is not truth / 为什么门禁通过不等于真理",
-      "Why AI output is review context / 为什么 AI 输出只是审阅上下文",
-      "Why skipped verifier is not pass / 为什么 skipped 不是 pass",
-      "How public and private KB roots work / 公开与私有 KB 根如何工作",
-      "How a result becomes accepted / 结果如何成为 accepted"
+    expect(AUTHORITY_GUIDE.map((entry) => entry.title.en)).toEqual([
+      "What Cosheaf is",
+      "What Cosheaf is not",
+      "Why gate pass is not truth",
+      "Why AI output is review context",
+      "Why skipped verifier is not pass",
+      "How public and private KB roots work",
+      "How a result becomes accepted"
     ]);
 
-    const guideText = AUTHORITY_GUIDE.map((entry) => entry.body).join(" ");
+    const guideText = AUTHORITY_GUIDE.map((entry) => entry.body.en).join(" ");
 
     expect(guideText).not.toMatch(/automatic theorem proving/i);
     expect(guideText).not.toMatch(/automatic promotion/i);
     expect(guideText).not.toMatch(/production ready/i);
   });
 
-  it("keeps primary user-facing website chrome bilingual", () => {
+  it("keeps primary user-facing website chrome switchable, not inline bilingual", () => {
     for (const route of ROUTES) {
-      expect(route.label).toContain(" / ");
-      expect(hasChinese(route.label)).toBe(true);
+      expectSwitchableText(route.label);
     }
 
     for (const entry of AUTHORITY_GUIDE) {
-      expect(entry.title).toContain(" / ");
-      expect(hasChinese(entry.title)).toBe(true);
-      expect(hasChinese(entry.body)).toBe(true);
+      expectSwitchableText(entry.title);
+      expectSwitchableText(entry.body);
     }
 
-    expect(PREVIEW_AUTHORITY_WARNING).toContain(" / ");
-    expect(hasChinese(PREVIEW_AUTHORITY_WARNING)).toBe(true);
+    expectSwitchableText(PREVIEW_AUTHORITY_WARNING);
   });
 
   it("builds preview-only action requests without write endpoints or tokens", async () => {
@@ -188,7 +251,7 @@ describe("site data contract", () => {
     });
 
     expect(PREVIEW_API_BASE).toBe("http://127.0.0.1:8765");
-    expect(PREVIEW_AUTHORITY_WARNING).toContain("dry-run");
+    expect(PREVIEW_AUTHORITY_WARNING.en).toContain("dry-run");
     expect(requests.map((request) => request.id)).toEqual([
       "local-issue",
       "github-issue",
@@ -201,11 +264,11 @@ describe("site data contract", () => {
       "/api/forge/prs/preview",
       "/api/forge/review-packets/preview"
     ]);
-    expect(requests.map((request) => request.label)).toEqual([
-      "Local issue / 本地议题",
-      "GitHub issue / GitHub 议题",
-      "Pull request / 拉取请求",
-      "Review packet / 审阅包"
+    expect(requests.map((request) => request.label.en)).toEqual([
+      "Local issue",
+      "GitHub issue",
+      "Pull request",
+      "Review packet"
     ]);
 
     for (const request of requests) {
@@ -214,7 +277,7 @@ describe("site data contract", () => {
     }
   });
 
-  it("chooses runtime mode with bilingual labels", () => {
+  it("chooses runtime mode with switchable labels", () => {
     expect(decideRuntimeMode({ dev: true, mode: "auto" }).mode).toBe(
       "live-local"
     );
@@ -224,9 +287,10 @@ describe("site data contract", () => {
     expect(decideRuntimeMode({ dev: false, mode: "hosted" }).mode).toBe(
       "hosted-workspace"
     );
-    expect(runtimeModeLabel("live-local")).toBe(
-      "Live local workspace mode / 本地实时工作区模式"
-    );
+    expect(runtimeModeLabel("live-local")).toEqual({
+      en: "Live local mode",
+      zh: "本地实时模式"
+    });
   });
 
   it("loads live backend data all at once when live mode is available", async () => {

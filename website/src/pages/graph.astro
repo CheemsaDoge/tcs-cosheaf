@@ -1,118 +1,212 @@
 ---
+import ForceGraph from "../components/ForceGraph.astro";
+import I18nText from "../components/I18nText.astro";
+import RelationshipTags from "../components/RelationshipTags.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
+import { localized } from "../lib/i18n";
 import {
+  GRAPH_PAGE_SIZE,
   artifactHref,
   dependenciesFor,
   dependentsFor,
   graphLayoutMode,
-  loadSiteData,
-  shouldDrawGraphConnector
+  loadSiteData
 } from "../lib/siteData";
 
 const data = await loadSiteData();
 const layoutMode = graphLayoutMode(data.graph.nodes.length);
-const showGraphConnector = shouldDrawGraphConnector(
-  data.graph.nodes.length,
-  data.graph.edges.length
-);
 const nodeLimitNotice =
   layoutMode === "empty"
-    ? "No dependency graph nodes were exported. / 没有导出依赖图谱节点。"
-    : data.graph.nodes.length > 25
-      ? `Showing ${data.graph.nodes.length} nodes as a navigable list for readability. / 为便于阅读，${data.graph.nodes.length} 个节点以可导航列表显示。`
-      : "This graph is an explanatory map, not proof or accepted authority. / 此图谱只是解释性地图，不是证明或 accepted 权威。";
+    ? localized(
+        "No dependency graph nodes were exported.",
+        "没有导出依赖图谱节点。"
+      )
+    : localized(
+        "Obsidian-style graph view: draggable nodes, panning, zooming, filters, and force controls. It remains display context only.",
+        "Obsidian 风格图谱：节点可拖动，画布可平移缩放，并提供过滤与力参数设置；它仍只是展示上下文。"
+      );
 ---
 
-<BaseLayout title="Graph / 图谱" eyebrow="Dependency relationships / 依赖关系">
+<BaseLayout
+  title={localized("Graph", "图谱")}
+  eyebrow={localized("Obsidian-style dependency view", "Obsidian 风格依赖视图")}
+>
   <section class="notice-band">
-    <strong>Graph boundary / 图谱边界</strong>
-    <span>{nodeLimitNotice}</span>
+    <strong><I18nText text={localized("Graph boundary", "图谱边界")} /></strong>
+    <span><I18nText text={nodeLimitNotice} /></span>
   </section>
 
-  <section class="panel">
-    {
-      layoutMode === "empty" ? (
-        <p class="empty-state">No graph nodes were exported. / 没有导出图谱节点。</p>
-      ) : (
-        <div
-          class:list={["graph-canvas", layoutMode === "list" && "graph-canvas-list"]}
-          role="img"
-          aria-label="Artifact dependency graph / 工件依赖图谱"
-        >
-          {
-            data.graph.nodes.map((node, index) => (
-              <div
-                class:list={[
-                  "graph-node",
-                  layoutMode === "pair" && (index === 0 ? "left-node" : "right-node"),
-                  layoutMode === "list" && "list-node"
-                ]}
-              >
-                <strong><a href={artifactHref(node.artifact_id)}>{node.title}</a></strong>
-                <span>{node.artifact_type}</span>
-                <small>{node.status}</small>
-              </div>
-            ))
-          }
-          {showGraphConnector && <div class="graph-line" aria-hidden="true"></div>}
-        </div>
-      )
-    }
-  </section>
+  {
+    layoutMode === "empty" ? (
+      <section class="panel">
+        <p class="empty-state">
+          <I18nText
+            text={localized(
+              "No graph nodes were exported.",
+              "没有导出图谱节点。"
+            )}
+          />
+        </p>
+      </section>
+    ) : (
+      <ForceGraph
+        id="artifact-global-graph"
+        nodes={data.graph.nodes}
+        edges={data.graph.edges}
+        pageSize={GRAPH_PAGE_SIZE}
+        ariaLabel={localized("Artifact dependency graph", "工件依赖图谱")}
+      />
+    )
+  }
 
-  <section class="table-panel compact" aria-label="Graph edges / 图谱边">
-    <div class="table-head graph-table">
-      <span>Source / 源</span>
-      <span>Target / 目标</span>
-    </div>
-    {
-      data.graph.edges.length > 0 ? (
-        data.graph.edges.map((edge) => (
-          <div class="table-row graph-table">
-            <code>{edge.source_id}</code>
-            <code>{edge.target_id}</code>
-          </div>
-        ))
-      ) : (
-        <div class="table-row empty-row">
-          <span>No graph edges were exported. / 没有导出图谱边。</span>
-        </div>
-      )
-    }
-  </section>
-
-  <section class="card-grid compact">
-    {
-      data.graph.nodes.length > 0 ? data.graph.nodes.map((node) => {
-        const deps = dependenciesFor(node.artifact_id, data.graph.edges);
-        const revDeps = dependentsFor(node.artifact_id, data.graph.edges);
-        return (
-          <article class="info-card">
-            <h2><a href={artifactHref(node.artifact_id)}>{node.title}</a></h2>
-            <p>{node.artifact_id}</p>
-            <div class="neighborhood-grid">
-              <div>
-                <strong>Depends on / 依赖</strong>
-                <div class="related-list">
-                  {deps.length > 0
-                    ? deps.map((id) => <a href={artifactHref(id)}>{id}</a>)
-                    : <span>none / 无</span>}
-                </div>
-              </div>
-              <div>
-                <strong>Used by / 被使用于</strong>
-                <div class="related-list">
-                  {revDeps.length > 0
-                    ? revDeps.map((id) => <a href={artifactHref(id)}>{id}</a>)
-                    : <span>none / 无</span>}
-                </div>
-              </div>
+  <details class="graph-detail-panel">
+    <summary><I18nText text={localized("Graph edges", "图谱边")} /></summary>
+    <section
+      class="table-panel compact"
+      aria-label="图谱边"
+      data-i18n-aria-label-en="Graph edges"
+      data-i18n-aria-label-zh="图谱边"
+      data-paginated-list
+      data-page-size="12"
+    >
+      <div class="table-head graph-table">
+        <span><I18nText text={localized("Source", "源")} /></span>
+        <span><I18nText text={localized("Target", "目标")} /></span>
+      </div>
+      {
+        data.graph.edges.length > 0 ? (
+          data.graph.edges.map((edge) => (
+            <div class="table-row graph-table paginated-row">
+              <code>{edge.source_id}</code>
+              <code>{edge.target_id}</code>
             </div>
-          </article>
-        );
-      }) : (
-        <p class="empty-state">No graph neighborhoods were exported. / 没有导出图谱邻域。</p>
-      )
+          ))
+        ) : (
+          <div class="table-row empty-row">
+            <span>
+              <I18nText
+                text={localized(
+                  "No graph edges were exported.",
+                  "没有导出图谱边。"
+                )}
+              />
+            </span>
+          </div>
+        )
+      }
+      <div class="list-pagination" data-list-pagination>
+        <button type="button" data-list-prev>
+          <I18nText text={localized("Previous", "上一页")} />
+        </button>
+        <output data-list-page>1 / 1</output>
+        <button type="button" data-list-next>
+          <I18nText text={localized("Next", "下一页")} />
+        </button>
+      </div>
+    </section>
+  </details>
+
+  <details class="graph-detail-panel">
+    <summary><I18nText text={localized("Neighborhood details", "邻域详情")} /></summary>
+    <section
+      class="card-grid compact"
+      data-paginated-list
+      data-page-size="9"
+      aria-label="图谱邻域"
+      data-i18n-aria-label-en="Graph neighborhoods"
+      data-i18n-aria-label-zh="图谱邻域"
+    >
+      {
+        data.graph.nodes.length > 0 ? data.graph.nodes.map((node) => {
+          const deps = dependenciesFor(node.artifact_id, data.graph.edges).map((id) => ({
+            id,
+            href: artifactHref(id)
+          }));
+          const revDeps = dependentsFor(node.artifact_id, data.graph.edges).map((id) => ({
+            id,
+            href: artifactHref(id)
+          }));
+          return (
+            <article class="info-card paginated-row">
+              <h2><a href={artifactHref(node.artifact_id)}>{node.title}</a></h2>
+              <p>{node.artifact_id}</p>
+              <div class="neighborhood-grid">
+                <div>
+                  <strong><I18nText text={localized("Depends on", "依赖")} /></strong>
+                  <RelationshipTags
+                    items={deps}
+                    title={localized("Depends on", "依赖")}
+                  />
+                </div>
+                <div>
+                  <strong><I18nText text={localized("Used by", "被使用于")} /></strong>
+                  <RelationshipTags
+                    items={revDeps}
+                    title={localized("Used by", "被使用于")}
+                  />
+                </div>
+              </div>
+            </article>
+          );
+        }) : (
+          <p class="empty-state">
+            <I18nText
+              text={localized(
+                "No graph neighborhoods were exported.",
+                "没有导出图谱邻域。"
+              )}
+            />
+          </p>
+        )
+      }
+      <div class="list-pagination" data-list-pagination>
+        <button type="button" data-list-prev>
+          <I18nText text={localized("Previous", "上一页")} />
+        </button>
+        <output data-list-page>1 / 1</output>
+        <button type="button" data-list-next>
+          <I18nText text={localized("Next", "下一页")} />
+        </button>
+      </div>
+    </section>
+  </details>
+
+  <script>
+    for (const container of document.querySelectorAll("[data-paginated-list]")) {
+      const rows = [...container.querySelectorAll(".paginated-row")];
+      const pageSize = Number(container.getAttribute("data-page-size") || 12);
+      const prev = container.querySelector("[data-list-prev]");
+      const next = container.querySelector("[data-list-next]");
+      const pageOutput = container.querySelector("[data-list-page]");
+      let page = 1;
+      const pageCount = () => Math.max(1, Math.ceil(rows.length / pageSize));
+      const render = () => {
+        page = Math.min(Math.max(1, page), pageCount());
+        rows.forEach((row, index) => {
+          row.toggleAttribute(
+            "hidden",
+            index < (page - 1) * pageSize || index >= page * pageSize
+          );
+        });
+        if (pageOutput) {
+          pageOutput.textContent = `${page} / ${pageCount()}`;
+        }
+        if (prev instanceof HTMLButtonElement) {
+          prev.disabled = page <= 1;
+        }
+        if (next instanceof HTMLButtonElement) {
+          next.disabled = page >= pageCount();
+        }
+      };
+      prev?.addEventListener("click", () => {
+        page -= 1;
+        render();
+      });
+      next?.addEventListener("click", () => {
+        page += 1;
+        render();
+      });
+      render();
     }
-  </section>
+  </script>
 </BaseLayout>

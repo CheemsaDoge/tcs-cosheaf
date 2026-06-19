@@ -10,7 +10,7 @@ from typing import Literal, cast
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.storage.loader import IssueRecord, LoadedRecord, load_artifacts
 from cosheaf.storage.repo import RepoContext
-from cosheaf.storage.writer import write_yaml_deterministic
+from cosheaf.storage.writer import dump_yaml_deterministic, write_yaml_deterministic
 
 IssueStatus = Literal["open", "blocked", "closed"]
 
@@ -46,6 +46,10 @@ class IssueResult:
             "artifact_status_changed": self.artifact_status_changed,
             "authority_notice": self.authority_notice,
         }
+
+    def yaml_text(self) -> str:
+        """Return the deterministic YAML that this result would write."""
+        return dump_yaml_deterministic(_issue_yaml_data(self.issue))
 
 
 @dataclass(frozen=True)
@@ -129,6 +133,51 @@ class LocalIssueService:
             writes_performed=False,
         )
 
+    def update(
+        self,
+        issue_id: str,
+        *,
+        title: str,
+        summary: str | None = None,
+        authors: tuple[str, ...] = (),
+        labels: tuple[str, ...] = (),
+        related_artifacts: tuple[str, ...] = (),
+        related_sources: tuple[str, ...] = (),
+        scope: Literal["private", "public"] = "private",
+        dry_run: bool = False,
+    ) -> IssueResult:
+        """Update editable issue fields without changing identity or status."""
+        loaded = self._find_issue(issue_id)
+        issue = cast(IssueRecord, loaded.record)
+        if not _is_issue_file_path(loaded.source_path):
+            raise LocalIssueError(
+                "local issue update only writes repository YAML under issues/"
+            )
+
+        updated = IssueRecord.model_validate(
+            {
+                **issue.model_dump(mode="json"),
+                "title": title,
+                "summary": summary if summary is not None else issue.summary,
+                "updated_at": _now_utc(),
+                "authors": list(authors),
+                "labels": list(labels),
+                "related_artifacts": list(related_artifacts),
+                "related_sources": list(related_sources),
+                "scope": scope,
+            }
+        )
+        if not dry_run:
+            write_yaml_deterministic(
+                self.context.resolve(loaded.source_path),
+                _issue_yaml_data(updated),
+            )
+        return IssueResult(
+            issue=updated,
+            relative_path=loaded.source_path,
+            writes_performed=not dry_run,
+        )
+
     def list(self) -> IssueListResult:
         """Return all issue records in deterministic order."""
         loaded_issues = sorted(
@@ -140,7 +189,13 @@ class LocalIssueService:
             paths=tuple(loaded.source_path for loaded in loaded_issues),
         )
 
-    def close(self, issue_id: str, *, reason: str) -> IssueResult:
+    def close(
+        self,
+        issue_id: str,
+        *,
+        reason: str,
+        dry_run: bool = False,
+    ) -> IssueResult:
         """Close an open or blocked local issue without changing artifacts."""
         loaded = self._find_issue(issue_id)
         issue = cast(IssueRecord, loaded.record)
@@ -165,13 +220,14 @@ class LocalIssueService:
         target = self.context.resolve(relative_path)
         if target.exists() and target.resolve() != source.resolve():
             raise LocalIssueError(f"issue path already exists: {relative_path}")
-        write_yaml_deterministic(target, _issue_yaml_data(updated))
-        if source.resolve() != target.resolve():
-            source.unlink()
+        if not dry_run:
+            write_yaml_deterministic(target, _issue_yaml_data(updated))
+            if source.resolve() != target.resolve():
+                source.unlink()
         return IssueResult(
             issue=updated,
             relative_path=relative_path,
-            writes_performed=True,
+            writes_performed=not dry_run,
         )
 
     def _loaded_issues(self) -> tuple[LoadedRecord, ...]:
@@ -205,6 +261,15 @@ def _is_mutable_issue_path(path: Path) -> bool:
     return len(parts) >= 3 and parts[0] == "issues" and parts[1] in {
         "open",
         "blocked",
+    }
+
+
+def _is_issue_file_path(path: Path) -> bool:
+    parts = path.parts
+    return len(parts) >= 3 and parts[0] == "issues" and parts[1] in {
+        "open",
+        "blocked",
+        "closed",
     }
 
 

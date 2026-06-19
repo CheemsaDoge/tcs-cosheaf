@@ -91,9 +91,9 @@ storage are forbidden.
 
 The target Workbench surfaces are dashboard, issues, artifacts, context, gates,
 evidence, review, promotion, forge/PR, and audit. Human-facing Workbench UI
-should support English and Simplified Chinese, with Chinese-first UI copy as an
-acceptable temporary fallback if full bilingual implementation would delay
-authority-critical work.
+should support switchable English and Simplified Chinese copy, with
+Chinese-first UI copy as an acceptable temporary fallback if full localization
+would delay authority-critical work.
 
 This task is documentation-only. It does not add runtime write endpoints,
 schema changes, accepted-write authority, human-review bypasses, token

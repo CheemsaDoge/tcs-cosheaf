@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import I18nText from "../components/I18nText.astro";
+import { localized } from "../lib/i18n";
 import { gateVerdictExplanation, loadSiteData, statusTone } from "../lib/siteData";
 
 const data = await loadSiteData();
@@ -8,52 +10,65 @@ const skippedRows = data.gates.gates.filter((row) =>
 );
 ---
 
-<BaseLayout title="Gate Reports / 门禁报告" eyebrow="Gate summary / 门禁摘要">
+<BaseLayout
+  title={localized("Gate Reports", "准入检查报告")}
+  eyebrow={localized("Gate summary", "准入检查摘要")}
+>
   <section class="split-layout">
     <article class="panel">
-      <p class="section-kicker">Verdict / 结论</p>
+      <p class="section-kicker"><I18nText text={localized("Verdict", "结论")} /></p>
       <h2>
         <span class:list={["badge", statusTone(data.gates.verdict)]}>
           {data.gates.verdict.replace("_", " ")}
         </span>
       </h2>
-      <p>{gateVerdictExplanation(data.gates)}</p>
+      <p><I18nText text={gateVerdictExplanation(data.gates)} /></p>
       <p>{data.gates.note}</p>
     </article>
     <article class="panel">
-      <p class="section-kicker">Blocking state / 阻断状态</p>
-      <h2>{data.gates.blocking_issues.length} blocking issues / 阻断问题</h2>
-      <p>Skipped, missing, or unavailable checks are rendered separately from pass. / skipped、missing 或 unavailable 检查会与 pass 分开显示。</p>
+      <p class="section-kicker"><I18nText text={localized("Blocking state", "阻断状态")} /></p>
+      <h2
+        data-i18n-en={`${data.gates.blocking_issues.length} blocking issues`}
+        data-i18n-zh={`${data.gates.blocking_issues.length} 个阻断问题`}
+      >{data.gates.blocking_issues.length} 个阻断问题</h2>
+      <p>
+        <I18nText
+          text={localized(
+            "Skipped, missing, or unavailable checks are shown separately from pass.",
+            "skipped、missing 或 unavailable 检查会与 pass 分开显示。"
+          )}
+        />
+      </p>
     </article>
   </section>
 
   <section class="metric-grid">
     <article class="metric-card">
-      <span>Gate rows / 门禁行</span>
+      <span><I18nText text={localized("Gate rows", "准入检查行")} /></span>
       <strong>{data.gates.gates.length}</strong>
-      <small>exported summaries / 已导出摘要</small>
+      <small><I18nText text={localized("Exported summaries", "已导出摘要")} /></small>
     </article>
     <article class="metric-card">
-      <span>Skipped / 已跳过</span>
+      <span><I18nText text={localized("Skipped", "已跳过")} /></span>
       <strong>{skippedRows.length}</strong>
-      <small>not pass / 不是通过</small>
+      <small><I18nText text={localized("Not pass", "不是通过")} /></small>
     </article>
     <article class="metric-card">
-      <span>Warnings / 警告</span>
+      <span><I18nText text={localized("Warnings", "警告")} /></span>
       <strong>{data.gates.nonblocking_issues.length}</strong>
-      <small>nonblocking issues / 非阻断问题</small>
+      <small><I18nText text={localized("Nonblocking issues", "非阻断问题")} /></small>
     </article>
     <article class="metric-card">
-      <span>Reports / 报告</span>
+      <span><I18nText text={localized("Reports", "报告")} /></span>
       <strong>{data.gates.report_paths.length}</strong>
-      <small>static references / 静态引用</small>
+      <small><I18nText text={localized("Static references", "静态引用")} /></small>
     </article>
   </section>
 
   <section class="split-layout">
     <article class="panel">
-      <p class="section-kicker">Failures and warnings / 失败与警告</p>
-      <h2>Blocking and nonblocking rows / 阻断与非阻断行</h2>
+      <p class="section-kicker"><I18nText text={localized("Failures and warnings", "失败与警告")} /></p>
+      <h2><I18nText text={localized("Blocking and nonblocking rows", "阻断与非阻断行")} /></h2>
       {
         data.gates.blocking_issues.length + data.gates.nonblocking_issues.length > 0 ? (
           <pre class="json-block">{JSON.stringify({
@@ -61,20 +76,34 @@ const skippedRows = data.gates.gates.filter((row) =>
             nonblocking: data.gates.nonblocking_issues
           }, null, 2)}</pre>
         ) : (
-          <p>No blocking or nonblocking issue rows were exported. / 没有导出阻断或非阻断问题行。</p>
+          <p>
+            <I18nText
+              text={localized(
+                "No blocking or nonblocking issue rows were exported.",
+                "没有导出阻断或非阻断问题行。"
+              )}
+            />
+          </p>
         )
       }
     </article>
     <article class="panel">
-      <p class="section-kicker">PR checklist gate / PR 清单门禁</p>
-      <h2>Report references / 报告引用</h2>
+      <p class="section-kicker"><I18nText text={localized("PR checklist gate", "PR 清单准入检查")} /></p>
+      <h2><I18nText text={localized("Report references", "报告引用")} /></h2>
       {
         data.gates.report_paths.length > 0 ? (
           <div class="related-list">
             {data.gates.report_paths.map((path) => <span>{path}</span>)}
           </div>
         ) : (
-          <p>No PR checklist gate report was exported for this fixture. / 此夹具没有导出 PR 清单门禁报告。</p>
+          <p>
+            <I18nText
+              text={localized(
+                "No PR checklist gate report was exported for this fixture.",
+                "此夹具没有导出 PR 清单准入检查报告。"
+              )}
+            />
+          </p>
         )
       }
     </article>

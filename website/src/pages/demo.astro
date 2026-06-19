@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import I18nText from "../components/I18nText.astro";
+import { localized } from "../lib/i18n";
 import {
   PREVIEW_API_BASE,
   PREVIEW_AUTHORITY_WARNING,
@@ -12,10 +14,13 @@ const issue = data.issues.issues[0];
 const previewRequests = buildPreviewRequests(data);
 ---
 
-<BaseLayout title="Demo / 演示" eyebrow="Workspace fixture / 工作区夹具">
+<BaseLayout
+  title={localized("Demo", "演示")}
+  eyebrow={localized("Workspace fixture", "工作区夹具")}
+>
   <section class="split-layout">
     <article class="panel">
-      <p class="section-kicker">Demo issue / 演示议题</p>
+      <p class="section-kicker"><I18nText text={localized("Demo issue", "演示议题")} /></p>
       <h2>{issue.title}</h2>
       <p>{issue.summary.split("\n\n")[0]}</p>
       <div class="tag-row">
@@ -24,17 +29,25 @@ const previewRequests = buildPreviewRequests(data);
     </article>
 
     <article class="panel">
-      <p class="section-kicker">Demo-only data / 仅演示数据</p>
-      <h2>Private fixture policy / 私有夹具策略</h2>
+      <p class="section-kicker"><I18nText text={localized("Demo-only data", "仅演示数据")} /></p>
+      <h2><I18nText text={localized("Private fixture policy", "私有夹具策略")} /></h2>
       <p>
-        Demo private records are rendered only because the fixture marks them
-        with demo tags and the export keeps full statements out of the sidecar.
-        / 演示私有记录只有在夹具显式标记为 demo 时才会渲染，导出也不会把完整陈述放进 sidecar。
+        <I18nText
+          text={localized(
+            "Demo private records are rendered only because the fixture marks them with demo tags and keeps full statements out of the sidecar.",
+            "演示私有记录只有在夹具显式标记为 demo、且完整陈述未进入 sidecar 时才会渲染。"
+          )}
+        />
       </p>
-      <div class="workflow-rail" aria-label="Demo workflow / 演示工作流">
-        <span>export / 导出</span>
-        <span>sanitize / 脱敏</span>
-        <span>render / 渲染</span>
+      <div
+        class="workflow-rail"
+        aria-label="演示工作流"
+        data-i18n-aria-label-en="Demo workflow"
+        data-i18n-aria-label-zh="演示工作流"
+      >
+        <span><I18nText text={localized("Export", "导出")} /></span>
+        <span><I18nText text={localized("Sanitize", "脱敏")} /></span>
+        <span><I18nText text={localized("Render", "渲染")} /></span>
       </div>
     </article>
   </section>
@@ -42,13 +55,18 @@ const previewRequests = buildPreviewRequests(data);
   <section class="panel preview-panel">
     <div class="card-heading">
       <div>
-        <p class="section-kicker">Preview actions / 预览动作</p>
-        <h2>Dry-run action previews / Dry-run 动作预览</h2>
+        <p class="section-kicker"><I18nText text={localized("Preview actions", "预览动作")} /></p>
+        <h2><I18nText text={localized("Dry-run action previews", "Dry-run 动作预览")} /></h2>
       </div>
-      <span class="badge warning">preview only / 仅预览</span>
+      <span class="badge warning"><I18nText text={localized("Preview only", "仅预览")} /></span>
     </div>
-    <p class="preview-warning">{PREVIEW_AUTHORITY_WARNING}</p>
-    <div class="preview-toolbar" aria-label="Preview actions / 预览动作">
+    <p class="preview-warning"><I18nText text={PREVIEW_AUTHORITY_WARNING} /></p>
+    <div
+      class="preview-toolbar"
+      aria-label="预览动作"
+      data-i18n-aria-label-en="Preview actions"
+      data-i18n-aria-label-zh="预览动作"
+    >
       {
         previewRequests.map((request) => (
           <button
@@ -56,14 +74,17 @@ const previewRequests = buildPreviewRequests(data);
             type="button"
             data-preview-action={request.id}
           >
-            {request.label}
+            <I18nText text={request.label} />
           </button>
         ))
       }
     </div>
-    <pre class="json-block preview-output" data-preview-output>
-Select a preview action. The response will show planned files and actions from the local API.
-选择一个预览动作。响应会显示本地 API 规划的文件和动作。</pre>
+    <pre
+      class="json-block preview-output"
+      data-preview-output
+      data-i18n-en="Select a preview action. The response will show planned files and actions from the local API."
+      data-i18n-zh="选择一个预览动作。响应会显示本地 API 规划的文件和动作。"
+    >选择一个预览动作。响应会显示本地 API 规划的文件和动作。</pre>
   </section>
 
   <script define:vars={{ previewRequests, apiBase: PREVIEW_API_BASE }}>

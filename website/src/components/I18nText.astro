@@ -1,0 +1,11 @@
+---
+import { asLocalizedText, type LocalizedText } from "../lib/i18n";
+
+interface Props {
+  text: string | LocalizedText;
+}
+
+const value = asLocalizedText(Astro.props.text);
+---
+
+<span data-i18n-en={value.en} data-i18n-zh={value.zh}>{value.zh}</span>

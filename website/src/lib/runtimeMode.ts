@@ -1,3 +1,5 @@
+import { type LocalizedText, localized } from "./i18n";
+
 export type RuntimeMode = "static-demo" | "live-local" | "hosted-workspace";
 
 export interface RuntimeModeInput {
@@ -9,7 +11,7 @@ export interface RuntimeModeInput {
 
 export interface RuntimeMetadata {
   mode: RuntimeMode;
-  label: string;
+  label: LocalizedText;
   label_en: string;
   label_zh: string;
   api_base: string;
@@ -21,12 +23,12 @@ export const DEFAULT_API_BASE = "http://127.0.0.1:8765";
 
 const LABELS: Record<RuntimeMode, { en: string; zh: string }> = {
   "static-demo": {
-    en: "Static demo mode",
-    zh: "静态演示模式"
+    en: "Read-only demo",
+    zh: "只读演示"
   },
   "live-local": {
-    en: "Live local workspace mode",
-    zh: "本地实时工作区模式"
+    en: "Live local mode",
+    zh: "本地实时模式"
   },
   "hosted-workspace": {
     en: "Hosted workspace mode",
@@ -34,9 +36,9 @@ const LABELS: Record<RuntimeMode, { en: string; zh: string }> = {
   }
 };
 
-export function runtimeModeLabel(mode: RuntimeMode): string {
+export function runtimeModeLabel(mode: RuntimeMode): LocalizedText {
   const label = LABELS[mode];
-  return `${label.en} / ${label.zh}`;
+  return localized(label.en, label.zh);
 }
 
 export function decideRuntimeMode(input: RuntimeModeInput = {}): RuntimeMetadata {
