@@ -4,14 +4,22 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Literal, cast
 from urllib.parse import unquote, urlparse
+from uuid import uuid4
 
 from cosheaf.app import CosheafApp
-from cosheaf.forge import FORGE_PREVIEW_AUTHORITY_WARNING
+from cosheaf.forge import (
+    FORGE_AUTHORITY_WARNING,
+    FORGE_PREVIEW_AUTHORITY_WARNING,
+    ForgeActionError,
+    ForgeActionResult,
+    ForgeCredentialProvider,
+)
 from cosheaf.site import REQUIRED_SITE_EXPORT_FILES, SITE_EXPORT_AUTHORITY_NOTICE
 
 READONLY_SERVER_HOST = "127.0.0.1"
@@ -30,6 +38,11 @@ _PREVIEW_ENDPOINTS = {
     "/api/forge/prs/preview",
     "/api/forge/review-packets/preview",
 }
+_CREATE_ENDPOINTS = {
+    "/api/forge/issues/create",
+    "/api/forge/prs/create",
+}
+_AUDIT_PATH = Path(".cosheaf") / "audit" / "website-forge-actions.jsonl"
 
 
 @dataclass(frozen=True)
@@ -55,9 +68,11 @@ class ReadOnlySiteApi:
         app: CosheafApp,
         *,
         host: str = READONLY_SERVER_HOST,
+        credential_provider: ForgeCredentialProvider | None = None,
     ) -> None:
         self.app = app
         self.host = host
+        self.credential_provider = credential_provider
 
     def handle(
         self,
@@ -96,11 +111,12 @@ class ReadOnlySiteApi:
         return _error(404, "not_found", f"Unknown endpoint: {path}")
 
     def _handle_post(self, path: str, body: str | bytes) -> ApiResponse:
-        if path not in _PREVIEW_ENDPOINTS:
+        if path not in _PREVIEW_ENDPOINTS and path not in _CREATE_ENDPOINTS:
             return _error(
                 405,
                 "method_not_allowed",
-                "POST is only available for preview-only endpoints.",
+                "POST is only available for preview or authenticated create "
+                "endpoints.",
             )
         payload = _json_body(body)
         if isinstance(payload, ApiResponse):
@@ -114,6 +130,12 @@ class ReadOnlySiteApi:
                 return self._preview_github_pr(payload)
             if path == "/api/forge/review-packets/preview":
                 return self._preview_review_packet(payload)
+            if path == "/api/forge/issues/create":
+                return self._create_github_issue(payload)
+            if path == "/api/forge/prs/create":
+                return self._create_github_pr(payload)
+        except ForgeActionError as exc:
+            return _error(400, exc.code, "forge action failed; see backend audit")
         except ValueError as exc:
             return _error(400, "preview_invalid_input", str(exc))
         return _error(404, "not_found", f"Unknown endpoint: {path}")
@@ -213,6 +235,179 @@ class ReadOnlySiteApi:
                 ],
             },
         )
+
+    def _create_github_issue(self, payload: dict[str, Any]) -> ApiResponse:
+        action = "github_issue_create"
+        source_path = _required_text(payload, "source_path")
+        blocked = self._blocked_create(action, payload)
+        if blocked is not None:
+            return blocked
+        try:
+            result = self.app.forge_github_issue_create(
+                source_path,
+                confirm=True,
+            )
+        except ForgeActionError as exc:
+            self._write_action_failure(
+                action=action,
+                result_status=exc.code,
+                planned_files=[source_path],
+            )
+            raise
+        return self._action_response(
+            "github_issue_create",
+            result,
+            planned_files=[source_path],
+            repo_writes_performed=True,
+        )
+
+    def _create_github_pr(self, payload: dict[str, Any]) -> ApiResponse:
+        action = "github_pr_create"
+        base = _required_text(payload, "base")
+        head = _required_text(payload, "head")
+        blocked = self._blocked_create(action, payload)
+        if blocked is not None:
+            return blocked
+        try:
+            result = self.app.forge_github_pr_create(
+                base=base,
+                head=head,
+                draft=_bool(payload, "draft", default=False),
+                confirm=True,
+            )
+        except ForgeActionError as exc:
+            self._write_action_failure(
+                action=action,
+                result_status=exc.code,
+                planned_files=[],
+            )
+            raise
+        return self._action_response(
+            "github_pr_create",
+            result,
+            planned_files=[],
+            repo_writes_performed=False,
+        )
+
+    def _blocked_create(
+        self,
+        action: str,
+        payload: dict[str, Any],
+    ) -> ApiResponse | None:
+        explicit_confirm = payload.get("confirm") is True
+        if not explicit_confirm:
+            self._write_audit(
+                action=action,
+                result_status="confirm_required",
+                explicit_confirm=False,
+            )
+            return _error(400, "confirm_required", "create requires confirm: true")
+        provider = self.credential_provider
+        if provider is None or not provider.has_github_token():
+            self._write_audit(
+                action=action,
+                result_status="auth_required",
+                explicit_confirm=True,
+                credential_provider=self._credential_provider_name(),
+            )
+            return _error(
+                401,
+                "auth_required",
+                "authenticated forge create requires backend GitHub credentials",
+            )
+        return None
+
+    def _action_response(
+        self,
+        kind: str,
+        result: ForgeActionResult,
+        *,
+        planned_files: list[str],
+        repo_writes_performed: bool,
+    ) -> ApiResponse:
+        payload = result.model_dump(mode="json")
+        self._write_audit(
+            action=result.action,
+            result_status="success",
+            explicit_confirm=True,
+            credential_provider=self._credential_provider_name(),
+            planned_files=planned_files,
+            repo_writes_performed=repo_writes_performed,
+            result=payload,
+        )
+        return ApiResponse(
+            200,
+            {
+                "schema_version": READONLY_SERVER_SCHEMA_VERSION,
+                "kind": kind,
+                "action_performed": result.action_performed,
+                "repo_writes_performed": repo_writes_performed,
+                "git_writes_performed": result.git_writes_performed,
+                "github_writes_performed": result.github_writes_performed,
+                "network_calls_performed": result.network_calls_performed,
+                "audit_logged": True,
+                "forge_action": payload,
+                "authority_warning": FORGE_AUTHORITY_WARNING,
+                "authority_notice": SITE_EXPORT_AUTHORITY_NOTICE,
+            },
+        )
+
+    def _write_action_failure(
+        self,
+        *,
+        action: str,
+        result_status: str,
+        planned_files: list[str],
+    ) -> None:
+        self._write_audit(
+            action=action,
+            result_status=result_status,
+            explicit_confirm=True,
+            credential_provider=self._credential_provider_name(),
+            planned_files=planned_files,
+        )
+
+    def _credential_provider_name(self) -> str | None:
+        return (
+            self.credential_provider.provider_name()
+            if self.credential_provider
+            else None
+        )
+
+    def _write_audit(
+        self,
+        *,
+        action: str,
+        result_status: str,
+        explicit_confirm: bool,
+        credential_provider: str | None = None,
+        planned_files: list[str] | None = None,
+        repo_writes_performed: bool = False,
+        result: dict[str, Any] | None = None,
+    ) -> None:
+        result = result or {}
+        entry = {
+            "schema_version": READONLY_SERVER_SCHEMA_VERSION,
+            "event_id": str(uuid4()),
+            "timestamp": datetime.now(UTC).replace(microsecond=0).isoformat(),
+            "action": action,
+            "repo": str(self.app.context.repo_root),
+            "credential_provider": credential_provider,
+            "explicit_confirm": explicit_confirm,
+            "planned_files": planned_files or [],
+            "result_status": result_status,
+            "result_url": result.get("github_issue_url") or result.get("github_pr_url"),
+            "git_writes_performed": bool(result.get("git_writes_performed", False)),
+            "github_writes_performed": bool(
+                result.get("github_writes_performed", False)
+            ),
+            "repo_writes_performed": repo_writes_performed,
+            "authority_notice": FORGE_AUTHORITY_WARNING,
+        }
+        audit_path = self.app.context.resolve(_AUDIT_PATH)
+        audit_path.parent.mkdir(parents=True, exist_ok=True)
+        with audit_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(entry, sort_keys=True) + "\n")
 
     def _payload_file(self, filename: str) -> dict[str, Any]:
         payloads = self._site_payloads()
@@ -341,6 +536,13 @@ def _optional_text(payload: dict[str, Any], key: str) -> str | None:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{key} must be a non-empty string when provided")
     return value.strip()
+
+
+def _bool(payload: dict[str, Any], key: str, *, default: bool) -> bool:
+    value = payload.get(key, default)
+    if not isinstance(value, bool):
+        raise ValueError(f"{key} must be a boolean")
+    return value
 
 
 def _text_list(payload: dict[str, Any], key: str) -> list[str]:

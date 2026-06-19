@@ -1,29 +1,36 @@
-# Local Read-Only Server API
+# Local Website Server API
 
 Cosheaf includes an optional localhost API for dynamic website preview and
-dry-run action previews:
+forge-backed action previews:
 
 ```bash
 cosheaf server serve --readonly --port 8765
 ```
 
-The server binds to `127.0.0.1` and refuses to start unless `--readonly` is
-provided. It has no authentication because it is loopback-only and read-only.
-Do not expose it on a public interface. Browser CORS responses are limited to
-localhost origins such as `http://localhost:<port>` and
-`http://127.0.0.1:<port>`.
+The CLI server binds to `127.0.0.1` and refuses to start unless `--readonly`
+is provided. Read and preview endpoints need no authentication because they
+are loopback-only and non-mutating. Authenticated create endpoints exist for
+backend integrations that instantiate `ReadOnlySiteApi` with a server-side
+`ForgeCredentialProvider`; the default CLI server does not configure one, so
+confirmed create requests return `401 auth_required`.
+
+Do not expose the localhost server on a public interface. Browser CORS
+responses are limited to localhost origins such as
+`http://localhost:<port>` and `http://127.0.0.1:<port>`.
 
 ## Boundary
 
 The server calls `cosheaf.app.open_app` and the application facade in-process.
-It does not shell out to the `cosheaf` CLI, run hosted providers, call GitHub,
-write accepted artifacts, promote artifacts, create human review, or run gates
-as a side effect.
+It does not shell out to the `cosheaf` CLI, run hosted providers, write
+accepted artifacts, promote artifacts, create human review, or run gates as a
+side effect.
 
 Read-only payloads are generated through the existing website export path into
 a temporary directory outside the repository, then returned as JSON. Preview
-actions return dry-run plans only. Repository YAML/JSON records remain the
-source of truth. Server responses are display context only.
+actions return dry-run plans only and never call GitHub. Authenticated create
+actions call the same `cosheaf.app` / `cosheaf.forge` GitHub issue/PR logic as
+the CLI after backend auth and explicit confirmation. Repository YAML/JSON
+records remain the source of truth. Server responses are display context only.
 
 ## Endpoints
 
@@ -37,11 +44,13 @@ GET /api/gates
 GET /api/context/<issue_id>
 POST /api/forge/local-issues/preview
 POST /api/forge/issues/preview
+POST /api/forge/issues/create
 POST /api/forge/prs/preview
+POST /api/forge/prs/create
 POST /api/forge/review-packets/preview
 ```
 
-Non-preview `POST` requests and unsupported methods return
+Unsupported `POST` requests and unsupported methods return
 `405 method_not_allowed`. `OPTIONS` is supported for localhost browser
 preflight.
 
@@ -54,15 +63,33 @@ and the forge authority warning. They do not write repository files, call
 GitHub, run `git` or `gh`, store credentials, run providers, create human
 review, or change accepted/promotion state.
 
-## Future Authenticated Actions
+## Authenticated Create Actions
 
-Authenticated create endpoints are not implemented by the local read-only
-server. The required backend-only design is recorded in
-[ADR 0038](ADR/0038-website-backend-auth-actions.md). Future create endpoints
-must keep GitHub credentials server-side, call `cosheaf.app` / `cosheaf.forge`
-in-process, require explicit confirmation, write redacted audit records, and
-return only redacted action metadata. The frontend must never receive GitHub
-tokens or call GitHub APIs directly.
+The backend-only design is recorded in
+[ADR 0038](ADR/0038-website-backend-auth-actions.md). The implemented W5.2
+create endpoints are limited to:
+
+```text
+POST /api/forge/issues/create
+POST /api/forge/prs/create
+```
+
+Both endpoints require a server-side `ForgeCredentialProvider` with GitHub
+credentials available and a request body containing `confirm: true`. Missing
+auth returns `401 auth_required`; missing explicit confirmation returns
+`400 confirm_required`. The frontend never receives GitHub tokens and must not
+call GitHub APIs directly.
+
+Confirmed issue creation calls `CosheafApp.forge_github_issue_create`, which
+uses the shared forge service and updates the source issue record's
+`external_links` as the CLI forge path does. Confirmed PR creation calls
+`CosheafApp.forge_github_pr_create`. Both routes return redacted action flags
+and URLs only. Success, auth/confirm refusal, and forge failures are logged to
+ignored runtime JSONL at `.cosheaf/audit/website-forge-actions.jsonl`.
+
+These endpoints do not create accepted knowledge, human review, verifier pass,
+gate pass, promotion authority, token storage, branch pushes, production
+hosting, checkout caching, or webhook handling.
 
 ## Authority Rules
 
