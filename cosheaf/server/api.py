@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from difflib import unified_diff
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -48,10 +49,18 @@ _PREVIEW_ENDPOINTS = {
     "/api/forge/issues/preview",
     "/api/forge/prs/preview",
     "/api/forge/review-packets/preview",
+    "/api/issues/preview-create",
 }
 _CREATE_ENDPOINTS = {
     "/api/forge/issues/create",
     "/api/forge/prs/create",
+    "/api/issues/create",
+}
+_ISSUE_ACTION_SUFFIXES = {
+    "preview-update",
+    "update",
+    "preview-close",
+    "close",
 }
 
 
@@ -140,7 +149,12 @@ class ReadOnlySiteApi:
         return _error(404, "not_found", f"Unknown endpoint: {path}")
 
     def _handle_post(self, path: str, body: str | bytes) -> ApiResponse:
-        if path not in _PREVIEW_ENDPOINTS and path not in _CREATE_ENDPOINTS:
+        issue_action = _parse_issue_action_path(path)
+        if (
+            path not in _PREVIEW_ENDPOINTS
+            and path not in _CREATE_ENDPOINTS
+            and issue_action is None
+        ):
             return _error(
                 405,
                 "method_not_allowed",
@@ -151,6 +165,20 @@ class ReadOnlySiteApi:
         if isinstance(payload, ApiResponse):
             return payload
         try:
+            if path == "/api/issues/preview-create":
+                return self._preview_issue_create(payload)
+            if path == "/api/issues/create":
+                return self._create_issue(payload)
+            if issue_action is not None:
+                issue_id, action = issue_action
+                if action == "preview-update":
+                    return self._preview_issue_update(issue_id, payload)
+                if action == "update":
+                    return self._update_issue(issue_id, payload)
+                if action == "preview-close":
+                    return self._preview_issue_close(issue_id, payload)
+                if action == "close":
+                    return self._close_issue(issue_id, payload)
             if path == "/api/forge/local-issues/preview":
                 return self._preview_local_issue(payload)
             if path == "/api/forge/issues/preview":
@@ -165,6 +193,8 @@ class ReadOnlySiteApi:
                 return self._create_github_pr(payload)
         except ForgeActionError as exc:
             return _error(400, exc.code, "forge action failed; see backend audit")
+        except LocalIssueError as exc:
+            return _error(400, "issue_action_failed", str(exc))
         except ValueError as exc:
             return _error(400, "preview_invalid_input", str(exc))
         return _error(404, "not_found", f"Unknown endpoint: {path}")
@@ -474,6 +504,201 @@ class ReadOnlySiteApi:
             },
         )
 
+    def _preview_issue_create(self, payload: dict[str, Any]) -> ApiResponse:
+        result = self.app.preview_issue(**_issue_write_args(payload, require_id=True))
+        planned_file = result.relative_path.as_posix()
+        self._write_audit(
+            action="issue_create",
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=[planned_file],
+            authority_warnings=[ISSUE_AUTHORITY_NOTICE],
+        )
+        return _preview_response(
+            "issue_create_preview",
+            planned_actions=["create repository-local issue YAML preview"],
+            planned_files=[planned_file],
+            issue=result.issue.model_dump(mode="json"),
+            path=planned_file,
+            diff=_diff_text(
+                "",
+                result.yaml_text(),
+                fromfile="/dev/null",
+                tofile=planned_file,
+            ),
+            authority_warning=ISSUE_AUTHORITY_NOTICE,
+            authority_notice=ISSUE_AUTHORITY_NOTICE,
+        )
+
+    def _create_issue(self, payload: dict[str, Any]) -> ApiResponse:
+        action = "issue_create"
+        blocked = self._blocked_confirm(action, payload)
+        if blocked is not None:
+            return blocked
+        result = self.app.create_issue(**_issue_write_args(payload, require_id=True))
+        planned_file = result.relative_path.as_posix()
+        self._write_audit(
+            action=action,
+            result_status="success",
+            explicit_confirm=True,
+            preview_only=False,
+            planned_files=[planned_file],
+            repo_writes_performed=True,
+            result={"action_performed": True},
+            authority_warnings=[ISSUE_AUTHORITY_NOTICE],
+        )
+        return _issue_action_response(
+            "issue_create",
+            result,
+            planned_files=[planned_file],
+            diff=_diff_text(
+                "",
+                result.yaml_text(),
+                fromfile="/dev/null",
+                tofile=planned_file,
+            ),
+        )
+
+    def _preview_issue_update(
+        self,
+        issue_id: str,
+        payload: dict[str, Any],
+    ) -> ApiResponse:
+        before = self.app.show_issue(issue_id)
+        result = self.app.preview_update_issue(
+            issue_id,
+            **_issue_write_args(payload, require_id=False),
+        )
+        planned_file = result.relative_path.as_posix()
+        self._write_audit(
+            action="issue_update",
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=[planned_file],
+            authority_warnings=[ISSUE_AUTHORITY_NOTICE],
+        )
+        return _preview_response(
+            "issue_update_preview",
+            planned_actions=["update repository-local issue YAML preview"],
+            planned_files=[planned_file],
+            before_issue=before.issue.model_dump(mode="json"),
+            issue=result.issue.model_dump(mode="json"),
+            path=planned_file,
+            diff=_diff_text(
+                before.yaml_text(),
+                result.yaml_text(),
+                fromfile=planned_file,
+                tofile=planned_file,
+            ),
+            authority_warning=ISSUE_AUTHORITY_NOTICE,
+            authority_notice=ISSUE_AUTHORITY_NOTICE,
+        )
+
+    def _update_issue(self, issue_id: str, payload: dict[str, Any]) -> ApiResponse:
+        action = "issue_update"
+        blocked = self._blocked_confirm(action, payload)
+        if blocked is not None:
+            return blocked
+        before = self.app.show_issue(issue_id)
+        result = self.app.update_issue(
+            issue_id,
+            **_issue_write_args(payload, require_id=False),
+        )
+        planned_file = result.relative_path.as_posix()
+        self._write_audit(
+            action=action,
+            result_status="success",
+            explicit_confirm=True,
+            preview_only=False,
+            planned_files=[planned_file],
+            repo_writes_performed=True,
+            result={"action_performed": True},
+            authority_warnings=[ISSUE_AUTHORITY_NOTICE],
+        )
+        return _issue_action_response(
+            "issue_update",
+            result,
+            planned_files=[planned_file],
+            diff=_diff_text(
+                before.yaml_text(),
+                result.yaml_text(),
+                fromfile=planned_file,
+                tofile=planned_file,
+            ),
+        )
+
+    def _preview_issue_close(
+        self,
+        issue_id: str,
+        payload: dict[str, Any],
+    ) -> ApiResponse:
+        before = self.app.show_issue(issue_id)
+        result = self.app.preview_close_issue(
+            issue_id,
+            reason=_required_text(payload, "reason"),
+        )
+        planned_file = result.relative_path.as_posix()
+        self._write_audit(
+            action="issue_close",
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=[planned_file],
+            authority_warnings=[ISSUE_AUTHORITY_NOTICE],
+        )
+        return _preview_response(
+            "issue_close_preview",
+            planned_actions=["close repository-local issue YAML preview"],
+            planned_files=[planned_file],
+            before_issue=before.issue.model_dump(mode="json"),
+            issue=result.issue.model_dump(mode="json"),
+            path=planned_file,
+            artifact_status_changed=result.artifact_status_changed,
+            diff=_diff_text(
+                before.yaml_text(),
+                result.yaml_text(),
+                fromfile=before.relative_path.as_posix(),
+                tofile=planned_file,
+            ),
+            authority_warning=ISSUE_AUTHORITY_NOTICE,
+            authority_notice=ISSUE_AUTHORITY_NOTICE,
+        )
+
+    def _close_issue(self, issue_id: str, payload: dict[str, Any]) -> ApiResponse:
+        action = "issue_close"
+        blocked = self._blocked_confirm(action, payload)
+        if blocked is not None:
+            return blocked
+        before = self.app.show_issue(issue_id)
+        result = self.app.close_issue(
+            issue_id,
+            reason=_required_text(payload, "reason"),
+        )
+        planned_file = result.relative_path.as_posix()
+        self._write_audit(
+            action=action,
+            result_status="success",
+            explicit_confirm=True,
+            preview_only=False,
+            planned_files=[planned_file],
+            repo_writes_performed=True,
+            result={"action_performed": True},
+            authority_warnings=[ISSUE_AUTHORITY_NOTICE],
+        )
+        return _issue_action_response(
+            "issue_close",
+            result,
+            planned_files=[planned_file],
+            diff=_diff_text(
+                before.yaml_text(),
+                result.yaml_text(),
+                fromfile=before.relative_path.as_posix(),
+                tofile=planned_file,
+            ),
+        )
+
     def _create_github_issue(self, payload: dict[str, Any]) -> ApiResponse:
         action = "github_issue_create"
         source_path = _required_text(payload, "source_path")
@@ -528,6 +753,23 @@ class ReadOnlySiteApi:
             planned_files=[],
             repo_writes_performed=False,
         )
+
+    def _blocked_confirm(
+        self,
+        action: str,
+        payload: dict[str, Any],
+    ) -> ApiResponse | None:
+        explicit_confirm = payload.get("confirm") is True
+        if not explicit_confirm:
+            self._write_audit(
+                action=action,
+                result_status="confirm_required",
+                explicit_confirm=False,
+                preview_only=False,
+                authority_warnings=[ISSUE_AUTHORITY_NOTICE],
+            )
+            return _error(400, "confirm_required", "write requires confirm: true")
+        return None
 
     def _blocked_create(
         self,
@@ -636,6 +878,7 @@ class ReadOnlySiteApi:
         head: str | None = None,
         branch: str | None = None,
         result: dict[str, Any] | None = None,
+        authority_warnings: list[str] | None = None,
     ) -> None:
         result = result or {}
         github_url = result.get("github_issue_url") or result.get("github_pr_url")
@@ -684,7 +927,7 @@ class ReadOnlySiteApi:
                 github_urls=[github_url] if isinstance(github_url, str) else [],
                 credential_provider=credential_provider,
                 result_status=result_status,
-                authority_warnings=[FORGE_AUTHORITY_WARNING],
+                authority_warnings=authority_warnings or [FORGE_AUTHORITY_WARNING],
                 error_code=error_code,
                 errors=errors,
             ),
@@ -781,6 +1024,18 @@ def _normalize_path(raw_path: str) -> str:
     return path or "/"
 
 
+def _parse_issue_action_path(path: str) -> tuple[str, str] | None:
+    if not path.startswith("/api/issues/"):
+        return None
+    parts = path.removeprefix("/api/issues/").split("/")
+    if len(parts) != 2:
+        return None
+    issue_id, action = parts
+    if not issue_id or action not in _ISSUE_ACTION_SUFFIXES:
+        return None
+    return issue_id, action
+
+
 def _allowed_cors_origin(origin: str | None) -> bool:
     if not origin:
         return False
@@ -847,6 +1102,25 @@ def _scope(value: object) -> Literal["private", "public"]:
     return cast(Literal["private", "public"], normalized)
 
 
+def _issue_write_args(
+    payload: dict[str, Any],
+    *,
+    require_id: bool,
+) -> dict[str, Any]:
+    args: dict[str, Any] = {
+        "title": _required_text(payload, "title"),
+        "summary": _optional_text(payload, "summary"),
+        "authors": _text_list(payload, "authors"),
+        "labels": _text_list(payload, "labels"),
+        "related_artifacts": _text_list(payload, "related_artifacts"),
+        "related_sources": _text_list(payload, "related_sources"),
+        "scope": _scope(payload.get("scope", "private")),
+    }
+    if require_id:
+        args["issue_id"] = _required_text(payload, "issue_id")
+    return args
+
+
 def _preview_response(
     kind: str,
     *,
@@ -873,9 +1147,60 @@ def _preview_response(
     )
 
 
+def _issue_action_response(
+    kind: str,
+    result: Any,
+    *,
+    planned_files: list[str],
+    diff: str,
+) -> ApiResponse:
+    return ApiResponse(
+        200,
+        {
+            "schema_version": READONLY_SERVER_SCHEMA_VERSION,
+            "kind": kind,
+            "action_performed": True,
+            "repo_writes_performed": True,
+            "git_writes_performed": False,
+            "github_writes_performed": False,
+            "network_calls_performed": False,
+            "audit_logged": True,
+            "planned_files": planned_files,
+            "written_files": planned_files,
+            "issue": result.issue.model_dump(mode="json"),
+            "path": result.relative_path.as_posix(),
+            "artifact_status_changed": result.artifact_status_changed,
+            "diff": diff,
+            "authority_warning": ISSUE_AUTHORITY_NOTICE,
+            "authority_notice": ISSUE_AUTHORITY_NOTICE,
+        },
+    )
+
+
+def _diff_text(
+    before: str,
+    after: str,
+    *,
+    fromfile: str,
+    tofile: str,
+) -> str:
+    return "".join(
+        unified_diff(
+            before.splitlines(keepends=True),
+            after.splitlines(keepends=True),
+            fromfile=fromfile,
+            tofile=tofile,
+            lineterm="",
+        )
+    )
+
+
 def _web_action_kind(action: str) -> WebActionKind:
     mapping = {
         "local_issue_preview": WebActionKind.ISSUE_CREATE,
+        "issue_create": WebActionKind.ISSUE_CREATE,
+        "issue_update": WebActionKind.ISSUE_UPDATE,
+        "issue_close": WebActionKind.ISSUE_CLOSE,
         "github_issue_preview": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_issue_create": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_pr_preview": WebActionKind.FORGE_PR_CREATE,

@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import I18nText from "../../components/I18nText.astro";
+import { localized, textFor } from "../../lib/i18n";
 import {
   artifactById,
   artifactHref,
@@ -8,6 +10,7 @@ import {
   loadSiteData,
   statusExplanation
 } from "../../lib/siteData";
+import { ISSUE_WORKBENCH_LABELS } from "../../lib/issueWorkbench";
 
 export async function getStaticPaths() {
   const data = await loadSiteData();
@@ -17,48 +20,126 @@ export async function getStaticPaths() {
 }
 
 const id = Astro.params.id ?? "";
-const data = await loadSiteData();
-const issue = issueById(id, data);
+let data = await loadSiteData();
+let issue = issueById(id, data);
+if (!issue) {
+  const staticData = await loadSiteData({ env: { mode: "static" } });
+  const staticIssue = issueById(id, staticData);
+  if (staticIssue) {
+    data = staticData;
+    issue = staticIssue;
+  }
+}
 if (!issue) {
   throw new Error(`Unknown issue: ${id}`);
 }
+const canWriteIssues = data.runtime.mode === "live-local";
+const canCloseIssue = canWriteIssues && issue.status !== "closed";
 ---
 
-<BaseLayout title={issue.title} eyebrow="Issue detail / 议题详情">
-  <section class="split-layout">
-    <article class="panel">
-      <p class="section-kicker">{issue.type}</p>
-      <h2>{issue.id}</h2>
+<BaseLayout title={issue.title} eyebrow={localized("Issue detail", "议题详情")}>
+  <section class="split-layout issue-detail-layout">
+    <article class="panel issue-summary-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker"><I18nText text={localized("Issue", "议题")} /></p>
+          <h2>{issue.id}</h2>
+        </div>
+        <span class="badge warning" title={textFor(statusExplanation(issue.status))}>{issue.status}</span>
+      </div>
       <p>{issue.summary}</p>
+      <div class="preview-toolbar compact">
+        {
+          canWriteIssues ? (
+            <a class="button-link" href={`/issues/${encodeURIComponent(issue.id)}/edit/`}>
+              <I18nText text={ISSUE_WORKBENCH_LABELS.editIssue} />
+            </a>
+          ) : (
+            <span class="tag"><I18nText text={localized("Read-only demo", "只读演示")} /></span>
+          )
+        }
+        <a class="button-link secondary" href={contextHref(issue.id)}>
+          <I18nText text={localized("Context pack", "上下文包")} />
+        </a>
+      </div>
       <div class="tag-row">
-        <span class="badge warning" title={statusExplanation(issue.status)}>{issue.status}</span>
-        <span class="tag">scope / 范围: {issue.scope}</span>
-        <span class="tag">severity / 严重度: {issue.severity}</span>
+        <span class="tag"><I18nText text={localized("Scope", "范围")} />: {issue.scope}</span>
+        <span class="tag"><I18nText text={localized("Severity", "严重度")} />: {issue.severity}</span>
       </div>
     </article>
-    <article class="panel">
-      <p class="section-kicker">Context / 上下文</p>
-      <h2>Review packet preview / 审阅包预览</h2>
-      <p>This static context view is display context only and performs no repository writes. / 此静态上下文视图仅作展示，不执行仓库写入。</p>
-      <a class="button-link" href={contextHref(issue.id)}>Open context pack / 打开上下文包</a>
+    <article class="panel compact-list-panel">
+      <p class="section-kicker"><I18nText text={localized("Related artifacts", "相关工件")} /></p>
+      <div class="compact-list">
+        {
+          issue.related_artifacts.map((id) => {
+            const artifact = artifactById(id, data);
+            return (
+              <a class="compact-row" href={artifactHref(id)}>
+                <span>{artifact?.title ?? id}</span>
+                <strong>{artifact?.status ?? "unavailable"}</strong>
+              </a>
+            );
+          })
+        }
+      </div>
     </article>
   </section>
 
-  <section class="table-panel compact">
-    <div class="table-head graph-table">
-      <span>Related artifact / 相关工件</span>
-      <span>Status / 状态</span>
-    </div>
-    {
-      issue.related_artifacts.map((id) => {
-        const artifact = artifactById(id, data);
-        return (
-          <div class="table-row graph-table">
-            <a class="row-title" href={artifactHref(id)}>{artifact?.title ?? id}</a>
-            <span>{artifact?.status ?? "unavailable"}</span>
-          </div>
-        );
-      })
-    }
+  <section class="workbench-shell compact">
+    <article class="panel workbench-main">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker"><I18nText text={ISSUE_WORKBENCH_LABELS.closeIssue} /></p>
+          <h2><I18nText text={localized("Close with a reason", "填写关闭原因")} /></h2>
+        </div>
+      </div>
+      {
+        canCloseIssue ? (
+          <form
+            class="workbench-form"
+            data-issue-close-form
+            data-mode={data.runtime.mode}
+            data-api-base={data.runtime.api_base}
+            data-issue-id={issue.id}
+            data-output="#issue-close-preview"
+          >
+            <label>
+              <I18nText text={ISSUE_WORKBENCH_LABELS.closeReason} />
+              <textarea name="reason" rows="4" required></textarea>
+            </label>
+            <div class="preview-toolbar">
+              <button class="preview-button" type="button" data-preview>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.preview} />
+              </button>
+              <button class="preview-button danger" type="submit" data-confirm disabled>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.confirm} />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p>
+            <I18nText
+              text={localized(
+                "Cannot close this issue in the current mode or status.",
+                "当前模式或状态下无法关闭此议题。"
+              )}
+            />
+          </p>
+        )
+      }
+    </article>
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker"><I18nText text={ISSUE_WORKBENCH_LABELS.previewDiff} /></p>
+      <pre
+        class="json-block preview-output"
+        id="issue-close-preview"
+        data-i18n-en="Preview a close action before writing it."
+        data-i18n-zh="写入前先预览关闭操作。"
+      >写入前先预览关闭操作。</pre>
+    </article>
   </section>
+
+  <script>
+    import "../../lib/issueWorkbenchClient";
+  </script>
 </BaseLayout>

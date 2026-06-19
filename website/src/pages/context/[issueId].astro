@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import I18nText from "../../components/I18nText.astro";
+import { localized } from "../../lib/i18n";
 import {
   artifactById,
   artifactHref,
@@ -24,27 +26,43 @@ if (!pack || !issue) {
 }
 ---
 
-<BaseLayout title={`Context / 上下文: ${issue.title}`} eyebrow="Context pack / 上下文包">
+<BaseLayout
+  title={localized(`Context: ${issue.title}`, `上下文：${issue.title}`)}
+  eyebrow={localized("Context pack", "上下文包")}
+>
   <section class="split-layout">
     <article class="panel">
-      <p class="section-kicker">Issue context / 议题上下文</p>
+      <p class="section-kicker"><I18nText text={localized("Issue context", "议题上下文")} /></p>
       <h2>{pack.issue_id}</h2>
-      <p>{pack.card_count} cards selected for the demo context pack. / 已为演示上下文包选择 {pack.card_count} 张卡片。</p>
+      <p
+        data-i18n-en={`${pack.card_count} cards selected for the demo context pack.`}
+        data-i18n-zh={`已为演示上下文包选择 ${pack.card_count} 张卡片。`}
+      >已为演示上下文包选择 {pack.card_count} 张卡片。</p>
       <div class="tag-row">
-        <span class="tag">public only / 仅公开: {pack.public_only ? "yes / 是" : "no / 否"}</span>
-        <span class="tag">private context / 私有上下文: {pack.private_context_included ? "yes / 是" : "no / 否"}</span>
         <span class="tag">
-          demo private context / 演示私有上下文: {pack.demo_private_context_included ? "yes / 是" : "no / 否"}
+          <I18nText text={localized("Public only", "仅公开")} />:
+          <I18nText text={pack.public_only ? localized("yes", "是") : localized("no", "否")} />
+        </span>
+        <span class="tag">
+          <I18nText text={localized("Private context", "私有上下文")} />:
+          <I18nText text={pack.private_context_included ? localized("yes", "是") : localized("no", "否")} />
+        </span>
+        <span class="tag">
+          <I18nText text={localized("Demo private context", "演示私有上下文")} />:
+          <I18nText text={pack.demo_private_context_included ? localized("yes", "是") : localized("no", "否")} />
         </span>
       </div>
     </article>
     <article class="panel">
-      <p class="section-kicker">Authority / 权限</p>
-      <h2>Context is not acceptance / 上下文不是接受</h2>
+      <p class="section-kicker"><I18nText text={localized("Authority", "权限")} /></p>
+      <h2><I18nText text={localized("Context is not acceptance", "上下文不是接受")} /></h2>
       <p>
-        This page shows what a reviewer should read. It does not grant human review,
-        verifier pass, gate pass, accepted status, or promotion authority.
-        / 此页面展示审阅者应阅读的内容；它不授予人工审阅、验证器通过、门禁通过、accepted 状态或提升权限。
+        <I18nText
+          text={localized(
+            "This page shows what a reviewer should read. It does not grant human review, verifier pass, gate pass, accepted status, or promotion authority.",
+            "此页面展示审阅者应阅读的内容；它不授予人工审阅、验证器通过、准入检查通过、accepted 状态或提升权限。"
+          )}
+        />
       </p>
     </article>
   </section>
@@ -56,7 +74,18 @@ if (!pack || !issue) {
         return (
           <article class="info-card">
             <h2><a href={artifactHref(id)}>{artifact?.title ?? id}</a></h2>
-            <p>{artifact?.summary ?? "Artifact metadata was not exported. / 工件元数据未导出。"}</p>
+            <p>
+              {
+                artifact?.summary ?? (
+                  <I18nText
+                    text={localized(
+                      "Artifact metadata was not exported.",
+                      "工件元数据未导出。"
+                    )}
+                  />
+                )
+              }
+            </p>
           </article>
         );
       })

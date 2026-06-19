@@ -127,15 +127,14 @@ The Workbench target surface includes:
 
 ## Language UX
 
-The target Web Workbench should support English and Simplified Chinese for
-human-facing navigation, labels, authority warnings, action confirmations,
-error messages, and workflow guidance. If a later implementation slice cannot
-finish full bilingual UI without risking the authority work, Chinese-first UI
-copy is an acceptable temporary fallback and English localization should remain
-tracked in a follow-up issue or PR acceptance checklist as deferred Workbench
-polish. Any implementation PR that ships Chinese-first fallback must open or
-link a follow-up issue titled `Complete Workbench English localization` and
-list the localization gap under its known limitations. Repository source files,
+The target Web Workbench should support switchable English and Simplified
+Chinese for human-facing navigation, labels, authority warnings, action
+confirmations, error messages, and workflow guidance. The UI must not present
+English and Chinese copy side by side as a substitute for localization. If a
+later implementation slice cannot finish full switchable localization without
+risking the authority work, Chinese-first UI copy is an acceptable temporary
+fallback and English localization should remain tracked in a follow-up issue or
+PR acceptance checklist as deferred Workbench polish. Repository source files,
 schemas, and project-facing docs remain English unless a task explicitly
 requires Chinese.
 
@@ -239,22 +238,27 @@ builds it chooses `static-demo`. Override the mode with
 backend URL with `PUBLIC_COSHEAF_API_BASE` or `COSHEAF_API_BASE`. The default
 backend URL is `http://127.0.0.1:8765`.
 
-The frontend live client reads only GET endpoints. It uses an all-or-nothing
-fallback: if any live endpoint is unavailable, the page renders the committed
-fixtures with a visible fallback banner instead of mixing live and fixture
-data. The rendered banner and primary navigation are bilingual in English and
-Simplified Chinese. Repository artifact and issue content is shown as recorded
-in the repository and is not machine-translated by the frontend.
+The frontend live client reads live repository GET endpoints and, in live
+local mode, can call local issue workbench action endpoints for previewed and
+confirmed issue create, update, and close operations. It uses an all-or-nothing
+read fallback: if any live read endpoint is unavailable, the page renders the
+committed fixtures with a visible fallback banner instead of mixing live and
+fixture data. The rendered banner, primary navigation, and issue workbench
+controls use a lightweight language switcher for English and Simplified
+Chinese, backed by explicit `{ en, zh }` UI copy. Repository artifact and issue
+content is shown as recorded in the repository and is not machine-translated by
+the frontend.
 
 The static build inlines CSS into the generated HTML so `website/dist` pages
 keep the styled UI even when an operator opens an HTML file directly from disk.
 Serving the directory through an HTTP static server or Astro preview remains
 the recommended way to navigate between routes.
 
-The scaffold has no repository writes, no GitHub token handling, no runtime
-private repository fetch from the browser, and no hosted provider call. The
-rendered site is a human interface over exported or live read-only JSON only;
-repository files remain the source of truth.
+Static showcase mode has no repository writes, no GitHub token handling, no
+runtime private repository fetch from the browser, and no hosted provider
+call. Live local mode may perform confirmed local issue writes only through the
+localhost server, `cosheaf.app`, and audited repository YAML writes. Repository
+files remain the source of truth.
 
 The static output directory is `website/dist`. The separate `Website build`
 GitHub Actions workflow runs `npm ci`, `npm test`, and `npm run build` under
@@ -273,6 +277,21 @@ GitHub issue, pull request, and review packet plans. These requests are
 `POST` dry-runs only. They show planned files/actions and authority warnings,
 but they do not write repository files, call GitHub, store tokens, run
 providers, create human review, or change accepted/promotion state.
+
+The issues pages now include a local issue workbench in live local mode:
+
+- `/issues/create/` previews and confirms creation of repository-local issue
+  YAML under `issues/open/`;
+- `/issues/<issue_id>/edit/` previews and confirms editable metadata updates
+  while keeping the issue ID immutable; and
+- `/issues/<issue_id>/` previews and confirms close actions with a required
+  close reason.
+
+All three confirmed actions require a successful preview in the UI, send
+`confirm: true` only on confirmation, call the localhost backend, write through
+`cosheaf.app`, and append web-action audit entries. Closing a local issue does
+not change related artifact accepted/refuted status, verifier output, gate
+state, human review, or promotion state.
 
 The server API now also has backend-only authenticated create endpoints for
 GitHub issue and PR creation. They are not frontend token flows: a backend must

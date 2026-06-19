@@ -1,23 +1,64 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import I18nText from "../components/I18nText.astro";
+import { localized } from "../lib/i18n";
 
 const concepts = [
-  ["Repository source / 仓库来源", "YAML and JSON sidecars remain the source of truth. / YAML 和 JSON sidecar 仍是事实来源。"],
-  ["Static export / 静态导出", "The website consumes deterministic sanitized JSON. / 网页消费确定性的脱敏 JSON。"],
-  ["Artifacts / 工件", "Cards expose safe metadata, status, dependencies, and risk flags. / 卡片展示安全元数据、状态、依赖和风险标记。"],
-  ["Issues / 议题", "Issue records organize work; they do not accept knowledge. / 议题记录用于组织工作，不接受知识。"],
-  ["Context packs / 上下文包", "Context summaries help review but are not authority. / 上下文摘要帮助审阅，但不是权威。"],
-  ["Gates / 门禁", "Gate output can block workflow but does not prove truth. / 门禁输出可以阻断工作流，但不能证明真理。"]
+  [
+    localized("Repository source", "仓库来源"),
+    localized(
+      "YAML and JSON sidecars remain the source of truth.",
+      "YAML 和 JSON sidecar 仍是事实来源。"
+    )
+  ],
+  [
+    localized("Static export", "静态导出"),
+    localized(
+      "The website consumes deterministic sanitized JSON.",
+      "网页消费确定性的脱敏 JSON。"
+    )
+  ],
+  [
+    localized("Artifacts", "工件"),
+    localized(
+      "Cards expose safe metadata, status, dependencies, and risk flags.",
+      "卡片展示安全元数据、状态、依赖和风险标记。"
+    )
+  ],
+  [
+    localized("Issues", "议题"),
+    localized(
+      "Issue records organize work; they do not accept knowledge.",
+      "议题记录用于组织工作，不接受知识。"
+    )
+  ],
+  [
+    localized("Context packs", "上下文包"),
+    localized(
+      "Context summaries help review but are not authority.",
+      "上下文摘要帮助审阅，但不是权威。"
+    )
+  ],
+  [
+    localized("Gates", "准入检查"),
+    localized(
+      "Gate output can block workflow but does not prove truth.",
+      "准入检查输出可以阻断工作流，但不能证明真理。"
+    )
+  ]
 ];
 ---
 
-<BaseLayout title="Docs / Concepts / 文档与概念" eyebrow="Concept map / 概念图">
+<BaseLayout
+  title={localized("Docs and Concepts", "文档与概念")}
+  eyebrow={localized("Concept map", "概念图")}
+>
   <section class="card-grid">
     {
       concepts.map(([title, body]) => (
         <article class="info-card">
-          <h2>{title}</h2>
-          <p>{body}</p>
+          <h2><I18nText text={title} /></h2>
+          <p><I18nText text={body} /></p>
         </article>
       ))
     }

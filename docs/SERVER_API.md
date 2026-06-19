@@ -1,7 +1,8 @@
 # Website Server API
 
 Cosheaf includes an optional localhost API for dynamic website preview,
-forge-backed action previews, and a narrow backend-only GitHub create slice:
+forge-backed action previews, local issue workbench actions, and a narrow
+backend-only GitHub create slice:
 
 ```bash
 cosheaf server serve --readonly --port 8765
@@ -9,10 +10,12 @@ cosheaf server serve --readonly --port 8765
 
 The CLI server binds to `127.0.0.1` and refuses to start unless `--readonly`
 is provided. Read and preview endpoints need no authentication because they
-are loopback-only and non-mutating. Authenticated create endpoints exist for
-backend integrations that instantiate `ReadOnlySiteApi` with a server-side
-`ForgeCredentialProvider`; the default CLI server does not configure one, so
-confirmed create requests return `401 auth_required`.
+are loopback-only and non-mutating. Confirmed local issue actions are
+loopback-only local repository writes and require `confirm: true`.
+Authenticated GitHub create endpoints exist for backend integrations that
+instantiate `ReadOnlySiteApi` with a server-side `ForgeCredentialProvider`;
+the default CLI server does not configure one, so confirmed GitHub create
+requests return `401 auth_required`.
 
 Longplan B2 turns this server boundary into the Human Governance Workbench
 bridge. The server is the only allowed path from browser actions to policy
@@ -29,15 +32,16 @@ responses are limited to localhost origins such as
 The server calls `cosheaf.app.open_app` and the application facade in-process.
 It does not shell out to the `cosheaf` CLI, run hosted providers, write
 accepted artifacts, promote artifacts, create human review, or run gates as a
-side effect in the current read/preview implementation.
+side effect. The local issue workbench slice may write repository-local issue
+YAML after explicit confirmation, through `cosheaf.app`, with audit logging.
 
 Static read-only payloads are generated through the existing website export
 path into a temporary directory outside the repository, then returned as JSON.
-Live read-only payloads call `cosheaf.app` services and storage loaders
+Live payloads call `cosheaf.app` services and storage loaders
 in-process for repository YAML, read existing ignored runtime sidecars directly
 when the requested source is `.cosheaf/` or `context/TASKS/`, and do not run
-gates, build context packs, call GitHub, shell out to CLI, or write audit
-records. Preview actions return dry-run plans only and never call GitHub.
+gates, build context packs, call GitHub, or shell out to CLI. Preview actions
+return dry-run plans only and never call GitHub.
 Authenticated create actions call the same `cosheaf.app` / `cosheaf.forge`
 GitHub issue/PR logic as the CLI after backend auth and explicit confirmation.
 Repository YAML/JSON records remain the source of truth. Server responses are
@@ -100,6 +104,12 @@ GET /api/context/<issue_id>
 GET /api/context/<issue_id>/latest
 GET /api/audit/recent
 POST /api/forge/local-issues/preview
+POST /api/issues/preview-create
+POST /api/issues/create
+POST /api/issues/<issue_id>/preview-update
+POST /api/issues/<issue_id>/update
+POST /api/issues/<issue_id>/preview-close
+POST /api/issues/<issue_id>/close
 POST /api/forge/issues/preview
 POST /api/forge/issues/create
 POST /api/forge/prs/preview
@@ -135,6 +145,37 @@ Preview endpoints return `dry_run_only: true`, planned actions, planned files,
 and the forge authority warning. They do not write repository files, call
 GitHub, run `git` or `gh`, store credentials, run providers, create human
 review, or change accepted/promotion state.
+
+## Local Issue Workbench Actions
+
+The B2.3.1 local issue workbench endpoints are:
+
+```text
+POST /api/issues/preview-create
+POST /api/issues/create
+POST /api/issues/<issue_id>/preview-update
+POST /api/issues/<issue_id>/update
+POST /api/issues/<issue_id>/preview-close
+POST /api/issues/<issue_id>/close
+```
+
+Create and update requests accept `issue_id` for create, `title`, optional
+`summary`, `scope` as `private` or `public`, and arrays for `authors`,
+`labels`, `related_artifacts`, and `related_sources`. Close requests accept a
+non-empty `reason`. Confirmed create, update, and close requests must include
+`confirm: true`.
+
+All local issue writes go through `CosheafApp` and `LocalIssueService`.
+Preview responses include planned files and a unified diff and write no issue
+YAML. Confirmed responses include written files, issue payload, action flags,
+diff, and authority warnings. Every preview, confirm refusal, and confirmed
+write appends a redacted web-action audit record under
+`.cosheaf/audit/web-actions.jsonl`.
+
+Issue closing moves the issue record to `issues/closed/<issue_id>.yaml` and
+records `close_reason`. It does not change related artifact status, accepted
+state, refuted state, verifier output, gate state, human review, or promotion
+state.
 
 ## Target Workbench Action Classes
 

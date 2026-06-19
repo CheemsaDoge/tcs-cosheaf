@@ -171,6 +171,55 @@ class CosheafApp:
             dry_run=True,
         )
 
+    def update_issue(
+        self,
+        issue_id: str,
+        *,
+        title: str,
+        summary: str | None = None,
+        authors: Sequence[str] = (),
+        labels: Sequence[str] = (),
+        related_artifacts: Sequence[str] = (),
+        related_sources: Sequence[str] = (),
+        scope: Literal["private", "public"] = "private",
+    ) -> IssueResult:
+        """Update editable fields on a repository-local issue."""
+        return LocalIssueService(self.context).update(
+            issue_id,
+            title=title,
+            summary=summary,
+            authors=tuple(authors),
+            labels=tuple(labels),
+            related_artifacts=tuple(related_artifacts),
+            related_sources=tuple(related_sources),
+            scope=scope,
+        )
+
+    def preview_update_issue(
+        self,
+        issue_id: str,
+        *,
+        title: str,
+        summary: str | None = None,
+        authors: Sequence[str] = (),
+        labels: Sequence[str] = (),
+        related_artifacts: Sequence[str] = (),
+        related_sources: Sequence[str] = (),
+        scope: Literal["private", "public"] = "private",
+    ) -> IssueResult:
+        """Preview editable field updates on a repository-local issue."""
+        return LocalIssueService(self.context).update(
+            issue_id,
+            title=title,
+            summary=summary,
+            authors=tuple(authors),
+            labels=tuple(labels),
+            related_artifacts=tuple(related_artifacts),
+            related_sources=tuple(related_sources),
+            scope=scope,
+            dry_run=True,
+        )
+
     def show_issue(self, issue_id: str) -> IssueResult:
         """Return one repository-local issue record."""
         return LocalIssueService(self.context).show(issue_id)
@@ -182,6 +231,14 @@ class CosheafApp:
     def close_issue(self, issue_id: str, *, reason: str) -> IssueResult:
         """Close a repository-local issue without changing artifact state."""
         return LocalIssueService(self.context).close(issue_id, reason=reason)
+
+    def preview_close_issue(self, issue_id: str, *, reason: str) -> IssueResult:
+        """Preview closing a repository-local issue without writing files."""
+        return LocalIssueService(self.context).close(
+            issue_id,
+            reason=reason,
+            dry_run=True,
+        )
 
     def forge_status(self) -> ForgePreviewResult:
         """Preview forge status without token lookup or git mutation."""

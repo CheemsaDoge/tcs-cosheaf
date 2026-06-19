@@ -1,8 +1,14 @@
 ---
+import ForceGraph from "../../components/ForceGraph.astro";
+import I18nText from "../../components/I18nText.astro";
+import RelationshipTags from "../../components/RelationshipTags.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import { localized, textFor } from "../../lib/i18n";
 import {
   artifactById,
   artifactHref,
+  dependentsFor,
+  graphNeighborhoodFor,
   issueHref,
   loadSiteData,
   statusExplanation,
@@ -22,65 +28,128 @@ const artifact = artifactById(id, data);
 if (!artifact) {
   throw new Error(`Unknown artifact: ${id}`);
 }
+const neighborhood = graphNeighborhoodFor(artifact.id, data.graph);
+const dependencies = artifact.depends_on.map((dep) => ({
+  id: dep,
+  href: artifactHref(dep)
+}));
+const usedBy = dependentsFor(artifact.id, data.graph.edges).map((dep) => ({
+  id: dep,
+  href: artifactHref(dep)
+}));
 const relatedIssues = data.issues.issues.filter((issue) =>
   issue.related_artifacts.includes(artifact.id)
 );
+const relatedIssueItems = relatedIssues.map((issue) => ({
+  id: issue.id,
+  href: issueHref(issue.id),
+  label: issue.title
+}));
 ---
 
-<BaseLayout title={artifact.title} eyebrow="Artifact detail / 工件详情">
-  <section class="split-layout">
-    <article class="panel">
-      <p class="section-kicker">{artifact.type}</p>
-      <h2>{artifact.id}</h2>
-      <p>{artifact.summary}</p>
-      <div class="tag-row">
-        <span class:list={["badge", statusTone(artifact.status)]} title={statusExplanation(artifact.status)}>
-          {artifact.status}
-        </span>
-        <span class:list={["badge", statusTone(artifact.verifier_state)]} title={statusExplanation(artifact.verifier_state)}>
-          verifier / 验证器: {artifact.verifier_state}
-        </span>
-        <span class="tag">review / 审阅: {artifact.review_state}</span>
-        <span class="tag">scope / 范围: {artifact.root_scope}</span>
-      </div>
-    </article>
+<BaseLayout title={artifact.title} eyebrow={localized("Artifact detail", "工件详情")}>
+  <section class="artifact-detail-layout">
+    <div class="artifact-detail-main">
+      <article class="panel">
+        <p class="section-kicker">{artifact.type}</p>
+        <h2>{artifact.id}</h2>
+        <p>{artifact.summary}</p>
+        <div class="tag-row">
+          <span class:list={["badge", statusTone(artifact.status)]} title={textFor(statusExplanation(artifact.status))}>
+            {artifact.status}
+          </span>
+          <span class:list={["badge", statusTone(artifact.verifier_state)]} title={textFor(statusExplanation(artifact.verifier_state))}>
+            <I18nText text={localized("Verifier", "验证器")} />: {artifact.verifier_state}
+          </span>
+          <span class="tag"><I18nText text={localized("Review", "审阅")} />: {artifact.review_state}</span>
+          <span class="tag"><I18nText text={localized("Scope", "范围")} />: {artifact.root_scope}</span>
+        </div>
+      </article>
 
-    <article class="panel">
-      <p class="section-kicker">Safe links / 安全链接</p>
-      <h2>Sources and evidence / 来源与证据</h2>
-      {
-        artifact.sources.length > 0 ? (
-          <div class="related-list">
-            {artifact.sources.map((source) => <span>{source}</span>)}
-          </div>
-        ) : (
-          <p>No safe source links were exported for this demo fixture. / 此演示夹具没有导出安全来源链接。</p>
-        )
-      }
-      <p>Verifier state is exported as `{artifact.verifier_state}` and does not imply pass. / 验证器状态导出为 `{artifact.verifier_state}`，不暗示通过。</p>
-    </article>
-  </section>
+      <section class="card-grid artifact-relationship-grid">
+        <article class="info-card">
+          <h2><I18nText text={localized("Depends on", "依赖")} /></h2>
+          <RelationshipTags
+            items={dependencies}
+            title={localized("Depends on", "依赖")}
+          />
+        </article>
+        <article class="info-card">
+          <h2><I18nText text={localized("Used by", "被使用于")} /></h2>
+          <RelationshipTags
+            items={usedBy}
+            title={localized("Used by", "被使用于")}
+          />
+        </article>
+        <article class="info-card">
+          <h2><I18nText text={localized("Related issues", "相关议题")} /></h2>
+          <RelationshipTags
+            items={relatedIssueItems}
+            title={localized("Related issues", "相关议题")}
+          />
+        </article>
+        <article class="info-card wide">
+          <h2><I18nText text={localized("Sources and evidence", "来源与证据")} /></h2>
+          {
+            artifact.sources.length > 0 ? (
+              <RelationshipTags
+                items={artifact.sources.map((source) => ({
+                  id: source,
+                  href: "#",
+                  label: source
+                }))}
+                title={localized("Sources and evidence", "来源与证据")}
+              />
+            ) : (
+              <p>
+                <I18nText
+                  text={localized(
+                    "No safe source links were exported for this demo fixture.",
+                    "此演示夹具没有导出安全来源链接。"
+                  )}
+                />
+              </p>
+            )
+          }
+          <p
+            data-i18n-en={`Verifier state is exported as ${artifact.verifier_state}; it does not imply pass.`}
+            data-i18n-zh={`验证器状态导出为 ${artifact.verifier_state}，不暗示通过。`}
+          >验证器状态导出为 {artifact.verifier_state}，不暗示通过。</p>
+        </article>
+      </section>
+    </div>
 
-  <section class="card-grid">
-    <article class="info-card">
-      <h2>Dependencies / 依赖</h2>
-      <div class="related-list">
-        {
-          artifact.depends_on.length > 0
-            ? artifact.depends_on.map((dep) => <a href={artifactHref(dep)}>{dep}</a>)
-            : <span>none / 无</span>
-        }
-      </div>
-    </article>
-    <article class="info-card">
-      <h2>Related issues / 相关议题</h2>
-      <div class="related-list">
-        {
-          relatedIssues.length > 0
-            ? relatedIssues.map((issue) => <a href={issueHref(issue.id)}>{issue.title}</a>)
-            : <span>none / 无</span>
-        }
-      </div>
-    </article>
+    <aside class="artifact-detail-aside">
+      <article class="panel action-panel">
+        <p class="section-kicker"><I18nText text={localized("Workflow actions", "工作流入口")} /></p>
+        <h2><I18nText text={localized("Change through review", "通过审阅变更")} /></h2>
+        <p>
+          <I18nText
+            text={localized(
+              "Create or edit artifacts through a draft change and PR review. Re-run validation and gate checks before any accepted promotion.",
+              "新建或修改工件应通过 draft 变更与 PR 审阅；进入 accepted 之前必须重新运行验证和准入检查。"
+            )}
+          />
+        </p>
+        <div class="preview-toolbar">
+          <a class="button-link" href="/issues/create/">
+            <I18nText text={localized("New artifact change", "新建工件变更")} />
+          </a>
+          <a class="button-link secondary" href="/demo/">
+            <I18nText text={localized("Review PR path", "审阅 PR 入口")} />
+          </a>
+        </div>
+      </article>
+
+      <ForceGraph
+        id="artifact-local-graph"
+        nodes={neighborhood.nodes}
+        edges={neighborhood.edges}
+        centerId={artifact.id}
+        pageSize={12}
+        compact
+        ariaLabel={localized("Local artifact dependency graph", "当前工件依赖图谱")}
+      />
+    </aside>
   </section>
 </BaseLayout>

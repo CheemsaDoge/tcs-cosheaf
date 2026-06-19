@@ -1,103 +1,104 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import {
-  graphLayoutMode,
-  loadSiteData,
-  shouldDrawGraphConnector
-} from "../lib/siteData";
+import I18nText from "../components/I18nText.astro";
+import { localized } from "../lib/i18n";
+import { loadSiteData } from "../lib/siteData";
 
 const data = await loadSiteData();
-const edge = data.graph.edges[0];
-const graphMode = graphLayoutMode(data.graph.nodes.length);
-const showMiniConnector = shouldDrawGraphConnector(
-  data.graph.nodes.length,
-  data.graph.edges.length
-);
 ---
 
-<BaseLayout title="Workspace export / 工作区导出" eyebrow="Home / 首页">
-  <section class="metric-grid" aria-label="Export summary / 导出摘要">
+<BaseLayout
+  title={localized("Workspace", "工作区")}
+  eyebrow={localized("Home", "首页")}
+>
+  <section class="workbench-intro">
+    <div>
+      <p class="section-kicker">
+        <I18nText text={localized("Human governance workbench", "人类治理工作台")} />
+      </p>
+      <h2>{data.workspace.workspace_name}</h2>
+      <p>
+        <I18nText
+          text={localized(
+            "Inspect repository artifacts, issues, dependency context, and gate results from exported Cosheaf state. The repository remains the source of truth.",
+            "从导出的 Cosheaf 状态检查仓库工件、议题、依赖上下文和准入检查结果；仓库记录仍是唯一事实来源。"
+          )}
+        />
+      </p>
+    </div>
+    <div class="authority-chip">
+      <strong><I18nText text={localized("Display only", "仅展示")} /></strong>
+      <span>
+        <I18nText
+          text={localized(
+            "This page does not review, verify, accept, or promote artifacts.",
+            "此页面不审阅、不验证、不接受、不晋升工件。"
+          )}
+        />
+      </span>
+    </div>
+  </section>
+
+  <section
+    class="metric-grid"
+    aria-label="工作区摘要"
+    data-i18n-aria-label-en="Workspace summary"
+    data-i18n-aria-label-zh="工作区摘要"
+  >
     <article class="metric-card">
-      <span>Artifacts / 工件</span>
+      <span><I18nText text={localized("Artifacts", "工件")} /></span>
       <strong>{data.artifacts.count}</strong>
-      <small>
-        {data.artifacts.public_only ? "public/demo-safe export / 公开或演示安全导出" : "local export / 本地导出"}
-      </small>
     </article>
     <article class="metric-card">
-      <span>Issues / 议题</span>
+      <span><I18nText text={localized("Issues", "议题")} /></span>
       <strong>{data.issues.count}</strong>
-      <small>repository workflow memory / 仓库工作流记忆</small>
     </article>
     <article class="metric-card">
-      <span>Gate verdict / 门禁结论</span>
+      <span><I18nText text={localized("Gate", "准入检查")} /></span>
       <strong>{data.gates.verdict.replace("_", " ")}</strong>
-      <small>static export did not run gates / 静态导出未运行门禁</small>
     </article>
     <article class="metric-card">
-      <span>Graph edges / 图谱边</span>
+      <span><I18nText text={localized("Graph edges", "图谱边")} /></span>
       <strong>{data.graph.edges.length}</strong>
-      <small>display context only / 仅作展示上下文</small>
     </article>
   </section>
 
-  <section class="split-layout">
-    <article class="panel">
-      <p class="section-kicker">Demo workspace / 演示工作区</p>
-      <h2>{data.workspace.workspace_name}</h2>
-      <p>
-        The scaffold renders the exported sidecar without repository writes,
-        backend calls, provider calls, or GitHub credentials. / 此界面渲染导出的
-        sidecar 数据，不写仓库、不调用后端或模型服务，也不使用 GitHub 凭据。
-      </p>
-      <div class="root-list">
-        {
-          data.workspace.kb_roots.map((root) => (
-            <div class="root-row">
-              <span>{root.name}</span>
-              <code>{root.path}</code>
-              <strong>{root.readonly ? "readonly / 只读" : "writable overlay / 可写覆盖层"}</strong>
-            </div>
-          ))
-        }
-      </div>
-    </article>
-
-    <article class="panel graph-preview">
-      <p class="section-kicker">Dependency graph / 依赖图谱</p>
-      <h2>{edge ? `${edge.source_id} -> ${edge.target_id}` : "No edges / 无边"}</h2>
-      {
-        graphMode === "empty" ? (
-          <p class="empty-state">No graph nodes were exported. / 没有导出图谱节点。</p>
-        ) : (
-          <div
-            class:list={["mini-graph", graphMode === "list" && "mini-graph-list"]}
-            role="img"
-            aria-label="Dependency graph preview / 依赖图谱预览"
-          >
-            {
-              data.graph.nodes.map((node, index) => (
-                <div
-                  class:list={[
-                    "mini-node",
-                    graphMode === "pair" && (index === 0 ? "source" : "target"),
-                    graphMode === "list" && "mini-list-node"
-                  ]}
-                >
-                  <strong>{node.title}</strong>
-                  <span>{node.status}</span>
-                </div>
-              ))
-            }
-            {showMiniConnector && <div class="mini-edge" aria-hidden="true"></div>}
-          </div>
-        )
-      }
-    </article>
+  <section
+    class="workbench-actions"
+    aria-label="工作台入口"
+    data-i18n-aria-label-en="Workbench actions"
+    data-i18n-aria-label-zh="工作台入口"
+  >
+    <a class="workbench-action" href="/artifacts/">
+      <strong><I18nText text={localized("Inspect artifacts", "检查工件")} /></strong>
+      <span><I18nText text={localized("Review draft and accepted metadata.", "查看 draft 与 accepted 元数据。")} /></span>
+    </a>
+    <a class="workbench-action" href="/issues/">
+      <strong><I18nText text={localized("Triage issues", "处理议题")} /></strong>
+      <span><I18nText text={localized("Create, edit, and close local issues in live mode.", "在本地实时模式中新建、修改和关闭议题。")} /></span>
+    </a>
+    <a class="workbench-action" href="/graph/">
+      <strong><I18nText text={localized("Explore graph", "探索图谱")} /></strong>
+      <span><I18nText text={localized("Use a draggable dependency graph as context.", "使用可拖拽依赖图谱作为上下文。")} /></span>
+    </a>
+    <a class="workbench-action" href="/gates/">
+      <strong><I18nText text={localized("Check gates", "查看准入检查")} /></strong>
+      <span><I18nText text={localized("Skipped and not-run results stay separate from pass.", "skipped 和 not-run 不会被当作 pass。")} /></span>
+    </a>
   </section>
 
   <section class="notice-band">
-    <strong>Authority boundary / 权限边界</strong>
-    <span>{data.authority_boundaries.notices[2]}</span>
+    <strong><I18nText text={localized("Authority boundary", "权限边界")} /></strong>
+    <span>
+      <I18nText
+        text={localized(
+          "Frontend output is context for humans. Accepted status enters only through repository records, source metadata, validation, gate policy, human review, and explicit promotion.",
+          "前端输出只是人类上下文；accepted 状态只能通过仓库记录、source metadata、验证、准入检查策略、人类审阅和显式晋升获得。"
+        )}
+      />
+    </span>
+    <a class="text-link" href="/authority/">
+      <I18nText text={localized("Read boundary", "查看边界")} />
+    </a>
   </section>
 </BaseLayout>

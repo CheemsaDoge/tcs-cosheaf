@@ -1,0 +1,116 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import I18nText from "../../components/I18nText.astro";
+import { localized } from "../../lib/i18n";
+import { ISSUE_WORKBENCH_LABELS } from "../../lib/issueWorkbench";
+import { loadSiteData } from "../../lib/siteData";
+
+const data = await loadSiteData();
+const canWriteIssues = data.runtime.mode === "live-local";
+---
+
+<BaseLayout
+  title={localized("New issue", "新建议题")}
+  eyebrow={localized("Issue Workbench", "议题工作台")}
+>
+  <section class="workbench-shell">
+    <article class="panel workbench-main">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">
+            <I18nText text={localized("Required", "必填")} />
+          </p>
+          <h2>
+            <I18nText text={localized("Describe the work", "描述要跟进的工作")} />
+          </h2>
+        </div>
+        <span class="tag">
+          <I18nText text={localized("Preview first", "先预览")} />
+        </span>
+      </div>
+      {
+        canWriteIssues ? (
+          <form
+            class="workbench-form"
+            data-issue-workbench-form
+            data-action="create"
+            data-mode={data.runtime.mode}
+            data-api-base={data.runtime.api_base}
+            data-output="#issue-create-preview"
+            data-redirect="/issues/"
+          >
+            <fieldset class="form-section">
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.issueId} />
+                <input name="issueId" required placeholder="issue.example" />
+              </label>
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.title} />
+                <input name="title" required />
+              </label>
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.summary} />
+                <textarea name="summary" rows="5"></textarea>
+              </label>
+            </fieldset>
+            <fieldset class="form-section secondary">
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.scope} />
+                <select name="scope">
+                  <option value="private" data-i18n-en="Private" data-i18n-zh="私有">私有</option>
+                  <option value="public" data-i18n-en="Public" data-i18n-zh="公开">公开</option>
+                </select>
+              </label>
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.labels} />
+                <input name="labels" placeholder="web, governance" />
+              </label>
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.authors} />
+                <input name="authors" placeholder="human reviewer" />
+              </label>
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.relatedArtifacts} />
+                <textarea name="relatedArtifacts" rows="3"></textarea>
+              </label>
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.relatedSources} />
+                <textarea name="relatedSources" rows="3"></textarea>
+              </label>
+            </fieldset>
+            <div class="preview-toolbar">
+              <button class="preview-button" type="button" data-preview>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.preview} />
+              </button>
+              <button class="preview-button" type="submit" data-confirm disabled>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.confirm} />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p>
+            <I18nText
+              text={localized(
+                "Create issues in live mode only.",
+                "仅实时模式可以新建议题。"
+              )}
+            />
+          </p>
+        )
+      }
+    </article>
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker"><I18nText text={ISSUE_WORKBENCH_LABELS.previewDiff} /></p>
+      <pre
+        class="json-block preview-output"
+        id="issue-create-preview"
+        data-i18n-en="Preview a change before writing it."
+        data-i18n-zh="写入前先预览变更。"
+      >写入前先预览变更。</pre>
+    </article>
+  </section>
+
+  <script>
+    import "../../lib/issueWorkbenchClient";
+  </script>
+</BaseLayout>

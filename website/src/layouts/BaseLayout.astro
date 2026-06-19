@@ -1,44 +1,69 @@
 ---
 import { ROUTES, loadSiteData } from "../lib/siteData";
-import "../styles/global.css";
+import { asLocalizedText, localized, type LocalizedText } from "../lib/i18n";
+import globalStyles from "../styles/global.css?raw";
 
 interface Props {
-  title: string;
-  eyebrow: string;
+  title: string | LocalizedText;
+  eyebrow: string | LocalizedText;
 }
 
 const { title, eyebrow } = Astro.props;
 const data = await loadSiteData();
 const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/";
 const runtime = data.runtime;
-const runtimeLabel = runtime?.label ?? "Static demo mode / 静态演示模式";
+const titleText = asLocalizedText(title);
+const eyebrowText = asLocalizedText(eyebrow);
+const runtimeLabel = runtime?.label ?? localized("Read-only demo", "只读演示");
 const runtimeDetail = runtime?.fallback
-  ? `Fallback / 回退：${runtime.fallback_reason ?? "backend unavailable"}`
+  ? localized(
+      `Fallback: ${runtime.fallback_reason ?? "backend unavailable"}`,
+      `回退：${runtime.fallback_reason ?? "后端不可用"}`
+    )
   : runtime?.mode === "static-demo"
-    ? "Fixture JSON / 静态 JSON"
-    : runtime?.api_base ?? "http://127.0.0.1:8765";
+    ? localized("Fixture JSON", "静态 JSON")
+    : localized(
+        runtime?.api_base ?? "http://127.0.0.1:8765",
+        runtime?.api_base ?? "http://127.0.0.1:8765"
+      );
+const pageTitleEn = `${titleText.en} | TCS-Cosheaf`;
+const pageTitleZh = `${titleText.zh} | TCS-Cosheaf`;
 ---
 
 <!doctype html>
-<html lang="zh-Hans">
+<html lang="zh-Hans" data-lang="zh">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Cosheaf human governance workbench and static showcase over repository data. / Cosheaf 人类治理工作台和仓库数据静态展示。"
+      content="Cosheaf human governance workbench and static showcase over repository data."
     />
-    <title>{title} | TCS-Cosheaf</title>
+    <style is:inline set:html={globalStyles}></style>
+    <title>{pageTitleZh}</title>
   </head>
-  <body>
-    <a class="skip-link" href="#main-content">Skip to content / 跳到内容</a>
+  <body data-page-title-en={pageTitleEn} data-page-title-zh={pageTitleZh}>
+    <a
+      class="skip-link"
+      href="#main-content"
+      data-i18n-en="Skip to content"
+      data-i18n-zh="跳到内容"
+    >跳到内容</a>
     <div class="app-shell">
-      <aside class="sidebar" aria-label="Primary navigation / 主导航">
+      <aside
+        class="sidebar"
+        aria-label="主导航"
+        data-i18n-aria-label-en="Primary navigation"
+        data-i18n-aria-label-zh="主导航"
+      >
         <a class="brand" href="/">
           <span class="brand-mark" aria-hidden="true">C</span>
           <span>
             <strong>Cosheaf</strong>
-            <small>governance workbench / 治理工作台</small>
+            <small
+              data-i18n-en="Governance workbench"
+              data-i18n-zh="治理工作台"
+            >治理工作台</small>
           </span>
         </a>
         <nav class="nav-list">
@@ -48,29 +73,53 @@ const runtimeDetail = runtime?.fallback
                 href={route.path}
                 class:list={["nav-link", currentPath === route.path && "active"]}
                 aria-current={currentPath === route.path ? "page" : undefined}
+                data-i18n-en={route.label.en}
+                data-i18n-zh={route.label.zh}
               >
-                {route.label}
+                {route.label.zh}
               </a>
             ))
           }
         </nav>
-        <div class="sidebar-status">
-          <span class="status-dot" aria-hidden="true"></span>
-          <span>{runtime?.label_zh ?? "静态演示模式"}</span>
+        <div
+          class="language-switcher"
+          role="group"
+          aria-label="语言"
+          data-i18n-aria-label-en="Language"
+          data-i18n-aria-label-zh="语言"
+        >
+          <button type="button" data-lang-option="zh" aria-pressed="true">
+            中文
+          </button>
+          <button type="button" data-lang-option="en" aria-pressed="false">
+            EN
+          </button>
         </div>
       </aside>
       <main class="content" id="main-content" tabindex="-1">
         <aside
           class:list={["runtime-banner", runtime?.fallback && "warning"]}
-          aria-label="Runtime mode / 运行模式"
+          aria-label="运行模式"
+          data-i18n-aria-label-en="Runtime mode"
+          data-i18n-aria-label-zh="运行模式"
         >
-          <strong>{runtimeLabel}</strong>
-          <span>{runtimeDetail}</span>
+          <strong data-i18n-en={runtimeLabel.en} data-i18n-zh={runtimeLabel.zh}>
+            {runtimeLabel.zh}
+          </strong>
+          <span data-i18n-en={runtimeDetail.en} data-i18n-zh={runtimeDetail.zh}>
+            {runtimeDetail.zh}
+          </span>
         </aside>
         <header class="page-header">
           <div>
-            <p class="eyebrow">{eyebrow}</p>
-            <h1>{title}</h1>
+            <p
+              class="eyebrow"
+              data-i18n-en={eyebrowText.en}
+              data-i18n-zh={eyebrowText.zh}
+            >{eyebrowText.zh}</p>
+            <h1 data-i18n-en={titleText.en} data-i18n-zh={titleText.zh}>
+              {titleText.zh}
+            </h1>
           </div>
           <div class="source-chip">
             <span>schema v{data.site.schema_version}</span>
@@ -80,5 +129,98 @@ const runtimeDetail = runtime?.fallback
         <slot />
       </main>
     </div>
+    <script is:inline>
+      (() => {
+        const storageKey = "cosheaf.language";
+        const languages = new Set(["en", "zh"]);
+
+        const storedLanguage = () => {
+          try {
+            const stored = window.localStorage.getItem(storageKey);
+            return languages.has(stored) ? stored : null;
+          } catch {
+            return null;
+          }
+        };
+
+        const preferredLanguage = () => {
+          const stored = storedLanguage();
+          if (stored) {
+            return stored;
+          }
+          return navigator.language?.toLowerCase().startsWith("zh") ? "zh" : "en";
+        };
+
+        const datasetValue = (element, prefix, language) =>
+          language === "en"
+            ? element.dataset[`${prefix}En`]
+            : element.dataset[`${prefix}Zh`];
+
+        const applyLanguage = (language) => {
+          const lang = languages.has(language) ? language : "zh";
+          document.documentElement.dataset.lang = lang;
+          document.documentElement.lang = lang === "en" ? "en" : "zh-Hans";
+
+          document
+            .querySelectorAll("[data-i18n-en][data-i18n-zh]")
+            .forEach((element) => {
+              const next = datasetValue(element, "i18n", lang);
+              if (typeof next === "string") {
+                element.textContent = next;
+              }
+            });
+
+          document
+            .querySelectorAll(
+              "[data-i18n-placeholder-en][data-i18n-placeholder-zh]"
+            )
+            .forEach((element) => {
+              const next = datasetValue(element, "i18nPlaceholder", lang);
+              if (typeof next === "string") {
+                element.setAttribute("placeholder", next);
+              }
+            });
+
+          document
+            .querySelectorAll(
+              "[data-i18n-aria-label-en][data-i18n-aria-label-zh]"
+            )
+            .forEach((element) => {
+              const next = datasetValue(element, "i18nAriaLabel", lang);
+              if (typeof next === "string") {
+                element.setAttribute("aria-label", next);
+              }
+            });
+
+          const title =
+            lang === "en"
+              ? document.body.dataset.pageTitleEn
+              : document.body.dataset.pageTitleZh;
+          if (title) {
+            document.title = title;
+          }
+
+          document.querySelectorAll("[data-lang-option]").forEach((button) => {
+            const active = button.getAttribute("data-lang-option") === lang;
+            button.classList.toggle("active", active);
+            button.setAttribute("aria-pressed", String(active));
+          });
+
+          try {
+            window.localStorage.setItem(storageKey, lang);
+          } catch {
+            // localStorage may be unavailable in hardened browser contexts.
+          }
+        };
+
+        document.querySelectorAll("[data-lang-option]").forEach((button) => {
+          button.addEventListener("click", () => {
+            applyLanguage(button.getAttribute("data-lang-option"));
+          });
+        });
+
+        applyLanguage(preferredLanguage());
+      })();
+    </script>
   </body>
 </html>

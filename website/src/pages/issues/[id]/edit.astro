@@ -1,0 +1,136 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import I18nText from "../../../components/I18nText.astro";
+import { localized } from "../../../lib/i18n";
+import { ISSUE_WORKBENCH_LABELS } from "../../../lib/issueWorkbench";
+import { issueById, issueHref, loadSiteData } from "../../../lib/siteData";
+
+export async function getStaticPaths() {
+  const data = await loadSiteData();
+  return data.issues.issues.map((issue) => ({
+    params: { id: issue.id }
+  }));
+}
+
+const id = Astro.params.id ?? "";
+let data = await loadSiteData();
+let issue = issueById(id, data);
+if (!issue) {
+  const staticData = await loadSiteData({ env: { mode: "static" } });
+  const staticIssue = issueById(id, staticData);
+  if (staticIssue) {
+    data = staticData;
+    issue = staticIssue;
+  }
+}
+if (!issue) {
+  throw new Error(`Unknown issue: ${id}`);
+}
+const canWriteIssues = data.runtime.mode === "live-local";
+---
+
+<BaseLayout
+  title={localized(`Edit issue: ${issue.id}`, `编辑议题：${issue.id}`)}
+  eyebrow={localized("Issue Workbench", "议题工作台")}
+>
+  <section class="workbench-shell">
+    <article class="panel workbench-main">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker">
+            <I18nText text={localized("Editable fields", "可编辑字段")} />
+          </p>
+          <h2>
+            <I18nText text={localized("Update issue details", "更新议题信息")} />
+          </h2>
+        </div>
+        <span class="tag">
+          <I18nText text={localized("ID locked", "ID 已锁定")} />
+        </span>
+      </div>
+      {
+        canWriteIssues ? (
+          <form
+            class="workbench-form"
+            data-issue-workbench-form
+            data-action="update"
+            data-mode={data.runtime.mode}
+            data-api-base={data.runtime.api_base}
+            data-output="#issue-update-preview"
+            data-redirect={issueHref(issue.id)}
+          >
+            <fieldset class="form-section">
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.issueId} />
+                <input name="issueId" value={issue.id} readonly />
+              </label>
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.title} />
+                <input name="title" value={issue.title} required />
+              </label>
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.summary} />
+                <textarea name="summary" rows="5">{issue.summary}</textarea>
+              </label>
+            </fieldset>
+            <fieldset class="form-section secondary">
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.scope} />
+                <select name="scope">
+                  <option value="private" selected={issue.scope !== "public"} data-i18n-en="Private" data-i18n-zh="私有">私有</option>
+                  <option value="public" selected={issue.scope === "public"} data-i18n-en="Public" data-i18n-zh="公开">公开</option>
+                </select>
+              </label>
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.labels} />
+                <input name="labels" value={issue.labels.join(", ")} />
+              </label>
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.authors} />
+                <input name="authors" value={(issue.authors ?? []).join(", ")} />
+              </label>
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.relatedArtifacts} />
+                <textarea name="relatedArtifacts" rows="3">{issue.related_artifacts.join("\n")}</textarea>
+              </label>
+              <label>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.relatedSources} />
+                <textarea name="relatedSources" rows="3">{issue.related_sources.join("\n")}</textarea>
+              </label>
+            </fieldset>
+            <div class="preview-toolbar">
+              <button class="preview-button" type="button" data-preview>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.preview} />
+              </button>
+              <button class="preview-button" type="submit" data-confirm disabled>
+                <I18nText text={ISSUE_WORKBENCH_LABELS.confirm} />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p>
+            <I18nText
+              text={localized(
+                "Edit issues in live mode only.",
+                "仅实时模式可以编辑议题。"
+              )}
+            />
+          </p>
+        )
+      }
+    </article>
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker"><I18nText text={ISSUE_WORKBENCH_LABELS.previewDiff} /></p>
+      <pre
+        class="json-block preview-output"
+        id="issue-update-preview"
+        data-i18n-en="Preview a change before writing it."
+        data-i18n-zh="写入前先预览变更。"
+      >写入前先预览变更。</pre>
+    </article>
+  </section>
+
+  <script>
+    import "../../../lib/issueWorkbenchClient";
+  </script>
+</BaseLayout>

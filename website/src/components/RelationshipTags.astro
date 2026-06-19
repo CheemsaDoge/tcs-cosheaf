@@ -1,0 +1,119 @@
+---
+import { localized, type LocalizedText } from "../lib/i18n";
+import { relationshipPreview } from "../lib/siteData";
+
+interface RelationshipItem {
+  id: string;
+  href: string;
+  label?: string;
+}
+
+interface Props {
+  items: RelationshipItem[];
+  title: LocalizedText;
+  empty?: LocalizedText;
+}
+
+const { items, title, empty = localized("None", "无") } = Astro.props;
+const preview = relationshipPreview(items);
+const drawerItems = JSON.stringify(items).replace(/</g, "\\u003c");
+---
+
+<div class="related-list relationship-list">
+  {
+    items.length > 0 ? (
+      <>
+        {preview.visible.map((item) => (
+          <a href={item.href}>{item.label ?? item.id}</a>
+        ))}
+        {preview.hiddenCount > 0 && (
+          <button
+            type="button"
+            class="relationship-more"
+            data-relationship-more
+            data-title-en={title.en}
+            data-title-zh={title.zh}
+            data-items={drawerItems}
+          >
+            <span
+              data-i18n-en={`${preview.hiddenCount} more`}
+              data-i18n-zh={`还有 ${preview.hiddenCount} 项`}
+            >还有 {preview.hiddenCount} 项</span>
+          </button>
+        )}
+      </>
+    ) : (
+      <span data-i18n-en={empty.en} data-i18n-zh={empty.zh}>{empty.zh}</span>
+    )
+  }
+</div>
+
+<script is:inline>
+  (() => {
+    if (window.__cosheafRelationshipDrawerReady) {
+      return;
+    }
+    window.__cosheafRelationshipDrawerReady = true;
+
+    const language = () =>
+      document.documentElement.dataset.lang === "en" ? "en" : "zh";
+
+    const drawer = document.createElement("aside");
+    drawer.className = "relationship-drawer";
+    drawer.hidden = true;
+    drawer.setAttribute("aria-hidden", "true");
+    drawer.innerHTML = `
+      <div class="relationship-drawer-scrim" data-relationship-close></div>
+      <section class="relationship-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="relationship-drawer-title">
+        <div class="relationship-drawer-head">
+          <h2 id="relationship-drawer-title"></h2>
+          <button type="button" data-relationship-close aria-label="Close">×</button>
+        </div>
+        <nav class="relationship-drawer-list"></nav>
+      </section>
+    `;
+    document.body.appendChild(drawer);
+
+    const title = drawer.querySelector("#relationship-drawer-title");
+    const list = drawer.querySelector(".relationship-drawer-list");
+    const closeDrawer = () => {
+      drawer.hidden = true;
+      drawer.setAttribute("aria-hidden", "true");
+    };
+    const openDrawer = (button) => {
+      const lang = language();
+      const items = JSON.parse(button.dataset.items || "[]");
+      title.textContent =
+        lang === "en" ? button.dataset.titleEn : button.dataset.titleZh;
+      list.textContent = "";
+      for (const item of items) {
+        const link = document.createElement("a");
+        link.href = item.href;
+        link.textContent = item.label || item.id;
+        const code = document.createElement("code");
+        code.textContent = item.id;
+        link.appendChild(code);
+        list.appendChild(link);
+      }
+      drawer.hidden = false;
+      drawer.setAttribute("aria-hidden", "false");
+      drawer.querySelector("[data-relationship-close]")?.focus();
+    };
+
+    document.addEventListener("click", (event) => {
+      const openButton = event.target.closest?.("[data-relationship-more]");
+      if (openButton) {
+        openDrawer(openButton);
+        return;
+      }
+      if (event.target.closest?.("[data-relationship-close]")) {
+        closeDrawer();
+      }
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeDrawer();
+      }
+    });
+  })();
+</script>

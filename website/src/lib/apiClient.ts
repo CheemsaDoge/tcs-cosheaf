@@ -63,7 +63,7 @@ async function fetchJson(
   const controller =
     typeof AbortController !== "undefined" ? new AbortController() : undefined;
   const timeout = controller
-    ? globalThis.setTimeout(() => controller.abort(), options.timeoutMs ?? 1200)
+    ? globalThis.setTimeout(() => controller.abort(), options.timeoutMs ?? 5000)
     : undefined;
   try {
     const response = await fetcher(new URL(endpoint, options.apiBase), {
@@ -200,6 +200,7 @@ function issueSummary(issue: Record<string, unknown>): IssueSummary {
     scope: text(issue.scope, "private"),
     severity: text(issue.severity, "medium"),
     summary: text(issue.summary, text(issue.description, "")),
+    authors: stringArray(issue.authors),
     labels: stringArray(issue.labels),
     related_artifacts: stringArray(issue.related_artifacts),
     related_sources: stringArray(issue.related_sources),
@@ -262,8 +263,8 @@ function mapGates(
     authority_notice: authorityNotice(payload, fixtureData.gates),
     verdict,
     note: reportPath
-      ? `Live gate report read from ${reportPath}. / 已从 ${reportPath} 读取实时门禁报告。`
-      : "No live gate report exists under .cosheaf/reports. / .cosheaf/reports 下没有实时门禁报告。",
+      ? `Live gate report read from ${reportPath}.`
+      : "No live gate report exists under .cosheaf/reports.",
     gates: arrayValue(report.gates),
     blocking_issues: arrayValue(report.blocking_issues),
     nonblocking_issues: arrayValue(report.nonblocking_issues),

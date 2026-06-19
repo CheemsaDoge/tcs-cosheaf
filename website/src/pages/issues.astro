@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import I18nText from "../components/I18nText.astro";
+import { localized, textFor } from "../lib/i18n";
 import {
   artifactById,
   contextHref,
@@ -7,11 +9,43 @@ import {
   loadSiteData,
   statusExplanation
 } from "../lib/siteData";
+import { ISSUE_WORKBENCH_LABELS } from "../lib/issueWorkbench";
 
 const data = await loadSiteData();
+const canWriteIssues = data.runtime.mode === "live-local";
 ---
 
-<BaseLayout title="Issues / 议题" eyebrow="Repository workflow memory / 仓库工作流记忆">
+<BaseLayout
+  title={localized("Issues", "议题")}
+  eyebrow={localized("Repository workflow memory", "仓库工作流记忆")}
+>
+  <section class="notice-band action-band">
+    <div>
+      <strong><I18nText text={localized("Issue actions", "议题操作")} /></strong>
+      <span>
+        <I18nText
+          text={localized(
+            "Live actions preview first, then write repository issue records through the local backend. They do not create accepted knowledge.",
+            "实时操作先预览，再通过本地后端写入仓库议题记录；它们不会创建 accepted 知识。"
+          )}
+        />
+      </span>
+    </div>
+    <div class="preview-toolbar">
+      {
+        canWriteIssues ? (
+          <a class="button-link" href="/issues/create/">
+            <I18nText text={ISSUE_WORKBENCH_LABELS.createIssue} />
+          </a>
+        ) : (
+          <span class="badge neutral">
+            <I18nText text={localized("Read-only demo", "只读演示")} />
+          </span>
+        )
+      }
+    </div>
+  </section>
+
   <section class="card-grid">
     {
       data.issues.issues.length > 0 ? (
@@ -19,12 +53,16 @@ const data = await loadSiteData();
           <article class="info-card wide">
             <div class="card-heading">
               <h2><a href={issueHref(issue.id)}>{issue.title}</a></h2>
-              <span class="badge warning" title={statusExplanation(issue.status)}>
+              <span class="badge warning" title={textFor(statusExplanation(issue.status))}>
                 {issue.status}
               </span>
             </div>
             <p>{issue.summary.split("\n\n")[0]}</p>
-            <p><a class="text-link" href={contextHref(issue.id)}>View context pack / 查看上下文包</a></p>
+            <p>
+              <a class="text-link" href={contextHref(issue.id)}>
+                <I18nText text={localized("Context pack", "上下文包")} />
+              </a>
+            </p>
             <div class="related-list">
               {issue.related_artifacts.map((id) => {
                 const artifact = artifactById(id, data);
@@ -34,7 +72,14 @@ const data = await loadSiteData();
           </article>
         ))
       ) : (
-        <p class="empty-state">No issue summaries were exported. / 没有导出议题摘要。</p>
+        <p class="empty-state">
+          <I18nText
+            text={localized(
+              "No issue summaries were exported.",
+              "没有导出议题摘要。"
+            )}
+          />
+        </p>
       )
     }
   </section>

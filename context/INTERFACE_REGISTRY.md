@@ -10,7 +10,8 @@
   gatekeeper runs, context build/show, memory cards/search, controlled draft
   artifact writes, controlled source-note writes, controlled review-request
   writes, WorkerBundle validate/submit/reduce, review-request generation from
-  WorkerBundle, repository-local issue preview/create/show/list/close,
+  WorkerBundle, repository-local issue preview/create/show/list/update/close
+  plus update/close previews,
   read-only promotion-readiness reports, forge dry-run previews, confirmed
   local forge git actions, confirmed GitHub issue/PR actions, and read-only
   forge sync status. The facade delegates to existing services, forge services,
@@ -88,6 +89,10 @@
   `/api/context/<issue_id>/latest`, and `/api/audit/recent`, plus preview-only
   `POST /api/forge/local-issues/preview`, `/api/forge/issues/preview`,
   `/api/forge/prs/preview`, and `/api/forge/review-packets/preview`, plus
+  local issue workbench actions `POST /api/issues/preview-create`,
+  `/api/issues/create`, `/api/issues/<issue_id>/preview-update`,
+  `/api/issues/<issue_id>/update`, `/api/issues/<issue_id>/preview-close`, and
+  `/api/issues/<issue_id>/close`, plus
   authenticated create `POST /api/forge/issues/create` and
   `/api/forge/prs/create`. The server calls `cosheaf.app.open_app` and app
   facade methods in-process. Static endpoints generate website export payloads
@@ -95,8 +100,12 @@
   repository YAML records through app services/storage loaders, read existing
   ignored runtime sidecars directly when the requested source is `.cosheaf/` or
   `context/TASKS/`, include `source_of_truth: "repository"` and authority
-  notices, and do not run gates, build context packs, call GitHub, write audit
-  entries, write repository files, or shell out to CLI. Preview endpoints
+  notices, and do not run gates, build context packs, call GitHub, or shell out
+  to CLI. Local issue workbench endpoints preview and confirm repository-local
+  issue create/update/close actions through `cosheaf.app`, write redacted
+  audit entries under `.cosheaf/audit/web-actions.jsonl`, and never change
+  accepted/refuted artifact status, verifier output, gate state, human review,
+  or promotion state. Preview endpoints
   return dry-run preview plans for prospective actions, and the server supports
   localhost CORS preflight. Preview and read endpoints perform no provider
   call, GitHub action, git/gh command, repository write, or CLI subprocess.
@@ -122,11 +131,15 @@
   selection is configured by `PUBLIC_COSHEAF_RUNTIME_MODE` or
   `COSHEAF_RUNTIME_MODE`, and the backend URL by `PUBLIC_COSHEAF_API_BASE` or
   `COSHEAF_API_BASE`, defaulting to `http://127.0.0.1:8765`. The rendered
-  website displays a bilingual runtime banner and bilingual primary navigation.
-  Static builds inline website stylesheets so `website/dist/*.html` keeps the
-  styled UI when opened directly as local files. The frontend client does not
-  call write endpoints, store browser credentials, call GitHub, create human
-  review, change gate/verifier state, accept artifacts, or promote knowledge.
+  website uses a lightweight English/Simplified Chinese language switcher for
+  runtime banner, primary navigation, and workbench controls; repository data is
+  shown as recorded and is not machine-translated. Static builds inline website
+  stylesheets so `website/dist/*.html` keeps the styled UI when opened directly
+  as local files. In live-local mode, the issue workbench frontend may call
+  localhost issue preview/create/update/close endpoints with
+  preview-before-confirm and no browser credentials. The frontend does not call
+  GitHub directly, store browser credentials, create human review, change
+  gate/verifier state, accept artifacts, or promote knowledge.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI
