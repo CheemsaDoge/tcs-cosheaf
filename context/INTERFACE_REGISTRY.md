@@ -104,7 +104,9 @@
   `POST /api/context/<issue_id>/preview-build` and
   `/api/context/<issue_id>/build`, plus review packet workbench actions
   `POST /api/reviews/packets/preview` and
-  `/api/reviews/packets/create`, plus validate/gate workbench actions
+  `/api/reviews/packets/create`, plus human review decision workbench actions
+  `POST /api/reviews/decisions/preview` and
+  `/api/reviews/decisions/create`, plus validate/gate workbench actions
   `POST /api/validate/run` and `POST /api/gate/run`, plus
   authenticated create `POST /api/forge/issues/create` and
   `/api/forge/prs/create`. The server calls `cosheaf.app.open_app` and app
@@ -141,6 +143,13 @@
   `reviews/requests/` through `CosheafApp.write_review_request`, preserving
   artifact review state and refusing to create human-review decisions,
   accepted status, proof, verifier pass, gate pass, or promotion authority.
+  Human review decision workbench endpoints preview and, only after
+  `confirm: true`, write explicit reviewer decisions under
+  `reviews/decisions/`; policy-allowed accepted-private,
+  accepted-public-candidate, and changes-requested decisions may update only
+  the target artifact review state, refuse AI/Codex/agent/provider/model or
+  verifier reviewer identities, and never grant accepted status, proof,
+  verifier pass, gate pass, accepted-artifact writes, or promotion authority.
   Validate/gate workbench endpoints call
   `CosheafApp.validate_repository` and `CosheafApp.run_gate`, write redacted
   audit entries, and expose validation plus gate pass/fail/skipped summaries;
@@ -179,10 +188,11 @@
   as local files. In live-local mode, the issue workbench frontend may call
   localhost issue preview/create/update/close endpoints and context
   preview-build/build endpoints with preview-before-confirm, and may call
-  localhost validate/gate run endpoints from the gate workbench, all with no
-  browser credentials. The frontend does not call
-  GitHub directly, store browser credentials, create human review, change
-  gate/verifier state, accept artifacts, or promote knowledge.
+  localhost validate/gate run endpoints from the gate workbench, and may call
+  localhost review decision preview/create endpoints with explicit human
+  confirmation, all with no browser credentials. The frontend does not call
+  GitHub directly, store browser credentials, accept artifacts, change
+  gate/verifier state, or promote knowledge.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI
@@ -1689,6 +1699,12 @@
   validates a WorkerBundle v2, generates a draft informational review request
   from its failure/counterexample/review-only fields, and writes or previews it
   through `write_review_request`.
+- `cosheaf.services.ReviewDecisionService.write_review_decision(request, *, dry_run=False) -> ReviewDecisionWriteResult`:
+  writes or previews an explicit human review decision under
+  `reviews/decisions/`; accepted-private, accepted-public-candidate, and
+  changes-requested decisions may update only the target artifact review
+  state. It refuses readonly roots, terminal artifacts, accepted paths, and
+  AI/Codex/agent/provider/model or verifier reviewer identities.
 - `cosheaf.services.DraftWriteService.append_failure_log_entry(artifact_id, request, *, dry_run=False) -> ControlledWriteResult`:
   validates and appends one `FailureLogEntry` to a writable non-accepted
   artifact, or previews the append in dry-run mode. It refuses accepted paths,
