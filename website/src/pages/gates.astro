@@ -2,18 +2,70 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import I18nText from "../components/I18nText.astro";
 import { localized } from "../lib/i18n";
-import { gateVerdictExplanation, loadSiteData, statusTone } from "../lib/siteData";
+import {
+  gateVerdictExplanation,
+  loadSiteData,
+  statusTone
+} from "../lib/siteData";
+import { CHECK_RUN_LABELS, summarizeCheckStatuses } from "../lib/gateWorkbench";
 
 const data = await loadSiteData();
-const skippedRows = data.gates.gates.filter((row) =>
-  JSON.stringify(row).toLowerCase().includes("skipped")
-);
+const checkStatuses = summarizeCheckStatuses(data.gates.gates);
+const canRunChecks = data.runtime.mode === "live-local";
 ---
 
 <BaseLayout
   title={localized("Gate Reports", "准入检查报告")}
   eyebrow={localized("Gate summary", "准入检查摘要")}
 >
+  <section class="workbench-shell compact">
+    <article class="panel workbench-main">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker"><I18nText text={CHECK_RUN_LABELS.actions} /></p>
+          <h2><I18nText text={localized("Workspace checks", "工作区检查")} /></h2>
+        </div>
+      </div>
+      {
+        canRunChecks ? (
+          <div class="preview-toolbar">
+            <button
+              class="preview-button"
+              type="button"
+              data-check-run="validate"
+              data-mode={data.runtime.mode}
+              data-api-base={data.runtime.api_base}
+              data-output="#check-run-output"
+            >
+              <I18nText text={CHECK_RUN_LABELS.runValidate} />
+            </button>
+            <button
+              class="preview-button"
+              type="button"
+              data-check-run="gate"
+              data-mode={data.runtime.mode}
+              data-api-base={data.runtime.api_base}
+              data-output="#check-run-output"
+            >
+              <I18nText text={CHECK_RUN_LABELS.runGate} />
+            </button>
+          </div>
+        ) : (
+          <p><I18nText text={localized("Live local mode only.", "仅本地实时模式。")} /></p>
+        )
+      }
+    </article>
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker"><I18nText text={CHECK_RUN_LABELS.result} /></p>
+      <pre
+        class="json-block preview-output"
+        id="check-run-output"
+        data-i18n-en="Run output appears here."
+        data-i18n-zh="运行结果会显示在这里。"
+      ></pre>
+    </article>
+  </section>
+
   <section class="split-layout">
     <article class="panel">
       <p class="section-kicker"><I18nText text={localized("Verdict", "结论")} /></p>
@@ -27,10 +79,10 @@ const skippedRows = data.gates.gates.filter((row) =>
     </article>
     <article class="panel">
       <p class="section-kicker"><I18nText text={localized("Blocking state", "阻断状态")} /></p>
-      <h2
-        data-i18n-en={`${data.gates.blocking_issues.length} blocking issues`}
-        data-i18n-zh={`${data.gates.blocking_issues.length} 个阻断问题`}
-      >{data.gates.blocking_issues.length} 个阻断问题</h2>
+      <h2>
+        {data.gates.blocking_issues.length}{" "}
+        <I18nText text={localized("blocking issues", "个阻断问题")} />
+      </h2>
       <p>
         <I18nText
           text={localized(
@@ -44,14 +96,19 @@ const skippedRows = data.gates.gates.filter((row) =>
 
   <section class="metric-grid">
     <article class="metric-card">
-      <span><I18nText text={localized("Gate rows", "准入检查行")} /></span>
-      <strong>{data.gates.gates.length}</strong>
-      <small><I18nText text={localized("Exported summaries", "已导出摘要")} /></small>
+      <span><I18nText text={CHECK_RUN_LABELS.pass} /></span>
+      <strong>{checkStatuses.pass}</strong>
+      <small><I18nText text={localized("Passed checks", "通过的检查")} /></small>
     </article>
     <article class="metric-card">
-      <span><I18nText text={localized("Skipped", "已跳过")} /></span>
-      <strong>{skippedRows.length}</strong>
-      <small><I18nText text={localized("Not pass", "不是通过")} /></small>
+      <span><I18nText text={CHECK_RUN_LABELS.fail} /></span>
+      <strong>{checkStatuses.fail}</strong>
+      <small><I18nText text={localized("Failed checks", "失败的检查")} /></small>
+    </article>
+    <article class="metric-card">
+      <span><I18nText text={CHECK_RUN_LABELS.skipped} /></span>
+      <strong>{checkStatuses.skipped}</strong>
+      <small><I18nText text={localized("Skipped checks", "跳过的检查")} /></small>
     </article>
     <article class="metric-card">
       <span><I18nText text={localized("Warnings", "警告")} /></span>
@@ -108,4 +165,7 @@ const skippedRows = data.gates.gates.filter((row) =>
       }
     </article>
   </section>
+  <script>
+    import "../lib/gateWorkbenchClient";
+  </script>
 </BaseLayout>

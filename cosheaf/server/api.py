@@ -42,6 +42,10 @@ CONTEXT_AUTHORITY_NOTICE = (
     "Context packs are retrieval context only; they are not proof, verifier "
     "pass, gate pass, human review, accepted status, or promotion authority."
 )
+CHECK_AUTHORITY_NOTICE = (
+    "Validation and gate output are workflow context only; skipped is not pass, "
+    "and gate pass is not accepted status or promotion authority."
+)
 _EXPORT_ENDPOINTS = {
     "/api/workspace": "workspace.json",
     "/api/artifacts": "artifacts.json",
@@ -60,6 +64,10 @@ _CREATE_ENDPOINTS = {
     "/api/forge/issues/create",
     "/api/forge/prs/create",
     "/api/issues/create",
+}
+_RUN_ENDPOINTS = {
+    "/api/validate/run",
+    "/api/gate/run",
 }
 _ISSUE_ACTION_SUFFIXES = {
     "preview-update",
@@ -159,6 +167,7 @@ class ReadOnlySiteApi:
         if (
             path not in _PREVIEW_ENDPOINTS
             and path not in _CREATE_ENDPOINTS
+            and path not in _RUN_ENDPOINTS
             and issue_action is None
             and context_action is None
         ):
@@ -192,6 +201,10 @@ class ReadOnlySiteApi:
                     return self._preview_context_build(issue_id, payload)
                 if action == "build":
                     return self._build_context(issue_id, payload)
+            if path == "/api/validate/run":
+                return self._run_validate()
+            if path == "/api/gate/run":
+                return self._run_gate()
             if path == "/api/forge/local-issues/preview":
                 return self._preview_local_issue(payload)
             if path == "/api/forge/issues/preview":
@@ -801,6 +814,71 @@ class ReadOnlySiteApi:
             },
         )
 
+    def _run_validate(self) -> ApiResponse:
+        validation = self.app.validate_repository()
+        self._write_audit(
+            action="validate_run",
+            result_status="success",
+            explicit_confirm=True,
+            preview_only=False,
+            result={"action_performed": True},
+            authority_warnings=[CHECK_AUTHORITY_NOTICE],
+        )
+        return ApiResponse(
+            200,
+            {
+                "schema_version": READONLY_SERVER_SCHEMA_VERSION,
+                "kind": "validate_run",
+                "action_performed": True,
+                "repo_writes_performed": False,
+                "git_writes_performed": False,
+                "github_writes_performed": False,
+                "network_calls_performed": False,
+                "audit_logged": True,
+                "validation": _validation_payload(validation),
+                "accepted_status_changed": False,
+                "authority_warning": CHECK_AUTHORITY_NOTICE,
+                "authority_notice": CHECK_AUTHORITY_NOTICE,
+            },
+        )
+
+    def _run_gate(self) -> ApiResponse:
+        result = self.app.run_gate()
+        report = result.report.to_dict()
+        planned_files = [
+            _repo_relative_or_string(self.app.context.repo_root, result.json_path),
+            _repo_relative_or_string(self.app.context.repo_root, result.markdown_path),
+        ]
+        self._write_audit(
+            action="gate_run",
+            result_status="success",
+            explicit_confirm=True,
+            preview_only=False,
+            planned_files=planned_files,
+            repo_writes_performed=True,
+            result={"action_performed": True},
+            authority_warnings=[CHECK_AUTHORITY_NOTICE],
+        )
+        return ApiResponse(
+            200,
+            {
+                "schema_version": READONLY_SERVER_SCHEMA_VERSION,
+                "kind": "gate_run",
+                "action_performed": True,
+                "repo_writes_performed": True,
+                "git_writes_performed": False,
+                "github_writes_performed": False,
+                "network_calls_performed": False,
+                "audit_logged": True,
+                "planned_files": planned_files,
+                "written_files": planned_files,
+                "gate": _gate_run_payload(report, planned_files),
+                "accepted_status_changed": False,
+                "authority_warning": CHECK_AUTHORITY_NOTICE,
+                "authority_notice": CHECK_AUTHORITY_NOTICE,
+            },
+        )
+
     def _create_github_issue(self, payload: dict[str, Any]) -> ApiResponse:
         action = "github_issue_create"
         source_path = _required_text(payload, "source_path")
@@ -1363,6 +1441,8 @@ def _web_action_kind(action: str) -> WebActionKind:
         "github_pr_create": WebActionKind.FORGE_PR_CREATE,
         "review_packet_preview": WebActionKind.REVIEW_PACKET_CREATE,
         "context_build": WebActionKind.CONTEXT_BUILD,
+        "validate_run": WebActionKind.VALIDATE_RUN,
+        "gate_run": WebActionKind.GATE_RUN,
     }
     try:
         return mapping[action]
@@ -1425,6 +1505,32 @@ def _validation_payload(report: Any) -> dict[str, Any]:
             for failure in report.failures
         ],
     }
+
+
+def _gate_run_payload(
+    report: dict[str, Any],
+    report_paths: list[str],
+) -> dict[str, Any]:
+    raw_summary = report.get("summary")
+    summary: dict[Any, Any] = raw_summary if isinstance(raw_summary, dict) else {}
+    return {
+        "verdict": report.get("verdict", "not_run"),
+        "report": report,
+        "report_paths": report_paths,
+        "gates": report.get("gates", []),
+        "blocking_issues": report.get("blocking_issues", []),
+        "nonblocking_issues": report.get("nonblocking_issues", []),
+        "pass_count": _summary_count(summary, "gates_passed"),
+        "fail_count": _summary_count(summary, "gates_failed"),
+        "skipped_count": _summary_count(summary, "gates_skipped"),
+        "skipped_is_pass": False,
+        "gate_pass_is_accepted_authority": False,
+    }
+
+
+def _summary_count(summary: dict[Any, Any], key: str) -> int:
+    value = summary.get(key, 0)
+    return value if isinstance(value, int) else 0
 
 
 def _artifact_payload(record: LoadedRecord) -> dict[str, Any]:

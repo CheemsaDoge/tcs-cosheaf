@@ -14,6 +14,8 @@ are loopback-only and non-mutating. Confirmed local issue actions are
 loopback-only local repository writes and require `confirm: true`.
 Confirmed context-build actions are loopback-only runtime writes under
 `context/TASKS/` and require `confirm: true`.
+Validate and gate run actions are loopback-only check actions; gate runs may
+write ignored runtime reports under `.cosheaf/reports/`.
 Authenticated GitHub create endpoints exist for backend integrations that
 instantiate `ReadOnlySiteApi` with a server-side `ForgeCredentialProvider`;
 the default CLI server does not configure one, so confirmed GitHub create
@@ -39,6 +41,8 @@ YAML after explicit confirmation, through `cosheaf.app`, with audit logging.
 The context workbench slice may build deterministic issue context packs under
 `context/TASKS/` after explicit confirmation, through `cosheaf.app`, with
 audit logging.
+The validate/gate workbench slice may run repository validation and gatekeeper
+checks through `cosheaf.app`, with audit logging and no accepted-state changes.
 
 Static read-only payloads are generated through the existing website export
 path into a temporary directory outside the repository, then returned as JSON.
@@ -108,6 +112,8 @@ GET /api/gates/latest
 GET /api/context/<issue_id>
 GET /api/context/<issue_id>/latest
 GET /api/audit/recent
+POST /api/validate/run
+POST /api/gate/run
 POST /api/forge/local-issues/preview
 POST /api/issues/preview-create
 POST /api/issues/create
@@ -206,6 +212,28 @@ and append a redacted web-action audit record under
 
 Context packs are retrieval guidance only. They do not create proof, verifier
 pass, gate pass, human review, accepted status, or promotion authority.
+
+## Validate And Gate Workbench Actions
+
+The B2.4.2 validate/gate endpoints are:
+
+```text
+POST /api/validate/run
+POST /api/gate/run
+GET /api/gates/latest
+```
+
+`POST /api/validate/run` calls `CosheafApp.validate_repository`, returns the
+validation summary, writes a redacted audit entry, and does not write
+repository files or accepted-state records.
+
+`POST /api/gate/run` calls `CosheafApp.run_gate`, writes the normal ignored
+gate reports under `.cosheaf/reports/`, returns pass/fail/skipped counts plus
+blocking and nonblocking issues, and writes a redacted audit entry.
+
+Validate and gate output are workflow context only. Skipped is not pass, and
+gate pass does not create proof, human review, accepted status, or promotion
+authority.
 
 ## Target Workbench Action Classes
 
