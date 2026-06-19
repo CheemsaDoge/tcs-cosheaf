@@ -54,6 +54,11 @@ ARTIFACT_WRITE_AUTHORITY_NOTICE = (
     "attach source/evidence metadata only. They do not create proof, accepted "
     "knowledge, human review, verifier pass, gate pass, or promotion authority."
 )
+REVIEW_PACKET_AUTHORITY_NOTICE = (
+    "Review packets are informational context for human reviewers. They do not "
+    "create proof, mark human review complete, pass gates, set accepted status, "
+    "or grant promotion authority."
+)
 _EXPORT_ENDPOINTS = {
     "/api/workspace": "workspace.json",
     "/api/artifacts": "artifacts.json",
@@ -67,12 +72,14 @@ _PREVIEW_ENDPOINTS = {
     "/api/forge/prs/preview",
     "/api/forge/review-packets/preview",
     "/api/issues/preview-create",
+    "/api/reviews/packets/preview",
 }
 _CREATE_ENDPOINTS = {
     "/api/forge/issues/create",
     "/api/forge/prs/create",
     "/api/issues/create",
     "/api/artifacts/create",
+    "/api/reviews/packets/create",
 }
 _RUN_ENDPOINTS = {
     "/api/validate/run",
@@ -246,6 +253,10 @@ class ReadOnlySiteApi:
                 return self._run_validate()
             if path == "/api/gate/run":
                 return self._run_gate()
+            if path == "/api/reviews/packets/preview":
+                return self._preview_review_packet(payload)
+            if path == "/api/reviews/packets/create":
+                return self._create_review_packet(payload)
             if path == "/api/forge/local-issues/preview":
                 return self._preview_local_issue(payload)
             if path == "/api/forge/issues/preview":
@@ -253,7 +264,7 @@ class ReadOnlySiteApi:
             if path == "/api/forge/prs/preview":
                 return self._preview_github_pr(payload)
             if path == "/api/forge/review-packets/preview":
-                return self._preview_review_packet(payload)
+                return self._preview_forge_review_packet(payload)
             if path == "/api/forge/issues/create":
                 return self._create_github_issue(payload)
             if path == "/api/forge/prs/create":
@@ -543,7 +554,7 @@ class ReadOnlySiteApi:
             github_pr_plan=result_payload.get("github_pr_plan"),
         )
 
-    def _preview_review_packet(self, payload: dict[str, Any]) -> ApiResponse:
+    def _preview_forge_review_packet(self, payload: dict[str, Any]) -> ApiResponse:
         issue_id = _required_text(payload, "issue_id")
         issue = self.app.show_issue(issue_id).issue
         planned_file = f"reviews/website/{issue_id}-review-packet.md"
@@ -568,6 +579,86 @@ class ReadOnlySiteApi:
                     "context pack",
                     "authority-boundary checklist",
                 ],
+            },
+        )
+
+    def _preview_review_packet(self, payload: dict[str, Any]) -> ApiResponse:
+        try:
+            packet = _build_review_packet(self, payload)
+            result = self.app.write_review_request(packet["request"], dry_run=True)
+        except (DraftWriteServiceError, LocalIssueError, LoadError, ValueError) as exc:
+            return _error(400, "review_packet_failed", str(exc))
+        planned_file = result.relative_path.as_posix()
+        self._write_audit(
+            action="review_packet_create",
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=[planned_file],
+            authority_warnings=[REVIEW_PACKET_AUTHORITY_NOTICE],
+        )
+        return _preview_response(
+            "review_packet_preview",
+            planned_actions=["create draft informational review packet preview"],
+            planned_files=[planned_file],
+            review_packet=packet["packet"],
+            review_request=packet["request"],
+            path=planned_file,
+            authority_warning=REVIEW_PACKET_AUTHORITY_NOTICE,
+            authority_notice=REVIEW_PACKET_AUTHORITY_NOTICE,
+        )
+
+    def _create_review_packet(self, payload: dict[str, Any]) -> ApiResponse:
+        action = "review_packet_create"
+        blocked = self._blocked_confirm(
+            action,
+            payload,
+            authority_warnings=[REVIEW_PACKET_AUTHORITY_NOTICE],
+        )
+        if blocked is not None:
+            return blocked
+        try:
+            packet = _build_review_packet(self, payload)
+            result = self.app.write_review_request(packet["request"], dry_run=False)
+        except (DraftWriteServiceError, LocalIssueError, LoadError, ValueError) as exc:
+            self._write_audit(
+                action=action,
+                result_status="review_packet_failed",
+                explicit_confirm=True,
+                preview_only=False,
+                authority_warnings=[REVIEW_PACKET_AUTHORITY_NOTICE],
+            )
+            return _error(400, "review_packet_failed", str(exc))
+        planned_file = result.relative_path.as_posix()
+        self._write_audit(
+            action=action,
+            result_status="success",
+            explicit_confirm=True,
+            preview_only=False,
+            planned_files=[planned_file],
+            repo_writes_performed=True,
+            result={"action_performed": True},
+            authority_warnings=[REVIEW_PACKET_AUTHORITY_NOTICE],
+        )
+        return ApiResponse(
+            200,
+            {
+                "schema_version": READONLY_SERVER_SCHEMA_VERSION,
+                "kind": "review_packet_create",
+                "action_performed": True,
+                "repo_writes_performed": True,
+                "git_writes_performed": False,
+                "github_writes_performed": False,
+                "network_calls_performed": False,
+                "audit_logged": True,
+                "planned_files": [planned_file],
+                "written_files": [path.as_posix() for path in result.written_paths],
+                "path": planned_file,
+                "review_id": result.record_id,
+                "review_packet": packet["packet"],
+                "review_request": packet["request"],
+                "authority_warning": REVIEW_PACKET_AUTHORITY_NOTICE,
+                "authority_notice": REVIEW_PACKET_AUTHORITY_NOTICE,
             },
         )
 
@@ -1777,6 +1868,166 @@ def _artifact_write_args(
     return args
 
 
+def _build_review_packet(
+    api: ReadOnlySiteApi,
+    payload: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    issue_id = _required_text(payload, "issue_id")
+    issue = api.app.show_issue(issue_id).issue
+    artifact_id = _optional_text(payload, "artifact_id")
+    artifacts = _review_packet_artifacts(api, issue.related_artifacts, artifact_id)
+    target = artifact_id or issue_id
+    sections = _review_packet_sections(api, artifacts)
+    review_id = _review_packet_id(issue_id, artifact_id)
+    authority_checklist = sections["authority_checklist"]
+    findings = [
+        f"Gate state: {sections['gate_state']}",
+        *[
+            f"Reviewer question: {question}"
+            for question in sections["reviewer_questions"]
+        ],
+        *[f"Authority: {item}" for item in authority_checklist],
+    ]
+    request = {
+        "review_id": review_id,
+        "title": f"Review packet: {issue.title}",
+        "status": "draft",
+        "authors": [],
+        "target": target,
+        "summary": f"Review packet for {issue.id}: {issue.summary}",
+        "findings": findings,
+        "decision": "informational",
+    }
+    packet = {
+        "review_id": review_id,
+        "title": request["title"],
+        "target": target,
+        "issue_id": issue.id,
+        "artifact_ids": [artifact.id for artifact in artifacts],
+        "summary": request["summary"],
+        "findings": findings,
+        "decision": "informational",
+        "status": "draft",
+        "sections": sections,
+        "authority_notice": REVIEW_PACKET_AUTHORITY_NOTICE,
+    }
+    return {"request": request, "packet": packet}
+
+
+def _review_packet_id(issue_id: str, artifact_id: str | None) -> str:
+    timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S%f")
+    parts = ["review", "packet", *issue_id.split(".")]
+    if artifact_id:
+        parts.extend(artifact_id.split("."))
+    parts.append(timestamp)
+    return ".".join(parts)
+
+
+def _review_packet_artifacts(
+    api: ReadOnlySiteApi,
+    related_artifact_ids: list[str],
+    artifact_id: str | None,
+) -> list[BaseArtifact]:
+    requested_ids = [artifact_id] if artifact_id else related_artifact_ids
+    records = tuple(load_artifacts(api.app.context))
+    by_id = {
+        record.id: record.record
+        for record in records
+        if isinstance(record.record, BaseArtifact)
+    }
+    artifacts: list[BaseArtifact] = []
+    for requested_id in requested_ids:
+        if not requested_id:
+            continue
+        artifact = by_id.get(requested_id)
+        if artifact is None and artifact_id:
+            raise ValueError(f"review packet artifact not found: {requested_id}")
+        if artifact is not None:
+            artifacts.append(artifact)
+    return artifacts
+
+
+def _review_packet_sections(
+    api: ReadOnlySiteApi,
+    artifacts: list[BaseArtifact],
+) -> dict[str, Any]:
+    focus = artifacts[0] if len(artifacts) == 1 else None
+    dependencies = sorted(
+        {
+            dependency
+            for artifact in artifacts
+            for dependency in artifact.depends_on
+        }
+    )
+    return {
+        "artifact_statement": focus.statement if focus else "",
+        "dependencies": dependencies,
+        "sources": [
+            _source_label(artifact, source)
+            for artifact in artifacts
+            for source in artifact.sources
+        ],
+        "evidence": [
+            _evidence_label(artifact, evidence)
+            for artifact in artifacts
+            for evidence in artifact.evidence
+        ],
+        "known_failures": [
+            _failure_label(artifact, failure)
+            for artifact in artifacts
+            for failure in artifact.failure_log
+        ],
+        "gate_state": _latest_gate_state(api),
+        "reviewer_questions": [
+            "Have dependencies been checked against accepted/draft boundaries?",
+            "Are sources sufficient for the intended review scope?",
+            "Does evidence support review discussion without claiming verifier pass?",
+        ],
+        "authority_checklist": [
+            "This packet is not human review.",
+            "This packet is not proof.",
+            "This packet is not gate pass or verifier pass.",
+            "This packet does not grant accepted status or promotion authority.",
+        ],
+    }
+
+
+def _source_label(artifact: BaseArtifact, source: Any) -> str:
+    details = [source.kind]
+    if source.year is not None:
+        details.append(str(source.year))
+    if source.theorem_number:
+        details.append(source.theorem_number)
+    if source.page:
+        details.append(f"p. {source.page}")
+    suffix = f" ({', '.join(details)})" if details else ""
+    title = source.title or "Untitled source"
+    return f"{artifact.id}: {title}{suffix}"
+
+
+def _evidence_label(artifact: BaseArtifact, evidence: Any) -> str:
+    return f"{artifact.id}: {evidence.kind} {evidence.path} - {evidence.summary}"
+
+
+def _failure_label(artifact: BaseArtifact, failure: Any) -> str:
+    return (
+        f"{artifact.id}: {failure.summary} - {failure.failed_because} "
+        f"({failure.status})"
+    )
+
+
+def _latest_gate_state(api: ReadOnlySiteApi) -> str:
+    reports_dir = api.app.context.resolve(Path(".cosheaf") / "reports")
+    candidates = sorted(reports_dir.glob("*-gate-report.json"))
+    if not candidates:
+        return "not_run"
+    report = _read_json_file(candidates[-1])
+    if not isinstance(report, dict):
+        return "unreadable"
+    verdict = report.get("verdict")
+    return str(verdict) if verdict is not None else "unknown"
+
+
 def _context_role(payload: dict[str, Any]) -> str:
     return _optional_text(payload, "role") or "orchestrator"
 
@@ -1921,6 +2172,7 @@ def _web_action_kind(action: str) -> WebActionKind:
         "artifact_update": WebActionKind.ARTIFACT_UPDATE,
         "source_attach": WebActionKind.SOURCE_ATTACH,
         "evidence_attach": WebActionKind.EVIDENCE_ATTACH,
+        "review_packet_create": WebActionKind.REVIEW_PACKET_CREATE,
         "github_issue_preview": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_issue_create": WebActionKind.ISSUE_PUBLISH_GITHUB,
         "github_pr_preview": WebActionKind.FORGE_PR_CREATE,

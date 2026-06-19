@@ -102,7 +102,9 @@
   `/api/artifacts/<artifact_id>/preview-evidence`, and
   `/api/artifacts/<artifact_id>/evidence`, plus context build workbench actions
   `POST /api/context/<issue_id>/preview-build` and
-  `/api/context/<issue_id>/build`, plus validate/gate workbench actions
+  `/api/context/<issue_id>/build`, plus review packet workbench actions
+  `POST /api/reviews/packets/preview` and
+  `/api/reviews/packets/create`, plus validate/gate workbench actions
   `POST /api/validate/run` and `POST /api/gate/run`, plus
   authenticated create `POST /api/forge/issues/create` and
   `/api/forge/prs/create`. The server calls `cosheaf.app.open_app` and app
@@ -134,7 +136,12 @@
   `CosheafApp.build_context` to write ignored runtime context-pack files with
   redacted audit entries. Context packs are retrieval guidance only and do not
   grant proof, verifier pass, gate pass, human review, accepted status, or
-  promotion authority. Validate/gate workbench endpoints call
+  promotion authority. Review packet workbench endpoints preview and, only
+  after `confirm: true`, write draft informational review-request records under
+  `reviews/requests/` through `CosheafApp.write_review_request`, preserving
+  artifact review state and refusing to create human-review decisions,
+  accepted status, proof, verifier pass, gate pass, or promotion authority.
+  Validate/gate workbench endpoints call
   `CosheafApp.validate_repository` and `CosheafApp.run_gate`, write redacted
   audit entries, and expose validation plus gate pass/fail/skipped summaries;
   gate runs may write ignored `.cosheaf/reports/` runtime reports but never
@@ -1442,7 +1449,8 @@
   human-review, and promotion work without performing it.
 - `cosheaf.web_actions.WebActionKind` and `WebActionMode`: public enums for
   allowed action names and static/local/hosted modes. Artifact metadata append
-  audit actions distinguish `source.attach` from `evidence.attach`.
+  audit actions distinguish `source.attach` from `evidence.attach`; review
+  packet preview/create audits use `review.packet_create`.
 - `schemas/web_action.schema.json`: JSON Schema bundle for the public
   WebAction DTOs.
 - `cosheaf.web_actions.WEB_ACTION_AUDIT_PATH`: repository-relative runtime
