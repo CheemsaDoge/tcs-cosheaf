@@ -350,6 +350,7 @@ class WebActionAuditEntry(AgentAccessModel):
     credential_provider: str | None = None
     result_status: str | None = None
     authority_warnings: list[str] = Field(default_factory=list)
+    operator_notes: str | None = None
     error_code: str | None = None
     errors: list[WebActionError] = Field(default_factory=list)
 
@@ -375,6 +376,7 @@ class WebActionAuditEntry(AgentAccessModel):
         "gate_summary",
         "credential_provider",
         "result_status",
+        "operator_notes",
         "error_code",
     )
     @classmethod

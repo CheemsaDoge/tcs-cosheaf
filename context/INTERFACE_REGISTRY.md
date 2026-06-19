@@ -41,6 +41,8 @@
   `schemas/web_action.schema.json`. The package also exposes
   `WEB_ACTION_AUDIT_PATH` and `append_web_action_audit` for redacted
   append-only runtime audit JSONL at `.cosheaf/audit/web-actions.jsonl`.
+  Audit entries may include optional `operator_notes` for human-entered
+  Workbench confirmation notes such as promotion justification.
   These DTOs and helpers define stable request/result, plan, error, and audit
   shapes for Workbench endpoints; they do not add endpoint execution,
   repository writes, Git writes, GitHub writes, human-review creation,
@@ -171,8 +173,11 @@
   review state, dependencies, source metadata, and verifier evidence, report
   skipped verifier output as skipped rather than pass, may write ignored gate
   reports under `.cosheaf/reports/`, audit previews as `promotion.preview`,
-  and never change artifact status, write accepted/refuted/obsolete artifacts,
-  mutate verifier evidence, or grant promotion authority.
+  and require confirmed promotion requests to include non-empty
+  `promotion_justification`, which is recorded in the `promotion.confirm`
+  audit entry as `operator_notes`. Readiness and preview never change artifact
+  status, write accepted/refuted/obsolete artifacts, mutate verifier evidence,
+  or grant promotion authority.
   Validate/gate workbench endpoints call
   `CosheafApp.validate_repository` and `CosheafApp.run_gate`, write redacted
   audit entries, and expose validation plus gate pass/fail/skipped summaries;
@@ -1487,8 +1492,8 @@
   repo root, optional branch/base/head metadata, preview/confirm/performed
   flags, repository/git/GitHub/network side-effect flags, planned and written
   files, validation/gate summaries, GitHub URLs, credential provider label,
-  result status, authority warnings, error code, and structured errors. This
-  DTO does not perform repository writes by itself.
+  result status, authority warnings, optional operator notes, error code, and
+  structured errors. This DTO does not perform repository writes by itself.
 - `cosheaf.web_actions.WebActionError`: public web-action error DTO with code,
   message, remediation, blocking flag, optional related path/artifact, and
   string details.

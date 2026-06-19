@@ -399,14 +399,17 @@ allows the selected target. It writes no lifecycle YAML, does not run `git` or
 `gh`, and audits as `promotion.preview`.
 
 Promotion confirm requests require `confirm: true`, a non-empty human `actor`,
-the same `target_state`, and an exact `typed_confirmation` phrase:
-`PROMOTE TO ACCEPTED`, `MARK REFUTED`, or `MARK OBSOLETE`. The server
-recomputes validation, gate, review, dependency, source-metadata, readonly-root,
-and path/status policy checks before writing. Successful confirm writes the
-deterministic lifecycle YAML, moves the source file to the target lifecycle
-path, returns `written_files`, and audits as `promotion.confirm` with the
-human actor. AI/Codex/provider/agent/model/verifier identities are refused as
-promotion actors.
+the same `target_state`, an exact `typed_confirmation` phrase:
+`PROMOTE TO ACCEPTED`, `MARK REFUTED`, or `MARK OBSOLETE`, and a non-empty
+`promotion_justification`. The server rejects missing justification before any
+lifecycle write, then recomputes validation, gate, review, dependency,
+source-metadata, readonly-root, and path/status policy checks before writing.
+Successful confirm writes the deterministic lifecycle YAML, moves the source
+file to the target lifecycle path, returns `written_files` and
+`promotion_justification_recorded: true`, and audits as `promotion.confirm`
+with the human actor and justification stored as `operator_notes`. The
+justification is not written into artifact YAML. AI/Codex/provider/agent/model/
+verifier identities are refused as promotion actors.
 
 Promotion readiness and preview output are advisory workflow context. Confirmed
 promotion is a repository write through `cosheaf.app` and service-layer policy;

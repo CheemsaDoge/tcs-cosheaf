@@ -1,0 +1,17 @@
+---
+import I18nText from "./I18nText.astro";
+import { localized, type LocalizedText } from "../lib/i18n";
+
+interface Props {
+  title?: LocalizedText;
+  diff?: string;
+  id?: string;
+}
+
+const { title = localized("Diff", "差异"), diff = "", id } = Astro.props;
+---
+
+<section class="diff-viewer">
+  <p class="section-kicker"><I18nText text={title} /></p>
+  <pre class="json-block preview-output" id={id} data-diff-viewer>{diff || "preview required"}</pre>
+</section>

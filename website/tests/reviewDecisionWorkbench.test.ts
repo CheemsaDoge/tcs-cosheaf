@@ -4,7 +4,8 @@ import {
   HUMAN_REVIEW_DECISION_OPTIONS,
   REVIEW_DECISION_ENDPOINTS,
   REVIEW_DECISION_LABELS,
-  buildReviewDecisionPayload
+  buildReviewDecisionPayload,
+  canConfirmReviewDecision
 } from "../src/lib/reviewDecisionWorkbench";
 
 describe("review decision workbench helpers", () => {
@@ -66,6 +67,41 @@ describe("review decision workbench helpers", () => {
       explicit_human_confirmation: true,
       confirm: true
     });
+  });
+
+  it("blocks confirmed review writes without preview, notes, or human confirmation", () => {
+    expect(
+      canConfirmReviewDecision({
+        previewLoaded: true,
+        reviewer: "Ada Reviewer",
+        reviewNotes: "Checked by hand.",
+        explicitHumanConfirmation: true
+      })
+    ).toBe(true);
+    expect(
+      canConfirmReviewDecision({
+        previewLoaded: false,
+        reviewer: "Ada Reviewer",
+        reviewNotes: "Checked by hand.",
+        explicitHumanConfirmation: true
+      })
+    ).toBe(false);
+    expect(
+      canConfirmReviewDecision({
+        previewLoaded: true,
+        reviewer: "Ada Reviewer",
+        reviewNotes: " ",
+        explicitHumanConfirmation: true
+      })
+    ).toBe(false);
+    expect(
+      canConfirmReviewDecision({
+        previewLoaded: true,
+        reviewer: "Ada Reviewer",
+        reviewNotes: "Checked by hand.",
+        explicitHumanConfirmation: false
+      })
+    ).toBe(false);
   });
 
   it("keeps labels switchable and rejects AI-as-reviewer wording", () => {

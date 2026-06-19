@@ -1,0 +1,25 @@
+---
+import I18nText from "./I18nText.astro";
+import type { LocalizedText } from "../lib/i18n";
+
+interface ChecklistItem {
+  name: string;
+  label: LocalizedText;
+  required?: boolean;
+}
+
+interface Props {
+  items: ChecklistItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<fieldset class="review-checklist">
+  {items.map((item) => (
+    <label class="checkbox-label">
+      <input name={item.name} type="checkbox" required={item.required} />
+      <I18nText text={item.label} />
+    </label>
+  ))}
+</fieldset>

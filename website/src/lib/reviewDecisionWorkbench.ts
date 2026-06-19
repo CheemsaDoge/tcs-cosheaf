@@ -101,6 +101,13 @@ export interface ReviewDecisionPayload {
   confirm?: true;
 }
 
+export interface ReviewDecisionConfirmState {
+  previewLoaded: boolean;
+  reviewer: string;
+  reviewNotes: string;
+  explicitHumanConfirmation: boolean;
+}
+
 export function buildReviewDecisionPayload(
   input: ReviewDecisionFormInput,
   options: { confirm?: true } = {}
@@ -122,4 +129,15 @@ export function buildReviewDecisionPayload(
     payload.confirm = true;
   }
   return payload;
+}
+
+export function canConfirmReviewDecision(
+  input: ReviewDecisionConfirmState
+): boolean {
+  return (
+    input.previewLoaded &&
+    Boolean(input.reviewer.trim()) &&
+    Boolean(input.reviewNotes.trim()) &&
+    input.explicitHumanConfirmation
+  );
 }

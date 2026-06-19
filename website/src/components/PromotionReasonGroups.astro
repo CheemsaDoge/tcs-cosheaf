@@ -1,0 +1,30 @@
+---
+import I18nText from "./I18nText.astro";
+import type { LocalizedText } from "../lib/i18n";
+
+interface ReasonGroup {
+  label: LocalizedText;
+  items: Array<string | LocalizedText>;
+}
+
+interface Props {
+  groups: ReasonGroup[];
+}
+
+const { groups } = Astro.props;
+---
+
+<div class="promotion-groups">
+  {groups.map((group) => (
+    <details class="workbench-details" open>
+      <summary><I18nText text={group.label} /></summary>
+      <ul class="reason-list">
+        {group.items.map((item) => (
+          <li>
+            {typeof item === "string" ? item : <I18nText text={item} />}
+          </li>
+        ))}
+      </ul>
+    </details>
+  ))}
+</div>

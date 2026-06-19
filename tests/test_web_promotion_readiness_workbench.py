@@ -308,6 +308,7 @@ def test_web_promotion_confirm_requires_typed_confirmation_then_promotes(
                 "target_state": "accepted",
                 "actor": "Ada Reviewer",
                 "typed_confirmation": "MARK REFUTED",
+                "promotion_justification": "Reviewed by hand before promotion.",
                 "confirm": True,
             }
         ),
@@ -325,6 +326,7 @@ def test_web_promotion_confirm_requires_typed_confirmation_then_promotes(
                 "target_state": "accepted",
                 "actor": "Ada Reviewer",
                 "typed_confirmation": "PROMOTE TO ACCEPTED",
+                "promotion_justification": "Reviewed by hand before promotion.",
                 "confirm": True,
             }
         ),
@@ -343,10 +345,47 @@ def test_web_promotion_confirm_requires_typed_confirmation_then_promotes(
     entries = _audit_entries(tmp_path)
     assert entries[-1]["action"] == "promotion.confirm"
     assert entries[-1]["actor"] == "Ada Reviewer"
+    assert entries[-1]["operator_notes"] == "Reviewed by hand before promotion."
     assert entries[-1]["repo_writes_performed"] is True
     assert "kb/accepted/claims/claim.fixture.web-promote.yaml" in entries[-1][
         "written_files"
     ]
+
+
+def test_web_promotion_confirm_requires_justification(
+    tmp_path: Path,
+) -> None:
+    source = _write_yaml(
+        tmp_path,
+        "kb/draft/claims/claim.fixture.web-promote-notes.yaml",
+        _artifact_data("claim.fixture.web-promote-notes"),
+    )
+    api = ReadOnlySiteApi(open_app(tmp_path))
+
+    response = api.handle(
+        "POST",
+        "/api/artifacts/claim.fixture.web-promote-notes/promotion/confirm",
+        json.dumps(
+            {
+                "target_state": "accepted",
+                "actor": "Ada Reviewer",
+                "typed_confirmation": "PROMOTE TO ACCEPTED",
+                "promotion_justification": " ",
+                "confirm": True,
+            }
+        ),
+    )
+
+    assert response.status == 400
+    assert response.payload["code"] == "promotion_justification_required"
+    assert source.is_file()
+    assert not (
+        tmp_path
+        / "kb"
+        / "accepted"
+        / "claims"
+        / "claim.fixture.web-promote-notes.yaml"
+    ).exists()
 
 
 def test_web_promotion_confirm_blocks_missing_review(
@@ -367,6 +406,7 @@ def test_web_promotion_confirm_blocks_missing_review(
                 "target_state": "accepted",
                 "actor": "Ada Reviewer",
                 "typed_confirmation": "PROMOTE TO ACCEPTED",
+                "promotion_justification": "Reviewed by hand before promotion.",
                 "confirm": True,
             }
         ),
@@ -399,6 +439,7 @@ def test_web_promotion_confirm_moves_refuted_through_lifecycle(
                 "target_state": "refuted",
                 "actor": "Ada Reviewer",
                 "typed_confirmation": "MARK REFUTED",
+                "promotion_justification": "Reviewed by hand before refutation.",
                 "confirm": True,
             }
         ),
@@ -431,6 +472,7 @@ def test_web_promotion_confirm_refuses_ai_actor(
                 "target_state": "accepted",
                 "actor": "Codex reviewer",
                 "typed_confirmation": "PROMOTE TO ACCEPTED",
+                "promotion_justification": "Reviewed by hand before promotion.",
                 "confirm": True,
             }
         ),
