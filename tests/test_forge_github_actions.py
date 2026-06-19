@@ -265,6 +265,143 @@ def test_forge_pr_create_calls_gh_without_push_or_token_storage(
     assert not any("token" in path.name.lower() for path in tmp_path.rglob("*"))
 
 
+def test_forge_pr_submit_requires_confirm(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    def fail_subprocess_run(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("unconfirmed PR submit must not run git or gh")
+
+    monkeypatch.setattr(subprocess, "run", fail_subprocess_run)
+
+    result = runner.invoke(
+        app,
+        [
+            "forge",
+            "pr",
+            "submit",
+            "--base",
+            "main",
+            "--head",
+            "feature",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1, result.output
+    payload = json.loads(result.output)
+    assert payload["code"] == "forge_confirm_required"
+
+
+def test_forge_pr_submit_refuses_protected_head(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    def fail_subprocess_run(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("protected PR submit must not run git or gh")
+
+    monkeypatch.setattr(subprocess, "run", fail_subprocess_run)
+
+    result = runner.invoke(
+        app,
+        [
+            "forge",
+            "pr",
+            "submit",
+            "--base",
+            "main",
+            "--head",
+            "main",
+            "--confirm",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1, result.output
+    payload = json.loads(result.output)
+    assert payload["code"] == "forge_protected_branch"
+
+
+def test_forge_pr_submit_validates_gates_pushes_and_creates_draft_pr(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    calls: list[list[str]] = []
+
+    def fake_subprocess_run(
+        args: list[str],
+        **_kwargs: object,
+    ) -> subprocess.CompletedProcess[str]:
+        calls.append(args)
+        if args[:2] == ["git", "push"]:
+            stdout = ""
+        elif args[:3] == ["gh", "pr", "create"]:
+            stdout = "https://github.com/CheemsaDoge/tcs-cosheaf/pull/1003\n"
+        else:
+            raise AssertionError(f"unexpected subprocess call: {args}")
+        return subprocess.CompletedProcess(
+            args=args,
+            returncode=0,
+            stdout=stdout,
+            stderr="",
+        )
+
+    monkeypatch.setattr(subprocess, "run", fake_subprocess_run)
+
+    result = runner.invoke(
+        app,
+        [
+            "forge",
+            "pr",
+            "submit",
+            "--base",
+            "main",
+            "--head",
+            "feature",
+            "--draft",
+            "--confirm",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["action"] == "github_pr_submit"
+    assert payload["action_performed"] is True
+    assert payload["validation_performed"] is True
+    assert payload["gate_performed"] is True
+    assert payload["git_writes_performed"] is True
+    assert payload["network_calls_performed"] is True
+    assert payload["github_writes_performed"] is True
+    assert payload["push_performed"] is True
+    assert payload["github_pr_created"] is True
+    assert payload["github_pr_url"].endswith("/pull/1003")
+    assert calls == [
+        ["git", "push", "-u", "origin", "feature"],
+        [
+            "gh",
+            "pr",
+            "create",
+            "--base",
+            "main",
+            "--head",
+            "feature",
+            "--title",
+            "Merge feature into main",
+            "--body",
+            "Forge-created PR for feature into main.",
+            "--draft",
+        ],
+    ]
+    assert not any("token" in path.name.lower() for path in tmp_path.rglob("*"))
+
+
 def test_forge_sync_is_read_only(tmp_path: Path, monkeypatch: Any) -> None:
     def fail_subprocess_run(*_args: object, **_kwargs: object) -> None:
         raise AssertionError("forge sync must not call gh in A4.3")

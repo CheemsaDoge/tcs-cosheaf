@@ -129,7 +129,7 @@ class ForgeActionResult(AgentAccessModel):
     network_calls_performed: bool = False
     git_writes_performed: bool = False
     github_writes_performed: bool = False
-    push_performed: Literal[False] = False
+    push_performed: bool = False
     github_issue_created: bool = False
     github_pr_created: bool = False
     branch: str | None = None

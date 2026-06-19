@@ -1,0 +1,143 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import I18nText from "../../components/I18nText.astro";
+import { localized } from "../../lib/i18n";
+import { FORGE_PR_FLOW_LABELS } from "../../lib/forgeWorkbench";
+import { loadSiteData } from "../../lib/siteData";
+
+const data = await loadSiteData();
+const canSubmitPr = data.runtime.mode === "live-local";
+---
+
+<BaseLayout
+  title={FORGE_PR_FLOW_LABELS.title}
+  eyebrow={FORGE_PR_FLOW_LABELS.workflow}
+>
+  <section class="workbench-shell">
+    <article class="panel workbench-main">
+      <div class="workflow-rail">
+        <span><I18nText text={FORGE_PR_FLOW_LABELS.branch} /></span>
+        <span><I18nText text={FORGE_PR_FLOW_LABELS.commit} /></span>
+        <span><I18nText text={FORGE_PR_FLOW_LABELS.push} /></span>
+        <span><I18nText text={FORGE_PR_FLOW_LABELS.pr} /></span>
+      </div>
+      {
+        canSubmitPr ? (
+          <form
+            class="workbench-form"
+            data-forge-pr-flow
+            data-mode={data.runtime.mode}
+            data-api-base={data.runtime.api_base}
+            data-output="#forge-pr-flow-output"
+            data-pr-url="#forge-pr-url"
+          >
+            <fieldset class="form-section">
+              <label>
+                <I18nText text={FORGE_PR_FLOW_LABELS.branchName} />
+                <input name="branch" required placeholder="feature.web-pr" />
+              </label>
+              <div class="root-list">
+                <label class="graph-checkbox-inline">
+                  <input name="branchMode" type="radio" value="create" checked />
+                  <I18nText text={FORGE_PR_FLOW_LABELS.createBranch} />
+                </label>
+                <label class="graph-checkbox-inline">
+                  <input name="branchMode" type="radio" value="existing" />
+                  <I18nText text={FORGE_PR_FLOW_LABELS.useExistingBranch} />
+                </label>
+              </div>
+              <div class="preview-toolbar">
+                <button class="preview-button" type="button" data-forge-action="branch-preview">
+                  <I18nText text={FORGE_PR_FLOW_LABELS.preview} />
+                </button>
+                <button class="preview-button" type="button" data-forge-action="branch-create">
+                  <I18nText text={FORGE_PR_FLOW_LABELS.createBranch} />
+                </button>
+              </div>
+            </fieldset>
+
+            <fieldset class="form-section secondary">
+              <label>
+                <I18nText text={FORGE_PR_FLOW_LABELS.manualStage} />
+                <input readonly value="git add" />
+              </label>
+              <label>
+                <I18nText text={FORGE_PR_FLOW_LABELS.commitMessage} />
+                <input name="message" required placeholder="Add Forge PR flow" />
+              </label>
+              <div class="preview-toolbar">
+                <button class="preview-button" type="button" data-forge-action="commit-preview">
+                  <I18nText text={FORGE_PR_FLOW_LABELS.preview} />
+                </button>
+                <button class="preview-button" type="button" data-forge-action="commit-create">
+                  <I18nText text={FORGE_PR_FLOW_LABELS.commit} />
+                </button>
+              </div>
+            </fieldset>
+
+            <fieldset class="form-section secondary">
+              <label>
+                <I18nText text={FORGE_PR_FLOW_LABELS.head} />
+                <input name="head" required placeholder="feature.web-pr" />
+              </label>
+              <label class="graph-checkbox-inline">
+                <input name="confirmPush" type="checkbox" />
+                <I18nText text={FORGE_PR_FLOW_LABELS.confirmPush} />
+              </label>
+              <div class="preview-toolbar">
+                <button class="preview-button" type="button" data-forge-action="push-preview">
+                  <I18nText text={FORGE_PR_FLOW_LABELS.preview} />
+                </button>
+                <button class="preview-button" type="button" data-forge-action="push-create">
+                  <I18nText text={FORGE_PR_FLOW_LABELS.push} />
+                </button>
+              </div>
+            </fieldset>
+
+            <fieldset class="form-section secondary">
+              <label>
+                <I18nText text={FORGE_PR_FLOW_LABELS.base} />
+                <input name="base" required value="main" />
+              </label>
+              <label class="graph-checkbox-inline">
+                <input name="draft" type="checkbox" checked />
+                <I18nText text={FORGE_PR_FLOW_LABELS.draft} />
+              </label>
+              <label class="graph-checkbox-inline">
+                <input name="confirmPr" type="checkbox" />
+                <I18nText text={FORGE_PR_FLOW_LABELS.confirmPr} />
+              </label>
+              <div class="preview-toolbar">
+                <button class="preview-button" type="button" data-forge-action="pr-preview">
+                  <I18nText text={FORGE_PR_FLOW_LABELS.preview} />
+                </button>
+                <button class="preview-button danger" type="button" data-forge-action="pr-create">
+                  <I18nText text={FORGE_PR_FLOW_LABELS.pr} />
+                </button>
+              </div>
+            </fieldset>
+          </form>
+        ) : (
+          <p><I18nText text={localized("Live local mode only.", "仅本地实时模式。")} /></p>
+        )
+      }
+    </article>
+
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker"><I18nText text={FORGE_PR_FLOW_LABELS.result} /></p>
+      <a class="button-link" id="forge-pr-url" href="#" hidden>
+        <I18nText text={FORGE_PR_FLOW_LABELS.prUrl} />
+      </a>
+      <pre
+        class="json-block preview-output"
+        id="forge-pr-flow-output"
+        data-i18n-en="Result appears here."
+        data-i18n-zh="结果会显示在这里。"
+      ></pre>
+    </article>
+  </section>
+
+  <script>
+    import "../../lib/forgeWorkbenchClient";
+  </script>
+</BaseLayout>

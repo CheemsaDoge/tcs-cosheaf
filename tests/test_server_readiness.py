@@ -144,6 +144,12 @@ def test_server_readiness_doc_lists_future_server_functions() -> None:
         "CosheafApp.forge_status",
         "CosheafApp.forge_issue_preview",
         "CosheafApp.forge_pr_preview",
+        "CosheafApp.forge_branch_create",
+        "CosheafApp.forge_commit",
+        "CosheafApp.forge_push",
+        "CosheafApp.forge_github_issue_create",
+        "CosheafApp.forge_github_pr_create",
+        "CosheafApp.forge_github_pr_submit",
         "ErrorResult",
     ]
 

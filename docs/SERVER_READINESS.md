@@ -26,8 +26,12 @@ facade directly:
 - `CosheafApp.forge_status`
 - `CosheafApp.forge_issue_preview`
 - `CosheafApp.forge_pr_preview`
+- `CosheafApp.forge_branch_create`
+- `CosheafApp.forge_commit`
+- `CosheafApp.forge_push`
 - `CosheafApp.forge_github_issue_create`
 - `CosheafApp.forge_github_pr_create`
+- `CosheafApp.forge_github_pr_submit`
 
 Server-facing error responses should serialize `ErrorResult` instead of
 returning raw Python exceptions or terminal-only CLI text.
@@ -43,14 +47,17 @@ Forge and website previews are read-only planning output. They do not call
 `git`, `gh`, the network, create GitHub issues, create GitHub PRs, push, store
 credentials, or change accepted/promotion state.
 
-Authenticated website create endpoints are limited to GitHub issue and PR
-creation. They require a backend `ForgeCredentialProvider` and explicit
-`confirm: true`, then call the app facade/forge service in-process. They write
-redacted runtime audit records through
+Authenticated website create endpoints cover GitHub issue creation, legacy PR
+creation, and B2.8.1 PR submit. They require a backend
+`ForgeCredentialProvider` and explicit `confirm: true`, then call the app
+facade/forge service in-process. PR submit runs validation/gate, pushes the
+non-protected head branch, and creates the PR. Local branch/commit/push forge
+endpoints require explicit confirmation but not a GitHub credential provider.
+They write redacted runtime audit records through
 `cosheaf.web_actions.append_web_action_audit` under ignored
 `.cosheaf/audit/web-actions.jsonl` and return only redacted action flags and
 URLs. They do not create accepted knowledge, human review, verifier pass, gate
-pass, promotion authority, branch pushes, or token storage.
+pass, promotion authority, or token storage.
 
 Local issue creation through `CosheafApp.create_issue` writes only
 repository-local issue YAML under `issues/open/`. It does not create a GitHub

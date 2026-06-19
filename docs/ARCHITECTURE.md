@@ -105,13 +105,17 @@ local branch. `forge commit` requires `--confirm`, refuses unstaged or
 untracked ambiguity, requires staged changes, runs repository validation and
 gatekeeper in-process, and then creates one local commit. Local git actions do
 not push, create pull requests, call GitHub, read tokens, or store credentials.
+`forge push` is a separate confirmed action that refuses `main`/`master` and
+pushes one branch through `git push -u origin <branch>`.
 
 GitHub actions are narrower than general `gh` access. `forge issue create`
 requires `--confirm`, calls `gh issue create`, and when possible records the
 returned GitHub issue URL in the local issue record's `external_links` without
 closing the local issue. `forge pr create` requires `--confirm` and calls
 `gh pr create`; it does not push the branch or create accepted-artifact
-authority. GitHub credentials remain outside the repository through the user's
+authority. `forge pr submit` runs validation and gatekeeper, pushes the
+non-protected head branch, then calls `gh pr create`. GitHub credentials remain
+outside the repository through the user's
 authenticated `gh` state or token environment variables supported by `gh`;
 Forge does not read token values or persist credentials. `forge sync` is
 read-only in A4.3 and performs no subprocess, network, or repository mutation.

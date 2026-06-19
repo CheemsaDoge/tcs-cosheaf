@@ -3,6 +3,35 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.8.1 Forge push and PR submit flow - 2026-06-20
+
+Issue #568 adds the Forge branch-to-PR submit path on branch
+`web-forge-pr-submit-flow`.
+
+The current surface includes:
+
+- `cosheaf forge push --branch <branch> --confirm --json`;
+- `cosheaf forge pr submit --base main --head <branch> --draft --confirm --json`;
+- `CosheafApp.forge_push`;
+- `CosheafApp.forge_github_pr_submit`;
+- `POST /api/forge/branch/preview` and `/api/forge/branch/create`;
+- `POST /api/forge/commit/preview` and `/api/forge/commit/create`;
+- `POST /api/forge/push/preview` and `/api/forge/push/create`;
+- `POST /api/forge/pr/preview` and `/api/forge/pr/create`; and
+- website route `/forge/submit/`.
+
+`forge push` and `forge pr submit` refuse `main`/`master` heads and require
+explicit confirmation. PR submit runs repository validation and gatekeeper
+before pushing the branch and creating the GitHub PR through `gh pr create`.
+The web PR page keeps staging manual outside the browser, sends confirm flags
+only for confirmed push/PR actions, and renders the returned PR URL when
+created.
+
+This task does not add browser-side GitHub token storage, direct main writes,
+accepted knowledge, human review, verifier pass, gate-pass authority,
+promotion authority, hosted checkout caching, webhook handling, or automatic
+artifact status changes.
+
 ## Longplan B2.7.2 web promotion actions - 2026-06-20
 
 Issue #566 adds live-local artifact promotion actions on branch

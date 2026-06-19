@@ -195,6 +195,57 @@ def forge_pr_create(
     )
 
 
+@forge_pr_app.command("submit")
+def forge_pr_submit(
+    base: str = typer.Option(
+        ...,
+        "--base",
+        help="Base branch for the GitHub PR.",
+    ),
+    head: str = typer.Option(
+        ...,
+        "--head",
+        help="Head branch to push and submit.",
+    ),
+    draft: bool = typer.Option(
+        False,
+        "--draft",
+        help="Create the GitHub PR as a draft.",
+    ),
+    confirm: bool = typer.Option(
+        False,
+        "--confirm",
+        help="Confirm validation, gate, push, and GitHub PR write.",
+    ),
+    remote: str = typer.Option(
+        "origin",
+        "--remote",
+        help="Git remote to push to.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Validate, gate, push a branch, and create a GitHub PR."""
+    _emit_action_or_exit(
+        lambda: ForgeService(RepoContext(repo_root)).github_pr_submit(
+            base=base,
+            head=head,
+            draft=draft,
+            confirm=confirm,
+            remote=remote,
+        ),
+        json_output=json_output,
+    )
+
+
 @forge_branch_app.command("create")
 def forge_branch_create(
     branch: str = typer.Argument(..., help="Branch name to create and switch to."),
@@ -247,6 +298,46 @@ def forge_commit(
     _emit_action_or_exit(
         lambda: ForgeService(RepoContext(repo_root)).commit(
             message=message,
+            confirm=confirm,
+        ),
+        json_output=json_output,
+    )
+
+
+@forge_app.command("push")
+def forge_push(
+    branch: str | None = typer.Option(
+        None,
+        "--branch",
+        "--head",
+        help="Branch to push. Defaults to the current branch.",
+    ),
+    remote: str = typer.Option(
+        "origin",
+        "--remote",
+        help="Git remote to push to.",
+    ),
+    confirm: bool = typer.Option(
+        False,
+        "--confirm",
+        help="Confirm the git push.",
+    ),
+    repo_root: Path = typer.Option(
+        Path("."),
+        "--repo-root",
+        help="Repository root.",
+    ),
+    json_output: bool = typer.Option(
+        False,
+        "--json",
+        help="Emit deterministic JSON instead of text output.",
+    ),
+) -> None:
+    """Push a non-protected branch with explicit confirmation."""
+    _emit_action_or_exit(
+        lambda: ForgeService(RepoContext(repo_root)).push(
+            branch=branch,
+            remote=remote,
             confirm=confirm,
         ),
         json_output=json_output,

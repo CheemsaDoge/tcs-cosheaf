@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import subprocess
 from pathlib import Path
+from typing import Any
 
 from typer.testing import CliRunner
 
@@ -110,6 +111,29 @@ def test_forge_branch_create_refuses_dirty_state(tmp_path: Path) -> None:
     assert _git(tmp_path, "branch", "--show-current") == "main"
 
 
+def test_forge_branch_create_refuses_protected_branch(tmp_path: Path) -> None:
+    _init_repo(tmp_path)
+
+    result = runner.invoke(
+        app,
+        [
+            "forge",
+            "branch",
+            "create",
+            "master",
+            "--confirm",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1, result.output
+    payload = json.loads(result.output)
+    assert payload["code"] == "forge_protected_branch"
+    assert _git(tmp_path, "branch", "--show-current") == "main"
+
+
 def test_forge_commit_requires_confirm(tmp_path: Path) -> None:
     _init_repo(tmp_path)
     (tmp_path / "README.md").write_text("changed\n", encoding="utf-8")
@@ -193,3 +217,99 @@ def test_forge_commit_refuses_untracked_ambiguity(tmp_path: Path) -> None:
     assert payload["code"] == "forge_dirty_state"
     assert "untracked" in payload["message"]
     assert _git(tmp_path, "log", "-1", "--pretty=%s") == "Initial commit"
+
+
+def test_forge_push_requires_confirm(tmp_path: Path, monkeypatch: Any) -> None:
+    def fail_subprocess_run(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("unconfirmed forge push must not run git")
+
+    monkeypatch.setattr(subprocess, "run", fail_subprocess_run)
+
+    result = runner.invoke(
+        app,
+        [
+            "forge",
+            "push",
+            "--branch",
+            "feature.local",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1, result.output
+    payload = json.loads(result.output)
+    assert payload["code"] == "forge_confirm_required"
+
+
+def test_forge_push_refuses_protected_branch(tmp_path: Path, monkeypatch: Any) -> None:
+    def fail_subprocess_run(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("protected forge push must not run git")
+
+    monkeypatch.setattr(subprocess, "run", fail_subprocess_run)
+
+    result = runner.invoke(
+        app,
+        [
+            "forge",
+            "push",
+            "--branch",
+            "main",
+            "--confirm",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1, result.output
+    payload = json.loads(result.output)
+    assert payload["code"] == "forge_protected_branch"
+
+
+def test_forge_push_calls_git_push_without_github_api(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    calls: list[list[str]] = []
+
+    def fake_subprocess_run(
+        args: list[str],
+        **_kwargs: object,
+    ) -> subprocess.CompletedProcess[str]:
+        calls.append(args)
+        return subprocess.CompletedProcess(
+            args=args,
+            returncode=0,
+            stdout="",
+            stderr="",
+        )
+
+    monkeypatch.setattr(subprocess, "run", fake_subprocess_run)
+
+    result = runner.invoke(
+        app,
+        [
+            "forge",
+            "push",
+            "--branch",
+            "feature.local",
+            "--confirm",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["action"] == "push"
+    assert payload["action_performed"] is True
+    assert payload["git_writes_performed"] is True
+    assert payload["network_calls_performed"] is True
+    assert payload["github_writes_performed"] is False
+    assert payload["push_performed"] is True
+    assert payload["branch"] == "feature.local"
+    assert payload["head"] == "feature.local"
+    assert calls == [["git", "push", "-u", "origin", "feature.local"]]

@@ -264,6 +264,20 @@ class CosheafApp:
         """Run validation/gate and create one local git commit."""
         return ForgeService(self.context).commit(message=message, confirm=confirm)
 
+    def forge_push(
+        self,
+        *,
+        branch: str | None = None,
+        remote: str = "origin",
+        confirm: bool,
+    ) -> ForgeActionResult:
+        """Push a non-protected branch with explicit confirmation."""
+        return ForgeService(self.context).push(
+            branch=branch,
+            remote=remote,
+            confirm=confirm,
+        )
+
     def forge_github_issue_create(
         self,
         source_path: str | Path,
@@ -289,6 +303,24 @@ class CosheafApp:
             base=base,
             head=head,
             draft=draft,
+            confirm=confirm,
+        )
+
+    def forge_github_pr_submit(
+        self,
+        *,
+        base: str,
+        head: str,
+        draft: bool = False,
+        remote: str = "origin",
+        confirm: bool,
+    ) -> ForgeActionResult:
+        """Validate, gate, push a branch, and create a GitHub PR."""
+        return ForgeService(self.context).github_pr_submit(
+            base=base,
+            head=head,
+            draft=draft,
+            remote=remote,
             confirm=confirm,
         )
 

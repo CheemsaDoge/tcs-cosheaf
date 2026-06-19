@@ -144,6 +144,14 @@ POST /api/artifacts/<artifact_id>/promotion/preview
 POST /api/artifacts/<artifact_id>/promotion/confirm
 POST /api/forge/issues/preview
 POST /api/forge/issues/create
+POST /api/forge/branch/preview
+POST /api/forge/branch/create
+POST /api/forge/commit/preview
+POST /api/forge/commit/create
+POST /api/forge/push/preview
+POST /api/forge/push/create
+POST /api/forge/pr/preview
+POST /api/forge/pr/create
 POST /api/forge/prs/preview
 POST /api/forge/prs/create
 POST /api/forge/review-packets/preview
@@ -444,15 +452,16 @@ mode must route writes through branches and PRs, not direct main writes.
 ## Authenticated Create Actions
 
 The backend-only design is recorded in
-[ADR 0038](ADR/0038-website-backend-auth-actions.md). The implemented W5.2
-create endpoints are limited to:
+[ADR 0038](ADR/0038-website-backend-auth-actions.md). The GitHub create
+endpoints are:
 
 ```text
 POST /api/forge/issues/create
+POST /api/forge/pr/create
 POST /api/forge/prs/create
 ```
 
-Both endpoints require a server-side `ForgeCredentialProvider` with GitHub
+These endpoints require a server-side `ForgeCredentialProvider` with GitHub
 credentials available and a request body containing `confirm: true`. Missing
 auth returns `401 auth_required`; missing explicit confirmation returns
 `400 confirm_required`. The frontend never receives GitHub tokens and must not
@@ -461,13 +470,21 @@ call GitHub APIs directly.
 Confirmed issue creation calls `CosheafApp.forge_github_issue_create`, which
 uses the shared forge service and updates the source issue record's
 `external_links` as the CLI forge path does. Confirmed PR creation calls
-`CosheafApp.forge_github_pr_create`. Both routes return redacted action flags
-and URLs only. Success, auth/confirm refusal, and forge failures are logged to
-ignored runtime JSONL at `.cosheaf/audit/web-actions.jsonl`.
+`CosheafApp.forge_github_pr_create` on the compatibility `/prs/create` route.
+The B2.8.1 `/api/forge/pr/create` route calls
+`CosheafApp.forge_github_pr_submit`: it runs validation and gatekeeper,
+pushes the non-protected head branch, creates a draft PR by default, and
+returns the redacted PR URL. Success, auth/confirm refusal, and forge failures
+are logged to ignored runtime JSONL at `.cosheaf/audit/web-actions.jsonl`.
+
+The local Forge endpoints `branch/create`, `commit/create`, and `push/create`
+require `confirm: true` but do not require a GitHub credential provider.
+Branch creation and push refuse `main`/`master`; commit requires already staged
+changes and runs validation/gate before committing.
 
 These endpoints do not create accepted knowledge, human review, verifier pass,
-gate pass, promotion authority, token storage, branch pushes, production
-hosting, checkout caching, or webhook handling.
+gate pass, promotion authority, token storage, production hosting, checkout
+caching, or webhook handling.
 
 ## Authority Rules
 

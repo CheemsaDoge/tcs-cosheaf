@@ -14,8 +14,10 @@ cosheaf forge issue preview --from issues/open/<issue-id>.yaml --json
 cosheaf forge issue create --from issues/open/<issue-id>.yaml --confirm --json
 cosheaf forge pr preview --base main --head <branch> --json
 cosheaf forge pr create --base main --head <branch> --draft --confirm --json
+cosheaf forge pr submit --base main --head <branch> --draft --confirm --json
 cosheaf forge branch create <branch> --confirm --json
 cosheaf forge commit --message <message> --confirm --json
+cosheaf forge push --branch <branch> --confirm --json
 cosheaf forge sync --json
 ```
 
@@ -43,7 +45,7 @@ a token.
 ## Confirmed Local Git Actions
 
 `forge branch create <branch> --confirm` creates and switches to a local branch.
-It refuses dirty working trees before changing refs.
+It refuses `main`/`master` targets and dirty working trees before changing refs.
 
 `forge commit --message <message> --confirm` commits already staged changes
 only. It refuses untracked files, unstaged changes, and empty staged state to
@@ -59,8 +61,13 @@ Local git actions report:
 - `push_performed: false`
 - `github_pr_created: false`
 
-These commands never push, create a pull request, call GitHub, read tokens, or
-store credentials.
+These branch and commit commands never push, create a pull request, call GitHub,
+read tokens, or store credentials.
+
+`forge push --branch <branch> --confirm` pushes one non-protected branch with
+`git push -u origin <branch>`. Without `--branch`, it uses the current branch.
+It refuses `main`/`master`, requires explicit confirmation, reports
+`push_performed: true`, and does not call the GitHub API or store credentials.
 
 ## Confirmed GitHub Actions
 
@@ -76,6 +83,14 @@ GitHub pull request through `gh pr create`. It does not push the branch and does
 not close or accept any local issue or artifact. Because Cosheaf has no local PR
 record, PR linking is limited to the returned URL in the action result.
 
+`forge pr submit --base <base> --head <head> --draft --confirm` is the
+reviewable branch-to-PR flow. It refuses `main`/`master` heads, runs repository
+validation and gatekeeper in-process, stops on failure, pushes the head branch
+with `git push -u origin <head>`, then creates the GitHub PR through
+`gh pr create`. The result reports `validation_performed: true`,
+`gate_performed: true`, `push_performed: true`, `github_pr_created: true`, and
+the returned `github_pr_url`.
+
 GitHub actions use credentials outside the repository, such as the user's
 authenticated `gh` state or token environment variables supported by `gh`.
 Forge does not read token values, write token files, or persist credentials in
@@ -88,8 +103,8 @@ GitHub action results report:
 - `network_calls_performed: true`
 - `github_writes_performed: true`
 - `github_issue_created` or `github_pr_created`
-- `git_writes_performed: false`
-- `push_performed: false`
+- `git_writes_performed` when a branch push was performed
+- `push_performed` when a branch push was performed
 - `local_issue_closed: false`
 
 `forge sync --json` is read-only in A4.3. It returns a typed action result
