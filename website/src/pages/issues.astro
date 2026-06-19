@@ -14,24 +14,28 @@ const data = await loadSiteData();
 <BaseLayout title="Issues" eyebrow="Repository workflow memory">
   <section class="card-grid">
     {
-      data.issues.issues.map((issue) => (
-        <article class="info-card wide">
-          <div class="card-heading">
-            <h2><a href={issueHref(issue.id)}>{issue.title}</a></h2>
-            <span class="badge warning" title={statusExplanation(issue.status)}>
-              {issue.status}
-            </span>
-          </div>
-          <p>{issue.summary.split("\n\n")[0]}</p>
-          <p><a class="text-link" href={contextHref(issue.id)}>View context pack</a></p>
-          <div class="related-list">
-            {issue.related_artifacts.map((id) => {
-              const artifact = artifactById(id);
-              return <span>{artifact ? artifact.title : id}</span>;
-            })}
-          </div>
-        </article>
-      ))
+      data.issues.issues.length > 0 ? (
+        data.issues.issues.map((issue) => (
+          <article class="info-card wide">
+            <div class="card-heading">
+              <h2><a href={issueHref(issue.id)}>{issue.title}</a></h2>
+              <span class="badge warning" title={statusExplanation(issue.status)}>
+                {issue.status}
+              </span>
+            </div>
+            <p>{issue.summary.split("\n\n")[0]}</p>
+            <p><a class="text-link" href={contextHref(issue.id)}>View context pack</a></p>
+            <div class="related-list">
+              {issue.related_artifacts.map((id) => {
+                const artifact = artifactById(id);
+                return <span>{artifact ? artifact.title : id}</span>;
+              })}
+            </div>
+          </article>
+        ))
+      ) : (
+        <p class="empty-state">No issue summaries were exported.</p>
+      )
     }
   </section>
 </BaseLayout>

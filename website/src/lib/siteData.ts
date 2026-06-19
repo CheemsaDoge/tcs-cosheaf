@@ -122,6 +122,8 @@ export interface GraphEdge {
   target_id: string;
 }
 
+export type GraphLayoutMode = "empty" | "pair" | "list";
+
 export interface SitePayload extends SiteExportPayload {
   demo: boolean;
   public_only: boolean;
@@ -291,6 +293,23 @@ export function dependentsFor(id: string, edges: GraphEdge[]): string[] {
   return uniqueSorted(
     edges.filter((edge) => edge.target_id === id).map((edge) => edge.source_id)
   );
+}
+
+export function graphLayoutMode(nodeCount: number): GraphLayoutMode {
+  if (nodeCount === 0) {
+    return "empty";
+  }
+  if (nodeCount === 2) {
+    return "pair";
+  }
+  return "list";
+}
+
+export function shouldDrawGraphConnector(
+  nodeCount: number,
+  edgeCount: number
+): boolean {
+  return graphLayoutMode(nodeCount) === "pair" && edgeCount > 0;
 }
 
 export function gateVerdictExplanation(gates: GatesPayload): string {

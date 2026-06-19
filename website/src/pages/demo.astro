@@ -72,12 +72,14 @@ Select a preview action. The response will show planned files and actions from t
 
     document.querySelectorAll("[data-preview-action]").forEach((button) => {
       button.addEventListener("click", async () => {
-        const request = requests.get(button.dataset.previewAction);
+        const request = requests.get(button.getAttribute("data-preview-action"));
         if (!request || !output) {
           return;
         }
 
         const endpoint = `${apiBase}${request.endpoint}`;
+        button.setAttribute("disabled", "");
+        button.setAttribute("aria-busy", "true");
         output.textContent = JSON.stringify(
           {
             endpoint,
@@ -110,11 +112,15 @@ Select a preview action. The response will show planned files and actions from t
             {
               endpoint,
               request: request.payload,
+              status: "error",
               error: error instanceof Error ? error.message : String(error)
             },
             null,
             2
           );
+        } finally {
+          button.removeAttribute("disabled");
+          button.removeAttribute("aria-busy");
         }
       });
     });

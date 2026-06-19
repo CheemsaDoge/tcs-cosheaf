@@ -24,6 +24,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/";
     <title>{title} | TCS-Cosheaf</title>
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <div class="app-shell">
       <aside class="sidebar" aria-label="Primary navigation">
         <a class="brand" href="/">
@@ -39,6 +40,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/";
               <a
                 href={route.path}
                 class:list={["nav-link", currentPath === route.path && "active"]}
+                aria-current={currentPath === route.path ? "page" : undefined}
               >
                 {route.label}
               </a>
@@ -50,7 +52,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/";
           <span>{data.site.public_only ? "public demo export" : "local export"}</span>
         </div>
       </aside>
-      <main class="content">
+      <main class="content" id="main-content" tabindex="-1">
         <header class="page-header">
           <div>
             <p class="eyebrow">{eyebrow}</p>
