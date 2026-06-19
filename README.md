@@ -474,11 +474,14 @@ The server binds to localhost, serves read-only website JSON endpoints plus
 preview-only action plans, and does not write repository or GitHub records. See
 [Local Read-Only Server API](docs/SERVER_API.md).
 
-Authenticated website write actions are not implemented yet. Their backend-only
+Authenticated backend issue/PR create endpoints are available for integrations
+that inject a server-side `ForgeCredentialProvider`. Their backend-only
 credential and audit design is recorded in
 [ADR 0038](docs/ADR/0038-website-backend-auth-actions.md): credentials remain
-server-side, the frontend never sees GitHub tokens, and future write endpoints
-must require auth, explicit confirmation, and redacted audit records.
+server-side, the frontend never sees GitHub tokens, and create endpoints
+require auth, explicit confirmation, shared forge execution, and redacted
+audit records. The static website UI remains non-authoritative and does not
+own tokens or accepted-knowledge writes.
 
 ## Roadmap
 

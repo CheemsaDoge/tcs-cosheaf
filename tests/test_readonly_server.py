@@ -18,6 +18,20 @@ from cosheaf.server import READONLY_SERVER_HOST, ReadOnlySiteApi, make_handler
 runner = CliRunner()
 
 
+class _FakeCredentialProvider:
+    def __init__(self, *, has_token: bool = True) -> None:
+        self.has_token = has_token
+        self.calls = 0
+        self.secret = "secret-token-value"
+
+    def provider_name(self) -> str:
+        return "fake-provider"
+
+    def has_github_token(self) -> bool:
+        self.calls += 1
+        return self.has_token
+
+
 def _write_yaml(repo_root: Path, relative_path: str, data: dict[str, Any]) -> None:
     path = repo_root / relative_path
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -72,6 +86,15 @@ def _fixture_workspace(repo_root: Path) -> None:
         "issues/open/readonly-server.yaml",
         _issue_data(),
     )
+
+
+def _audit_entries(repo_root: Path) -> list[dict[str, Any]]:
+    audit_path = repo_root / ".cosheaf" / "audit" / "website-forge-actions.jsonl"
+    return [
+        json.loads(line)
+        for line in audit_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
 
 
 def test_readonly_site_api_routes_export_payloads_without_cli_subprocess(
@@ -195,6 +218,193 @@ def test_preview_endpoints_plan_actions_without_repo_or_github_writes(
         tmp_path
         / "reviews/website/issue.fixture.readonly-server-review-packet.md"
     ).exists()
+
+
+def test_preview_endpoints_do_not_use_backend_credentials(tmp_path: Path) -> None:
+    _fixture_workspace(tmp_path)
+    credentials = _FakeCredentialProvider()
+    api = ReadOnlySiteApi(open_app(tmp_path), credential_provider=credentials)
+
+    response = api.handle(
+        "POST",
+        "/api/forge/prs/preview",
+        json.dumps({"base": "main", "head": "website-authenticated-forge-actions"}),
+    )
+
+    assert response.status == 200
+    assert response.payload["kind"] == "github_pr_preview"
+    assert credentials.calls == 0
+
+
+def test_authenticated_create_endpoints_require_auth_and_confirm(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    _fixture_workspace(tmp_path)
+
+    def fail_subprocess_run(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("unauthorized or unconfirmed create must not run gh")
+
+    monkeypatch.setattr(subprocess, "run", fail_subprocess_run)
+
+    no_auth_api = ReadOnlySiteApi(open_app(tmp_path))
+    no_auth = no_auth_api.handle(
+        "POST",
+        "/api/forge/prs/create",
+        json.dumps(
+            {
+                "base": "main",
+                "head": "website-authenticated-forge-actions",
+                "confirm": True,
+            }
+        ),
+    )
+    assert no_auth.status == 401
+    assert no_auth.payload["code"] == "auth_required"
+
+    credentials = _FakeCredentialProvider()
+    authed_api = ReadOnlySiteApi(open_app(tmp_path), credential_provider=credentials)
+    no_confirm = authed_api.handle(
+        "POST",
+        "/api/forge/prs/create",
+        json.dumps({"base": "main", "head": "website-authenticated-forge-actions"}),
+    )
+    assert no_confirm.status == 400
+    assert no_confirm.payload["code"] == "confirm_required"
+
+    audit = _audit_entries(tmp_path)
+    assert [entry["result_status"] for entry in audit] == [
+        "auth_required",
+        "confirm_required",
+    ]
+
+
+def test_authenticated_create_endpoints_call_forge_and_write_redacted_audit(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    _fixture_workspace(tmp_path)
+    credentials = _FakeCredentialProvider()
+    calls: list[list[str]] = []
+
+    def fake_subprocess_run(
+        args: list[str],
+        **_kwargs: object,
+    ) -> subprocess.CompletedProcess[str]:
+        calls.append(args)
+        if args[:3] == ["gh", "issue", "create"]:
+            stdout = "https://github.com/CheemsaDoge/tcs-cosheaf/issues/1001\n"
+        elif args[:3] == ["gh", "pr", "create"]:
+            stdout = "https://github.com/CheemsaDoge/tcs-cosheaf/pull/1002\n"
+        else:
+            raise AssertionError(f"unexpected subprocess call: {args}")
+        return subprocess.CompletedProcess(args=args, returncode=0, stdout=stdout)
+
+    monkeypatch.setattr(subprocess, "run", fake_subprocess_run)
+
+    api = ReadOnlySiteApi(open_app(tmp_path), credential_provider=credentials)
+    issue_response = api.handle(
+        "POST",
+        "/api/forge/issues/create",
+        json.dumps(
+            {
+                "source_path": "issues/open/readonly-server.yaml",
+                "confirm": True,
+            }
+        ),
+    )
+    pr_response = api.handle(
+        "POST",
+        "/api/forge/prs/create",
+        json.dumps(
+            {
+                "base": "main",
+                "head": "website-authenticated-forge-actions",
+                "draft": True,
+                "confirm": True,
+            }
+        ),
+    )
+
+    assert issue_response.status == 200
+    assert issue_response.payload["kind"] == "github_issue_create"
+    assert issue_response.payload["forge_action"]["github_issue_created"] is True
+    assert pr_response.status == 200
+    assert pr_response.payload["kind"] == "github_pr_create"
+    assert pr_response.payload["forge_action"]["github_pr_created"] is True
+    assert credentials.calls == 2
+    assert calls[0][:3] == ["gh", "issue", "create"]
+    assert calls[1][:3] == ["gh", "pr", "create"]
+
+    response_text = json.dumps(
+        [issue_response.payload, pr_response.payload],
+        sort_keys=True,
+    )
+    assert credentials.secret not in response_text
+    assert "token" not in response_text.lower()
+
+    audit_path = tmp_path / ".cosheaf" / "audit" / "website-forge-actions.jsonl"
+    audit_text = audit_path.read_text(encoding="utf-8")
+    assert credentials.secret not in audit_text
+    entries = _audit_entries(tmp_path)
+    assert [entry["action"] for entry in entries] == [
+        "github_issue_create",
+        "github_pr_create",
+    ]
+    assert [entry["credential_provider"] for entry in entries] == [
+        "fake-provider",
+        "fake-provider",
+    ]
+    assert all(entry["explicit_confirm"] is True for entry in entries)
+    assert all(entry["github_writes_performed"] is True for entry in entries)
+
+
+def test_authenticated_create_failures_write_redacted_audit(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    _fixture_workspace(tmp_path)
+    credentials = _FakeCredentialProvider()
+
+    def fail_subprocess_run(
+        args: list[str],
+        **_kwargs: object,
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(
+            args=args,
+            returncode=1,
+            stdout="",
+            stderr=f"gh failed with token {credentials.secret}",
+        )
+
+    monkeypatch.setattr(subprocess, "run", fail_subprocess_run)
+
+    api = ReadOnlySiteApi(open_app(tmp_path), credential_provider=credentials)
+    response = api.handle(
+        "POST",
+        "/api/forge/prs/create",
+        json.dumps(
+            {
+                "base": "main",
+                "head": "website-authenticated-forge-actions",
+                "confirm": True,
+            }
+        ),
+    )
+
+    assert response.status == 400
+    assert response.payload["code"] == "forge_github_failed"
+    response_text = json.dumps(response.payload, sort_keys=True)
+    assert credentials.secret not in response_text
+    assert "token" not in response_text.lower()
+
+    entries = _audit_entries(tmp_path)
+    assert len(entries) == 1
+    assert entries[0]["action"] == "github_pr_create"
+    assert entries[0]["result_status"] == "forge_github_failed"
+    assert entries[0]["credential_provider"] == "fake-provider"
+    assert entries[0]["explicit_confirm"] is True
+    assert entries[0]["github_writes_performed"] is False
 
 
 def test_http_preview_endpoints_allow_localhost_browser_preflight(

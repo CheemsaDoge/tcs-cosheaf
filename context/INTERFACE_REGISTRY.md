@@ -62,34 +62,31 @@
   write, human review, verifier-result mutation, or promotion. Exported
   website data is display context only and remains subordinate to repository
   YAML/JSON source files.
-- Local read-only website API server is implemented under `cosheaf.server` and
-  exposed through `cosheaf server serve --readonly --port 8765`. The Python
-  surface defines `ReadOnlySiteApi`, `ApiResponse`, `make_handler`, and
-  `serve_readonly_api`. The HTTP surface is localhost JSON endpoints:
+- Local website API server is implemented under `cosheaf.server` and exposed
+  through `cosheaf server serve --readonly --port 8765`. The Python surface
+  defines `ReadOnlySiteApi`, `ApiResponse`, `make_handler`, and
+  `serve_readonly_api`. `ReadOnlySiteApi` accepts an optional backend
+  `ForgeCredentialProvider` for authenticated create actions; the default CLI
+  server does not configure one. The HTTP surface is localhost JSON endpoints:
   `GET /api/health`, `/api/workspace`, `/api/artifacts`, `/api/issues`,
-  `/api/graph`, `/api/gates`, and `/api/context/<issue_id>`, plus
-  preview-only `POST /api/forge/local-issues/preview`,
-  `/api/forge/issues/preview`, `/api/forge/prs/preview`, and
-  `/api/forge/review-packets/preview`. The server calls
-  `cosheaf.app.open_app` and app facade methods in-process, generates website
-  export payloads in a temporary directory outside the repository, returns
-  dry-run preview plans for prospective actions, and supports localhost CORS
-  preflight. It performs no accepted writes, promotion, human review, verifier
-  mutation, gate run, context build side effect, provider call, GitHub action,
-  git/gh command, repository write, or CLI subprocess. Server output is display
-  context only and remains subordinate to repository YAML/JSON source files.
-- Authenticated website backend action design is recorded in
-  `docs/ADR/0038-website-backend-auth-actions.md` but is not implemented as an
-  endpoint yet. The planned server-only surface keeps GitHub App installation
-  tokens and GitHub user tokens out of the repository and out of frontend code,
-  resolves credentials through a backend `ForgeCredentialProvider`, leases a
-  repository checkout/cache outside public KB roots for hosted deployments,
-  validates webhooks as synchronization input only, and writes redacted
-  append-only audit records for confirmed actions. Planned create endpoints
-  must require authentication and explicit confirmation, must call
-  `cosheaf.app` / `cosheaf.forge` in-process, and must not create accepted
-  knowledge, human review, verifier pass, gate pass, promotion authority,
-  token storage, or a production-readiness claim.
+  `/api/graph`, `/api/gates`, and `/api/context/<issue_id>`, plus preview-only
+  `POST /api/forge/local-issues/preview`, `/api/forge/issues/preview`,
+  `/api/forge/prs/preview`, and `/api/forge/review-packets/preview`, plus
+  authenticated create `POST /api/forge/issues/create` and
+  `/api/forge/prs/create`. The server calls `cosheaf.app.open_app` and app
+  facade methods in-process, generates website export payloads in a temporary
+  directory outside the repository, returns dry-run preview plans for
+  prospective actions, and supports localhost CORS preflight. Preview and read
+  endpoints perform no provider call, GitHub action, git/gh command,
+  repository write, or CLI subprocess. Authenticated create endpoints require a
+  backend credential provider and `confirm: true`, call shared app/forge GitHub
+  issue/PR create logic, return only redacted action flags and URLs, and write
+  redacted runtime audit records under ignored
+  `.cosheaf/audit/website-forge-actions.jsonl` for success and failure.
+  Website server output is display context only and remains subordinate to
+  repository YAML/JSON source files; it does not create accepted knowledge,
+  human review, verifier pass, gate pass, promotion authority, token storage,
+  branch push, webhook handling, or a production-readiness claim.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
   `cosheaf interface list --json` and `cosheaf interface list`. It emits a
   deterministic `schema_version: 1` payload listing the stable v1.0 CLI

@@ -140,6 +140,16 @@ GitHub issue, pull request, and review packet plans. These requests are
 but they do not write repository files, call GitHub, store tokens, run
 providers, create human review, or change accepted/promotion state.
 
+The server API now also has backend-only authenticated create endpoints for
+GitHub issue and PR creation. They are not frontend token flows: a backend must
+inject a server-side `ForgeCredentialProvider`, the request must include
+`confirm: true`, and the server calls `cosheaf.app` / `cosheaf.forge`
+in-process. Results and failures are redacted and audited under ignored
+`.cosheaf/audit/`. These endpoints write only the shared forge issue/PR
+effects; they do not write accepted knowledge, create human review, mutate
+verifier/gate state, promote artifacts, store tokens, or claim production
+readiness.
+
 Artifact, issue, and context views now include static detail pages generated
 from the fixture data. Artifact filters run in the browser over already-exported
 metadata only. Status badges include authority explanations; missing verifier
@@ -155,17 +165,17 @@ real human review, and explicit promotion.
 
 ## Future Write Actions
 
-The frontend must not own GitHub credentials or tokens. Future authenticated
-write actions must call a backend, and the backend must call `cosheaf.app` or
+The frontend must not own GitHub credentials or tokens. Authenticated write
+actions must call a backend, and the backend must call `cosheaf.app` or
 `cosheaf.forge`. Frontend code must never call GitHub APIs directly with user
 tokens.
 
 The W5.1 backend-auth design is recorded in
-[ADR 0038](ADR/0038-website-backend-auth-actions.md). The future path supports
-GitHub App installation tokens and GitHub user tokens, but both are resolved
-server-side only. Confirmed actions must use a backend credential provider,
-explicit confirmation, repository checkout/cache locking, and redacted audit
-records.
+[ADR 0038](ADR/0038-website-backend-auth-actions.md). W5.2 implements the
+first GitHub issue/PR create slice with backend credential-provider gating,
+explicit confirmation, shared forge execution, and redacted audit records.
+Future hosted deployments still need server-side GitHub App/user-token
+resolution, repository checkout/cache locking, and webhook synchronization.
 
-Future write actions remain out of scope for the first deployable website, and
-they are not implemented by the current localhost preview server.
+Write actions remain out of scope for the first deployable static website UI
+and do not make website output a knowledge authority.
