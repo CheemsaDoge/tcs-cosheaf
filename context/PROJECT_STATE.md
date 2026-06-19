@@ -3,6 +3,25 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.10.1 local actor model - 2026-06-20
+
+Issue #578 adds the local actor model on branch `web-local-actor-model`.
+
+The local website server accepts `--local-actor <name>` and exposes that value
+through `GET /api/health` as runtime metadata. The frontend live-local runtime
+banner displays `Local actor: <name>` / `本地角色：<name>` when configured.
+The health payload also reports `local_actor_is_auth: false`; local actor is an
+audit label for a local Workbench session, not authentication, authorization,
+or cryptographic identity.
+
+Confirmed human review decisions and artifact promotion actions now require a
+configured server-local actor. Missing local actor is refused before repository
+writes with `400 local_actor_required` and a web-action audit entry. Successful
+review and promotion confirms audit the configured local actor. Review records
+still use the explicit reviewer from the confirmed review payload, and
+promotion still runs the existing validation, gate, review, dependency,
+source-metadata, readonly-root, and path/status policy checks.
+
 ## Longplan B2.9.3 Markdown and LaTeX rendering polish - 2026-06-20
 
 Issue #576 adds display-only Markdown and LaTeX rendering on branch
@@ -133,13 +152,13 @@ The current surface includes:
 
 Preview returns readiness context, planned lifecycle files, YAML diff, review
 preview, validation/gate summaries, and the required confirmation phrase
-without writing repository files. Confirm requires `confirm: true`, a non-AI
-human actor, the selected target state, and the exact typed phrase before the
-backend recomputes validation, gate, review, dependency, source-metadata,
-readonly-root, and path/status policy checks.
+without writing repository files. Current confirm requires `confirm: true`, a
+server-configured local actor, the selected target state, and the exact typed
+phrase before the backend recomputes validation, gate, review, dependency,
+source-metadata, readonly-root, and path/status policy checks.
 
 Successful confirm writes deterministic lifecycle YAML through the app/service
-boundary and appends a `promotion.confirm` audit record using the human actor.
+boundary and appends a `promotion.confirm` audit record using the local actor.
 The website still does not directly mutate YAML, run Git/GitHub promotion
 flows, create human review, mutate verifier evidence, bypass source metadata,
 or make website output an accepted authority.
@@ -161,7 +180,8 @@ now uses the shared logger for preview actions, confirmed forge issue/PR
 actions, missing-confirmation refusals, missing-auth refusals, and forge
 failures.
 
-Audit entries record local actor placeholder `local.web`, typed
+Audit entries record the configured local actor when the server has one and
+otherwise use local actor placeholder `local.web`, typed
 `WebActionKind` values, local mode, repo root, preview/confirm/performed
 flags, planned and written files, validation/gate summaries, GitHub URLs when
 created, optional base/head/branch metadata, result status, authority warnings,

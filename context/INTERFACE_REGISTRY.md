@@ -86,9 +86,11 @@
   website data is display context only and remains subordinate to repository
   YAML/JSON source files.
 - Local website API server is implemented under `cosheaf.server` and exposed
-  through `cosheaf server serve --readonly --port 8765`. The Python surface
+  through `cosheaf server serve --readonly --port 8765 --local-actor <name>`.
+  The Python surface
   defines `ReadOnlySiteApi`, `ApiResponse`, `make_handler`, and
-  `serve_readonly_api`. `ReadOnlySiteApi` accepts an optional backend
+  `serve_readonly_api`. `ReadOnlySiteApi` accepts an optional
+  `local_actor` for local Workbench audit identity and an optional backend
   `ForgeCredentialProvider` for authenticated create actions; the default CLI
   server does not configure one. The HTTP surface is localhost JSON endpoints:
   `GET /api/health`, `/api/workspace`, `/api/workspace/live`, `/api/status`,
@@ -126,7 +128,13 @@
   local forge create actions `POST /api/forge/branch/create`,
   `/api/forge/commit/create`, and `/api/forge/push/create`, plus authenticated
   create `POST /api/forge/issues/create`, `/api/forge/pr/create`, and
-  `/api/forge/prs/create`. The server calls `cosheaf.app.open_app` and app
+  `/api/forge/prs/create`. `GET /api/health` includes `local_actor`,
+  `local_actor_configured`, `local_actor_is_auth: false`, and
+  `local_actor_notice`. Confirmed human review decision and promotion actions
+  require a configured local actor in local mode and return
+  `400 local_actor_required` before repository writes when it is missing. The
+  local actor is an audit label only, not authentication or cryptographic
+  identity. The server calls `cosheaf.app.open_app` and app
   facade methods in-process. Static endpoints generate website export payloads
   in a temporary directory outside the repository. Live endpoints read
   repository YAML records through app services/storage loaders, read existing
@@ -200,10 +208,13 @@
 - Website frontend runtime selection is implemented under `website/src/lib`.
   `runtimeMode.ts` defines the public frontend modes `static-demo`,
   `live-local`, and `hosted-workspace`, with `auto` resolving to `live-local`
-  during Astro development and `static-demo` during static builds.
+  during Astro development and `static-demo` during static builds. Runtime
+  metadata includes optional `local_actor` and `local_actor_is_auth`; the
+  frontend only uses the actor in `live-local` mode.
   `apiClient.ts` reads the live localhost backend through GET-only endpoints
-  when live mode is selected, maps the payloads into the existing `SiteData`
-  shape, and falls back all-at-once to committed fixtures when any live read is
+  when live mode is selected, including `/api/health` for local actor metadata,
+  maps the payloads into the existing `SiteData` shape, and falls back
+  all-at-once to committed fixtures when any live read is
   unavailable. `loadSiteData(options)` is the frontend orchestration entry
   point; callers may pass an injected fetcher and timeout for tests. Runtime
   selection is configured by `PUBLIC_COSHEAF_RUNTIME_MODE` or
@@ -1493,7 +1504,9 @@
   flags, repository/git/GitHub/network side-effect flags, planned and written
   files, validation/gate summaries, GitHub URLs, credential provider label,
   result status, authority warnings, optional operator notes, error code, and
-  structured errors. This DTO does not perform repository writes by itself.
+  structured errors. In local Workbench mode the actor is the configured
+  server-local actor when present, otherwise the non-authoritative `local.web`
+  placeholder. This DTO does not perform repository writes by itself.
 - `cosheaf.web_actions.WebActionError`: public web-action error DTO with code,
   message, remediation, blocking flag, optional related path/artifact, and
   string details.

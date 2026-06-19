@@ -33,17 +33,21 @@ interface LivePayload {
 export async function fetchLiveSiteData(
   options: FetchLiveSiteDataOptions
 ): Promise<SiteData> {
-  const [workspace, status, artifacts, issues, gates] = await Promise.all([
-    fetchJson(options, "/api/workspace/live"),
-    fetchJson(options, "/api/status"),
-    fetchJson(options, "/api/artifacts/live"),
-    fetchJson(options, "/api/issues/live"),
-    fetchJson(options, "/api/gates/latest")
-  ]);
+  const [health, workspace, status, artifacts, issues, gates] = await Promise.all(
+    [
+      fetchJson(options, "/api/health"),
+      fetchJson(options, "/api/workspace/live"),
+      fetchJson(options, "/api/status"),
+      fetchJson(options, "/api/artifacts/live"),
+      fetchJson(options, "/api/issues/live"),
+      fetchJson(options, "/api/gates/latest")
+    ]
+  );
 
   return mapLiveSiteData({
     fixtureData: options.fixtureData,
     runtime: options.runtime,
+    health,
     workspace,
     status,
     artifacts,
@@ -87,6 +91,7 @@ async function fetchJson(
 function mapLiveSiteData(input: {
   fixtureData: SiteData;
   runtime: RuntimeMetadata;
+  health: Record<string, unknown>;
   workspace: Record<string, unknown>;
   status: Record<string, unknown>;
   artifacts: Record<string, unknown>;
@@ -106,7 +111,21 @@ function mapLiveSiteData(input: {
     context_packs: mapContextPacks(input.fixtureData, issues.issues),
     reports: input.fixtureData.reports,
     authority_boundaries: input.fixtureData.authority_boundaries,
-    runtime: input.runtime
+    runtime: runtimeWithHealth(input.runtime, input.health)
+  };
+}
+
+function runtimeWithHealth(
+  runtime: RuntimeMetadata,
+  health: Record<string, unknown>
+): RuntimeMetadata {
+  if (runtime.mode !== "live-local") {
+    return runtime;
+  }
+  return {
+    ...runtime,
+    local_actor: textOrUndefined(health.local_actor),
+    local_actor_is_auth: Boolean(health.local_actor_is_auth)
   };
 }
 
@@ -307,6 +326,10 @@ function stringArray(value: unknown): string[] {
 
 function text(value: unknown, fallback: string): string {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function textOrUndefined(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 function numberValue(value: unknown, fallback: number): number {

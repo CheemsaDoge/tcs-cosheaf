@@ -40,6 +40,14 @@ def server_serve(
         "--repo-root",
         help="Repository root to serve.",
     ),
+    local_actor: str | None = typer.Option(
+        None,
+        "--local-actor",
+        help=(
+            "Local operator name recorded in web-action audit logs. This is "
+            "not authentication or cryptographic identity."
+        ),
+    ),
 ) -> None:
     """Serve local read-only website JSON APIs on localhost."""
     console = Console(width=120, markup=False)
@@ -52,5 +60,12 @@ def server_serve(
         f"Serving read-only website API on http://{READONLY_SERVER_HOST}:{port}"
     )
     console.print("- writes: disabled")
+    local_actor_label = local_actor.strip() if local_actor else "not set"
+    console.print(f"- local actor: {local_actor_label}")
     console.print("- authority: display context only")
-    serve_readonly_api(app, host=READONLY_SERVER_HOST, port=port)
+    serve_readonly_api(
+        app,
+        host=READONLY_SERVER_HOST,
+        port=port,
+        local_actor=local_actor,
+    )

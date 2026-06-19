@@ -5,7 +5,7 @@ forge-backed action previews, local issue workbench actions, and a narrow
 backend-only GitHub create slice:
 
 ```bash
-cosheaf server serve --readonly --port 8765
+cosheaf server serve --readonly --port 8765 --local-actor "Ada Reviewer"
 ```
 
 The CLI server binds to `127.0.0.1` and refuses to start unless `--readonly`
@@ -20,6 +20,11 @@ Authenticated GitHub create endpoints exist for backend integrations that
 instantiate `ReadOnlySiteApi` with a server-side `ForgeCredentialProvider`;
 the default CLI server does not configure one, so confirmed GitHub create
 requests return `401 auth_required`.
+
+In local mode, `--local-actor <name>` records the local person operating the
+Workbench. It is not authentication, authorization, or cryptographic identity.
+Confirmed human review decisions and promotion actions are refused with
+`400 local_actor_required` when the server has no configured local actor.
 
 Longplan B2 turns this server boundary into the Human Governance Workbench
 bridge. The server is the only allowed path from browser actions to policy
@@ -157,6 +162,10 @@ POST /api/forge/prs/create
 POST /api/forge/review-packets/preview
 GET /api/forge/pr-status?number=<n>&base=main&head=<branch>
 ```
+
+`GET /api/health` includes `local_actor`, `local_actor_configured`,
+`local_actor_is_auth: false`, and `local_actor_notice` so the frontend can show
+the configured local actor without presenting it as hosted auth.
 
 Unsupported `POST` requests and unsupported methods return
 `405 method_not_allowed`. `OPTIONS` is supported for localhost browser
@@ -371,7 +380,10 @@ according to repository policy.
 Human review decision endpoints refuse AI, Codex, agent, provider, model, or
 verifier identities as reviewers. They audit as `review.decision_create`. They
 do not set artifact `status: accepted`, pass gates, mutate verifier evidence,
-promote knowledge, or write accepted artifacts.
+promote knowledge, or write accepted artifacts. Confirmed creates also require
+the server's local mode to be started with `--local-actor <name>`; the audit
+actor comes from that server option, while the review record reviewer comes
+from the confirmed review payload.
 
 ## Promotion Readiness Workbench Actions
 
@@ -398,8 +410,9 @@ Promotion preview requests accept `target_state` as `accepted`, `refuted`, or
 allows the selected target. It writes no lifecycle YAML, does not run `git` or
 `gh`, and audits as `promotion.preview`.
 
-Promotion confirm requests require `confirm: true`, a non-empty human `actor`,
-the same `target_state`, an exact `typed_confirmation` phrase:
+Promotion confirm requests require `confirm: true`, a configured server
+`--local-actor <name>`, the same `target_state`, an exact
+`typed_confirmation` phrase:
 `PROMOTE TO ACCEPTED`, `MARK REFUTED`, or `MARK OBSOLETE`, and a non-empty
 `promotion_justification`. The server rejects missing justification before any
 lifecycle write, then recomputes validation, gate, review, dependency,
@@ -407,9 +420,10 @@ source-metadata, readonly-root, and path/status policy checks before writing.
 Successful confirm writes the deterministic lifecycle YAML, moves the source
 file to the target lifecycle path, returns `written_files` and
 `promotion_justification_recorded: true`, and audits as `promotion.confirm`
-with the human actor and justification stored as `operator_notes`. The
-justification is not written into artifact YAML. AI/Codex/provider/agent/model/
-verifier identities are refused as promotion actors.
+with the server-local actor and justification stored as `operator_notes`. The
+local actor is not auth, and the justification is not written into artifact
+YAML. AI/Codex/provider/agent/model/verifier identities are refused as
+promotion actors.
 
 Promotion readiness and preview output are advisory workflow context. Confirmed
 promotion is a repository write through `cosheaf.app` and service-layer policy;
@@ -537,7 +551,7 @@ comments.
 In one terminal:
 
 ```bash
-cosheaf server serve --readonly --port 8765
+cosheaf server serve --readonly --port 8765 --local-actor "Ada Reviewer"
 ```
 
 In another terminal:

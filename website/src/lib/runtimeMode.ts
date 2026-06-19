@@ -7,6 +7,8 @@ export interface RuntimeModeInput {
   dev?: boolean;
   apiBase?: string;
   fallbackReason?: string;
+  localActor?: string;
+  localActorIsAuth?: boolean;
 }
 
 export interface RuntimeMetadata {
@@ -17,6 +19,8 @@ export interface RuntimeMetadata {
   api_base: string;
   fallback: boolean;
   fallback_reason?: string;
+  local_actor?: string;
+  local_actor_is_auth: boolean;
 }
 
 export const DEFAULT_API_BASE = "http://127.0.0.1:8765";
@@ -52,7 +56,10 @@ export function decideRuntimeMode(input: RuntimeModeInput = {}): RuntimeMetadata
     label_zh: label.zh,
     api_base: normalizeApiBase(input.apiBase),
     fallback: Boolean(input.fallbackReason),
-    fallback_reason: input.fallbackReason
+    fallback_reason: input.fallbackReason,
+    local_actor:
+      mode === "live-local" ? normalizeLocalActor(input.localActor) : undefined,
+    local_actor_is_auth: mode === "live-local" && Boolean(input.localActorIsAuth)
   };
 }
 
@@ -75,4 +82,9 @@ function normalizeApiBase(value: string | undefined): string {
     return DEFAULT_API_BASE;
   }
   return trimmed.replace(/\/+$/, "");
+}
+
+function normalizeLocalActor(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed || undefined;
 }

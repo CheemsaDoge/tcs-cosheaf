@@ -789,6 +789,18 @@ def test_preview_endpoint_writes_web_action_audit_without_repo_file(
     ]
 
 
+def test_health_endpoint_reports_configured_local_actor(tmp_path: Path) -> None:
+    _fixture_workspace(tmp_path)
+    api = ReadOnlySiteApi(open_app(tmp_path), local_actor="Ada Local")
+
+    response = api.handle("GET", "/api/health")
+
+    assert response.status == 200
+    assert response.payload["local_actor"] == "Ada Local"
+    assert response.payload["local_actor_configured"] is True
+    assert response.payload["local_actor_is_auth"] is False
+
+
 def test_authenticated_create_endpoints_require_auth_and_confirm(
     tmp_path: Path,
     monkeypatch: Any,
@@ -1029,10 +1041,17 @@ def test_server_cli_registers_readonly_localhost_command(
         seen["repo_root"] = repo_root
         return fake_app
 
-    def fake_serve_readonly_api(app_obj: object, *, host: str, port: int) -> None:
+    def fake_serve_readonly_api(
+        app_obj: object,
+        *,
+        host: str,
+        port: int,
+        local_actor: str | None = None,
+    ) -> None:
         seen["app"] = app_obj
         seen["host"] = host
         seen["port"] = port
+        seen["local_actor"] = local_actor
 
     monkeypatch.setattr("cosheaf.server.cli.open_app", fake_open_app)
     monkeypatch.setattr(
@@ -1049,6 +1068,8 @@ def test_server_cli_registers_readonly_localhost_command(
             "8765",
             "--repo-root",
             str(tmp_path),
+            "--local-actor",
+            "Ada Local",
         ],
     )
 
@@ -1058,6 +1079,7 @@ def test_server_cli_registers_readonly_localhost_command(
         "app": fake_app,
         "host": "127.0.0.1",
         "port": 8765,
+        "local_actor": "Ada Local",
     }
 
 

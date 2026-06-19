@@ -32,4 +32,13 @@ describe("Astro static output", () => {
     expect(layout).toContain("artifactRows");
     expect(graphPage).not.toContain("<script is:inline>");
   });
+
+  it("shows configured local actor in the runtime banner without auth claims", () => {
+    const layout = readFileSync("src/layouts/BaseLayout.astro", "utf8");
+
+    expect(layout).toContain("runtime.local_actor");
+    expect(layout).toContain("Local actor:");
+    expect(layout).toContain("本地角色：");
+    expect(layout).toContain("local_actor_is_auth");
+  });
 });

@@ -138,7 +138,7 @@ def test_web_review_decision_create_requires_confirm_and_then_records_human_revi
     tmp_path: Path,
 ) -> None:
     _fixture_workspace(tmp_path)
-    api = ReadOnlySiteApi(open_app(tmp_path))
+    api = ReadOnlySiteApi(open_app(tmp_path), local_actor="Ada Local")
     artifact_path = tmp_path / "kb/draft/claims/claim.fixture.review-decision.yaml"
 
     blocked = api.handle(
@@ -176,14 +176,36 @@ def test_web_review_decision_create_requires_confirm_and_then_records_human_revi
 
     entries = _audit_entries(tmp_path)
     assert entries[-1]["action"] == "review.decision_create"
+    assert entries[-1]["actor"] == "Ada Local"
     assert entries[-1]["repo_writes_performed"] is True
+
+
+def test_web_review_decision_confirm_requires_configured_local_actor(
+    tmp_path: Path,
+) -> None:
+    _fixture_workspace(tmp_path)
+    api = ReadOnlySiteApi(open_app(tmp_path))
+
+    blocked = api.handle(
+        "POST",
+        "/api/reviews/decisions/create",
+        json.dumps({**_valid_payload(), "confirm": True}),
+    )
+
+    assert blocked.status == 400
+    assert blocked.payload["code"] == "local_actor_required"
+    assert not (tmp_path / "reviews" / "decisions").exists()
+    entries = _audit_entries(tmp_path)
+    assert entries[-1]["action"] == "review.decision_create"
+    assert entries[-1]["result_status"] == "local_actor_required"
+    assert entries[-1]["repo_writes_performed"] is False
 
 
 def test_web_review_decision_refuses_missing_notes_and_ai_reviewer(
     tmp_path: Path,
 ) -> None:
     _fixture_workspace(tmp_path)
-    api = ReadOnlySiteApi(open_app(tmp_path))
+    api = ReadOnlySiteApi(open_app(tmp_path), local_actor="Ada Local")
 
     missing_notes = api.handle(
         "POST",
@@ -210,7 +232,7 @@ def test_web_review_decision_keep_draft_records_decision_without_review_state_ch
     tmp_path: Path,
 ) -> None:
     _fixture_workspace(tmp_path)
-    api = ReadOnlySiteApi(open_app(tmp_path))
+    api = ReadOnlySiteApi(open_app(tmp_path), local_actor="Ada Local")
     artifact_path = tmp_path / "kb/draft/claims/claim.fixture.review-decision.yaml"
 
     created = api.handle(

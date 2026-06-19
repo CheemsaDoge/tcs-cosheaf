@@ -299,6 +299,13 @@ describe("site data contract", () => {
   it("loads live backend data all at once when live mode is available", async () => {
     const calls: string[] = [];
     const payloads: Record<string, unknown> = {
+      "/api/health": {
+        schema_version: 1,
+        status: "ok",
+        local_actor: "Ada Local",
+        local_actor_configured: true,
+        local_actor_is_auth: false
+      },
       "/api/workspace/live": {
         schema_version: 1,
         kind: "workspace_live",
@@ -412,6 +419,7 @@ describe("site data contract", () => {
     });
 
     expect(calls).toEqual([
+      "/api/health",
       "/api/workspace/live",
       "/api/status",
       "/api/artifacts/live",
@@ -420,6 +428,8 @@ describe("site data contract", () => {
     ]);
     expect(data.runtime.mode).toBe("live-local");
     expect(data.runtime.fallback).toBe(false);
+    expect(data.runtime.local_actor).toBe("Ada Local");
+    expect(data.runtime.local_actor_is_auth).toBe(false);
     expect(data.workspace.workspace_name).toBe("live-workspace");
     expect(data.artifacts.artifacts.map((artifact) => artifact.id)).toEqual([
       "definition.live",
