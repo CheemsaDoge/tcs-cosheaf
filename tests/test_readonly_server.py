@@ -105,6 +105,17 @@ def _repo_file_snapshot(repo_root: Path) -> dict[str, str]:
     }
 
 
+def _artifact_statuses(repo_root: Path) -> dict[str, tuple[str, str]]:
+    statuses: dict[str, tuple[str, str]] = {}
+    for path in sorted((repo_root / "kb").rglob("*.yaml")):
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        statuses[str(data["id"])] = (
+            str(data.get("status", "")),
+            str(data.get("review", {}).get("state", "")),
+        )
+    return statuses
+
+
 def test_readonly_site_api_routes_export_payloads_without_cli_subprocess(
     tmp_path: Path,
     monkeypatch: Any,
@@ -342,6 +353,48 @@ def test_context_build_preview_then_confirm_writes_context_pack(
     assert entries[0]["preview_only"] is True
     assert entries[1]["result_status"] == "confirm_required"
     assert entries[2]["repo_writes_performed"] is True
+
+
+def test_validate_and_gate_run_actions_are_audited_without_acceptance_changes(
+    tmp_path: Path,
+) -> None:
+    _fixture_workspace(tmp_path)
+    api = ReadOnlySiteApi(open_app(tmp_path))
+    before = _artifact_statuses(tmp_path)
+
+    validate_run = api.handle("POST", "/api/validate/run", "{}")
+
+    assert validate_run.status == 200
+    assert validate_run.payload["kind"] == "validate_run"
+    assert validate_run.payload["validation"]["ok"] is True
+    assert validate_run.payload["repo_writes_performed"] is False
+    assert validate_run.payload["accepted_status_changed"] is False
+    assert _artifact_statuses(tmp_path) == before
+
+    gate_run = api.handle("POST", "/api/gate/run", "{}")
+
+    assert gate_run.status == 200
+    assert gate_run.payload["kind"] == "gate_run"
+    assert gate_run.payload["gate"]["verdict"] == "pass"
+    assert gate_run.payload["gate"]["skipped_count"] >= 0
+    assert gate_run.payload["gate"]["skipped_is_pass"] is False
+    assert gate_run.payload["gate"]["gate_pass_is_accepted_authority"] is False
+    assert gate_run.payload["repo_writes_performed"] is True
+    assert gate_run.payload["accepted_status_changed"] is False
+    assert _artifact_statuses(tmp_path) == before
+
+    latest = api.handle("GET", "/api/gates/latest")
+    assert latest.status == 200
+    assert latest.payload["gate_report"]["exists"] is True
+    assert latest.payload["gate_report"]["verdict"] == "pass"
+
+    entries = _audit_entries(tmp_path)
+    assert [entry["action"] for entry in entries] == [
+        "validate.run",
+        "gate.run",
+    ]
+    assert entries[0]["repo_writes_performed"] is False
+    assert entries[1]["repo_writes_performed"] is True
 
 
 def test_preview_endpoints_plan_actions_without_repo_or_github_writes(

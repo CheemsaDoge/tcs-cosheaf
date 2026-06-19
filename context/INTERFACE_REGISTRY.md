@@ -94,7 +94,8 @@
   `/api/issues/<issue_id>/update`, `/api/issues/<issue_id>/preview-close`, and
   `/api/issues/<issue_id>/close`, plus context build workbench actions
   `POST /api/context/<issue_id>/preview-build` and
-  `/api/context/<issue_id>/build`, plus
+  `/api/context/<issue_id>/build`, plus validate/gate workbench actions
+  `POST /api/validate/run` and `POST /api/gate/run`, plus
   authenticated create `POST /api/forge/issues/create` and
   `/api/forge/prs/create`. The server calls `cosheaf.app.open_app` and app
   facade methods in-process. Static endpoints generate website export payloads
@@ -112,7 +113,12 @@
   `CosheafApp.build_context` to write ignored runtime context-pack files with
   redacted audit entries. Context packs are retrieval guidance only and do not
   grant proof, verifier pass, gate pass, human review, accepted status, or
-  promotion authority. Preview endpoints
+  promotion authority. Validate/gate workbench endpoints call
+  `CosheafApp.validate_repository` and `CosheafApp.run_gate`, write redacted
+  audit entries, and expose validation plus gate pass/fail/skipped summaries;
+  gate runs may write ignored `.cosheaf/reports/` runtime reports but never
+  change accepted status, human review, verifier output, or promotion state.
+  Preview endpoints
   return dry-run preview plans for prospective actions, and the server supports
   localhost CORS preflight. Preview and read endpoints perform no provider
   call, GitHub action, git/gh command, repository write, or CLI subprocess.
@@ -144,8 +150,9 @@
   stylesheets so `website/dist/*.html` keeps the styled UI when opened directly
   as local files. In live-local mode, the issue workbench frontend may call
   localhost issue preview/create/update/close endpoints and context
-  preview-build/build endpoints with preview-before-confirm and no browser
-  credentials. The frontend does not call
+  preview-build/build endpoints with preview-before-confirm, and may call
+  localhost validate/gate run endpoints from the gate workbench, all with no
+  browser credentials. The frontend does not call
   GitHub directly, store browser credentials, create human review, change
   gate/verifier state, accept artifacts, or promote knowledge.
 - CLI interface discovery is implemented in `cosheaf.cli`. The CLI surface is
