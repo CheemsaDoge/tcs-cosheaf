@@ -23,6 +23,7 @@ Introduce `cosheaf.forge` as the Git/GitHub workflow boundary. It exposes:
 - `LocalGitPlan`;
 - `GitHubIssuePlan`;
 - `GitHubPrPlan`;
+- `GitHubPrStatusResult`;
 - `ForgePreviewResult`; and
 - `ForgeActionResult`.
 
@@ -45,12 +46,16 @@ The app facade exposes corresponding `forge_status`,
 `forge_issue_preview`, `forge_pr_preview`, `forge_branch_create`, and
 `forge_commit` methods, plus `forge_github_issue_create`,
 `forge_push`, `forge_github_pr_create`, `forge_github_pr_submit`, and
-`forge_sync`.
+`forge_github_pr_status`, plus `forge_sync`.
 
 Forge previews remain dry-run only. Confirmed actions are limited to local
 branch creation, local commits, explicit branch pushes, GitHub issue creation,
 and GitHub PR creation/submission. `forge sync` is a read-only reconciliation
 placeholder in A4.3.
+
+PR status reads are also read-only. They may call `gh pr view --json` to fetch
+GitHub collaboration metadata, but they return degraded status when GitHub auth
+or network access is unavailable and never write Cosheaf review records.
 
 ## Authority Boundary
 
@@ -78,6 +83,11 @@ tokens, close local issues, or treat GitHub issue/PR/merge state as accepted
 knowledge. When possible, GitHub issue creation links the returned
 URL into the local issue record's `external_links` while leaving local issue
 status unchanged.
+
+GitHub PR approvals, comments, CI results, and gate check results displayed by
+PR status reads are workflow context only. They must remain separate from
+Cosheaf human-review records unless a human explicitly records a review through
+the review workflow.
 
 ## Consequences
 

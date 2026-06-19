@@ -155,6 +155,7 @@ POST /api/forge/pr/create
 POST /api/forge/prs/preview
 POST /api/forge/prs/create
 POST /api/forge/review-packets/preview
+GET /api/forge/pr-status?number=<n>&base=main&head=<branch>
 ```
 
 Unsupported `POST` requests and unsupported methods return
@@ -184,6 +185,11 @@ Live endpoints return `source_of_truth: "repository"` and an authority notice:
   `.cosheaf/reports/*-gate-report.json` when present, or returns `not_run`.
 - `/api/audit/recent` reads recent existing entries from
   `.cosheaf/audit/web-actions.jsonl`.
+- `/api/forge/pr-status` reads GitHub PR collaboration metadata through the
+  server-side `gh pr view` path when available. It writes no repository files,
+  no review records, and no GitHub state. If `gh` auth or network access is
+  unavailable, it returns a degraded `200` payload with `github_auth_available:
+  false` instead of leaving the web status panel empty.
 
 Preview endpoints return `dry_run_only: true`, planned actions, planned files,
 and the forge authority warning. They do not write repository files, call
@@ -485,6 +491,34 @@ changes and runs validation/gate before committing.
 These endpoints do not create accepted knowledge, human review, verifier pass,
 gate pass, promotion authority, token storage, production hosting, checkout
 caching, or webhook handling.
+
+## Pull Request Status
+
+The B2.8.2 pull-request status endpoint is:
+
+```text
+GET /api/forge/pr-status?number=<n>&base=main&head=<branch>
+```
+
+The endpoint returns `kind: "github_pr_status"` with a nested `pr_status`
+object. The object separates:
+
+- `pr`: PR number, title, state, URL, base/head, merge state, and review
+  decision reported by GitHub;
+- `linked_issue`: the first closing issue reference when GitHub reports one;
+- `checklist`: parsed GitHub markdown checklist counts and items;
+- `ci`: status-check rollup summary;
+- `gate`: gate check summary when a GitHub check named like `gate` exists;
+- `github_reviews` and `review_comments`: GitHub collaboration signals;
+- `cosheaf_review`: a separate Cosheaf review placeholder with
+  `status: "not_imported"` unless a future explicit human import flow creates
+  a repository review record.
+
+GitHub review approval, PR mergeability, CI success, and gate success displayed
+by this endpoint remain workflow context only. They do not create Cosheaf human
+review, accepted status, verifier pass, source metadata, refutation, or
+promotion authority. The endpoint does not expose any API for resolving review
+comments.
 
 ## Authority Rules
 

@@ -14,7 +14,12 @@ from cosheaf.agent.context_pack import CONTEXT_MAX_CARDS, ContextPackResult
 from cosheaf.agent.orchestrator_state import ReducerResult
 from cosheaf.agent.worker_bundle_v2 import WorkerBundleV2
 from cosheaf.core.status import ArtifactStatus, ArtifactType
-from cosheaf.forge import ForgeActionResult, ForgePreviewResult, ForgeService
+from cosheaf.forge import (
+    ForgeActionResult,
+    ForgePreviewResult,
+    ForgeService,
+    GitHubPrStatusResult,
+)
 from cosheaf.gates.gatekeeper import GatekeeperRunResult, ValidationReport
 from cosheaf.gates.promotion_readiness import (
     PromotionReadinessReport,
@@ -322,6 +327,20 @@ class CosheafApp:
             draft=draft,
             remote=remote,
             confirm=confirm,
+        )
+
+    def forge_github_pr_status(
+        self,
+        *,
+        number: int | None = None,
+        base: str = "",
+        head: str = "",
+    ) -> GitHubPrStatusResult:
+        """Return read-only GitHub PR workflow status."""
+        return ForgeService(self.context).github_pr_status(
+            number=number,
+            base=base,
+            head=head,
         )
 
     def forge_sync(self) -> ForgeActionResult:

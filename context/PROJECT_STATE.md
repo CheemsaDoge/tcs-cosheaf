@@ -3,6 +3,29 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.8.2 PR review status and comments in web - 2026-06-20
+
+Issue #570 adds a read-only PR status workbench on branch
+`web-pr-review-status`.
+
+The current surface includes:
+
+- `CosheafApp.forge_github_pr_status`;
+- `cosheaf.forge.GitHubPrStatusResult`;
+- `GET /api/forge/pr-status?number=<n>&base=main&head=<branch>`; and
+- website route `/forge/pr-status/`.
+
+The endpoint reads GitHub PR metadata through `gh pr view --json` when
+available and returns a degraded `github_auth_available: false` payload when
+GitHub auth, `gh`, or network access is unavailable. The web page displays PR
+and linked issue URLs, checklist progress, CI/gate check status, GitHub reviews,
+and recent comments while keeping GitHub collaboration signals separate from
+Cosheaf human review.
+
+This task does not add review-comment resolution, browser-side GitHub token
+storage, repository review imports, accepted knowledge, verifier pass,
+gate-pass authority, promotion authority, or automatic artifact status changes.
+
 ## Longplan B2.8.1 Forge push and PR submit flow - 2026-06-20
 
 Issue #568 adds the Forge branch-to-PR submit path on branch

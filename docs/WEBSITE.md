@@ -314,6 +314,15 @@ explicit confirmation. The page calls only the localhost server endpoints under
 When PR creation succeeds, it renders the returned PR URL as the primary
 result link.
 
+The live-local PR status page at `/forge/pr-status/` uses
+`GET /api/forge/pr-status` to show GitHub PR collaboration state alongside the
+Cosheaf authority boundary. It displays the PR/issue links, checklist counts,
+CI and gate check rollups, GitHub review/comment summaries, and an explicit
+separate Cosheaf review slot. GitHub approvals remain collaboration signals;
+they are not imported as Cosheaf human review unless a future human action
+writes an explicit repository review record. Missing GitHub auth or `gh`
+availability produces a degraded status panel rather than a blank page.
+
 Artifact, issue, and context views now include static detail pages generated
 from the fixture data. Artifact filters run in the browser over already-exported
 metadata only. Status badges include authority explanations; missing verifier

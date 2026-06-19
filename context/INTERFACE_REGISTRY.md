@@ -14,9 +14,10 @@
   WorkerBundle, repository-local issue preview/create/show/list/update/close
   plus update/close previews,
   read-only promotion-readiness reports, forge dry-run previews, confirmed
-  local forge git actions, confirmed GitHub issue/PR actions, and read-only
-  forge sync status. The facade delegates to existing services, forge services,
-  and read-only domain functions. It is not a new knowledge authority
+  local forge git actions, confirmed GitHub issue/PR actions, read-only PR
+  collaboration status, and read-only forge sync status. The facade delegates
+  to existing services, forge services, and read-only domain functions. It is
+  not a new knowledge authority
   and does not grant proof, source metadata, human review, verifier pass, gate
   pass, accepted status, accepted theorem/refutation status, or promotion
   authority.
@@ -56,15 +57,18 @@
   `forge_status`, `forge_issue_preview`, `forge_pr_preview`,
   `forge_branch_create`, `forge_commit`, `forge_github_issue_create`,
   `forge_push`, `forge_github_pr_create`, `forge_github_pr_submit`, and
-  `forge_sync`. The Python surface defines
+  `forge_github_pr_status`, and `forge_sync`. The Python surface defines
   `ForgeCredentialProvider`, `LocalGitPlan`, `GitHubIssuePlan`, `GitHubPrPlan`,
-  `ForgePreviewResult`, `ForgeActionResult`, `ForgeService`, and
-  `ForgePreviewError` / `ForgeActionError`. Forge previews remain dry-run only.
+  `GitHubPrStatusResult`, `ForgePreviewResult`, `ForgeActionResult`,
+  `ForgeService`, and `ForgePreviewError` / `ForgeActionError`. Forge previews
+  remain dry-run only.
   Confirmed local git actions may create local branches, commits, or explicit
   branch pushes. Confirmed GitHub actions may create GitHub issues or PRs
   through `gh`, but perform no token storage, artifact acceptance, refutation,
   human review, verifier pass, gate pass, or promotion. `forge sync` is
-  read-only in A4.3.
+  read-only in A4.3. PR status reads may call `gh pr view --json` and return a
+  degraded payload when GitHub auth is unavailable; GitHub reviews stay
+  separate from Cosheaf human-review records.
 - Static website export is implemented under `cosheaf.site` and exposed through
   `cosheaf site export --out <dir>`, optional `--public-only`, optional
   `--demo`, and the app facade method `export_site_data`. It writes
@@ -90,7 +94,8 @@
   `/api/artifacts/<artifact_id>/promotion-readiness`,
   `/api/issues`, `/api/issues/live`, `/api/issues/<issue_id>`, `/api/graph`,
   `/api/gates`, `/api/gates/latest`, `/api/context/<issue_id>`,
-  `/api/context/<issue_id>/latest`, and `/api/audit/recent`, plus preview-only
+  `/api/context/<issue_id>/latest`, `/api/audit/recent`, and
+  `/api/forge/pr-status`, plus preview-only
   `POST /api/forge/local-issues/preview`, `/api/forge/issues/preview`,
   `/api/forge/branch/preview`, `/api/forge/commit/preview`,
   `/api/forge/push/preview`, `/api/forge/pr/preview`,

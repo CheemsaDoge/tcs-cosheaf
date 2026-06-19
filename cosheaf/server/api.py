@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Literal, cast
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from cosheaf.agent.context_pack import PACK_FILENAMES
 from cosheaf.app import CosheafApp
@@ -163,7 +163,7 @@ class ReadOnlySiteApi:
         normalized_method = method.upper()
         path = _normalize_path(raw_path)
         if normalized_method == "GET":
-            return self._handle_get(path)
+            return self._handle_get(path, raw_path)
         if normalized_method == "POST":
             return self._handle_post(path, body)
         return _error(
@@ -173,7 +173,7 @@ class ReadOnlySiteApi:
             "preview-only POST requests.",
         )
 
-    def _handle_get(self, path: str) -> ApiResponse:
+    def _handle_get(self, path: str, raw_path: str) -> ApiResponse:
         if path in _PREVIEW_ENDPOINTS:
             return _error(
                 405,
@@ -206,6 +206,8 @@ class ReadOnlySiteApi:
             return self._live_gate_latest_payload()
         if path == "/api/audit/recent":
             return self._live_audit_recent_payload()
+        if path == "/api/forge/pr-status":
+            return self._forge_pr_status_payload(_query_params(raw_path))
         if path in _EXPORT_ENDPOINTS:
             return ApiResponse(200, self._payload_file(_EXPORT_ENDPOINTS[path]))
         if path.startswith("/api/context/"):
@@ -539,6 +541,39 @@ class ReadOnlySiteApi:
             )
         return tuple(
             record for record in records if isinstance(record.record, BaseArtifact)
+        )
+
+    def _forge_pr_status_payload(self, query: dict[str, str]) -> ApiResponse:
+        number_text = _optional_text(query, "number")
+        number: int | None = None
+        if number_text is not None:
+            try:
+                number = int(number_text)
+            except ValueError:
+                return _error(400, "invalid_pr_number", "PR number must be an integer")
+            if number <= 0:
+                return _error(400, "invalid_pr_number", "PR number must be positive")
+        head = _optional_text(query, "head") or ""
+        if number is None and not head:
+            return _error(
+                400,
+                "pr_selector_required",
+                "PR number or head branch is required",
+            )
+        result = self.app.forge_github_pr_status(
+            number=number,
+            base=_optional_text(query, "base") or "",
+            head=head,
+        )
+        result_payload = result.model_dump(mode="json")
+        return _live_response(
+            "github_pr_status",
+            pr_status=result_payload,
+            github_auth_available=result.github_auth_available,
+            network_calls_performed=result.network_calls_performed,
+            git_writes_performed=False,
+            github_writes_performed=False,
+            authority_notice=FORGE_AUTHORITY_WARNING,
         )
 
     def _context_payload(self, issue_id: str) -> ApiResponse:
@@ -2199,6 +2234,15 @@ def _normalize_path(raw_path: str) -> str:
     if path != "/":
         path = path.rstrip("/")
     return path or "/"
+
+
+def _query_params(raw_path: str) -> dict[str, str]:
+    parsed = parse_qs(urlparse(raw_path).query, keep_blank_values=False)
+    return {
+        key: values[-1]
+        for key, values in parsed.items()
+        if values and isinstance(values[-1], str)
+    }
 
 
 def _parse_issue_action_path(path: str) -> tuple[str, str] | None:

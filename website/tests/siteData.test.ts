@@ -55,6 +55,7 @@ describe("site data contract", () => {
       "/artifacts",
       "/issues",
       "/forge/submit",
+      "/forge/pr-status",
       "/graph",
       "/gates",
       "/authority"

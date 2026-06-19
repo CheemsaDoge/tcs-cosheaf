@@ -32,6 +32,7 @@ facade directly:
 - `CosheafApp.forge_github_issue_create`
 - `CosheafApp.forge_github_pr_create`
 - `CosheafApp.forge_github_pr_submit`
+- `CosheafApp.forge_github_pr_status`
 
 Server-facing error responses should serialize `ErrorResult` instead of
 returning raw Python exceptions or terminal-only CLI text.
@@ -58,6 +59,11 @@ They write redacted runtime audit records through
 `.cosheaf/audit/web-actions.jsonl` and return only redacted action flags and
 URLs. They do not create accepted knowledge, human review, verifier pass, gate
 pass, promotion authority, or token storage.
+
+The B2.8.2 PR status endpoint is read-only. It may call `gh pr view --json`
+for GitHub metadata and must return a degraded payload when GitHub auth, `gh`,
+or network access is unavailable. Displayed GitHub reviews and comments are
+collaboration state only and are not Cosheaf human review imports.
 
 Local issue creation through `CosheafApp.create_issue` writes only
 repository-local issue YAML under `issues/open/`. It does not create a GitHub

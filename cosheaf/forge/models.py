@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, Protocol
+from typing import Any, Literal, Protocol
 
 from pydantic import Field, field_validator
 
@@ -171,6 +171,39 @@ class ForgeActionResult(AgentAccessModel):
         if value is None:
             return None
         return validate_artifact_id(value.strip())
+
+
+class GitHubPrStatusResult(AgentAccessModel):
+    """Read-only GitHub PR status for web workflow display."""
+
+    kind: Literal["github_pr_status"] = "github_pr_status"
+    read_only: Literal[True] = True
+    network_calls_performed: bool = False
+    git_writes_performed: Literal[False] = False
+    github_writes_performed: Literal[False] = False
+    github_auth_available: bool = False
+    source_of_truth: Literal["github", "degraded"] = "degraded"
+    updated_at: str
+    pr: dict[str, Any] = Field(default_factory=dict)
+    linked_issue: dict[str, Any] | None = None
+    checklist: dict[str, Any] = Field(default_factory=dict)
+    ci: dict[str, Any] = Field(default_factory=dict)
+    gate: dict[str, Any] = Field(default_factory=dict)
+    cosheaf_review: dict[str, Any] = Field(default_factory=dict)
+    github_reviews: list[dict[str, Any]] = Field(default_factory=list)
+    review_comments: list[dict[str, Any]] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    authority_warning: str = FORGE_AUTHORITY_WARNING
+
+    @field_validator("updated_at")
+    @classmethod
+    def _updated_at(cls, value: str) -> str:
+        return _non_empty(value)
+
+    @field_validator("warnings")
+    @classmethod
+    def _status_warnings(cls, values: list[str]) -> list[str]:
+        return _unique_text(values)
 
 
 def _non_empty(value: str) -> str:
