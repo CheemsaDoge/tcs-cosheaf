@@ -1,7 +1,7 @@
-# Local Website Server API
+# Website Server API
 
-Cosheaf includes an optional localhost API for dynamic website preview and
-forge-backed action previews:
+Cosheaf includes an optional localhost API for dynamic website preview,
+forge-backed action previews, and a narrow backend-only GitHub create slice:
 
 ```bash
 cosheaf server serve --readonly --port 8765
@@ -14,6 +14,12 @@ backend integrations that instantiate `ReadOnlySiteApi` with a server-side
 `ForgeCredentialProvider`; the default CLI server does not configure one, so
 confirmed create requests return `401 auth_required`.
 
+Longplan B2 turns this server boundary into the Human Governance Workbench
+bridge. The server is the only allowed path from browser actions to policy
+checks, repository writes, Git/GitHub actions, audit logs, human review records,
+and promotion workflows. This document records that target contract without
+claiming that the full write surface exists yet.
+
 Do not expose the localhost server on a public interface. Browser CORS
 responses are limited to localhost origins such as
 `http://localhost:<port>` and `http://127.0.0.1:<port>`.
@@ -23,7 +29,7 @@ responses are limited to localhost origins such as
 The server calls `cosheaf.app.open_app` and the application facade in-process.
 It does not shell out to the `cosheaf` CLI, run hosted providers, write
 accepted artifacts, promote artifacts, create human review, or run gates as a
-side effect.
+side effect in the current read/preview implementation.
 
 Read-only payloads are generated through the existing website export path into
 a temporary directory outside the repository, then returned as JSON. Preview
@@ -31,6 +37,31 @@ actions return dry-run plans only and never call GitHub. Authenticated create
 actions call the same `cosheaf.app` / `cosheaf.forge` GitHub issue/PR logic as
 the CLI after backend auth and explicit confirmation. Repository YAML/JSON
 records remain the source of truth. Server responses are display context only.
+
+Future Workbench write endpoints may create or update issues, draft artifacts,
+source/evidence metadata, review packets, human review decisions, promotion
+records, branches, commits, pushes, GitHub issues, and GitHub PRs only through
+the backend/app/storage/forge path. Direct browser-to-YAML writes are
+forbidden. Browser-side GitHub token storage is forbidden. Server logs,
+responses, audit records, and test fixtures must never expose tokens,
+authorization headers, private keys, or cookies.
+
+Every write-class endpoint must:
+
+- offer a preview request that performs no repository write and no network
+  mutation;
+- require an explicit confirm request before writing;
+- recompute or verify the preview plan before confirmation;
+- run the policy checks required for the action class;
+- write a redacted machine-readable audit event;
+- report planned and written files/actions; and
+- preserve skipped, failed, unavailable, and not-run states instead of turning
+  them into pass.
+
+Review and promotion endpoints are allowed in the Workbench target because the
+website is the human interface. They still cannot invent authority: accepted,
+refuted, or obsolete promotion requires explicit human review state and the
+ordinary Cosheaf validation, gate, source, dependency, and audit policy.
 
 ## Endpoints
 
@@ -62,6 +93,26 @@ Preview endpoints return `dry_run_only: true`, planned actions, planned files,
 and the forge authority warning. They do not write repository files, call
 GitHub, run `git` or `gh`, store credentials, run providers, create human
 review, or change accepted/promotion state.
+
+## Target Workbench Action Classes
+
+Future endpoints should keep actions in these classes:
+
+- read actions: live workspace, issue, artifact, context, gate, evidence,
+  review, promotion-readiness, forge, and audit reads;
+- preview actions: dry-run plans for every write-class action;
+- local repo write actions: issue, draft artifact, source/evidence, review
+  packet, and human review record writes;
+- git/forge actions: branch, commit, push, and PR preparation;
+- GitHub actions: GitHub issue and PR creation/update through server-side
+  credentials only; and
+- review/promotion actions: human review decisions and accepted/refuted/
+  obsolete promotion through policy-checked backend workflows.
+
+Local mode may use the active repository root and local credential provider.
+Hosted mode must use authenticated server sessions, role checks, server-owned
+checkout/cache state, and backend-held GitHub App or OAuth credentials. Hosted
+mode must route writes through branches and PRs, not direct main writes.
 
 ## Authenticated Create Actions
 

@@ -2,7 +2,7 @@
 
 Milestone: **V18 / v1.0.0 AI Math Collaborator MVP**
 
-Status: **Post-v1.0.0 Longplan B website scope/data-contract planning**
+Status: **Post-v1.0.0 Longplan B2 Human Governance Workbench planning**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V18.md
 
@@ -17,14 +17,22 @@ complete.
 
 Current focus:
 
-- define the read-only website human-interface boundary and data contract;
+- define the Human Governance Workbench product contract;
+- preserve static showcase mode as a read-only explanation mode;
 - maintain the published `v1.0.0` AI Math Collaborator MVP baseline;
 - keep downstream workspace-template and public KB pins aligned to `v1.0.0`;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
 - keep accepted promotion, human review, source metadata, verifier, and gate
   semantics unchanged.
 
-Post-v1.0.0 Longplan B website work:
+Post-v1.0.0 Longplan B/B2 website work:
+
+- issue #538 / branch `web-governance-workbench-spec` redefines the website
+  target as the Human Governance Workbench: website as human research/review/
+  governance workspace, CLI as AI/Codex/operator/automation interface, server
+  as policy/auth/audit/repo-write/GitHub bridge, and repository files as
+  source of truth. This task is documentation-only and does not add runtime
+  write endpoints.
 
 - issue #512 / branch `website-product-data-contract` defines the website as a
   read-only human interface, records the static export data contract, and keeps
