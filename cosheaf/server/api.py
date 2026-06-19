@@ -10,7 +10,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Literal, cast
 from urllib.parse import unquote, urlparse
-from uuid import uuid4
 
 from cosheaf.app import CosheafApp
 from cosheaf.forge import (
@@ -21,6 +20,13 @@ from cosheaf.forge import (
     ForgeCredentialProvider,
 )
 from cosheaf.site import REQUIRED_SITE_EXPORT_FILES, SITE_EXPORT_AUTHORITY_NOTICE
+from cosheaf.web_actions import (
+    WebActionAuditEntry,
+    WebActionError,
+    WebActionKind,
+    WebActionMode,
+    append_web_action_audit,
+)
 
 READONLY_SERVER_HOST = "127.0.0.1"
 READONLY_SERVER_PORT = 8765
@@ -42,7 +48,6 @@ _CREATE_ENDPOINTS = {
     "/api/forge/issues/create",
     "/api/forge/prs/create",
 }
-_AUDIT_PATH = Path(".cosheaf") / "audit" / "website-forge-actions.jsonl"
 
 
 @dataclass(frozen=True)
@@ -182,6 +187,13 @@ class ReadOnlySiteApi:
             scope=_scope(payload.get("scope", "private")),
         )
         planned_file = result.relative_path.as_posix()
+        self._write_audit(
+            action="local_issue_preview",
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=[planned_file],
+        )
         return _preview_response(
             "local_issue_preview",
             planned_actions=["create repository-local issue YAML preview"],
@@ -193,6 +205,13 @@ class ReadOnlySiteApi:
         source_path = _required_text(payload, "source_path")
         result = self.app.forge_issue_preview(source_path)
         result_payload = result.model_dump(mode="json")
+        self._write_audit(
+            action="github_issue_preview",
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=[source_path],
+        )
         return _preview_response(
             "github_issue_preview",
             planned_actions=["create GitHub issue preview"],
@@ -202,11 +221,22 @@ class ReadOnlySiteApi:
         )
 
     def _preview_github_pr(self, payload: dict[str, Any]) -> ApiResponse:
+        base = _required_text(payload, "base")
+        head = _required_text(payload, "head")
         result = self.app.forge_pr_preview(
-            base=_required_text(payload, "base"),
-            head=_required_text(payload, "head"),
+            base=base,
+            head=head,
         )
         result_payload = result.model_dump(mode="json")
+        self._write_audit(
+            action="github_pr_preview",
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=[],
+            base=base,
+            head=head,
+        )
         return _preview_response(
             "github_pr_preview",
             planned_actions=["create GitHub pull request preview"],
@@ -219,6 +249,13 @@ class ReadOnlySiteApi:
         issue_id = _required_text(payload, "issue_id")
         issue = self.app.show_issue(issue_id).issue
         planned_file = f"reviews/website/{issue_id}-review-packet.md"
+        self._write_audit(
+            action="review_packet_preview",
+            result_status="preview",
+            explicit_confirm=False,
+            preview_only=True,
+            planned_files=[planned_file],
+        )
         return _preview_response(
             "review_packet_preview",
             planned_actions=["create review packet markdown preview"],
@@ -280,6 +317,8 @@ class ReadOnlySiteApi:
                 action=action,
                 result_status=exc.code,
                 planned_files=[],
+                base=base,
+                head=head,
             )
             raise
         return self._action_response(
@@ -300,6 +339,7 @@ class ReadOnlySiteApi:
                 action=action,
                 result_status="confirm_required",
                 explicit_confirm=False,
+                preview_only=False,
             )
             return _error(400, "confirm_required", "create requires confirm: true")
         provider = self.credential_provider
@@ -308,6 +348,7 @@ class ReadOnlySiteApi:
                 action=action,
                 result_status="auth_required",
                 explicit_confirm=True,
+                preview_only=False,
                 credential_provider=self._credential_provider_name(),
             )
             return _error(
@@ -330,6 +371,7 @@ class ReadOnlySiteApi:
             action=result.action,
             result_status="success",
             explicit_confirm=True,
+            preview_only=False,
             credential_provider=self._credential_provider_name(),
             planned_files=planned_files,
             repo_writes_performed=repo_writes_performed,
@@ -358,13 +400,18 @@ class ReadOnlySiteApi:
         action: str,
         result_status: str,
         planned_files: list[str],
+        base: str | None = None,
+        head: str | None = None,
     ) -> None:
         self._write_audit(
             action=action,
             result_status=result_status,
             explicit_confirm=True,
+            preview_only=False,
             credential_provider=self._credential_provider_name(),
             planned_files=planned_files,
+            base=base,
+            head=head,
         )
 
     def _credential_provider_name(self) -> str | None:
@@ -380,34 +427,67 @@ class ReadOnlySiteApi:
         action: str,
         result_status: str,
         explicit_confirm: bool,
+        preview_only: bool,
         credential_provider: str | None = None,
         planned_files: list[str] | None = None,
         repo_writes_performed: bool = False,
+        base: str | None = None,
+        head: str | None = None,
+        branch: str | None = None,
         result: dict[str, Any] | None = None,
     ) -> None:
         result = result or {}
-        entry = {
-            "schema_version": READONLY_SERVER_SCHEMA_VERSION,
-            "event_id": str(uuid4()),
-            "timestamp": datetime.now(UTC).replace(microsecond=0).isoformat(),
-            "action": action,
-            "repo": str(self.app.context.repo_root),
-            "credential_provider": credential_provider,
-            "explicit_confirm": explicit_confirm,
-            "planned_files": planned_files or [],
-            "result_status": result_status,
-            "result_url": result.get("github_issue_url") or result.get("github_pr_url"),
-            "git_writes_performed": bool(result.get("git_writes_performed", False)),
-            "github_writes_performed": bool(
-                result.get("github_writes_performed", False)
+        github_url = result.get("github_issue_url") or result.get("github_pr_url")
+        performed = result_status == "success" and bool(
+            result.get("action_performed", False)
+        )
+        error_code = None if result_status in {"preview", "success"} else result_status
+        errors = []
+        if error_code is not None:
+            errors.append(
+                WebActionError(
+                    code=error_code,
+                    message="web action did not complete",
+                    remediation="Inspect the API response and backend credentials.",
+                    blocking=True,
+                )
+            )
+        append_web_action_audit(
+            self.app.context,
+            WebActionAuditEntry(
+                timestamp=datetime.now(UTC).replace(microsecond=0),
+                actor="local.web",
+                action=_web_action_kind(action),
+                mode=WebActionMode.LOCAL,
+                repo_root=str(self.app.context.repo_root),
+                branch=branch or _optional_str(result.get("branch")),
+                base=base or _optional_str(result.get("base")),
+                head=head or _optional_str(result.get("head")),
+                preview_only=preview_only,
+                confirm_required=result_status == "confirm_required",
+                confirmed=explicit_confirm,
+                explicit_confirm=explicit_confirm,
+                performed=performed,
+                repo_writes_performed=repo_writes_performed,
+                git_writes_performed=bool(result.get("git_writes_performed", False)),
+                github_writes_performed=bool(
+                    result.get("github_writes_performed", False)
+                ),
+                network_calls_performed=bool(
+                    result.get("network_calls_performed", False)
+                ),
+                planned_files=planned_files or [],
+                written_files=(planned_files or []) if repo_writes_performed else [],
+                validation_summary=_performed_summary(result, "validation_performed"),
+                gate_summary=_performed_summary(result, "gate_performed"),
+                github_urls=[github_url] if isinstance(github_url, str) else [],
+                credential_provider=credential_provider,
+                result_status=result_status,
+                authority_warnings=[FORGE_AUTHORITY_WARNING],
+                error_code=error_code,
+                errors=errors,
             ),
-            "repo_writes_performed": repo_writes_performed,
-            "authority_notice": FORGE_AUTHORITY_WARNING,
-        }
-        audit_path = self.app.context.resolve(_AUDIT_PATH)
-        audit_path.parent.mkdir(parents=True, exist_ok=True)
-        with audit_path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(entry, sort_keys=True) + "\n")
+        )
 
     def _payload_file(self, filename: str) -> dict[str, Any]:
         payloads = self._site_payloads()
@@ -590,6 +670,31 @@ def _preview_response(
             **extra,
         },
     )
+
+
+def _web_action_kind(action: str) -> WebActionKind:
+    mapping = {
+        "local_issue_preview": WebActionKind.ISSUE_CREATE,
+        "github_issue_preview": WebActionKind.ISSUE_PUBLISH_GITHUB,
+        "github_issue_create": WebActionKind.ISSUE_PUBLISH_GITHUB,
+        "github_pr_preview": WebActionKind.FORGE_PR_CREATE,
+        "github_pr_create": WebActionKind.FORGE_PR_CREATE,
+        "review_packet_preview": WebActionKind.REVIEW_PACKET_CREATE,
+    }
+    try:
+        return mapping[action]
+    except KeyError as exc:
+        raise ValueError(f"unknown web action audit kind: {action}") from exc
+
+
+def _optional_str(value: object) -> str | None:
+    return value if isinstance(value, str) and value.strip() else None
+
+
+def _performed_summary(result: dict[str, Any], key: str) -> str | None:
+    if result.get(key) is True:
+        return "performed"
+    return None
 
 
 def _error(status: int, code: str, message: str) -> ApiResponse:

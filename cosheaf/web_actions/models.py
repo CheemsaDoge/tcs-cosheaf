@@ -324,13 +324,25 @@ class WebActionAuditEntry(AgentAccessModel):
     action: WebActionKind
     mode: WebActionMode
     repo_root: str
+    branch: str | None = None
+    base: str | None = None
+    head: str | None = None
     preview_only: bool
+    confirm_required: bool = False
     confirmed: bool
+    explicit_confirm: bool = False
     performed: bool
+    repo_writes_performed: bool = False
+    git_writes_performed: bool = False
+    github_writes_performed: bool = False
+    network_calls_performed: bool = False
     planned_files: list[str] = Field(default_factory=list)
     written_files: list[str] = Field(default_factory=list)
     validation_summary: str | None = None
     gate_summary: str | None = None
+    github_urls: list[str] = Field(default_factory=list)
+    credential_provider: str | None = None
+    result_status: str | None = None
     authority_warnings: list[str] = Field(default_factory=list)
     error_code: str | None = None
     errors: list[WebActionError] = Field(default_factory=list)
@@ -340,17 +352,35 @@ class WebActionAuditEntry(AgentAccessModel):
     def _text(cls, value: str) -> str:
         return _non_empty(value)
 
+    @field_validator("branch", "base", "head")
+    @classmethod
+    def _optional_ref(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        return _non_empty(value)
+
     @field_validator("planned_files", "written_files")
     @classmethod
     def _paths(cls, values: list[str]) -> list[str]:
         return [_repo_local_path(value) for value in values]
 
-    @field_validator("validation_summary", "gate_summary", "error_code")
+    @field_validator(
+        "validation_summary",
+        "gate_summary",
+        "credential_provider",
+        "result_status",
+        "error_code",
+    )
     @classmethod
     def _optional_text(cls, value: str | None) -> str | None:
         if value is None:
             return None
         return _non_empty(value)
+
+    @field_validator("github_urls")
+    @classmethod
+    def _github_urls(cls, values: list[str]) -> list[str]:
+        return _unique_text(values)
 
     @field_validator("authority_warnings")
     @classmethod

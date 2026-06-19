@@ -27,6 +27,11 @@ Current focus:
 
 Post-v1.0.0 Longplan B/B2 website work:
 
+- issue #542 / branch `web-action-audit-log` adds the B2.1.2 shared
+  append-only web-action audit helper under `cosheaf.web_actions`, writing
+  redacted runtime JSONL at `.cosheaf/audit/web-actions.jsonl`. Current server
+  preview and authenticated forge create actions use the shared logger.
+
 - issue #540 / branch `web-action-dtos` adds the B2.1.1 typed WebAction DTO
   contract under `cosheaf.web_actions`, re-exported through
   `cosheaf.app.models`, with `schemas/web_action.schema.json`. This creates

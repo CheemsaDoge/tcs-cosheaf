@@ -35,10 +35,13 @@
   `WebActionAuditEntry`, `WebActionError`, `RepoWritePlan`, `GitWritePlan`,
   `GitHubWritePlan`, `ReviewDecisionPlan`, `PromotionPlan`,
   `WebActionKind`, and `WebActionMode`. The JSON Schema surface is
-  `schemas/web_action.schema.json`. These DTOs define stable request/result,
-  plan, error, and audit shapes for future Workbench endpoints only; they do
-  not add endpoint execution, repository writes, Git writes, GitHub writes,
-  human-review creation, promotion, or token handling.
+  `schemas/web_action.schema.json`. The package also exposes
+  `WEB_ACTION_AUDIT_PATH` and `append_web_action_audit` for redacted
+  append-only runtime audit JSONL at `.cosheaf/audit/web-actions.jsonl`.
+  These DTOs and helpers define stable request/result, plan, error, and audit
+  shapes for Workbench endpoints; they do not add endpoint execution,
+  repository writes, Git writes, GitHub writes, human-review creation,
+  promotion, or token handling by themselves.
 - The validate/gate CLI group is registered from `cosheaf.validation_cli` and
   delegates repository validation and gatekeeper runs to `cosheaf.app.open_app`.
   Public command names and JSON DTOs remain `cosheaf validate`,
@@ -91,8 +94,9 @@
   repository write, or CLI subprocess. Authenticated create endpoints require a
   backend credential provider and `confirm: true`, call shared app/forge GitHub
   issue/PR create logic, return only redacted action flags and URLs, and write
-  redacted runtime audit records under ignored
-  `.cosheaf/audit/website-forge-actions.jsonl` for success and failure.
+  redacted runtime audit records through `append_web_action_audit` under
+  ignored `.cosheaf/audit/web-actions.jsonl` for preview, success, auth or
+  confirmation refusal, and failure.
   Website server output is display context only and remains subordinate to
   repository YAML/JSON source files; it does not create accepted knowledge,
   human review, verifier pass, gate pass, promotion authority, token storage,
@@ -1348,10 +1352,12 @@
   Preview-only results validate that no side effect flags or written files are
   reported.
 - `cosheaf.web_actions.WebActionAuditEntry`: public audit-entry DTO shape for
-  future append-only web-action logging. It records timestamp, actor, action,
-  mode, repo root, preview/confirm/performed flags, planned and written files,
-  validation/gate summaries, authority warnings, and errors. This DTO does not
-  implement audit logging by itself.
+  append-only web-action logging. It records timestamp, actor, action, mode,
+  repo root, optional branch/base/head metadata, preview/confirm/performed
+  flags, repository/git/GitHub/network side-effect flags, planned and written
+  files, validation/gate summaries, GitHub URLs, credential provider label,
+  result status, authority warnings, error code, and structured errors. This
+  DTO does not perform repository writes by itself.
 - `cosheaf.web_actions.WebActionError`: public web-action error DTO with code,
   message, remediation, blocking flag, optional related path/artifact, and
   string details.
@@ -1363,6 +1369,13 @@
   allowed action names and static/local/hosted modes.
 - `schemas/web_action.schema.json`: JSON Schema bundle for the public
   WebAction DTOs.
+- `cosheaf.web_actions.WEB_ACTION_AUDIT_PATH`: repository-relative runtime
+  audit path `.cosheaf/audit/web-actions.jsonl`.
+- `cosheaf.web_actions.append_web_action_audit(context, entry)`: appends one
+  redacted `WebActionAuditEntry` JSONL record to `WEB_ACTION_AUDIT_PATH` and
+  returns that repository-relative path. The helper redacts sensitive keys and
+  common token-like string patterns before append. It does not execute the
+  action described by the entry.
 - `cosheaf.research.run.ResearchRunRecord`: strict Pydantic v2 DTO for one
   repository-local research run. It records issue ID, operator kind/label,
   timestamps, status, command records, artifact references, controlled outputs,
