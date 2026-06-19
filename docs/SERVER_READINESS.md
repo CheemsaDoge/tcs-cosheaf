@@ -17,6 +17,7 @@ facade directly:
 - `CosheafApp.build_context`
 - `CosheafApp.show_context`
 - `CosheafApp.create_issue`
+- `CosheafApp.preview_issue`
 - `CosheafApp.forge_status`
 - `CosheafApp.forge_issue_preview`
 - `CosheafApp.forge_pr_preview`
@@ -31,13 +32,15 @@ in-process. It must not shell out to `cosheaf` CLI commands for workspace info,
 validation, gatekeeper runs, context packs, local issue creation, forge
 previews, or website payloads.
 
-Forge previews are read-only planning output. They do not call `git`, `gh`, the
-network, create GitHub issues, create GitHub PRs, push, store credentials, or
-change accepted/promotion state.
+Forge and website previews are read-only planning output. They do not call
+`git`, `gh`, the network, create GitHub issues, create GitHub PRs, push, store
+credentials, or change accepted/promotion state.
 
 Local issue creation through `CosheafApp.create_issue` writes only
 repository-local issue YAML under `issues/open/`. It does not create a GitHub
 issue and does not accept, refute, review, verify, gate, or promote artifacts.
+Local issue preview through `CosheafApp.preview_issue` validates and returns the
+planned issue path and record without writing the YAML file.
 
 Validation and gatekeeper calls remain the same authority boundaries as the
 CLI: skipped is not pass, gate output is not human review, and neither a
@@ -47,5 +50,6 @@ passing gate nor a GitHub workflow state creates accepted knowledge.
 
 `tests/test_server_readiness.py` proves the listed app and forge entry points
 can be called without CLI subprocesses. `tests/test_readonly_server.py` proves
-the read-only website API routes app-layer payloads without CLI subprocesses
-and refuses non-GET methods.
+the website API routes app-layer payloads without CLI subprocesses, serves
+preview-only action plans without repository or GitHub writes, and supports
+localhost browser preflight.

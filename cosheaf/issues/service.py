@@ -87,6 +87,7 @@ class LocalIssueService:
         related_artifacts: tuple[str, ...] = (),
         related_sources: tuple[str, ...] = (),
         scope: Literal["private", "public"] = "private",
+        dry_run: bool = False,
     ) -> IssueResult:
         """Create an open repository-local issue YAML record."""
         normalized_id = validate_artifact_id(issue_id)
@@ -110,11 +111,12 @@ class LocalIssueService:
         absolute_path = self.context.resolve(relative_path)
         if absolute_path.exists():
             raise LocalIssueError(f"issue path already exists: {relative_path}")
-        write_yaml_deterministic(absolute_path, _issue_yaml_data(issue))
+        if not dry_run:
+            write_yaml_deterministic(absolute_path, _issue_yaml_data(issue))
         return IssueResult(
             issue=issue,
             relative_path=relative_path,
-            writes_performed=True,
+            writes_performed=not dry_run,
         )
 
     def show(self, issue_id: str) -> IssueResult:

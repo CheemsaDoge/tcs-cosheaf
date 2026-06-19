@@ -146,6 +146,31 @@ class CosheafApp:
             scope=scope,
         )
 
+    def preview_issue(
+        self,
+        *,
+        issue_id: str,
+        title: str,
+        summary: str | None = None,
+        authors: Sequence[str] = (),
+        labels: Sequence[str] = (),
+        related_artifacts: Sequence[str] = (),
+        related_sources: Sequence[str] = (),
+        scope: Literal["private", "public"] = "private",
+    ) -> IssueResult:
+        """Preview an open repository-local issue YAML record without writing."""
+        return LocalIssueService(self.context).create(
+            issue_id=issue_id,
+            title=title,
+            summary=summary,
+            authors=tuple(authors),
+            labels=tuple(labels),
+            related_artifacts=tuple(related_artifacts),
+            related_sources=tuple(related_sources),
+            scope=scope,
+            dry_run=True,
+        )
+
     def show_issue(self, issue_id: str) -> IssueResult:
         """Return one repository-local issue record."""
         return LocalIssueService(self.context).show(issue_id)

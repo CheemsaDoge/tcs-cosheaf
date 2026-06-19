@@ -1,9 +1,15 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import {
+  PREVIEW_API_BASE,
+  PREVIEW_AUTHORITY_WARNING,
+  buildPreviewRequests
+} from "../lib/previewActions";
 import { loadSiteData } from "../lib/siteData";
 
 const data = await loadSiteData();
 const issue = data.issues.issues[0];
+const previewRequests = buildPreviewRequests(data);
 ---
 
 <BaseLayout title="Demo" eyebrow="Workspace fixture">
@@ -31,4 +37,86 @@ const issue = data.issues.issues[0];
       </div>
     </article>
   </section>
+
+  <section class="panel preview-panel">
+    <div class="card-heading">
+      <div>
+        <p class="section-kicker">Preview actions</p>
+        <h2>Dry-run action previews</h2>
+      </div>
+      <span class="badge warning">preview only</span>
+    </div>
+    <p class="preview-warning">{PREVIEW_AUTHORITY_WARNING}</p>
+    <div class="preview-toolbar" aria-label="Preview actions">
+      {
+        previewRequests.map((request) => (
+          <button
+            class="preview-button"
+            type="button"
+            data-preview-action={request.id}
+          >
+            {request.label}
+          </button>
+        ))
+      }
+    </div>
+    <pre class="json-block preview-output" data-preview-output>
+Select a preview action. The response will show planned files and actions from the local API.</pre>
+  </section>
+
+  <script define:vars={{ previewRequests, apiBase: PREVIEW_API_BASE }}>
+    const output = document.querySelector("[data-preview-output]");
+    const requests = new Map(
+      previewRequests.map((request) => [request.id, request])
+    );
+
+    document.querySelectorAll("[data-preview-action]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const request = requests.get(button.dataset.previewAction);
+        if (!request || !output) {
+          return;
+        }
+
+        const endpoint = `${apiBase}${request.endpoint}`;
+        output.textContent = JSON.stringify(
+          {
+            endpoint,
+            request: request.payload,
+            status: "pending"
+          },
+          null,
+          2
+        );
+
+        try {
+          const response = await fetch(endpoint, {
+            method: request.method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(request.payload)
+          });
+          const payload = await response.json();
+          output.textContent = JSON.stringify(
+            {
+              endpoint,
+              request: request.payload,
+              status: response.status,
+              response: payload
+            },
+            null,
+            2
+          );
+        } catch (error) {
+          output.textContent = JSON.stringify(
+            {
+              endpoint,
+              request: request.payload,
+              error: error instanceof Error ? error.message : String(error)
+            },
+            null,
+            2
+          );
+        }
+      });
+    });
+  </script>
 </BaseLayout>

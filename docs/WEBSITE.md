@@ -134,6 +134,12 @@ The server calls the app facade in-process, does not shell out to CLI commands,
 does not write repository records, and does not run gates or context builds as
 request side effects. See [Local Read-Only Server API](SERVER_API.md).
 
+The demo page can also call localhost preview-only endpoints for local issue,
+GitHub issue, pull request, and review packet plans. These requests are
+`POST` dry-runs only. They show planned files/actions and authority warnings,
+but they do not write repository files, call GitHub, store tokens, run
+providers, create human review, or change accepted/promotion state.
+
 Artifact, issue, and context views now include static detail pages generated
 from the fixture data. Artifact filters run in the browser over already-exported
 metadata only. Status badges include authority explanations; missing verifier
