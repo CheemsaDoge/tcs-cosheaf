@@ -40,7 +40,12 @@ from cosheaf.agent.worker_bundle_v2 import (
     worker_bundle_review_warnings,
 )
 from cosheaf.config.workspace import KbRootConfig
-from cosheaf.core.artifact import BaseArtifact, FailureLogEntry, SourceMetadata
+from cosheaf.core.artifact import (
+    BaseArtifact,
+    Evidence,
+    FailureLogEntry,
+    SourceMetadata,
+)
 from cosheaf.core.ids import validate_artifact_id
 from cosheaf.core.paths import lifecycle_artifact_path, normalize_repo_path
 from cosheaf.core.status import ArtifactStatus, ArtifactType, is_preaccepted_status
@@ -840,6 +845,50 @@ class DraftWriteService:
             validator=_validate_source_note_file,
         )
 
+    def append_source_metadata(
+        self,
+        artifact_id: str,
+        request: Mapping[str, Any],
+        *,
+        dry_run: bool = False,
+    ) -> ArtifactWriteResult:
+        """Append source metadata to a writable draft/pre-accepted artifact."""
+        source = _source_metadata_from_request(request)
+        return self._append_artifact_metadata(
+            artifact_id,
+            source=source,
+            evidence=None,
+            dry_run=dry_run,
+        )
+
+    def append_evidence_metadata(
+        self,
+        artifact_id: str,
+        request: Mapping[str, Any],
+        *,
+        dry_run: bool = False,
+    ) -> ArtifactWriteResult:
+        """Append evidence metadata to a writable draft/pre-accepted artifact."""
+        evidence_payload = {
+            "kind": _required_text(request, "kind"),
+            "path": _required_text(request, "path"),
+            "summary": _required_text(request, "summary"),
+        }
+        try:
+            evidence = Evidence.model_validate(evidence_payload)
+        except ValidationError as exc:
+            raise DraftWriteServiceError(
+                _format_pydantic_errors(exc),
+                code="artifact_model_validation_failed",
+                remediation="Fix evidence metadata fields and retry.",
+            ) from exc
+        return self._append_artifact_metadata(
+            artifact_id,
+            source=None,
+            evidence=evidence,
+            dry_run=dry_run,
+        )
+
     def write_review_request(
         self,
         request: Mapping[str, Any],
@@ -977,6 +1026,81 @@ class DraftWriteService:
             kind="artifact_failure_log_entry",
             record_id=entry.failure_id,
             dry_run=dry_run,
+        )
+
+    def _append_artifact_metadata(
+        self,
+        artifact_id: str,
+        *,
+        source: SourceMetadata | None,
+        evidence: Evidence | None,
+        dry_run: bool,
+    ) -> ArtifactWriteResult:
+        loaded = _find_unique_artifact(self.context, artifact_id)
+        if loaded.kb_root_readonly:
+            raise DraftWriteServiceError(
+                f"readonly KB root cannot be modified: {loaded.kb_root_name}",
+                code="readonly_kb_root",
+                remediation="Choose an artifact in a writable private KB root.",
+                details={
+                    "kb_root": loaded.kb_root_name or "",
+                    "path": loaded.source_path.as_posix(),
+                },
+            )
+        _reject_accepted_path(loaded.source_path)
+        _ensure_target_writable(self.context, loaded.source_path)
+        artifact = loaded.record
+        if not isinstance(artifact, BaseArtifact):
+            raise AssertionError("unreachable non-artifact metadata target")
+        if not is_preaccepted_status(artifact.status):
+            raise DraftWriteServiceError(
+                "web metadata writes cannot target accepted or terminal artifacts",
+                code="accepted_write_forbidden"
+                if artifact.status is ArtifactStatus.ACCEPTED
+                else "terminal_status_forbidden",
+                remediation=(
+                    "Attach metadata to draft/pre-accepted artifacts only. "
+                    "Accepted and terminal states require lifecycle workflows."
+                ),
+            )
+
+        payload = artifact.model_dump(mode="json")
+        payload["updated_at"] = datetime.now(UTC).replace(microsecond=0)
+        if source is not None:
+            payload["sources"] = [
+                *payload.get("sources", []),
+                source.model_dump(mode="json"),
+            ]
+        if evidence is not None:
+            payload["evidence"] = [
+                *payload.get("evidence", []),
+                evidence.model_dump(mode="json"),
+            ]
+        try:
+            updated = BaseArtifact.model_validate(payload)
+        except ValidationError as exc:
+            raise DraftWriteServiceError(
+                _format_pydantic_errors(exc),
+                code="artifact_model_validation_failed",
+                remediation="Fix metadata fields and retry.",
+            ) from exc
+
+        result = ArtifactWriteResult(artifact=updated, relative_path=loaded.source_path)
+        if dry_run:
+            return result
+
+        target_path = self.context.resolve(loaded.source_path)
+        original_text = target_path.read_text(encoding="utf-8")
+        write_yaml_deterministic(target_path, updated)
+        report = validate_artifact_file(self.context, loaded.source_path)
+        if report.ok:
+            return result
+
+        target_path.write_text(original_text, encoding="utf-8", newline="\n")
+        raise DraftWriteServiceError(
+            _format_report_failures(report),
+            code="artifact_file_validation_failed",
+            remediation="Fix validation failures before attaching metadata.",
         )
 
     def plan_failure_log_entries_from_bundle(

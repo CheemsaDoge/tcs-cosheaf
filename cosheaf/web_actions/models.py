@@ -27,6 +27,7 @@ class WebActionKind(StrEnum):
     CONTEXT_BUILD = "context.build"
     VALIDATE_RUN = "validate.run"
     GATE_RUN = "gate.run"
+    SOURCE_ATTACH = "source.attach"
     EVIDENCE_ATTACH = "evidence.attach"
     REVIEW_PACKET_CREATE = "review.packet_create"
     REVIEW_DECISION_CREATE = "review.decision_create"

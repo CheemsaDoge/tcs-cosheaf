@@ -1,0 +1,114 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import I18nText from "../../../components/I18nText.astro";
+import { ARTIFACT_METADATA_LABELS } from "../../../lib/artifactMetadataWorkbench";
+import { PREACCEPTED_ARTIFACT_STATUSES } from "../../../lib/artifactWorkbench";
+import { localized } from "../../../lib/i18n";
+import { artifactById, artifactHref, loadSiteData } from "../../../lib/siteData";
+
+export async function getStaticPaths() {
+  const data = await loadSiteData();
+  return data.artifacts.artifacts.map((artifact) => ({
+    params: { id: artifact.id }
+  }));
+}
+
+const id = Astro.params.id ?? "";
+const data = await loadSiteData();
+const artifact = artifactById(id, data);
+if (!artifact) {
+  throw new Error(`Unknown artifact: ${id}`);
+}
+const canWrite =
+  data.runtime.mode === "live-local" &&
+  PREACCEPTED_ARTIFACT_STATUSES.includes(
+    artifact.status as (typeof PREACCEPTED_ARTIFACT_STATUSES)[number]
+  );
+const evidenceKinds = [
+  "note",
+  "python_checker",
+  "lean",
+  "sat",
+  "smt",
+  "external"
+];
+---
+
+<BaseLayout
+  title={localized(`Add evidence: ${artifact.id}`, `添加证据：${artifact.id}`)}
+  eyebrow={localized("Artifact Workbench", "工件工作台")}
+>
+  <section class="workbench-shell">
+    <article class="panel workbench-main">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker"><I18nText text={localized("Evidence metadata", "证据元数据")} /></p>
+          <h2><I18nText text={ARTIFACT_METADATA_LABELS.addEvidence} /></h2>
+        </div>
+        <span class="tag"><I18nText text={localized("Preview first", "先预览")} /></span>
+      </div>
+      <p>
+        <I18nText
+          text={localized(
+            "Evidence metadata records support for review; it is not verifier pass or gate pass.",
+            "证据元数据记录审阅支撑，不等于验证器通过或准入检查通过。"
+          )}
+        />
+      </p>
+      {
+        canWrite ? (
+          <form
+            class="workbench-form"
+            data-artifact-metadata-form
+            data-action="evidence"
+            data-artifact-id={artifact.id}
+            data-mode={data.runtime.mode}
+            data-api-base={data.runtime.api_base}
+            data-output="#artifact-evidence-preview"
+            data-redirect={artifactHref(artifact.id)}
+          >
+            <fieldset class="form-section">
+              <label>
+                <I18nText text={ARTIFACT_METADATA_LABELS.kind} />
+                <select name="kind">
+                  {evidenceKinds.map((kind) => <option value={kind}>{kind}</option>)}
+                </select>
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_METADATA_LABELS.path} />
+                <input name="path" required placeholder="docs/evidence.md or external:doi/..." />
+              </label>
+              <label>
+                <I18nText text={ARTIFACT_METADATA_LABELS.summary} />
+                <textarea name="summary" rows="6" required></textarea>
+              </label>
+            </fieldset>
+            <div class="preview-toolbar">
+              <button class="preview-button" type="button" data-preview>
+                <I18nText text={ARTIFACT_METADATA_LABELS.preview} />
+              </button>
+              <button class="preview-button" type="submit" data-confirm disabled>
+                <I18nText text={ARTIFACT_METADATA_LABELS.confirm} />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p><I18nText text={localized("Add evidence metadata in live draft mode only.", "仅实时草稿模式可添加证据元数据。")} /></p>
+        )
+      }
+    </article>
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker"><I18nText text={ARTIFACT_METADATA_LABELS.previewOutput} /></p>
+      <pre
+        class="json-block preview-output"
+        id="artifact-evidence-preview"
+        data-i18n-en="Preview before writing."
+        data-i18n-zh="写入前先预览。"
+      >写入前先预览。</pre>
+    </article>
+  </section>
+
+  <script>
+    import "../../../lib/artifactMetadataWorkbenchClient";
+  </script>
+</BaseLayout>

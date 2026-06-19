@@ -483,6 +483,52 @@ class CosheafApp:
             dry_run=dry_run,
         )
 
+    def append_source_metadata(
+        self,
+        artifact_id: str,
+        request: Mapping[str, Any],
+    ) -> ArtifactWriteResult:
+        """Append source metadata to a draft/pre-accepted artifact."""
+        return DraftWriteService(self.context).append_source_metadata(
+            artifact_id,
+            request,
+        )
+
+    def preview_append_source_metadata(
+        self,
+        artifact_id: str,
+        request: Mapping[str, Any],
+    ) -> ArtifactWriteResult:
+        """Preview source metadata attachment without writing."""
+        return DraftWriteService(self.context).append_source_metadata(
+            artifact_id,
+            request,
+            dry_run=True,
+        )
+
+    def append_evidence_metadata(
+        self,
+        artifact_id: str,
+        request: Mapping[str, Any],
+    ) -> ArtifactWriteResult:
+        """Append evidence metadata to a draft/pre-accepted artifact."""
+        return DraftWriteService(self.context).append_evidence_metadata(
+            artifact_id,
+            request,
+        )
+
+    def preview_append_evidence_metadata(
+        self,
+        artifact_id: str,
+        request: Mapping[str, Any],
+    ) -> ArtifactWriteResult:
+        """Preview evidence metadata attachment without writing."""
+        return DraftWriteService(self.context).append_evidence_metadata(
+            artifact_id,
+            request,
+            dry_run=True,
+        )
+
     def write_review_request(
         self,
         request: Mapping[str, Any],

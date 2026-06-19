@@ -96,7 +96,11 @@
   `/api/issues/<issue_id>/close`, plus draft artifact workbench actions
   `POST /api/artifacts/preview-create`, `/api/artifacts/create`,
   `/api/artifacts/<artifact_id>/preview-update`, and
-  `/api/artifacts/<artifact_id>/update`, plus context build workbench actions
+  `/api/artifacts/<artifact_id>/update`, plus artifact metadata workbench
+  actions `POST /api/artifacts/<artifact_id>/preview-source`,
+  `/api/artifacts/<artifact_id>/source`,
+  `/api/artifacts/<artifact_id>/preview-evidence`, and
+  `/api/artifacts/<artifact_id>/evidence`, plus context build workbench actions
   `POST /api/context/<issue_id>/preview-build` and
   `/api/context/<issue_id>/build`, plus validate/gate workbench actions
   `POST /api/validate/run` and `POST /api/gate/run`, plus
@@ -113,11 +117,18 @@
   audit entries under `.cosheaf/audit/web-actions.jsonl`, and never change
   accepted/refuted artifact status, verifier output, gate state, human review,
   or promotion state. Draft artifact workbench endpoints preview and confirm
-  draft/pre-accepted artifact create/update actions through `cosheaf.app`, write
-  redacted audit entries under `.cosheaf/audit/web-actions.jsonl`, validate
-  confirmed writes, refuse direct accepted/refuted/obsolete/superseded writes,
-  refuse readonly KB roots, and never grant proof, source metadata, verifier
-  pass, gate pass, human review, accepted status, or promotion authority.
+  draft/pre-accepted artifact create/update and source/evidence metadata append
+  actions through `cosheaf.app`, write redacted audit entries under
+  `.cosheaf/audit/web-actions.jsonl`, validate confirmed writes, refuse direct
+  accepted/refuted/obsolete/superseded writes, refuse readonly KB roots, and
+  never grant proof, verifier pass, gate pass, human review, accepted status,
+  or promotion authority. Artifact metadata append endpoints accept structured
+  source metadata or evidence metadata for writable draft/pre-accepted
+  artifacts only; preview writes no artifact YAML, evidence preview warns about
+  missing or escaping local paths, confirmed writes validate the artifact file,
+  and validation failure rolls the artifact file back. Attached source/evidence
+  metadata remains workflow context and does not replace public accepted
+  promotion policy, gates, or human review.
   Context build workbench endpoints preview planned
   `context/TASKS/<issue_id>/` files and, only after `confirm: true`, call
   `CosheafApp.build_context` to write ignored runtime context-pack files with
@@ -1430,7 +1441,8 @@
   preview/confirm endpoints. They describe intended repository, git, GitHub,
   human-review, and promotion work without performing it.
 - `cosheaf.web_actions.WebActionKind` and `WebActionMode`: public enums for
-  allowed action names and static/local/hosted modes.
+  allowed action names and static/local/hosted modes. Artifact metadata append
+  audit actions distinguish `source.attach` from `evidence.attach`.
 - `schemas/web_action.schema.json`: JSON Schema bundle for the public
   WebAction DTOs.
 - `cosheaf.web_actions.WEB_ACTION_AUDIT_PATH`: repository-relative runtime
@@ -1653,6 +1665,15 @@
 - `cosheaf.services.DraftWriteService.write_source_note(request, *, dry_run=False) -> ControlledWriteResult`:
   writes or previews a staged draft source-note record with nested
   `SourceMetadata` validation.
+- `cosheaf.services.DraftWriteService.append_source_metadata(artifact_id, request, *, dry_run=False) -> ArtifactWriteResult`:
+  appends or previews one structured `SourceMetadata` entry on a writable
+  draft/pre-accepted artifact. It refuses accepted paths, accepted or terminal
+  artifact status, readonly KB roots, and schema-invalid source metadata.
+- `cosheaf.services.DraftWriteService.append_evidence_metadata(artifact_id, request, *, dry_run=False) -> ArtifactWriteResult`:
+  appends or previews one structured `Evidence` entry on a writable
+  draft/pre-accepted artifact. Confirmed writes validate the artifact file
+  after writing and roll back on validation failure, including missing
+  repository-local evidence paths.
 - `cosheaf.services.DraftWriteService.write_review_request(request, *, dry_run=False) -> ControlledWriteResult`:
   writes or previews a draft informational review-request record and refuses
   human-review spoofing.
