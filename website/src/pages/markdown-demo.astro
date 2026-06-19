@@ -1,0 +1,249 @@
+---
+/**
+ * Demo page for Markdown and LaTeX math rendering.
+ *
+ * Demonstrates rendering capabilities for TCS content:
+ * - Inline math
+ * - Block math
+ * - Markdown formatting
+ * - Mixed content
+ * - Security (sanitization)
+ */
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import MarkdownRenderer from '../components/MarkdownRenderer.astro';
+import { localized } from '../lib/i18n';
+
+const pageTitle = localized('Markdown & Math Rendering Demo', 'Markdown & 数学公式渲染演示');
+const eyebrow = localized('Demo', '演示');
+
+// Example TCS content with various formatting
+const examples = [
+  {
+    title: 'Inline Math',
+    content: 'Triangle graph $K_3$ has 3 vertices and 3 edges.',
+  },
+  {
+    title: 'Block Math',
+    content: 'Summation formula:\n\n$$\\sum_{i=1}^n i = \\frac{n(n+1)}{2}$$',
+  },
+  {
+    title: 'Complexity Classes',
+    content: 'The complexity class **P** is defined as $\\text{DTIME}(n^{O(1)})$, and **NP** is $\\text{NTIME}(n^{O(1)})$.',
+  },
+  {
+    title: 'Graph Notation',
+    content: 'Let $G = (V, E)$ be a graph where $|V| = n$ vertices and $|E| = m$ edges. The complete graph $K_n$ has $\\binom{n}{2} = \\frac{n(n-1)}{2}$ edges.',
+  },
+  {
+    title: 'Algorithm Complexity',
+    content: 'Sorting algorithms:\n\n- Quicksort: $O(n \\log n)$ average case\n- Mergesort: $O(n \\log n)$ worst case\n- Heapsort: $O(n \\log n)$ worst case',
+  },
+  {
+    title: 'Probability',
+    content: 'For a random variable $X$, we have $\\Pr[X = k] = \\binom{n}{k} p^k (1-p)^{n-k}$ for binomial distribution.',
+  },
+  {
+    title: 'Set Theory',
+    content: 'The set $S = \\{1, 2, 3, 4, 5\\}$ has cardinality $|S| = 5$. Its power set $2^S$ has $2^{|S|} = 32$ elements.',
+  },
+  {
+    title: 'Mixed Markdown and Math',
+    content: `## Theorem
+
+Let $G$ be a connected graph with $n$ vertices. Then:
+
+1. $G$ has at least $n-1$ edges
+2. If $G$ has exactly $n-1$ edges, then $G$ is a **tree**
+3. The diameter $\\text{diam}(G) \\leq n-1$
+
+*Proof*: See standard graph theory texts.`,
+  },
+  {
+    title: 'Literal Dollar Signs',
+    content: 'The cost is \\$100 and the profit is \\$50. The formula $P = R - C$ gives profit.',
+  },
+  {
+    title: 'Code and Math',
+    content: 'The function `fibonacci(n)` computes $F_n$ where $F_n = F_{n-1} + F_{n-2}$ with $F_0 = 0, F_1 = 1$.',
+  },
+];
+---
+
+<BaseLayout title={pageTitle} eyebrow={eyebrow}>
+  <div class="demo-page">
+    <header class="demo-header">
+      <h1>Markdown & Math Rendering</h1>
+      <p class="subtitle">
+        Display-only rendering for user-authored TCS content.
+        Repository files remain plain Markdown/YAML.
+      </p>
+    </header>
+
+    <section class="examples">
+      {examples.map((example) => (
+        <article class="example-card">
+          <h2 class="example-title">{example.title}</h2>
+          <div class="example-source">
+            <strong>Source:</strong>
+            <pre><code>{example.content}</code></pre>
+          </div>
+          <div class="example-rendered">
+            <strong>Rendered:</strong>
+            <MarkdownRenderer content={example.content} />
+          </div>
+        </article>
+      ))}
+    </section>
+
+    <section class="security-notice">
+      <h2>Security</h2>
+      <ul>
+        <li>HTML sanitized via DOMPurify</li>
+        <li>Scripts and event handlers removed</li>
+        <li>Only safe URL protocols allowed (https, mailto)</li>
+        <li>Raw HTML disabled by default</li>
+        <li>Math rendering uses KaTeX (no MathJax remote scripts)</li>
+      </ul>
+    </section>
+
+    <section class="usage-note">
+      <h2>Usage</h2>
+      <p>
+        Import the <code>MarkdownRenderer</code> component to render
+        user-authored text on artifact, issue, context, evidence, review,
+        and dashboard pages.
+      </p>
+      <pre><code>{`import MarkdownRenderer from '../components/MarkdownRenderer.astro';
+
+<MarkdownRenderer content={artifactStatement} />
+<MarkdownRenderer content={issueTitle} inline />`}</code></pre>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .demo-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    color: #1F2421;
+  }
+
+  .demo-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .demo-header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 2.5rem;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: #5C635D;
+    font-size: 1.1rem;
+    font-weight: 300;
+  }
+
+  .examples {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .example-card {
+    background: #FFFFFF;
+    border: 1px solid #E7E1D7;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .example-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    color: #C4612F;
+  }
+
+  .example-source,
+  .example-rendered {
+    margin-bottom: 1rem;
+  }
+
+  .example-source strong,
+  .example-rendered strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #5C635D;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .example-source pre {
+    background: #F7F4EF;
+    border: 1px solid #E7E1D7;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .example-source code {
+    font-family: 'Consolas', 'Monaco', monospace;
+  }
+
+  .example-rendered {
+    background: #FBF9F5;
+    border: 1px solid #E7E1D7;
+    border-radius: 6px;
+    padding: 1rem;
+    min-height: 3rem;
+  }
+
+  .security-notice,
+  .usage-note {
+    margin-top: 3rem;
+    padding: 1.5rem;
+    background: #F7F4EF;
+    border-radius: 12px;
+    border: 1px solid #E7E1D7;
+  }
+
+  .security-notice h2,
+  .usage-note h2 {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+
+  .security-notice ul {
+    list-style: disc;
+    padding-left: 1.5rem;
+  }
+
+  .security-notice li {
+    margin-bottom: 0.5rem;
+  }
+
+  .usage-note pre {
+    background: #FFFFFF;
+    border: 1px solid #E7E1D7;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin-top: 1rem;
+  }
+
+  .usage-note code {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9rem;
+  }
+</style>

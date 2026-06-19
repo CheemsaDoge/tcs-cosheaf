@@ -1,6 +1,7 @@
 ---
 import ForceGraph from "../../components/ForceGraph.astro";
 import I18nText from "../../components/I18nText.astro";
+import MarkdownRenderer from "../../components/MarkdownRenderer.astro";
 import RelationshipTags from "../../components/RelationshipTags.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { localized, textFor } from "../../lib/i18n";
@@ -53,7 +54,9 @@ const relatedIssueItems = relatedIssues.map((issue) => ({
       <article class="panel">
         <p class="section-kicker">{artifact.type}</p>
         <h2>{artifact.id}</h2>
-        <p>{artifact.summary}</p>
+        <div class="artifact-summary">
+          <MarkdownRenderer content={artifact.summary} />
+        </div>
         <div class="tag-row">
           <span class:list={["badge", statusTone(artifact.status)]} title={textFor(statusExplanation(artifact.status))}>
             {artifact.status}

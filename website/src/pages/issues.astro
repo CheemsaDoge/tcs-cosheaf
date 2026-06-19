@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import I18nText from "../components/I18nText.astro";
+import MarkdownRenderer from "../components/MarkdownRenderer.astro";
 import { localized, textFor } from "../lib/i18n";
 import {
   artifactById,
@@ -57,7 +58,7 @@ const canWriteIssues = data.runtime.mode === "live-local";
                 {issue.status}
               </span>
             </div>
-            <p>{issue.summary.split("\n\n")[0]}</p>
+            <MarkdownRenderer content={issue.summary.split("\n\n")[0]} />
             <p>
               <a class="text-link" href={contextHref(issue.id)}>
                 <I18nText text={localized("Context pack", "上下文包")} />

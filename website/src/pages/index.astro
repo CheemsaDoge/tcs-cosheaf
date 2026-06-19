@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import I18nText from "../components/I18nText.astro";
+import MarkdownRenderer from "../components/MarkdownRenderer.astro";
 import { localized } from "../lib/i18n";
 import {
   artifactHref,
@@ -90,7 +91,7 @@ const firstPromotionCandidate =
           dashboard.activeIssues.slice(0, 3).map((issue) => (
             <a class="dashboard-row" href={`/issues/${encodeURIComponent(issue.id)}/`}>
               <span>
-                <strong>{issue.title}</strong>
+                <strong><MarkdownRenderer content={issue.title} inline /></strong>
                 <small>{issue.id}</small>
               </span>
               <span class="badge warning">{issue.status}</span>
@@ -119,7 +120,7 @@ const firstPromotionCandidate =
           dashboard.draftReviewArtifacts.slice(0, 3).map((artifact) => (
             <a class="dashboard-row" href={artifactHref(artifact.id)}>
               <span>
-                <strong>{artifact.title}</strong>
+                <strong><MarkdownRenderer content={artifact.title} inline /></strong>
                 <small>{artifact.id}</small>
               </span>
               <span class:list={["badge", statusTone(artifact.review_state)]}>

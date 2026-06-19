@@ -1,0 +1,37 @@
+---
+import I18nText from "./I18nText.astro";
+import { localized } from "../lib/i18n";
+---
+
+<p class="markdown-math-hint">
+  <I18nText
+    text={localized(
+      "Markdown and $LaTeX$ supported. Escape literal dollars as \\$100.",
+      "支持 Markdown 和 $LaTeX$。普通美元符号写作 \\$100。"
+    )}
+  />
+</p>
+<output
+  class="markdown-math-feedback"
+  data-markdown-math-feedback
+  data-i18n-en=""
+  data-i18n-zh=""
+  hidden
+></output>
+
+<style>
+  .markdown-math-hint {
+    margin: 0.35rem 0 0;
+    color: var(--muted-text, #5c635d);
+    font-size: 0.85rem;
+    line-height: 1.35;
+  }
+
+  .markdown-math-feedback {
+    display: block;
+    margin-top: 0.25rem;
+    color: #9b3b22;
+    font-size: 0.85rem;
+    line-height: 1.35;
+  }
+</style>

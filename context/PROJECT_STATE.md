@@ -3,6 +3,25 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.9.3 Markdown and LaTeX rendering polish - 2026-06-20
+
+Issue #576 adds display-only Markdown and LaTeX rendering on branch
+`web-markdown-math-rendering`.
+
+The website now uses a shared Markdown/KaTeX renderer for formula-bearing
+artifact, issue, context, gate, dashboard, demo, and graph-detail text
+surfaces. Inline `$...$` and block `$$...$$` formulas render through KaTeX with
+`trust: false` and `throwOnError: false`; plain text such as `K_3` remains
+literal unless the author uses math delimiters. Raw HTML is refused before
+Markdown rendering, final output is sanitized, and renderer failure falls back
+to escaped plain text.
+
+Workbench textareas that accept narrative artifact, issue, source, evidence,
+review, promotion, or close-reason text now show a compact Markdown/LaTeX hint.
+Repository Markdown/YAML remains canonical source text. Rendered output does
+not create human review, verifier pass, gate pass, accepted status, source
+metadata, or promotion authority.
+
 ## Longplan B2.9.2 keyboard-light review UX polish - 2026-06-20
 
 Issue #574 adds review and promotion UX guardrails on branch
