@@ -3,6 +3,41 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.0.1 Human Governance Workbench contract - 2026-06-19
+
+Issue #538 defines the B2 website product contract on branch
+`web-governance-workbench-spec`.
+
+The current web target is the Human Governance Workbench:
+
+- website: main human research, review, governance, promotion, forge/PR, and
+  audit workspace;
+- CLI: AI/Codex/operator/automation interface and scriptable oracle;
+- server: policy, auth, audit, repo-write, and GitHub bridge; and
+- repository files: source of truth.
+
+Static showcase mode remains valid as a read-only explanation mode, but it is
+not the complete web product. Live local and future hosted modes may perform
+write-class human actions only through backend/app/storage/forge workflows with
+preview-before-confirm, policy checks, redacted audit logs, and strict
+authority warnings.
+
+The B2 contract explicitly allows web-originated human review and
+accepted/refuted/obsolete promotion workflows only when the backend enforces
+the ordinary Cosheaf review, validation, gate, source, dependency, audit, and
+promotion policy. Direct frontend YAML mutation and browser-side GitHub token
+storage are forbidden.
+
+The target Workbench surfaces are dashboard, issues, artifacts, context, gates,
+evidence, review, promotion, forge/PR, and audit. Human-facing Workbench UI
+should support English and Simplified Chinese, with Chinese-first UI copy as an
+acceptable temporary fallback if full bilingual implementation would delay
+authority-critical work.
+
+This task is documentation-only. It does not add runtime write endpoints,
+schema changes, accepted-write authority, human-review bypasses, token
+handling, hosted auth, or production deployment.
+
 ## V19 Phase A4.3 forge GitHub actions - 2026-06-19
 
 Issue #508 adds confirmed Forge GitHub issue and pull-request actions on branch

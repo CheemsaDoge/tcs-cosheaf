@@ -1,11 +1,26 @@
-# Website Scope And Data Contract
+# Web Workbench Scope And Data Contract
 
-Cosheaf's website is a human-facing interface over sanitized repository data.
-It is not the source of truth and does not create knowledge authority.
+Cosheaf's website is the Human Governance Workbench: the primary human
+research, review, and governance workspace over a Git-backed Cosheaf
+repository. It is not only a showcase. Static demo pages remain useful, but
+they are one read-only mode of the product rather than the full product.
 
 ## Scope
 
-The first website release is read-only. It may show:
+The product contract is:
+
+- Website: main human workspace for research, issue triage, review,
+  promotion, forge/PR preparation, and audit inspection.
+- CLI: AI/Codex/operator/automation interface and scriptable oracle.
+- Server: policy, auth, audit, repo-write, and GitHub bridge.
+- Repository: source of truth.
+
+The Web Workbench may execute human review and accepted/refuted/obsolete
+promotion workflows when the backend enforces the same policy checks,
+confirmation, audit, repository writes, and Git/GitHub review flow as the CLI.
+The frontend must never become accepted authority by itself.
+
+Static showcase mode may show:
 
 - workspace metadata and public/demo KB root summaries;
 - artifact cards and safe artifact metadata;
@@ -16,18 +31,113 @@ The first website release is read-only. It may show:
 - static report summaries; and
 - explicit authority-boundary notices.
 
-The CLI and `cosheaf.app` remain the machine/oracle interfaces. Repository
-YAML, JSON sidecars, and generated reports remain the source of truth.
+Live local and hosted Workbench modes may additionally expose confirmed human
+actions through the server. They are not implemented by this documentation
+change; this file defines the contract future runtime tasks must preserve.
 
 ## Authority Boundary
 
-Website output must never mark artifacts accepted, human-reviewed, verifier
-pass, gate pass, promoted, refuted, source-reviewed, or semantically aligned.
-A rendered page, click, filter, graph edge, or badge is display context only.
+Website display output must never mark artifacts accepted, human-reviewed,
+verifier pass, gate pass, promoted, refuted, source-reviewed, or semantically
+aligned. A rendered page, click, filter, graph edge, badge, or readiness panel
+is display context only.
 
-The website must not become accepted-knowledge evidence. Accepted artifacts
-still enter through validation, gates, source metadata, human review, and the
-explicit `cosheaf artifact promote` path.
+Confirmed Workbench actions may write review records or promote artifacts only
+through `cosheaf.server -> cosheaf.app -> cosheaf.core/storage/forge` and the
+ordinary Cosheaf policy path. Accepted artifacts still require repository
+records, source metadata where policy requires it, validation, gate policy,
+explicit human review, and explicit promotion. Gate pass, verifier pass,
+GitHub PR merge, AI/Codex output, or server audit output is not accepted
+authority by itself.
+
+Direct frontend YAML mutation is forbidden. Browser-side GitHub token storage
+is forbidden. Frontend code must not call GitHub APIs directly with user
+tokens and must not write repository files.
+
+## Operating Modes
+
+### Static Showcase Mode
+
+Static showcase mode is a read-only public or local build from sanitized
+export JSON. It has no backend, no repository writes, no GitHub token
+handling, no provider call, and no private repository fetch. It is appropriate
+for public explanation and inspection, not governance work.
+
+### Local Workbench Mode
+
+Local mode is for a single researcher running the server on loopback with an
+explicit write-enabled configuration. The backend may write local repository
+files, run validation/gate/context workflows, create local branches/commits,
+and call local GitHub/forge credentials only after preview and explicit
+confirm. All writes must be audited.
+
+Local mode may record a local actor identity, but that identity is not
+cryptographic hosted auth. Human review and promotion actions still require an
+explicit human decision and policy checks.
+
+### Hosted Workbench Mode
+
+Hosted mode is a future collaborative deployment. It must use server-side auth,
+role checks, server-owned repository checkout/cache state, branch/PR write
+flows, and backend-held GitHub App or OAuth credentials. Browser GitHub token
+storage remains forbidden. Hosted mode must not write directly to `main` and
+must not treat GitHub issue, PR, webhook, or CI state as Cosheaf human review
+or accepted authority.
+
+## Action Taxonomy
+
+Workbench actions are classified by authority and side effects:
+
+- Read actions: inspect exported or live repository state without writes.
+- Preview actions: compute planned files, Git/GitHub actions, warnings, and
+  policy blockers without writes or network mutation.
+- Local repo write actions: create or update repository records only through
+  backend/app/storage paths after preview and confirm.
+- Git/forge actions: create branches, stage selected files, commit, push, and
+  prepare PRs through the forge boundary after preview, checks, and confirm.
+- GitHub actions: create or update GitHub issues/PRs only through backend-held
+  credentials and redacted audit logs.
+- Review/promotion actions: record human review decisions and promote to
+  accepted, refuted, or obsolete only through policy checks, audit, repository
+  writes, and the promotion workflow.
+
+Every write-class action must support preview before confirm, produce a
+machine-readable audit entry, show authority warnings, and report skipped,
+failed, unavailable, or not-run checks separately from pass.
+
+## Target UX Surfaces
+
+The Workbench target surface includes:
+
+- Dashboard: workspace health, open work, failures, recent actions, and next
+  actions.
+- Issues: create, edit, close, publish, and link local/GitHub issues.
+- Artifacts: inspect, create, and edit draft/pre-accepted artifacts.
+- Context: build and inspect issue-scoped context packs.
+- Gates: run and inspect validation/gate outcomes with skipped-not-pass
+  display.
+- Evidence: attach and inspect source notes, evidence paths, checker output,
+  and reproducibility metadata.
+- Review: generate packets and record explicit human review decisions.
+- Promotion: inspect readiness and promote only through policy-confirmed
+  accepted/refuted/obsolete workflows.
+- Forge/PR: prepare branch, commit, push, GitHub issue, and GitHub PR actions.
+- Audit: inspect append-only Workbench, forge, review, and promotion action
+  history.
+
+## Language UX
+
+The target Web Workbench should support English and Simplified Chinese for
+human-facing navigation, labels, authority warnings, action confirmations,
+error messages, and workflow guidance. If a later implementation slice cannot
+finish full bilingual UI without risking the authority work, Chinese-first UI
+copy is an acceptable temporary fallback and English localization should remain
+tracked in a follow-up issue or PR acceptance checklist as deferred Workbench
+polish. Any implementation PR that ships Chinese-first fallback must open or
+link a follow-up issue titled `Complete Workbench English localization` and
+list the localization gap under its known limitations. Repository source files,
+schemas, and project-facing docs remain English unless a task explicitly
+requires Chinese.
 
 ## Public Demo Privacy
 
@@ -163,7 +273,7 @@ human review, how public/private KB roots are separated, and how accepted
 status enters through repository records, source metadata, validation, gates,
 real human review, and explicit promotion.
 
-## Future Write Actions
+## Workbench Write Actions
 
 The frontend must not own GitHub credentials or tokens. Authenticated write
 actions must call a backend, and the backend must call `cosheaf.app` or
@@ -177,5 +287,8 @@ explicit confirmation, shared forge execution, and redacted audit records.
 Future hosted deployments still need server-side GitHub App/user-token
 resolution, repository checkout/cache locking, and webhook synchronization.
 
-Write actions remain out of scope for the first deployable static website UI
-and do not make website output a knowledge authority.
+Longplan B2 extends this backend-action direction into the full Human
+Governance Workbench. Write actions are allowed only when they stay behind the
+server/app/forge boundary, preserve preview-before-confirm, emit redacted
+machine-readable audit logs, and keep repository files as the source of truth.
+They do not make website output a knowledge authority.

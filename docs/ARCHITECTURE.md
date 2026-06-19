@@ -410,17 +410,48 @@ previews/actions, and shared `ErrorResult` serialization. The DTOs reuse the
 existing agent-access model base and keep accepted-write and human-review
 authority unavailable through app requests.
 
+### Server/API Layer
+
+The server/API layer is the controlled bridge between browser-originated human
+actions and Cosheaf application use cases. It is documented in
+[Website Server API](SERVER_API.md).
+
+For the B2 Web Workbench target, server endpoints must route write-class
+actions through `cosheaf.app`, storage, policy checks, audit logging, and
+`cosheaf.forge` where Git/GitHub work is involved. The browser is never a
+repository writer and never a GitHub credential holder. Preview endpoints must
+perform no repository write and no network mutation; confirm endpoints must
+verify the preview plan, enforce policy, record audit entries, and report
+written files/actions.
+
+The server may support local single-user mode and future hosted/collaborative
+mode, but the modes remain separate. Local mode can use the active repository
+root and local credentials after explicit confirmation. Hosted mode needs
+server-side auth, role checks, server-owned checkout/cache state, branch/PR
+write flows, and backend-held GitHub App or OAuth credentials.
+
+The server layer is not knowledge authority. Server responses, audit records,
+GitHub events, and PR merges are workflow evidence only unless repository
+records and Cosheaf review/promotion policy explicitly record the authority.
+
 ### Website Layer
 
-The website layer is a human interface over sanitized Cosheaf export data. It
-is documented in [Website Scope And Data Contract](WEBSITE.md) and governed by
-[ADR 0037](ADR/0037-website-human-interface.md).
+The website layer is the Human Governance Workbench for human research, issue
+triage, review, promotion, forge/PR preparation, and audit inspection. It is
+documented in [Web Workbench Scope And Data Contract](WEBSITE.md) and governed
+by [ADR 0037](ADR/0037-website-human-interface.md) plus
+[ADR 0039](ADR/0039-web-governance-workbench.md).
 
-The first website release is read-only. It may visualize workspace metadata,
-artifact cards, issues, dependency graph summaries, gate summaries, context-pack
-summaries, static report summaries, and authority-boundary notices. Repository
-YAML, JSON sidecars, and generated reports remain the source of truth, while
-CLI and `cosheaf.app` remain the machine/oracle interfaces.
+Static showcase mode remains read-only. It may visualize workspace metadata,
+artifact cards, issues, dependency graph summaries, gate summaries,
+context-pack summaries, static report summaries, and authority-boundary
+notices. Live local and hosted Workbench modes may add confirmed human actions
+only through the server/API layer.
+
+Repository YAML, JSON sidecars, and generated reports remain the source of
+truth. CLI remains the AI/Codex/operator/automation interface and scriptable
+oracle; the website is the primary human governance interface; `cosheaf.app`
+is the shared use-case boundary underneath both.
 
 Public demo exports must exclude private source notes, private unpublished
 artifacts unless explicitly demo-only, API keys, tokens, raw provider prompts
@@ -429,9 +460,11 @@ actions must call a backend, which calls `cosheaf.app` or `cosheaf.forge`.
 Frontend code must not own GitHub credentials or call GitHub APIs directly with
 user tokens.
 
-Website output does not grant proof, source metadata, human review, verifier
-pass, gate pass, accepted status, accepted theorem/refutation status, or
-promotion authority.
+Website display output does not grant proof, source metadata, human review,
+verifier pass, gate pass, accepted status, accepted theorem/refutation status,
+or promotion authority. Confirmed review and promotion actions are allowed only
+when routed through policy-checked backend workflows with explicit human
+decision records and audit logs.
 
 ### CLI Layer
 
@@ -448,9 +481,12 @@ CLI commands now call typed service functions for workspace inspection,
 repository and artifact validation, gate execution, context-pack generation,
 memory card/search operations, task operations, forge previews/actions, and
 draft artifact creation.
-The CLI remains the human and CI oracle: it parses command-line options,
-renders service results, preserves existing exit-code behavior, and keeps
-existing promotion and verifier boundaries intact.
+The CLI remains the operator, automation, and CI oracle: it parses
+command-line options, renders service results, preserves existing exit-code
+behavior, and keeps existing promotion and verifier boundaries intact. The
+Workbench may become the preferred human review/governance surface, but it
+must share the same app/service policy boundaries rather than bypass the CLI
+semantics.
 
 Lifecycle write commands are workspace-aware. In configured workspaces,
 `cosheaf artifact create` writes to the writable private KB root by default, and
