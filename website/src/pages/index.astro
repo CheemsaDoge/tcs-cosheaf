@@ -1,9 +1,18 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { loadSiteData } from "../lib/siteData";
+import {
+  graphLayoutMode,
+  loadSiteData,
+  shouldDrawGraphConnector
+} from "../lib/siteData";
 
 const data = await loadSiteData();
 const edge = data.graph.edges[0];
+const graphMode = graphLayoutMode(data.graph.nodes.length);
+const showMiniConnector = shouldDrawGraphConnector(
+  data.graph.nodes.length,
+  data.graph.edges.length
+);
 ---
 
 <BaseLayout title="Read-only workspace export" eyebrow="Home">
@@ -54,17 +63,33 @@ const edge = data.graph.edges[0];
     <article class="panel graph-preview">
       <p class="section-kicker">Dependency graph</p>
       <h2>{edge ? `${edge.source_id} -> ${edge.target_id}` : "No edges"}</h2>
-      <div class="mini-graph" aria-label="Dependency graph preview">
-        {
-          data.graph.nodes.map((node, index) => (
-            <div class:list={["mini-node", index === 0 ? "source" : "target"]}>
-              <strong>{node.title}</strong>
-              <span>{node.status}</span>
-            </div>
-          ))
-        }
-        <div class="mini-edge" aria-hidden="true"></div>
-      </div>
+      {
+        graphMode === "empty" ? (
+          <p class="empty-state">No graph nodes were exported.</p>
+        ) : (
+          <div
+            class:list={["mini-graph", graphMode === "list" && "mini-graph-list"]}
+            role="img"
+            aria-label="Dependency graph preview"
+          >
+            {
+              data.graph.nodes.map((node, index) => (
+                <div
+                  class:list={[
+                    "mini-node",
+                    graphMode === "pair" && (index === 0 ? "source" : "target"),
+                    graphMode === "list" && "mini-list-node"
+                  ]}
+                >
+                  <strong>{node.title}</strong>
+                  <span>{node.status}</span>
+                </div>
+              ))
+            }
+            {showMiniConnector && <div class="mini-edge" aria-hidden="true"></div>}
+          </div>
+        )
+      }
     </article>
   </section>
 

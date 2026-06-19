@@ -9,8 +9,10 @@ import {
   dependenciesFor,
   filterArtifacts,
   gateVerdictExplanation,
+  graphLayoutMode,
   issueById,
-  loadSiteData
+  loadSiteData,
+  shouldDrawGraphConnector
 } from "../src/lib/siteData";
 import {
   PREVIEW_API_BASE,
@@ -107,6 +109,17 @@ describe("site data contract", () => {
     expect(dependentsFor("definition.graph", data.graph.edges)).toEqual([
       "claim.example-private"
     ]);
+  });
+
+  it("chooses graph layouts that do not overlap multi-node exports", () => {
+    expect(graphLayoutMode(0)).toBe("empty");
+    expect(graphLayoutMode(1)).toBe("list");
+    expect(graphLayoutMode(2)).toBe("pair");
+    expect(graphLayoutMode(3)).toBe("list");
+
+    expect(shouldDrawGraphConnector(2, 1)).toBe(true);
+    expect(shouldDrawGraphConnector(2, 0)).toBe(false);
+    expect(shouldDrawGraphConnector(3, 2)).toBe(false);
   });
 
   it("explains gate verdicts without turning pass into accepted truth", async () => {
