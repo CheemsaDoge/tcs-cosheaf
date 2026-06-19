@@ -31,12 +31,17 @@ It does not shell out to the `cosheaf` CLI, run hosted providers, write
 accepted artifacts, promote artifacts, create human review, or run gates as a
 side effect in the current read/preview implementation.
 
-Read-only payloads are generated through the existing website export path into
-a temporary directory outside the repository, then returned as JSON. Preview
-actions return dry-run plans only and never call GitHub. Authenticated create
-actions call the same `cosheaf.app` / `cosheaf.forge` GitHub issue/PR logic as
-the CLI after backend auth and explicit confirmation. Repository YAML/JSON
-records remain the source of truth. Server responses are display context only.
+Static read-only payloads are generated through the existing website export
+path into a temporary directory outside the repository, then returned as JSON.
+Live read-only payloads call `cosheaf.app` services and storage loaders
+in-process for repository YAML, read existing ignored runtime sidecars directly
+when the requested source is `.cosheaf/` or `context/TASKS/`, and do not run
+gates, build context packs, call GitHub, shell out to CLI, or write audit
+records. Preview actions return dry-run plans only and never call GitHub.
+Authenticated create actions call the same `cosheaf.app` / `cosheaf.forge`
+GitHub issue/PR logic as the CLI after backend auth and explicit confirmation.
+Repository YAML/JSON records remain the source of truth. Server responses are
+display context only.
 
 Future Workbench write endpoints may create or update issues, draft artifacts,
 source/evidence metadata, review packets, human review decisions, promotion
@@ -80,11 +85,20 @@ ordinary Cosheaf validation, gate, source, dependency, and audit policy.
 ```text
 GET /api/health
 GET /api/workspace
+GET /api/workspace/live
+GET /api/status
 GET /api/artifacts
+GET /api/artifacts/live
+GET /api/artifacts/<artifact_id>
 GET /api/issues
+GET /api/issues/live
+GET /api/issues/<issue_id>
 GET /api/graph
 GET /api/gates
+GET /api/gates/latest
 GET /api/context/<issue_id>
+GET /api/context/<issue_id>/latest
+GET /api/audit/recent
 POST /api/forge/local-issues/preview
 POST /api/forge/issues/preview
 POST /api/forge/issues/create
@@ -100,6 +114,22 @@ preflight.
 `/api/context/<issue_id>` returns the exported context-pack summary for that
 issue. It does not run `cosheaf context build` and does not write
 `context/TASKS/`.
+
+Live endpoints return `source_of_truth: "repository"` and an authority notice:
+
+- `/api/workspace/live` returns active workspace and KB-root metadata.
+- `/api/status` returns workspace metadata plus validation status. It runs
+  repository validation but does not run gates or write reports.
+- `/api/issues/live` and `/api/issues/<issue_id>` read repository-local issue
+  YAML records.
+- `/api/artifacts/live` and `/api/artifacts/<artifact_id>` read lifecycle
+  artifact YAML records.
+- `/api/context/<issue_id>/latest` reads an existing
+  `context/TASKS/<issue_id>/` pack when present. It does not build one.
+- `/api/gates/latest` reads the latest existing
+  `.cosheaf/reports/*-gate-report.json` when present, or returns `not_run`.
+- `/api/audit/recent` reads recent existing entries from
+  `.cosheaf/audit/web-actions.jsonl`.
 
 Preview endpoints return `dry_run_only: true`, planned actions, planned files,
 and the forge authority warning. They do not write repository files, call

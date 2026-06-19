@@ -81,22 +81,31 @@
   `serve_readonly_api`. `ReadOnlySiteApi` accepts an optional backend
   `ForgeCredentialProvider` for authenticated create actions; the default CLI
   server does not configure one. The HTTP surface is localhost JSON endpoints:
-  `GET /api/health`, `/api/workspace`, `/api/artifacts`, `/api/issues`,
-  `/api/graph`, `/api/gates`, and `/api/context/<issue_id>`, plus preview-only
+  `GET /api/health`, `/api/workspace`, `/api/workspace/live`, `/api/status`,
+  `/api/artifacts`, `/api/artifacts/live`, `/api/artifacts/<artifact_id>`,
+  `/api/issues`, `/api/issues/live`, `/api/issues/<issue_id>`, `/api/graph`,
+  `/api/gates`, `/api/gates/latest`, `/api/context/<issue_id>`,
+  `/api/context/<issue_id>/latest`, and `/api/audit/recent`, plus preview-only
   `POST /api/forge/local-issues/preview`, `/api/forge/issues/preview`,
   `/api/forge/prs/preview`, and `/api/forge/review-packets/preview`, plus
   authenticated create `POST /api/forge/issues/create` and
   `/api/forge/prs/create`. The server calls `cosheaf.app.open_app` and app
-  facade methods in-process, generates website export payloads in a temporary
-  directory outside the repository, returns dry-run preview plans for
-  prospective actions, and supports localhost CORS preflight. Preview and read
-  endpoints perform no provider call, GitHub action, git/gh command,
-  repository write, or CLI subprocess. Authenticated create endpoints require a
-  backend credential provider and `confirm: true`, call shared app/forge GitHub
-  issue/PR create logic, return only redacted action flags and URLs, and write
-  redacted runtime audit records through `append_web_action_audit` under
-  ignored `.cosheaf/audit/web-actions.jsonl` for preview, success, auth or
-  confirmation refusal, and failure.
+  facade methods in-process. Static endpoints generate website export payloads
+  in a temporary directory outside the repository. Live endpoints read
+  repository YAML records through app services/storage loaders, read existing
+  ignored runtime sidecars directly when the requested source is `.cosheaf/` or
+  `context/TASKS/`, include `source_of_truth: "repository"` and authority
+  notices, and do not run gates, build context packs, call GitHub, write audit
+  entries, write repository files, or shell out to CLI. Preview endpoints
+  return dry-run preview plans for prospective actions, and the server supports
+  localhost CORS preflight. Preview and read endpoints perform no provider
+  call, GitHub action, git/gh command, repository write, or CLI subprocess.
+  Authenticated create endpoints require a backend credential provider and
+  `confirm: true`, call shared app/forge GitHub issue/PR create logic, return
+  only redacted action flags and URLs, and write redacted runtime audit records
+  through `append_web_action_audit` under ignored
+  `.cosheaf/audit/web-actions.jsonl` for preview, success, auth or confirmation
+  refusal, and failure.
   Website server output is display context only and remains subordinate to
   repository YAML/JSON source files; it does not create accepted knowledge,
   human review, verifier pass, gate pass, promotion authority, token storage,

@@ -97,6 +97,14 @@ def _audit_entries(repo_root: Path) -> list[dict[str, Any]]:
     ]
 
 
+def _repo_file_snapshot(repo_root: Path) -> dict[str, str]:
+    return {
+        path.relative_to(repo_root).as_posix(): path.read_text(encoding="utf-8")
+        for path in sorted(repo_root.rglob("*"))
+        if path.is_file()
+    }
+
+
 def test_readonly_site_api_routes_export_payloads_without_cli_subprocess(
     tmp_path: Path,
     monkeypatch: Any,
@@ -137,6 +145,124 @@ def test_readonly_site_api_routes_export_payloads_without_cli_subprocess(
     refused_write = api.handle("POST", "/api/artifacts")
     assert refused_write.status == 405
     assert refused_write.payload["code"] == "method_not_allowed"
+
+
+def test_live_repository_api_reads_current_repo_state_without_writes(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    _fixture_workspace(tmp_path)
+    context_dir = tmp_path / "context" / "TASKS" / "issue.fixture.readonly-server"
+    context_dir.mkdir(parents=True)
+    (context_dir / "CONTEXT.md").write_text("# Fixture context\n", encoding="utf-8")
+    (context_dir / "RETRIEVAL_AUDIT.json").write_text(
+        json.dumps({"card_count": 1}, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    report_dir = tmp_path / ".cosheaf" / "reports"
+    report_dir.mkdir(parents=True)
+    (report_dir / "20260619T000000000000Z-gate-report.json").write_text(
+        json.dumps(
+            {
+                "verdict": "fail",
+                "summary": {"records_checked": 2},
+                "blocking_issues": [{"message": "fixture block"}],
+                "nonblocking_issues": [],
+                "gates": [],
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    audit_dir = tmp_path / ".cosheaf" / "audit"
+    audit_dir.mkdir(parents=True)
+    audit_dir.joinpath("web-actions.jsonl").write_text(
+        json.dumps(
+            {
+                "timestamp": "2026-06-19T00:00:00Z",
+                "actor": "local.web",
+                "action": "forge.pr_create",
+                "result_status": "preview",
+            },
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    def fail_subprocess_run(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("live read endpoints must not shell out to CLI")
+
+    monkeypatch.setattr(subprocess, "run", fail_subprocess_run)
+
+    before = _repo_file_snapshot(tmp_path)
+    api = ReadOnlySiteApi(open_app(tmp_path))
+
+    workspace = api.handle("GET", "/api/workspace/live")
+    assert workspace.status == 200
+    assert workspace.payload["kind"] == "workspace_live"
+    assert workspace.payload["source_of_truth"] == "repository"
+    assert workspace.payload["workspace"]["mode"] == "legacy"
+
+    status = api.handle("GET", "/api/status")
+    assert status.status == 200
+    assert status.payload["kind"] == "repository_status"
+    assert status.payload["validation"]["ok"] is True
+    assert status.payload["source_of_truth"] == "repository"
+
+    issues = api.handle("GET", "/api/issues/live")
+    assert issues.status == 200
+    assert issues.payload["count"] == 1
+    assert issues.payload["issues"][0]["id"] == "issue.fixture.readonly-server"
+
+    issue = api.handle("GET", "/api/issues/issue.fixture.readonly-server")
+    assert issue.status == 200
+    assert issue.payload["issue"]["path"] == "issues/open/readonly-server.yaml"
+
+    artifacts = api.handle("GET", "/api/artifacts/live")
+    assert artifacts.status == 200
+    assert artifacts.payload["count"] == 1
+    assert artifacts.payload["artifacts"][0]["id"] == "claim.fixture.readonly-server"
+    assert artifacts.payload["artifacts"][0]["path"] == (
+        "kb/draft/claims/readonly-server.yaml"
+    )
+
+    artifact = api.handle("GET", "/api/artifacts/claim.fixture.readonly-server")
+    assert artifact.status == 200
+    assert artifact.payload["artifact"]["id"] == "claim.fixture.readonly-server"
+
+    latest_context = api.handle(
+        "GET",
+        "/api/context/issue.fixture.readonly-server/latest",
+    )
+    assert latest_context.status == 200
+    assert latest_context.payload["context_pack"]["exists"] is True
+    assert latest_context.payload["context_pack"]["files"] == [
+        "context/TASKS/issue.fixture.readonly-server/CONTEXT.md",
+        "context/TASKS/issue.fixture.readonly-server/RETRIEVAL_AUDIT.json",
+    ]
+    assert latest_context.payload["context_pack"]["retrieval_audit"] == {
+        "card_count": 1
+    }
+
+    latest_gate = api.handle("GET", "/api/gates/latest")
+    assert latest_gate.status == 200
+    assert latest_gate.payload["gate_report"]["path"] == (
+        ".cosheaf/reports/20260619T000000000000Z-gate-report.json"
+    )
+    assert latest_gate.payload["gate_report"]["report"]["verdict"] == "fail"
+
+    audit = api.handle("GET", "/api/audit/recent")
+    assert audit.status == 200
+    assert audit.payload["count"] == 1
+    assert audit.payload["entries"][0]["action"] == "forge.pr_create"
+
+    missing_issue = api.handle("GET", "/api/issues/issue.missing")
+    assert missing_issue.status == 404
+    assert missing_issue.payload["code"] == "issue_not_found"
+
+    assert _repo_file_snapshot(tmp_path) == before
 
 
 def test_preview_endpoints_plan_actions_without_repo_or_github_writes(
