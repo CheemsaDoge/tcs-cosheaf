@@ -171,42 +171,4 @@ const nodeLimitNotice =
     </section>
   </details>
 
-  <script>
-    for (const container of document.querySelectorAll("[data-paginated-list]")) {
-      const rows = [...container.querySelectorAll(".paginated-row")];
-      const pageSize = Number(container.getAttribute("data-page-size") || 12);
-      const prev = container.querySelector("[data-list-prev]");
-      const next = container.querySelector("[data-list-next]");
-      const pageOutput = container.querySelector("[data-list-page]");
-      let page = 1;
-      const pageCount = () => Math.max(1, Math.ceil(rows.length / pageSize));
-      const render = () => {
-        page = Math.min(Math.max(1, page), pageCount());
-        rows.forEach((row, index) => {
-          row.toggleAttribute(
-            "hidden",
-            index < (page - 1) * pageSize || index >= page * pageSize
-          );
-        });
-        if (pageOutput) {
-          pageOutput.textContent = `${page} / ${pageCount()}`;
-        }
-        if (prev instanceof HTMLButtonElement) {
-          prev.disabled = page <= 1;
-        }
-        if (next instanceof HTMLButtonElement) {
-          next.disabled = page >= pageCount();
-        }
-      };
-      prev?.addEventListener("click", () => {
-        page -= 1;
-        render();
-      });
-      next?.addEventListener("click", () => {
-        page += 1;
-        render();
-      });
-      render();
-    }
-  </script>
 </BaseLayout>

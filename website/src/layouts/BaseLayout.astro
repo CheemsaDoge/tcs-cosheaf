@@ -222,5 +222,90 @@ const pageTitleZh = `${titleText.zh} | TCS-Cosheaf`;
         applyLanguage(preferredLanguage());
       })();
     </script>
+    <script is:inline>
+      (() => {
+        const initPagination = (container, visibleRows) => {
+          const rows = Array.from(visibleRows);
+          const pageSize = Number(container.getAttribute("data-page-size") || 12);
+          const prev = container.querySelector("[data-list-prev]");
+          const next = container.querySelector("[data-list-next]");
+          const pageOutput = container.querySelector("[data-list-page]");
+          let page = 1;
+
+          const render = (nextRows = rows, resetPage = false) => {
+            const activeRows = Array.from(nextRows);
+            const pageCount = Math.max(1, Math.ceil(activeRows.length / pageSize));
+            page = resetPage ? 1 : Math.min(Math.max(1, page), pageCount);
+            for (const row of rows) {
+              row.toggleAttribute("hidden", true);
+            }
+            activeRows.forEach((row, index) => {
+              row.toggleAttribute(
+                "hidden",
+                index < (page - 1) * pageSize || index >= page * pageSize
+              );
+            });
+            if (pageOutput) {
+              pageOutput.textContent = `${page} / ${pageCount}`;
+            }
+            if (prev instanceof HTMLButtonElement) {
+              prev.disabled = page <= 1;
+            }
+            if (next instanceof HTMLButtonElement) {
+              next.disabled = page >= pageCount;
+            }
+          };
+
+          prev?.addEventListener("click", () => {
+            page -= 1;
+            render(container.__cosheafActiveRows || rows);
+          });
+          next?.addEventListener("click", () => {
+            page += 1;
+            render(container.__cosheafActiveRows || rows);
+          });
+
+          return render;
+        };
+
+        const artifactRows = Array.from(document.querySelectorAll(".artifact-row"));
+        const artifactContainer = artifactRows[0]?.closest("[data-page-size]");
+        if (artifactContainer) {
+          const selects = [
+            document.querySelector("#status-filter"),
+            document.querySelector("#type-filter"),
+            document.querySelector("#domain-filter")
+          ];
+          const emptyMessage = document.querySelector("[data-filter-empty]");
+          const renderArtifacts = initPagination(artifactContainer, artifactRows);
+          const applyArtifactFilters = () => {
+            const [status, type, domain] = selects.map(
+              (select) => select?.value ?? ""
+            );
+            const filteredRows = artifactRows.filter(
+              (row) =>
+                (!status || row.dataset.status === status) &&
+                (!type || row.dataset.type === type) &&
+                (!domain || row.dataset.domain?.split(" ").includes(domain))
+            );
+            artifactContainer.__cosheafActiveRows = filteredRows;
+            renderArtifacts(filteredRows, true);
+            if (emptyMessage) {
+              emptyMessage.hidden =
+                artifactRows.length === 0 || filteredRows.length > 0;
+            }
+          };
+          for (const select of selects) {
+            select?.addEventListener("change", applyArtifactFilters);
+          }
+          applyArtifactFilters();
+        }
+
+        document.querySelectorAll("[data-paginated-list]").forEach((container) => {
+          const rows = container.querySelectorAll(".paginated-row");
+          initPagination(container, rows)();
+        });
+      })();
+    </script>
   </body>
 </html>
