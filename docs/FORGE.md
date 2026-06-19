@@ -112,6 +112,21 @@ without calling `git`, `gh`, the network, or mutating repository files. Future
 sync behavior may reconcile local issue links and remote metadata, but it must
 remain separate from accepted-artifact authority.
 
+## Read-Only PR Status
+
+The app/server Forge surface also exposes read-only GitHub PR status for the
+web workbench through `CosheafApp.forge_github_pr_status` and
+`GET /api/forge/pr-status`. This uses `gh pr view --json` when available and
+returns a degraded payload when GitHub auth, `gh`, or network access is
+missing. It writes no git state, GitHub state, local issue state, review
+records, gate reports, verifier evidence, accepted artifacts, or promotion
+records.
+
+The status payload keeps `github_reviews` and `cosheaf_review` separate.
+GitHub approvals, comments, CI checks, and gate checks are collaboration and
+workflow context only. They are not Cosheaf human review unless a human later
+uses an explicit review-record workflow.
+
 ## Authority Boundary
 
 Forge output is planning context only. It does not grant human review, verifier

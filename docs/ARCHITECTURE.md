@@ -91,13 +91,17 @@ issue/PR actions. It is implemented under `cosheaf.forge` and exposes forge
 status, GitHub issue preview from a local issue YAML file, GitHub PR preview
 from base/head branch names, confirmed local branch creation, confirmed local
 commit, confirmed GitHub issue creation, confirmed GitHub PR creation, and a
-read-only sync placeholder.
+read-only PR status query plus a read-only sync placeholder.
 
 Forge previews do not run `git`, `gh`, or any subprocess. They do not call the
 network, create GitHub issues, create GitHub PRs, commit, push, read or store
 tokens, or write repository files. Preview DTOs explicitly report dry-run
 status and no-write/no-network flags, and each result carries an authority
 warning.
+
+PR status queries may call `gh pr view --json` to display GitHub collaboration
+metadata. They degrade when GitHub auth or network access is unavailable and
+keep GitHub reviews/comments separate from Cosheaf human-review records.
 
 Local git actions are narrower than general shell access. `forge branch create`
 requires `--confirm`, refuses dirty working trees, and creates/switches to a

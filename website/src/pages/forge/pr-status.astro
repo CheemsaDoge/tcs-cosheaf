@@ -1,0 +1,132 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import I18nText from "../../components/I18nText.astro";
+import { localized } from "../../lib/i18n";
+import { PR_STATUS_LABELS } from "../../lib/prStatusWorkbench";
+import { loadSiteData } from "../../lib/siteData";
+
+const data = await loadSiteData();
+const canSync = data.runtime.mode === "live-local";
+---
+
+<BaseLayout
+  title={PR_STATUS_LABELS.title}
+  eyebrow={PR_STATUS_LABELS.workflow}
+>
+  <section class="workbench-shell pr-status-layout">
+    <article class="panel workbench-main">
+      <form
+        class="workbench-form pr-status-form"
+        data-pr-status-workbench
+        data-api-base={data.runtime.api_base}
+        data-pr-title="#pr-status-title"
+        data-pr-updated="#pr-status-updated"
+        data-pr-link="#pr-status-link"
+        data-pr-badges="#pr-status-badges"
+        data-pr-checklist-summary="#pr-status-checklist-summary"
+        data-pr-checklist-items="#pr-status-checklist-items"
+        data-pr-comments="#pr-status-comments"
+        data-pr-warnings="#pr-status-warnings"
+        data-pr-raw="#pr-status-raw"
+      >
+        <fieldset class="form-section">
+          <label>
+            <I18nText text={PR_STATUS_LABELS.prNumber} />
+            <input
+              name="number"
+              inputmode="numeric"
+              placeholder="570"
+              data-i18n-placeholder-en="570"
+              data-i18n-placeholder-zh="570"
+            />
+          </label>
+          <label>
+            <I18nText text={PR_STATUS_LABELS.head} />
+            <input
+              name="head"
+              placeholder="web-pr-review-status"
+              data-i18n-placeholder-en="web-pr-review-status"
+              data-i18n-placeholder-zh="web-pr-review-status"
+            />
+          </label>
+          <label>
+            <I18nText text={PR_STATUS_LABELS.base} />
+            <input name="base" value="main" />
+          </label>
+        </fieldset>
+        <div class="preview-toolbar">
+          <button
+            class="preview-button"
+            type="button"
+            data-pr-status-sync
+            disabled={!canSync}
+          >
+            <I18nText text={PR_STATUS_LABELS.sync} />
+          </button>
+          {
+            !canSync && (
+              <span class="status-inline">
+                <I18nText text={PR_STATUS_LABELS.githubDisconnected} />
+              </span>
+            )
+          }
+        </div>
+      </form>
+    </article>
+
+    <article class="panel preview-panel workbench-preview pr-status-panel">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker"><I18nText text={PR_STATUS_LABELS.status} /></p>
+          <h2 id="pr-status-title">
+            <I18nText text={PR_STATUS_LABELS.notSynced} />
+          </h2>
+          <p id="pr-status-updated"></p>
+        </div>
+        <a class="button-link" id="pr-status-link" href="#" hidden>
+          <I18nText text={PR_STATUS_LABELS.viewGithub} />
+        </a>
+      </div>
+
+      <div class="status-strip" id="pr-status-badges">
+        <span class="status-badge tone-warning">
+          <I18nText text={PR_STATUS_LABELS.notSynced} />
+        </span>
+      </div>
+
+      <div class="review-boundary-grid">
+        <div>
+          <strong><I18nText text={PR_STATUS_LABELS.cosheafReview} /></strong>
+          <span><I18nText text={PR_STATUS_LABELS.notImported} /></span>
+        </div>
+        <div>
+          <strong><I18nText text={PR_STATUS_LABELS.githubCollaboration} /></strong>
+          <span><I18nText text={localized("Signal only", "仅协作信号")} /></span>
+        </div>
+      </div>
+
+      <details class="workbench-details" open>
+        <summary id="pr-status-checklist-summary">
+          <I18nText text={PR_STATUS_LABELS.checklist} />
+        </summary>
+        <ul class="status-list" id="pr-status-checklist-items"></ul>
+      </details>
+
+      <details class="workbench-details">
+        <summary><I18nText text={PR_STATUS_LABELS.comments} /></summary>
+        <ul class="status-list" id="pr-status-comments"></ul>
+      </details>
+
+      <ul class="status-list warning-list" id="pr-status-warnings"></ul>
+
+      <details class="workbench-details">
+        <summary>JSON</summary>
+        <pre class="json-block preview-output" id="pr-status-raw"></pre>
+      </details>
+    </article>
+  </section>
+
+  <script>
+    import "../../lib/prStatusWorkbenchClient";
+  </script>
+</BaseLayout>

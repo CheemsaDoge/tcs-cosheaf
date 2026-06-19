@@ -8,6 +8,7 @@ from cosheaf.forge.models import (
     ForgePreviewResult,
     GitHubIssuePlan,
     GitHubPrPlan,
+    GitHubPrStatusResult,
     LocalGitPlan,
 )
 from cosheaf.forge.service import ForgeActionError, ForgePreviewError, ForgeService
@@ -23,5 +24,6 @@ __all__ = [
     "ForgeService",
     "GitHubIssuePlan",
     "GitHubPrPlan",
+    "GitHubPrStatusResult",
     "LocalGitPlan",
 ]

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath, PureWindowsPath
@@ -14,6 +16,7 @@ from cosheaf.forge.models import (
     ForgePreviewResult,
     GitHubIssuePlan,
     GitHubPrPlan,
+    GitHubPrStatusResult,
     LocalGitPlan,
 )
 from cosheaf.services import GateService, ValidationService
@@ -273,6 +276,47 @@ class ForgeService:
             gate_performed=True,
         )
 
+    def github_pr_status(
+        self,
+        *,
+        number: int | None = None,
+        base: str = "",
+        head: str = "",
+    ) -> GitHubPrStatusResult:
+        """Read GitHub PR status without writing GitHub, git, or review records."""
+        normalized_base = base.strip()
+        normalized_head = head.strip()
+        selector = str(number) if number is not None else normalized_head
+        if not selector:
+            return _degraded_pr_status(
+                number=number,
+                base=normalized_base,
+                head=normalized_head,
+                warning="PR number or head branch is required.",
+            )
+        try:
+            payload = _run_gh_json(
+                self.context,
+                "pr",
+                "view",
+                selector,
+                "--json",
+                ",".join(_PR_STATUS_FIELDS),
+            )
+        except ForgeActionError:
+            return _degraded_pr_status(
+                number=number,
+                base=normalized_base,
+                head=normalized_head,
+                warning="GitHub status unavailable; gh auth or network is missing.",
+            )
+        return _github_pr_status_from_payload(
+            payload,
+            number=number,
+            base=normalized_base,
+            head=normalized_head,
+        )
+
     def sync(self) -> ForgeActionResult:
         """Return a read-only sync placeholder for future link reconciliation."""
         return ForgeActionResult(action="sync")
@@ -466,6 +510,273 @@ def _run_gh(context: RepoContext, *args: str) -> str:
     if not output:
         raise ForgeActionError("forge_github_failed", "gh did not return a URL")
     return output.splitlines()[0].strip()
+
+
+_PR_STATUS_FIELDS = (
+    "number",
+    "title",
+    "state",
+    "isDraft",
+    "mergeStateStatus",
+    "mergeable",
+    "headRefName",
+    "baseRefName",
+    "url",
+    "author",
+    "reviewDecision",
+    "reviews",
+    "comments",
+    "closingIssuesReferences",
+    "statusCheckRollup",
+    "body",
+    "updatedAt",
+)
+
+
+def _run_gh_json(context: RepoContext, *args: str) -> dict[str, object]:
+    result = subprocess.run(
+        ["gh", *args],
+        cwd=context.repo_root,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise ForgeActionError(
+            "forge_github_status_unavailable",
+            "GitHub PR status is unavailable.",
+        )
+    try:
+        payload = json.loads(result.stdout or "{}")
+    except json.JSONDecodeError as exc:
+        raise ForgeActionError(
+            "forge_github_status_unavailable",
+            "GitHub PR status did not return JSON.",
+        ) from exc
+    if not isinstance(payload, dict):
+        raise ForgeActionError(
+            "forge_github_status_unavailable",
+            "GitHub PR status did not return an object.",
+        )
+    return payload
+
+
+def _github_pr_status_from_payload(
+    payload: dict[str, object],
+    *,
+    number: int | None,
+    base: str,
+    head: str,
+) -> GitHubPrStatusResult:
+    checks = _checks(payload.get("statusCheckRollup"))
+    github_reviews = _github_reviews(payload.get("reviews"))
+    comments = _review_comments(payload.get("comments"))
+    return GitHubPrStatusResult(
+        network_calls_performed=True,
+        github_auth_available=True,
+        source_of_truth="github",
+        updated_at=_text(payload.get("updatedAt"), _now_iso()),
+        pr={
+            "number": _int_value(payload.get("number"), number),
+            "title": _text(payload.get("title"), f"PR {number or head}"),
+            "state": _text(payload.get("state"), "unknown").lower(),
+            "url": _text(payload.get("url"), ""),
+            "author": _author_login(payload.get("author")),
+            "base": _text(payload.get("baseRefName"), base),
+            "head": _text(payload.get("headRefName"), head),
+            "is_draft": bool(payload.get("isDraft", False)),
+            "merge_state": _text(payload.get("mergeStateStatus"), "unknown").lower(),
+            "mergeable": _text(payload.get("mergeable"), "unknown").lower(),
+            "review_decision": _text(payload.get("reviewDecision"), "unknown").lower(),
+        },
+        linked_issue=_linked_issue(payload.get("closingIssuesReferences")),
+        checklist=_checklist(payload.get("body")),
+        ci=_ci_summary(checks),
+        gate=_gate_summary(checks),
+        cosheaf_review=_cosheaf_review_placeholder(),
+        github_reviews=github_reviews,
+        review_comments=comments,
+        warnings=[
+            "GitHub reviews are collaboration signals only; no Cosheaf human "
+            "review record was imported."
+        ],
+    )
+
+
+def _degraded_pr_status(
+    *,
+    number: int | None,
+    base: str,
+    head: str,
+    warning: str,
+) -> GitHubPrStatusResult:
+    return GitHubPrStatusResult(
+        updated_at=_now_iso(),
+        pr={
+            "number": number,
+            "title": f"PR {number}" if number is not None else head,
+            "state": "unknown",
+            "url": "",
+            "author": "",
+            "base": base,
+            "head": head,
+            "is_draft": False,
+            "merge_state": "unknown",
+            "mergeable": "unknown",
+            "review_decision": "unknown",
+        },
+        linked_issue=None,
+        checklist={"completed": 0, "total": 0, "items": []},
+        ci={"status": "unknown", "checks": []},
+        gate={
+            "status": "unknown",
+            "checks": [],
+            "skipped_is_pass": False,
+            "gate_pass_is_review": False,
+        },
+        cosheaf_review=_cosheaf_review_placeholder(),
+        github_reviews=[],
+        review_comments=[],
+        warnings=[warning],
+    )
+
+
+def _checklist(value: object) -> dict[str, object]:
+    body = _text(value, "")
+    items: list[dict[str, object]] = []
+    pattern = re.compile(r"^\s*[-*]\s+\[([ xX])\]\s+(.+?)\s*$")
+    for line in body.splitlines():
+        match = pattern.match(line)
+        if match is None:
+            continue
+        checked = match.group(1).lower() == "x"
+        items.append({"text": match.group(2), "checked": checked})
+    completed = sum(1 for item in items if item["checked"] is True)
+    return {"completed": completed, "total": len(items), "items": items}
+
+
+def _checks(value: object) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+    checks: list[dict[str, str]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        checks.append(
+            {
+                "name": _text(item.get("name"), _text(item.get("workflowName"), "")),
+                "status": _text(item.get("status"), "unknown").lower(),
+                "conclusion": _text(item.get("conclusion"), "unknown").lower(),
+                "url": _text(item.get("detailsUrl"), ""),
+            }
+        )
+    return checks
+
+
+def _ci_summary(checks: list[dict[str, str]]) -> dict[str, object]:
+    return {"status": _checks_status(checks), "checks": checks}
+
+
+def _gate_summary(checks: list[dict[str, str]]) -> dict[str, object]:
+    gate_checks = [check for check in checks if "gate" in check["name"].lower()]
+    return {
+        "status": _checks_status(gate_checks),
+        "checks": gate_checks,
+        "skipped_is_pass": False,
+        "gate_pass_is_review": False,
+    }
+
+
+def _checks_status(checks: list[dict[str, str]]) -> str:
+    if not checks:
+        return "unknown"
+    conclusions = {check["conclusion"] for check in checks}
+    statuses = {check["status"] for check in checks}
+    if conclusions & {"failure", "cancelled", "timed_out", "action_required"}:
+        return "failure"
+    if any(status not in {"completed", "success"} for status in statuses):
+        return "pending"
+    if conclusions <= {"success", "neutral"}:
+        return "success"
+    if "skipped" in conclusions:
+        return "unknown"
+    return "unknown"
+
+
+def _github_reviews(value: object) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+    reviews: list[dict[str, str]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        reviews.append(
+            {
+                "author": _author_login(item.get("author")),
+                "state": _text(item.get("state"), "unknown").lower(),
+                "submitted_at": _text(item.get("submittedAt"), ""),
+                "body": _text(item.get("body"), ""),
+            }
+        )
+    return reviews
+
+
+def _review_comments(value: object) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+    comments: list[dict[str, str]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        comments.append(
+            {
+                "author": _author_login(item.get("author")),
+                "created_at": _text(item.get("createdAt"), ""),
+                "url": _text(item.get("url"), ""),
+                "body": _text(item.get("body"), ""),
+            }
+        )
+    return comments
+
+
+def _linked_issue(value: object) -> dict[str, object] | None:
+    if not isinstance(value, list) or not value:
+        return None
+    first = value[0]
+    if not isinstance(first, dict):
+        return None
+    return {
+        "number": _int_value(first.get("number"), None),
+        "title": _text(first.get("title"), ""),
+        "state": _text(first.get("state"), "unknown").lower(),
+        "url": _text(first.get("url"), ""),
+    }
+
+
+def _cosheaf_review_placeholder() -> dict[str, str]:
+    return {
+        "status": "not_imported",
+        "source": "repository",
+        "summary": "Cosheaf human review has not been imported from this PR.",
+    }
+
+
+def _author_login(value: object) -> str:
+    if isinstance(value, dict):
+        return _text(value.get("login"), "")
+    return ""
+
+
+def _text(value: object, fallback: str) -> str:
+    return value.strip() if isinstance(value, str) and value.strip() else fallback
+
+
+def _int_value(value: object, fallback: int | None) -> int | None:
+    return value if isinstance(value, int) else fallback
+
+
+def _now_iso() -> str:
+    return _now_utc().isoformat().replace("+00:00", "Z")
 
 
 def _git_status(context: RepoContext) -> tuple[str, ...]:

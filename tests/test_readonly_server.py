@@ -609,6 +609,149 @@ def test_b281_forge_push_and_pr_submit_endpoints_return_pr_url(
     ]
 
 
+def test_b282_pr_status_reads_github_metadata_without_review_import(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    _fixture_workspace(tmp_path)
+    before = _repo_file_snapshot(tmp_path)
+    calls: list[list[str]] = []
+    gh_payload = {
+        "number": 570,
+        "title": "Add PR review status",
+        "state": "OPEN",
+        "isDraft": False,
+        "mergeStateStatus": "CLEAN",
+        "mergeable": "MERGEABLE",
+        "headRefName": "web-pr-review-status",
+        "baseRefName": "main",
+        "url": "https://github.com/CheemsaDoge/tcs-cosheaf/pull/570",
+        "author": {"login": "CheemsaDoge"},
+        "reviewDecision": "APPROVED",
+        "body": "- [x] make test\n- [ ] reviewer sign-off\n",
+        "updatedAt": "2026-06-19T21:00:00Z",
+        "closingIssuesReferences": [
+            {
+                "number": 570,
+                "title": "Add PR review status and comments in web",
+                "state": "OPEN",
+                "url": "https://github.com/CheemsaDoge/tcs-cosheaf/issues/570",
+            }
+        ],
+        "statusCheckRollup": [
+            {
+                "name": "lint",
+                "status": "COMPLETED",
+                "conclusion": "SUCCESS",
+                "detailsUrl": "https://example.invalid/lint",
+            },
+            {
+                "name": "gate",
+                "status": "COMPLETED",
+                "conclusion": "SUCCESS",
+                "detailsUrl": "https://example.invalid/gate",
+            },
+        ],
+        "reviews": [
+            {
+                "author": {"login": "reviewer"},
+                "state": "APPROVED",
+                "submittedAt": "2026-06-19T21:01:00Z",
+                "body": "Looks ready.",
+            }
+        ],
+        "comments": [
+            {
+                "author": {"login": "reviewer"},
+                "createdAt": "2026-06-19T21:02:00Z",
+                "url": "https://github.com/CheemsaDoge/tcs-cosheaf/pull/570#x",
+                "body": "One non-blocking note.",
+            }
+        ],
+    }
+
+    def fake_subprocess_run(
+        args: list[str],
+        **_kwargs: object,
+    ) -> subprocess.CompletedProcess[str]:
+        calls.append(args)
+        return subprocess.CompletedProcess(
+            args=args,
+            returncode=0,
+            stdout=json.dumps(gh_payload),
+            stderr="",
+        )
+
+    monkeypatch.setattr(subprocess, "run", fake_subprocess_run)
+
+    api = ReadOnlySiteApi(open_app(tmp_path))
+    response = api.handle(
+        "GET",
+        "/api/forge/pr-status?number=570&base=main&head=web-pr-review-status",
+    )
+
+    assert response.status == 200, response.payload
+    payload = response.payload["pr_status"]
+    assert response.payload["kind"] == "github_pr_status"
+    assert response.payload["github_auth_available"] is True
+    assert response.payload["git_writes_performed"] is False
+    assert response.payload["github_writes_performed"] is False
+    assert payload["source_of_truth"] == "github"
+    assert payload["pr"]["number"] == 570
+    assert payload["linked_issue"]["number"] == 570
+    assert payload["checklist"]["completed"] == 1
+    assert payload["checklist"]["total"] == 2
+    assert payload["ci"]["status"] == "success"
+    assert payload["gate"]["status"] == "success"
+    assert payload["gate"]["skipped_is_pass"] is False
+    assert payload["cosheaf_review"]["status"] == "not_imported"
+    assert payload["github_reviews"][0]["state"] == "approved"
+    assert payload["review_comments"][0]["body"] == "One non-blocking note."
+    assert "imported" in payload["warnings"][0]
+    assert calls[0][:4] == ["gh", "pr", "view", "570"]
+    assert _repo_file_snapshot(tmp_path) == before
+
+
+def test_b282_pr_status_degrades_when_github_is_unavailable(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    _fixture_workspace(tmp_path)
+
+    def fake_subprocess_run(
+        args: list[str],
+        **_kwargs: object,
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(
+            args=args,
+            returncode=1,
+            stdout="",
+            stderr="gh auth required",
+        )
+
+    monkeypatch.setattr(subprocess, "run", fake_subprocess_run)
+
+    api = ReadOnlySiteApi(open_app(tmp_path))
+    response = api.handle(
+        "GET",
+        "/api/forge/pr-status?number=570&base=main&head=web-pr-review-status",
+    )
+
+    assert response.status == 200, response.payload
+    payload = response.payload["pr_status"]
+    assert payload["source_of_truth"] == "degraded"
+    assert payload["github_auth_available"] is False
+    assert payload["network_calls_performed"] is False
+    assert payload["pr"]["number"] == 570
+    assert payload["pr"]["base"] == "main"
+    assert payload["pr"]["head"] == "web-pr-review-status"
+    assert payload["ci"]["status"] == "unknown"
+    assert payload["gate"]["status"] == "unknown"
+    assert payload["cosheaf_review"]["status"] == "not_imported"
+    assert payload["github_reviews"] == []
+    assert "unavailable" in payload["warnings"][0]
+
+
 def test_preview_endpoint_writes_web_action_audit_without_repo_file(
     tmp_path: Path,
 ) -> None:

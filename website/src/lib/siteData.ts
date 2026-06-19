@@ -34,6 +34,7 @@ export const ROUTES = [
   { path: "/artifacts", label: localized("Artifacts", "工件") },
   { path: "/issues", label: localized("Issues", "议题") },
   { path: "/forge/submit", label: localized("Forge PR", "Forge PR 提交") },
+  { path: "/forge/pr-status", label: localized("PR Status", "PR 状态") },
   { path: "/graph", label: localized("Graph", "图谱") },
   { path: "/gates", label: localized("Gate Reports", "准入检查报告") },
   { path: "/authority", label: localized("Authority", "权限边界") }
