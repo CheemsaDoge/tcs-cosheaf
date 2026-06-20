@@ -327,6 +327,9 @@ create a draft PR with explicit confirmation. The page calls only the localhost
 server endpoints under
 `/api/forge/branch/*`, `/api/forge/commit/*`, `/api/forge/push/*`, and
 `/api/forge/pr/*`; it never stores GitHub tokens or calls GitHub directly.
+Branch, commit, and push confirms cannot use `main` or `master` as the write
+target; explicit staging happens only after the backend accepts the current
+branch as non-protected.
 When PR creation succeeds, it renders the returned PR URL as the primary
 result link.
 
