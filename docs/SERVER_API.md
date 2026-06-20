@@ -26,6 +26,16 @@ Workbench. It is not authentication, authorization, or cryptographic identity.
 Confirmed human review decisions and promotion actions are refused with
 `400 local_actor_required` when the server has no configured local actor.
 
+Hosted auth design is recorded in [Authentication And Authorization](AUTH.md).
+Hosted mode is available only as a backend guard stub when `ReadOnlySiteApi`
+is constructed with `web_action_mode=WebActionMode.HOSTED` and a
+server-provided `HostedAuthProvider`; the CLI localhost server still starts in
+local mode. Hosted mode refuses unauthenticated write-class POST actions with
+`403 hosted_auth_required` and refuses insufficient-role actions with
+`403 hosted_action_denied`. It does not implement OAuth, GitHub App login,
+sessions, browser credentials, hosted checkout caching, webhook handling, or
+production SaaS.
+
 Longplan B2 turns this server boundary into the Human Governance Workbench
 bridge. The server is the only allowed path from browser actions to policy
 checks, repository writes, Git/GitHub actions, audit logs, human review records,
@@ -164,8 +174,9 @@ GET /api/forge/pr-status?number=<n>&base=main&head=<branch>
 ```
 
 `GET /api/health` includes `local_actor`, `local_actor_configured`,
-`local_actor_is_auth: false`, and `local_actor_notice` so the frontend can show
-the configured local actor without presenting it as hosted auth.
+`local_actor_is_auth: false`, `local_actor_notice`, `web_action_mode`,
+`hosted_auth_configured`, and `hosted_auth_production_ready: false` so the
+frontend can show local actor metadata without presenting it as hosted auth.
 
 Unsupported `POST` requests and unsupported methods return
 `405 method_not_allowed`. `OPTIONS` is supported for localhost browser

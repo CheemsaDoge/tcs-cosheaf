@@ -25,6 +25,12 @@ from cosheaf.forge import (
     ForgeCredentialProvider,
 )
 from cosheaf.issues import ISSUE_AUTHORITY_NOTICE, LocalIssueError
+from cosheaf.server.auth import (
+    HostedAuthProvider,
+    HostedIdentity,
+    hosted_action_allowed,
+    hosted_required_role,
+)
 from cosheaf.services import PROMOTION_CONFIRMATION_PHRASES, DraftWriteServiceError
 from cosheaf.site import REQUIRED_SITE_EXPORT_FILES, SITE_EXPORT_AUTHORITY_NOTICE
 from cosheaf.storage.loader import LoadedRecord, LoadError, load_artifacts
@@ -153,11 +159,15 @@ class ReadOnlySiteApi:
         host: str = READONLY_SERVER_HOST,
         credential_provider: ForgeCredentialProvider | None = None,
         local_actor: str | None = None,
+        web_action_mode: WebActionMode = WebActionMode.LOCAL,
+        hosted_auth_provider: HostedAuthProvider | None = None,
     ) -> None:
         self.app = app
         self.host = host
         self.credential_provider = credential_provider
         self.local_actor = _normalize_local_actor(local_actor)
+        self.web_action_mode = WebActionMode(web_action_mode)
+        self.hosted_auth_provider = hosted_auth_provider
 
     def handle(
         self,
@@ -245,6 +255,20 @@ class ReadOnlySiteApi:
         payload = _json_body(body)
         if isinstance(payload, ApiResponse):
             return payload
+        route_action = _post_route_action(
+            path,
+            issue_action=issue_action,
+            artifact_action=artifact_action,
+            artifact_promotion=artifact_promotion,
+            context_action=context_action,
+        )
+        blocked = self._blocked_hosted_action(
+            route_action,
+            payload,
+            preview_only=_post_route_is_preview(path, artifact_promotion),
+        )
+        if blocked is not None:
+            return blocked
         try:
             if path == "/api/artifacts/preview-create":
                 return self._preview_artifact_create(payload)
@@ -351,6 +375,9 @@ class ReadOnlySiteApi:
             "local_actor_configured": self.local_actor is not None,
             "local_actor_is_auth": False,
             "local_actor_notice": LOCAL_ACTOR_NOTICE,
+            "web_action_mode": self.web_action_mode,
+            "hosted_auth_configured": self.hosted_auth_provider is not None,
+            "hosted_auth_production_ready": False,
             "authority_notice": SITE_EXPORT_AUTHORITY_NOTICE,
         }
 
@@ -876,7 +903,7 @@ class ReadOnlySiteApi:
         )
         if blocked is not None:
             return blocked
-        actor, actor_blocked = self._require_local_actor(
+        actor, actor_blocked = self._require_confirm_actor(
             action,
             authority_warnings=[REVIEW_DECISION_AUTHORITY_NOTICE],
         )
@@ -939,7 +966,7 @@ class ReadOnlySiteApi:
         action = "promotion_preview"
         normalized_id = validate_artifact_id(artifact_id)
         target_state = _promotion_target_state(payload.get("target_state", "accepted"))
-        actor = self.local_actor or _optional_text(payload, "actor") or "local.web"
+        actor = self._preview_actor(payload)
         report = self.app.promotion_readiness(artifact_id=normalized_id)
         readiness = report.to_dict()
         missing = _promotion_missing_requirements(readiness)
@@ -1028,7 +1055,7 @@ class ReadOnlySiteApi:
         )
         if blocked is not None:
             return blocked
-        actor, actor_blocked = self._require_local_actor(
+        actor, actor_blocked = self._require_confirm_actor(
             action,
             authority_warnings=[PROMOTION_AUTHORITY_NOTICE],
         )
@@ -1985,9 +2012,65 @@ class ReadOnlySiteApi:
             repo_writes_performed=False,
         )
 
+    def _current_hosted_identity(self) -> HostedIdentity | None:
+        if self.hosted_auth_provider is None:
+            return None
+        return self.hosted_auth_provider.current_identity()
+
+    def _preview_actor(self, payload: dict[str, Any]) -> str:
+        if self.web_action_mode is WebActionMode.HOSTED:
+            identity = self._current_hosted_identity()
+            if identity is not None:
+                return identity.subject
+            return "hosted.anonymous"
+        return self.local_actor or _optional_text(payload, "actor") or "local.web"
+
+    def _blocked_hosted_action(
+        self,
+        action: WebActionKind,
+        payload: dict[str, Any],
+        *,
+        preview_only: bool,
+    ) -> ApiResponse | None:
+        if self.web_action_mode is not WebActionMode.HOSTED:
+            return None
+        identity = self._current_hosted_identity()
+        authority_warnings = _authority_warnings_for_action(action)
+        explicit_confirm = payload.get("confirm") is True
+        if identity is None:
+            self._write_audit(
+                action=action,
+                result_status="hosted_auth_required",
+                explicit_confirm=explicit_confirm,
+                preview_only=preview_only,
+                actor="hosted.anonymous",
+                authority_warnings=authority_warnings,
+            )
+            return _error(
+                403,
+                "hosted_auth_required",
+                "hosted mode requires an authenticated hosted identity",
+            )
+        if not hosted_action_allowed(identity, action):
+            required = hosted_required_role(action)
+            self._write_audit(
+                action=action,
+                result_status="hosted_action_denied",
+                explicit_confirm=explicit_confirm,
+                preview_only=preview_only,
+                actor=identity.subject,
+                authority_warnings=authority_warnings,
+            )
+            return _error(
+                403,
+                "hosted_action_denied",
+                f"hosted action requires role: {required}",
+            )
+        return None
+
     def _blocked_confirm(
         self,
-        action: str,
+        action: str | WebActionKind,
         payload: dict[str, Any],
         *,
         authority_warnings: list[str] | None = None,
@@ -2003,6 +2086,37 @@ class ReadOnlySiteApi:
             )
             return _error(400, "confirm_required", "write requires confirm: true")
         return None
+
+    def _require_confirm_actor(
+        self,
+        action: str,
+        *,
+        authority_warnings: list[str] | None = None,
+    ) -> tuple[str, ApiResponse | None]:
+        if self.web_action_mode is WebActionMode.HOSTED:
+            identity = self._current_hosted_identity()
+            if identity is not None:
+                return identity.subject, None
+            self._write_audit(
+                action=action,
+                result_status="hosted_auth_required",
+                explicit_confirm=True,
+                preview_only=False,
+                actor="hosted.anonymous",
+                authority_warnings=authority_warnings or [SITE_EXPORT_AUTHORITY_NOTICE],
+            )
+            return (
+                "",
+                _error(
+                    403,
+                    "hosted_auth_required",
+                    "hosted mode requires an authenticated hosted identity",
+                ),
+            )
+        return self._require_local_actor(
+            action,
+            authority_warnings=authority_warnings,
+        )
 
     def _require_local_actor(
         self,
@@ -2157,7 +2271,15 @@ class ReadOnlySiteApi:
         actor: str | None = None,
     ) -> None:
         result = result or {}
-        audit_actor = actor or self.local_actor or "local.web"
+        audit_actor = (
+            actor
+            or self.local_actor
+            or (
+                "hosted.anonymous"
+                if self.web_action_mode is WebActionMode.HOSTED
+                else "local.web"
+            )
+        )
         github_url = result.get("github_issue_url") or result.get("github_pr_url")
         performed = result_status == "success" and bool(
             result.get("action_performed", False)
@@ -2178,8 +2300,10 @@ class ReadOnlySiteApi:
             WebActionAuditEntry(
                 timestamp=datetime.now(UTC).replace(microsecond=0),
                 actor=audit_actor,
-                action=_web_action_kind(action),
-                mode=WebActionMode.LOCAL,
+                action=action
+                if isinstance(action, WebActionKind)
+                else _web_action_kind(action),
+                mode=self.web_action_mode,
                 repo_root=str(self.app.context.repo_root),
                 branch=branch or _optional_str(result.get("branch")),
                 base=base or _optional_str(result.get("base")),
@@ -2314,6 +2438,117 @@ def _query_params(raw_path: str) -> dict[str, str]:
         for key, values in parsed.items()
         if values and isinstance(values[-1], str)
     }
+
+
+def _post_route_action(
+    path: str,
+    *,
+    issue_action: tuple[str, str] | None,
+    artifact_action: tuple[str, str] | None,
+    artifact_promotion: tuple[str, str] | None,
+    context_action: tuple[str, str] | None,
+) -> WebActionKind:
+    direct = {
+        "/api/artifacts/preview-create": WebActionKind.ARTIFACT_CREATE,
+        "/api/artifacts/create": WebActionKind.ARTIFACT_CREATE,
+        "/api/issues/preview-create": WebActionKind.ISSUE_CREATE,
+        "/api/issues/create": WebActionKind.ISSUE_CREATE,
+        "/api/validate/run": WebActionKind.VALIDATE_RUN,
+        "/api/gate/run": WebActionKind.GATE_RUN,
+        "/api/reviews/packets/preview": WebActionKind.REVIEW_PACKET_CREATE,
+        "/api/reviews/packets/create": WebActionKind.REVIEW_PACKET_CREATE,
+        "/api/reviews/decisions/preview": WebActionKind.REVIEW_DECISION_CREATE,
+        "/api/reviews/decisions/create": WebActionKind.REVIEW_DECISION_CREATE,
+        "/api/forge/local-issues/preview": WebActionKind.ISSUE_CREATE,
+        "/api/forge/issues/preview": WebActionKind.ISSUE_PUBLISH_GITHUB,
+        "/api/forge/issues/create": WebActionKind.ISSUE_PUBLISH_GITHUB,
+        "/api/forge/branch/preview": WebActionKind.FORGE_BRANCH_CREATE,
+        "/api/forge/branch/create": WebActionKind.FORGE_BRANCH_CREATE,
+        "/api/forge/commit/preview": WebActionKind.FORGE_COMMIT_CREATE,
+        "/api/forge/commit/create": WebActionKind.FORGE_COMMIT_CREATE,
+        "/api/forge/push/preview": WebActionKind.FORGE_PUSH_CREATE,
+        "/api/forge/push/create": WebActionKind.FORGE_PUSH_CREATE,
+        "/api/forge/pr/preview": WebActionKind.FORGE_PR_CREATE,
+        "/api/forge/pr/create": WebActionKind.FORGE_PR_CREATE,
+        "/api/forge/prs/preview": WebActionKind.FORGE_PR_CREATE,
+        "/api/forge/prs/create": WebActionKind.FORGE_PR_CREATE,
+        "/api/forge/review-packets/preview": WebActionKind.REVIEW_PACKET_CREATE,
+    }
+    if path in direct:
+        return direct[path]
+    if issue_action is not None:
+        _, action = issue_action
+        return {
+            "preview-update": WebActionKind.ISSUE_UPDATE,
+            "update": WebActionKind.ISSUE_UPDATE,
+            "preview-close": WebActionKind.ISSUE_CLOSE,
+            "close": WebActionKind.ISSUE_CLOSE,
+        }[action]
+    if artifact_action is not None:
+        _, action = artifact_action
+        return {
+            "preview-source": WebActionKind.SOURCE_ATTACH,
+            "source": WebActionKind.SOURCE_ATTACH,
+            "preview-evidence": WebActionKind.EVIDENCE_ATTACH,
+            "evidence": WebActionKind.EVIDENCE_ATTACH,
+            "preview-update": WebActionKind.ARTIFACT_UPDATE,
+            "update": WebActionKind.ARTIFACT_UPDATE,
+        }[action]
+    if artifact_promotion is not None:
+        _, action = artifact_promotion
+        return {
+            "preview": WebActionKind.PROMOTION_PREVIEW,
+            "confirm": WebActionKind.PROMOTION_CONFIRM,
+        }[action]
+    if context_action is not None:
+        return WebActionKind.CONTEXT_BUILD
+    raise ValueError(f"unmapped POST endpoint: {path}")
+
+
+def _post_route_is_preview(
+    path: str,
+    artifact_promotion: tuple[str, str] | None,
+) -> bool:
+    if path in _PREVIEW_ENDPOINTS or path in _ARTIFACT_PREVIEW_ENDPOINTS:
+        return True
+    if "/preview-" in path or path.endswith("/preview"):
+        return True
+    return artifact_promotion is not None and artifact_promotion[1] == "preview"
+
+
+def _authority_warnings_for_action(action: WebActionKind) -> list[str]:
+    if action in {
+        WebActionKind.ISSUE_CREATE,
+        WebActionKind.ISSUE_UPDATE,
+        WebActionKind.ISSUE_CLOSE,
+        WebActionKind.ISSUE_PUBLISH_GITHUB,
+    }:
+        return [ISSUE_AUTHORITY_NOTICE]
+    if action in {
+        WebActionKind.ARTIFACT_CREATE,
+        WebActionKind.ARTIFACT_UPDATE,
+        WebActionKind.SOURCE_ATTACH,
+        WebActionKind.EVIDENCE_ATTACH,
+    }:
+        return [ARTIFACT_WRITE_AUTHORITY_NOTICE]
+    if action is WebActionKind.CONTEXT_BUILD:
+        return [CONTEXT_AUTHORITY_NOTICE]
+    if action in {WebActionKind.VALIDATE_RUN, WebActionKind.GATE_RUN}:
+        return [CHECK_AUTHORITY_NOTICE]
+    if action is WebActionKind.REVIEW_PACKET_CREATE:
+        return [REVIEW_PACKET_AUTHORITY_NOTICE]
+    if action is WebActionKind.REVIEW_DECISION_CREATE:
+        return [REVIEW_DECISION_AUTHORITY_NOTICE]
+    if action in {WebActionKind.PROMOTION_PREVIEW, WebActionKind.PROMOTION_CONFIRM}:
+        return [PROMOTION_AUTHORITY_NOTICE]
+    if action in {
+        WebActionKind.FORGE_BRANCH_CREATE,
+        WebActionKind.FORGE_COMMIT_CREATE,
+        WebActionKind.FORGE_PUSH_CREATE,
+        WebActionKind.FORGE_PR_CREATE,
+    }:
+        return [FORGE_AUTHORITY_WARNING]
+    return [SITE_EXPORT_AUTHORITY_NOTICE]
 
 
 def _parse_issue_action_path(path: str) -> tuple[str, str] | None:
