@@ -8,6 +8,9 @@ backend-only GitHub create slice:
 cosheaf server serve --readonly --port 8765 --local-actor "Ada Reviewer"
 ```
 
+For operator setup, live-local frontend commands, audit inspection, and recovery
+steps, see the [Web Workbench runbook](WEB_WORKBENCH_RUNBOOK.md).
+
 The CLI server binds to `127.0.0.1` and refuses to start unless `--readonly`
 is provided. Read and preview endpoints need no authentication because they
 are loopback-only and non-mutating. Confirmed local issue actions are

@@ -4,6 +4,8 @@ Cosheaf's website is the Human Governance Workbench: the primary human
 research, review, and governance workspace over a Git-backed Cosheaf
 repository. It is not only a showcase. Static demo pages remain useful, but
 they are one read-only mode of the product rather than the full product.
+Operational setup and recovery steps are recorded in the
+[Web Workbench runbook](WEB_WORKBENCH_RUNBOOK.md).
 
 ## Scope
 
@@ -32,8 +34,8 @@ Static showcase mode may show:
 - explicit authority-boundary notices.
 
 Live local and hosted Workbench modes may additionally expose confirmed human
-actions through the server. They are not implemented by this documentation
-change; this file defines the contract future runtime tasks must preserve.
+actions through the server. Current local slices are documented in the runbook;
+hosted production deployment remains future work.
 
 ## Authority Boundary
 

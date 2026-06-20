@@ -462,7 +462,8 @@ cd website && npm run build
 The website remains display context only; repository files remain the source of
 truth. The static build output is `website/dist`; see
 [Website Scope And Data Contract](docs/WEBSITE.md) and
-[Static Website Deployment](docs/DEPLOYMENT.md).
+[Static Website Deployment](docs/DEPLOYMENT.md). For a step-by-step local
+operator flow, see the [Web Workbench runbook](docs/WEB_WORKBENCH_RUNBOOK.md).
 
 For local dynamic preview without cloud auth:
 
@@ -495,7 +496,8 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - Model training.
 - An automatic theorem-proving agent.
 - Full Lean autoformalization.
-- A write-capable or production-hosted web UI.
+- A browser-owned write UI or production-hosted SaaS UI that bypasses the
+  server/app/forge governance boundary.
 - A multi-user permission system.
 - A replacement for peer review, formal proof assistants, or domain expert
   judgment.
@@ -510,6 +512,7 @@ For the MVP, TCS-Cosheaf does not aim to provide:
 - [Workspace model](docs/WORKSPACE.md)
 - [AI Math Collaborator MVP](docs/AI_MATH_COLLABORATOR_MVP.md)
 - [Operator runbook](docs/OPERATOR_RUNBOOK.md)
+- [Web Workbench runbook](docs/WEB_WORKBENCH_RUNBOOK.md)
 - [Authority boundaries](docs/AUTHORITY_BOUNDARIES.md)
 - [Public/private policy](docs/PUBLIC_PRIVATE_POLICY.md)
 - [Public/private KB policy](docs/PUBLIC_PRIVATE_KB.md)
