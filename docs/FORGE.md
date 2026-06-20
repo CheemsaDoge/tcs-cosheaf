@@ -46,10 +46,16 @@ a token.
 
 `forge branch create <branch> --confirm` creates and switches to a local branch.
 It refuses `main`/`master` targets and dirty working trees before changing refs.
+Server/app callers may explicitly request `allow_dirty: true` to carry current
+worktree changes onto a new non-protected branch; the CLI keeps the clean-tree
+default.
 
 `forge commit --message <message> --confirm` commits already staged changes
-only. It refuses untracked files, unstaged changes, and empty staged state to
-avoid ambiguous commits. Before `git commit`, it runs repository validation and
+only in the CLI. It refuses current `main`/`master` branches, untracked files,
+unstaged changes, and empty staged state to avoid ambiguous or protected-branch
+commits. Server/app callers may explicitly request `stage_all: true` to stage
+repository changes before validation, gate, and commit, but the protected-branch
+guard still runs first. Before `git commit`, it runs repository validation and
 gatekeeper through the in-process app services.
 
 Local git actions report:

@@ -3,6 +3,21 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.12.1 Web Workbench runbook - 2026-06-20
+
+Issue #586 adds the operator-facing Web Workbench runbook on branch
+`web-workbench-runbook`.
+
+The runbook covers local setup, static showcase mode, live local mode,
+write-capable local mode, GitHub/forge setup, human review, promotion, PR
+workflow, audit inspection, recovery from failed actions, and security
+limitations. It explicitly separates static fixture display from live-local
+repository reads and confirmed Workbench writes.
+
+This task does not add frontend UI behavior, server endpoints, production
+hosted auth, browser-side GitHub credentials, accepted-write shortcuts,
+human-review shortcuts, gate/verifier authority, or promotion-policy bypasses.
+
 ## Longplan B2.11.2 negative authority E2E tests - 2026-06-20
 
 Issue #584 adds automated negative Workbench authority coverage on branch

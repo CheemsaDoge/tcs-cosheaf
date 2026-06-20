@@ -104,13 +104,16 @@ metadata. They degrade when GitHub auth or network access is unavailable and
 keep GitHub reviews/comments separate from Cosheaf human-review records.
 
 Local git actions are narrower than general shell access. `forge branch create`
-requires `--confirm`, refuses dirty working trees, and creates/switches to a
-local branch. `forge commit` requires `--confirm`, refuses unstaged or
-untracked ambiguity, requires staged changes, runs repository validation and
-gatekeeper in-process, and then creates one local commit. Local git actions do
-not push, create pull requests, call GitHub, read tokens, or store credentials.
-`forge push` is a separate confirmed action that refuses `main`/`master` and
-pushes one branch through `git push -u origin <branch>`.
+requires `--confirm`, refuses protected branch targets, refuses dirty working
+trees by default, and creates/switches to a local branch. Server/app callers may
+explicitly carry current dirty state onto a new non-protected branch.
+`forge commit` requires `--confirm`, refuses current `main`/`master`, refuses
+unstaged or untracked ambiguity by default, requires staged changes unless the
+server/app caller explicitly requests backend staging, runs repository
+validation and gatekeeper in-process, and then creates one local commit. Local
+git actions do not push, create pull requests, call GitHub, read tokens, or
+store credentials. `forge push` is a separate confirmed action that refuses
+`main`/`master` and pushes one branch through `git push -u origin <branch>`.
 
 GitHub actions are narrower than general `gh` access. `forge issue create`
 requires `--confirm`, calls `gh issue create`, and when possible records the
