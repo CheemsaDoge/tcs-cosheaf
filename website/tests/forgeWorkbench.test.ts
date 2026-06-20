@@ -1,15 +1,19 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  FORGE_ISSUE_ENDPOINTS,
+  FORGE_ISSUE_LABELS,
   FORGE_PR_FLOW_ENDPOINTS,
   FORGE_PR_FLOW_LABELS,
   buildBranchCreatePayload,
   buildCommitCreatePayload,
+  buildGitHubIssuePublishPayload,
   buildPrCreatePayload,
   buildPushCreatePayload,
   canCreateBranch,
   canCreatePr,
   canPushBranch,
+  extractGitHubIssueUrl,
   extractPrUrl,
   isProtectedBranch
 } from "../src/lib/forgeWorkbench";
@@ -36,8 +40,18 @@ describe("forge PR submit workbench helpers", () => {
     });
   });
 
+  it("uses the exact B2.3.2 GitHub issue publish endpoints", () => {
+    expect(FORGE_ISSUE_ENDPOINTS).toEqual({
+      preview: "/api/forge/issues/preview",
+      create: "/api/forge/issues/create"
+    });
+  });
+
   it("keeps labels switchable instead of inline bilingual", () => {
-    for (const value of Object.values(FORGE_PR_FLOW_LABELS)) {
+    for (const value of [
+      ...Object.values(FORGE_PR_FLOW_LABELS),
+      ...Object.values(FORGE_ISSUE_LABELS)
+    ]) {
       expect(isLocalizedText(value)).toBe(true);
       expect(value.en).not.toContain(" / ");
       expect(value.zh).not.toContain(" / ");
@@ -92,6 +106,23 @@ describe("forge PR submit workbench helpers", () => {
     ).toBe(true);
   });
 
+  it("builds GitHub issue publish payloads without implicit confirmation", () => {
+    expect(
+      buildGitHubIssuePublishPayload({
+        sourcePath: " issues/open/issue.fixture.yaml "
+      })
+    ).toEqual({ source_path: "issues/open/issue.fixture.yaml" });
+    expect(
+      buildGitHubIssuePublishPayload({
+        sourcePath: "issues/open/issue.fixture.yaml",
+        confirm: true
+      })
+    ).toEqual({
+      source_path: "issues/open/issue.fixture.yaml",
+      confirm: true
+    });
+  });
+
   it("extracts the created PR URL from action payloads", () => {
     expect(
       extractPrUrl({
@@ -101,5 +132,17 @@ describe("forge PR submit workbench helpers", () => {
       })
     ).toBe("https://github.com/CheemsaDoge/tcs-cosheaf/pull/1004");
     expect(extractPrUrl({ forge_action: {} })).toBe("");
+  });
+
+  it("extracts the created GitHub issue URL from action payloads", () => {
+    expect(
+      extractGitHubIssueUrl({
+        forge_action: {
+          github_issue_url:
+            "https://github.com/CheemsaDoge/tcs-cosheaf/issues/1004"
+        }
+      })
+    ).toBe("https://github.com/CheemsaDoge/tcs-cosheaf/issues/1004");
+    expect(extractGitHubIssueUrl({ forge_action: {} })).toBe("");
   });
 });

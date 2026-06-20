@@ -4,6 +4,11 @@ import {
   buildContextBuildPayload,
   buildIssueActionPayload
 } from "./issueWorkbench";
+import {
+  FORGE_ISSUE_ENDPOINTS,
+  buildGitHubIssuePublishPayload,
+  extractGitHubIssueUrl
+} from "./forgeWorkbench";
 
 type IssueFormAction = "create" | "update";
 
@@ -192,6 +197,82 @@ for (const form of document.querySelectorAll<HTMLFormElement>(
       );
       setOutput(output, result);
       globalThis.location.reload();
+    } catch (error) {
+      setOutput(output, { error: error instanceof Error ? error.message : error });
+      confirmButton?.removeAttribute("disabled");
+    }
+  });
+}
+
+for (const form of document.querySelectorAll<HTMLFormElement>(
+  "[data-github-issue-publish-form]"
+)) {
+  const apiBase = form.dataset.apiBase ?? "http://127.0.0.1:8765";
+  const output = document.querySelector(form.dataset.output ?? "");
+  const urlOutput = document.querySelector<HTMLAnchorElement>(
+    form.dataset.urlOutput ?? ""
+  );
+  const confirmButton = form.querySelector<HTMLButtonElement>("[data-confirm]");
+  const previewButton = form.querySelector<HTMLButtonElement>("[data-preview]");
+  if (form.dataset.mode !== "live-local") {
+    continue;
+  }
+
+  const clearUrl = () => {
+    if (urlOutput) {
+      urlOutput.hidden = true;
+      urlOutput.removeAttribute("href");
+      urlOutput.textContent = "";
+    }
+  };
+  const showUrl = (payload: unknown) => {
+    const url = extractGitHubIssueUrl(payload);
+    if (urlOutput && url) {
+      urlOutput.href = url;
+      urlOutput.textContent = url;
+      urlOutput.hidden = false;
+    }
+  };
+
+  previewButton?.addEventListener("click", async () => {
+    previewButton.disabled = true;
+    confirmButton?.setAttribute("disabled", "true");
+    clearUrl();
+    try {
+      const preview = await postJson(
+        apiBase,
+        FORGE_ISSUE_ENDPOINTS.preview,
+        buildGitHubIssuePublishPayload({
+          sourcePath: formText(form, "sourcePath")
+        })
+      );
+      setOutput(output, preview);
+      confirmButton?.removeAttribute("disabled");
+    } catch (error) {
+      setOutput(output, { error: error instanceof Error ? error.message : error });
+    } finally {
+      previewButton.disabled = false;
+    }
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (confirmButton?.disabled) {
+      return;
+    }
+    confirmButton?.setAttribute("disabled", "true");
+    clearUrl();
+    try {
+      const result = await postJson(
+        apiBase,
+        FORGE_ISSUE_ENDPOINTS.create,
+        buildGitHubIssuePublishPayload({
+          sourcePath: formText(form, "sourcePath"),
+          confirm: true
+        })
+      );
+      setOutput(output, result);
+      showUrl(result);
     } catch (error) {
       setOutput(output, { error: error instanceof Error ? error.message : error });
       confirmButton?.removeAttribute("disabled");

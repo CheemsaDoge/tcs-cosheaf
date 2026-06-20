@@ -169,6 +169,8 @@ Write-capable pages include:
 
 - `/issues/create/`, `/issues/<issue_id>/edit/`, and `/issues/<issue_id>/` for
   local issue create, update, and close.
+- `/issues/<issue_id>/` for publishing an open local issue to GitHub through
+  backend forge issue endpoints when server-side credentials are configured.
 - `/artifacts/create/` and `/artifacts/<artifact_id>/edit/` for draft or
   pre-accepted artifact writes.
 - `/artifacts/<artifact_id>/sources/` and
