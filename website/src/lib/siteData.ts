@@ -28,16 +28,14 @@ export const REQUIRED_DATA_FILES = [
 ] as const;
 
 export const ROUTES = [
-  { path: "/", label: localized("Home", "首页") },
-  { path: "/docs", label: localized("Docs", "文档") },
-  { path: "/demo", label: localized("Demo", "演示") },
+  { path: "/", label: localized("Dashboard", "总览") },
   { path: "/artifacts", label: localized("Artifacts", "工件") },
   { path: "/issues", label: localized("Issues", "议题") },
-  { path: "/forge/submit", label: localized("Forge PR", "Forge PR 提交") },
-  { path: "/forge/pr-status", label: localized("PR Status", "PR 状态") },
+  { path: "/forge/submit", label: localized("Submit PR", "提交 PR") },
+  { path: "/forge/pr-status", label: localized("PR status", "PR 状态") },
   { path: "/graph", label: localized("Graph", "图谱") },
-  { path: "/gates", label: localized("Gate Reports", "准入检查报告") },
-  { path: "/authority", label: localized("Authority", "权限边界") }
+  { path: "/gates", label: localized("Checks", "检查") },
+  { path: "/authority", label: localized("Rules", "权限规则") }
 ] as const;
 
 export const AUTHORITY_GUIDE = [
@@ -409,8 +407,8 @@ export function statusExplanation(status: string): LocalizedText {
   }
   if (status === "draft") {
     return localized(
-      "Draft means review context only; it is not accepted knowledge.",
-      "draft 只是审阅上下文，不是 accepted 知识。"
+      "Draft means material waiting for review; it is not accepted knowledge.",
+      "draft 是待审材料，不是 accepted 知识。"
     );
   }
   if (status === "not_run") {
@@ -648,14 +646,14 @@ function nextWorkbenchActions(
       meta: localized(issue.id, issue.id)
     });
     actions.push({
-      label: localized("Build issue context", "构建议题上下文"),
+      label: localized("Prepare related material", "准备相关资料"),
       href: contextHref(issue.id),
       meta: localized(issue.id, issue.id)
     });
   }
   if (draft) {
     actions.push({
-      label: localized("Prepare review packet", "准备审阅包"),
+      label: localized("Prepare review summary", "准备审阅摘要"),
       href: `/artifacts/${encodeURIComponent(draft.id)}/review-packet/`,
       meta: localized(draft.id, draft.id)
     });

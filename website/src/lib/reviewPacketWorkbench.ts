@@ -6,17 +6,17 @@ export const REVIEW_PACKET_ENDPOINTS = {
 } as const;
 
 export const REVIEW_PACKET_LABELS = {
-  generate: localized("Generate review packet", "生成审阅包"),
-  reviewPacket: localized("Review packet", "审阅包"),
-  preview: localized("Preview packet", "预览审阅包"),
+  generate: localized("Generate review summary", "生成审阅摘要"),
+  reviewPacket: localized("Review summary", "审阅摘要"),
+  preview: localized("Preview summary", "预览摘要"),
   confirm: localized("Confirm write", "确认写入"),
   focusArtifact: localized("Focus artifact", "聚焦工件"),
   relatedIssue: localized("Related issue", "相关议题"),
   allRelatedArtifacts: localized("All related artifacts", "全部相关工件"),
-  packetPreview: localized("Packet preview", "审阅包预览"),
+  packetPreview: localized("Summary preview", "摘要预览"),
   authorityNotice: localized(
-    "Review packets are informational context. They do not mark human review complete, pass gates, or grant accepted status.",
-    "审阅包只是信息上下文，不代表人工审阅完成、准入检查通过或授予 accepted 状态。"
+    "Review summaries collect material for a human reviewer. They do not mark review complete, pass checks, or grant accepted status.",
+    "审阅摘要只是给人工审阅者看的材料汇总，不代表审阅完成、检查通过或授予 accepted 状态。"
   )
 } as const;
 

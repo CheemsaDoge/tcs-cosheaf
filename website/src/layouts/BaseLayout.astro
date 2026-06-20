@@ -15,14 +15,14 @@ const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/";
 const runtime = data.runtime;
 const titleText = asLocalizedText(title);
 const eyebrowText = asLocalizedText(eyebrow);
-const runtimeLabel = runtime?.label ?? localized("Read-only demo", "只读演示");
+const runtimeLabel = runtime?.label ?? localized("Sample mode", "只读样例");
 const runtimeDetail = runtime?.fallback
   ? localized(
       `Fallback: ${runtime.fallback_reason ?? "backend unavailable"}`,
       `回退：${runtime.fallback_reason ?? "后端不可用"}`
     )
   : runtime?.mode === "static-demo"
-    ? localized("Fixture JSON", "静态 JSON")
+    ? localized("Sample JSON", "样例 JSON")
     : localized(
         runtime?.api_base ?? "http://127.0.0.1:8765",
         runtime?.api_base ?? "http://127.0.0.1:8765"
@@ -69,9 +69,9 @@ const pageTitleZh = `${titleText.zh} | TCS-Cosheaf`;
           <span>
             <strong>Cosheaf</strong>
             <small
-              data-i18n-en="Governance workbench"
-              data-i18n-zh="治理工作台"
-            >治理工作台</small>
+              data-i18n-en="Review workspace"
+              data-i18n-zh="审阅工作区"
+            >审阅工作区</small>
           </span>
         </a>
         <nav class="nav-list">

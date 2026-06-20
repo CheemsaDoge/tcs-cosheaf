@@ -48,11 +48,9 @@ describe("site data contract", () => {
     expect(hasChinese(value.en)).toBe(false);
   };
 
-  it("defines the required W2.1 routes", () => {
+  it("defines the primary Workbench routes", () => {
     expect(ROUTES.map((route) => route.path)).toEqual([
       "/",
-      "/docs",
-      "/demo",
       "/artifacts",
       "/issues",
       "/forge/submit",
@@ -271,7 +269,7 @@ describe("site data contract", () => {
       "Local issue",
       "GitHub issue",
       "Pull request",
-      "Review packet"
+      "Review summary"
     ]);
 
     for (const request of requests) {

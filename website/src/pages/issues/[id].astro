@@ -60,14 +60,14 @@ const issueSourcePath = `issues/${issue.status === "closed" ? "closed" : "open"}
               <I18nText text={ISSUE_WORKBENCH_LABELS.editIssue} />
             </a>
           ) : (
-            <span class="tag"><I18nText text={localized("Read-only demo", "只读演示")} /></span>
+            <span class="tag"><I18nText text={localized("Sample mode", "只读样例")} /></span>
           )
         }
         <a class="button-link secondary" href={contextHref(issue.id)}>
-          <I18nText text={localized("Context pack", "上下文包")} />
+          <I18nText text={localized("Related material", "相关资料")} />
         </a>
         <a class="button-link secondary" href={`/issues/${encodeURIComponent(issue.id)}/review-packet/`}>
-          <I18nText text={localized("Review packet", "审阅包")} />
+          <I18nText text={localized("Review summary", "审阅摘要")} />
         </a>
       </div>
       <div class="tag-row">
@@ -153,7 +153,7 @@ const issueSourcePath = `issues/${issue.status === "closed" ? "closed" : "open"}
       <div class="panel-heading">
         <div>
           <p class="section-kicker"><I18nText text={ISSUE_WORKBENCH_LABELS.buildContext} /></p>
-          <h2><I18nText text={localized("Issue context", "议题上下文")} /></h2>
+          <h2><I18nText text={localized("Related material", "相关资料")} /></h2>
         </div>
       </div>
       <p class="preview-warning">
@@ -207,7 +207,7 @@ const issueSourcePath = `issues/${issue.status === "closed" ? "closed" : "open"}
             <I18nText
               text={localized(
                 "Context builds require live local mode.",
-                "构建上下文包需要本地实时模式。"
+                "准备相关资料需要本地实时模式。"
               )}
             />
           </p>
@@ -219,17 +219,17 @@ const issueSourcePath = `issues/${issue.status === "closed" ? "closed" : "open"}
       <pre
         class="json-block preview-output"
         id="context-build-preview"
-        data-i18n-en="Preview a context build before writing it."
-        data-i18n-zh="写入前先预览上下文构建。"
-      >写入前先预览上下文构建。</pre>
+        data-i18n-en="Preview related material before writing it."
+        data-i18n-zh="写入前先预览相关资料。"
+      >写入前先预览相关资料。</pre>
       <details class="workbench-details">
-        <summary><I18nText text={localized("Latest context", "最新上下文")} /></summary>
+        <summary><I18nText text={localized("Latest material", "最新资料")} /></summary>
         <pre
           class="json-block preview-output"
           id="context-latest-output"
-          data-i18n-en="Latest context pack appears here in live local mode."
-          data-i18n-zh="本地实时模式下，最新上下文包会显示在这里。"
-        >本地实时模式下，最新上下文包会显示在这里。</pre>
+          data-i18n-en="Latest related material appears here in live local mode."
+          data-i18n-zh="本地实时模式下，最新相关资料会显示在这里。"
+        >本地实时模式下，最新相关资料会显示在这里。</pre>
       </details>
     </article>
   </section>

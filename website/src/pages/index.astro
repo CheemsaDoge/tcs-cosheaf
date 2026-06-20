@@ -25,13 +25,13 @@ const firstPromotionCandidate =
 ---
 
 <BaseLayout
-  title={localized("Workbench", "工作台")}
+  title={localized("Review workspace", "审阅工作区")}
   eyebrow={localized("Dashboard", "总览")}
 >
   <section class="dashboard-header">
     <div>
       <p class="section-kicker">
-        <I18nText text={localized("Human governance workbench", "人类治理工作台")} />
+        <I18nText text={localized("Artifact -> review -> PR", "工件 -> 审阅 -> PR")} />
       </p>
       <h2>{data.workspace.workspace_name}</h2>
     </div>
@@ -269,18 +269,18 @@ const firstPromotionCandidate =
     data-i18n-aria-label-zh="任务操作"
   >
     <div>
-      <strong><I18nText text={localized("Issue -> review", "议题 -> 审阅")} /></strong>
+      <strong><I18nText text={localized("Issue -> material", "议题 -> 资料")} /></strong>
       <a class="button-link" href={firstIssue ? `/issues/${encodeURIComponent(firstIssue.id)}/` : "/issues/"}>
         <I18nText text={localized("Open issue", "打开议题")} />
       </a>
       <a class="button-link secondary" href={firstIssue ? `/context/${encodeURIComponent(firstIssue.id)}/` : "/issues/"}>
-        <I18nText text={localized("Context", "上下文")} />
+        <I18nText text={localized("Related material", "相关资料")} />
       </a>
     </div>
     <div>
       <strong><I18nText text={localized("Artifact review", "工件审阅")} /></strong>
       <a class="button-link" href={firstDraft ? `/artifacts/${encodeURIComponent(firstDraft.id)}/review-packet/` : "/artifacts/"}>
-        <I18nText text={localized("Review packet", "审阅包")} />
+        <I18nText text={localized("Review summary", "审阅摘要")} />
       </a>
       <a class="button-link secondary" href={firstDraft ? `/artifacts/${encodeURIComponent(firstDraft.id)}/review-decision/` : "/artifacts/"}>
         <I18nText text={localized("Human review", "人工审阅")} />

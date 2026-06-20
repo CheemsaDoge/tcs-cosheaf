@@ -35,8 +35,8 @@ const canWriteReviews = data.runtime.mode === "live-local";
 ---
 
 <BaseLayout
-  title={localized(`Review packet: ${issue.id}`, `审阅包：${issue.id}`)}
-  eyebrow={localized("Review Workbench", "审阅工作台")}
+  title={localized(`Review summary: ${issue.id}`, `审阅摘要：${issue.id}`)}
+  eyebrow={localized("Review", "审阅")}
 >
   <section class="workbench-shell">
     <article class="panel workbench-main">
@@ -101,8 +101,8 @@ const canWriteReviews = data.runtime.mode === "live-local";
           <p>
             <I18nText
               text={localized(
-                "Review packets require live local mode.",
-                "审阅包需要本地实时模式。"
+                "Review summaries require live local mode.",
+                "生成审阅摘要需要本地实时模式。"
               )}
             />
           </p>
@@ -116,9 +116,9 @@ const canWriteReviews = data.runtime.mode === "live-local";
       <pre
         class="json-block preview-output"
         id="review-packet-preview"
-        data-i18n-en="Preview a review packet before writing it."
-        data-i18n-zh="写入前先预览审阅包。"
-      >写入前先预览审阅包。</pre>
+        data-i18n-en="Preview the review summary before writing it."
+        data-i18n-zh="写入前先预览审阅摘要。"
+      >写入前先预览审阅摘要。</pre>
     </article>
   </section>
 

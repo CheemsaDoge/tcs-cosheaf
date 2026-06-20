@@ -73,7 +73,7 @@ export function buildPreviewRequests(
     },
     {
       id: "review-packet",
-      label: localized("Review packet", "审阅包"),
+      label: localized("Review summary", "审阅摘要"),
       endpoint: "/api/forge/review-packets/preview",
       method: "POST",
       payload: {

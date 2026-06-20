@@ -23,45 +23,45 @@ const issueId = Astro.params.issueId ?? "";
 const pack = contextPackForIssue(issueId, data);
 const issue = issueById(issueId, data);
 if (!pack || !issue) {
-  throw new Error(`Unknown context pack: ${issueId}`);
+  throw new Error(`Unknown related material bundle: ${issueId}`);
 }
 ---
 
 <BaseLayout
-  title={localized(`Context: ${issue.title}`, `上下文：${issue.title}`)}
-  eyebrow={localized("Context pack", "上下文包")}
+  title={localized(`Related material: ${issue.title}`, `相关资料：${issue.title}`)}
+  eyebrow={localized("Related material", "相关资料")}
 >
   <section class="split-layout">
     <article class="panel">
-      <p class="section-kicker"><I18nText text={localized("Issue context", "议题上下文")} /></p>
+      <p class="section-kicker"><I18nText text={localized("Issue material", "议题资料")} /></p>
       <h2>{pack.issue_id}</h2>
       <p
-        data-i18n-en={`${pack.card_count} cards selected for the demo context pack.`}
-        data-i18n-zh={`已为演示上下文包选择 ${pack.card_count} 张卡片。`}
-      >已为演示上下文包选择 {pack.card_count} 张卡片。</p>
+        data-i18n-en={`${pack.card_count} cards selected as related material.`}
+        data-i18n-zh={`已选择 ${pack.card_count} 张相关资料卡片。`}
+      >已选择 {pack.card_count} 张相关资料卡片。</p>
       <div class="tag-row">
         <span class="tag">
           <I18nText text={localized("Public only", "仅公开")} />:
           <I18nText text={pack.public_only ? localized("yes", "是") : localized("no", "否")} />
         </span>
         <span class="tag">
-          <I18nText text={localized("Private context", "私有上下文")} />:
+          <I18nText text={localized("Private material", "私有资料")} />:
           <I18nText text={pack.private_context_included ? localized("yes", "是") : localized("no", "否")} />
         </span>
         <span class="tag">
-          <I18nText text={localized("Demo private context", "演示私有上下文")} />:
+          <I18nText text={localized("Sample private material", "样例私有资料")} />:
           <I18nText text={pack.demo_private_context_included ? localized("yes", "是") : localized("no", "否")} />
         </span>
       </div>
     </article>
     <article class="panel">
       <p class="section-kicker"><I18nText text={localized("Authority", "权限")} /></p>
-      <h2><I18nText text={localized("Context is not acceptance", "上下文不是接受")} /></h2>
+      <h2><I18nText text={localized("For review only", "仅供审阅参考")} /></h2>
       <p>
         <I18nText
           text={localized(
-            "This page shows what a reviewer should read. It does not grant human review, verifier pass, gate pass, accepted status, or promotion authority.",
-            "此页面展示审阅者应阅读的内容；它不授予人工审阅、验证器通过、准入检查通过、accepted 状态或提升权限。"
+            "These materials help a reviewer read the issue; they do not approve or promote anything.",
+            "这些资料帮助审阅者阅读议题；它们不会批准或晋升任何内容。"
           )}
         />
       </p>
