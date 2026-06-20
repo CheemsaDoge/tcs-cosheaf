@@ -680,6 +680,7 @@ class ReadOnlySiteApi:
 
     def _preview_forge_branch(self, payload: dict[str, Any]) -> ApiResponse:
         branch = _required_text(payload, "branch")
+        allow_dirty = _bool(payload, "allow_dirty", default=False)
         self._write_audit(
             action="branch_preview",
             result_status="preview",
@@ -687,26 +688,35 @@ class ReadOnlySiteApi:
             preview_only=True,
             branch=branch,
         )
+        action = f"create and switch branch {branch}"
+        if allow_dirty:
+            action += " carrying current worktree changes"
         return _preview_response(
             "branch_preview",
-            planned_actions=[f"create and switch branch {branch}"],
+            planned_actions=[action],
             planned_files=[],
             branch=branch,
+            allow_dirty=allow_dirty,
         )
 
     def _preview_forge_commit(self, payload: dict[str, Any]) -> ApiResponse:
         message = _required_text(payload, "message")
+        stage_all = _bool(payload, "stage_all", default=False)
         self._write_audit(
             action="commit_preview",
             result_status="preview",
             explicit_confirm=False,
             preview_only=True,
         )
+        actions = ["run validation, run gate, commit staged changes"]
+        if stage_all:
+            actions.insert(0, "stage all repository changes")
         return _preview_response(
             "commit_preview",
-            planned_actions=["run validation, run gate, commit staged changes"],
+            planned_actions=actions,
             planned_files=[],
             commit_message=message,
+            stage_all=stage_all,
         )
 
     def _preview_forge_push(self, payload: dict[str, Any]) -> ApiResponse:
@@ -1857,11 +1867,16 @@ class ReadOnlySiteApi:
     def _create_forge_branch(self, payload: dict[str, Any]) -> ApiResponse:
         action = "branch_create"
         branch = _required_text(payload, "branch")
+        allow_dirty = _bool(payload, "allow_dirty", default=False)
         blocked = self._blocked_confirm(action, payload)
         if blocked is not None:
             return blocked
         try:
-            result = self.app.forge_branch_create(branch, confirm=True)
+            result = self.app.forge_branch_create(
+                branch,
+                confirm=True,
+                allow_dirty=allow_dirty,
+            )
         except ForgeActionError as exc:
             self._write_action_failure(
                 action=action,
@@ -1880,11 +1895,16 @@ class ReadOnlySiteApi:
     def _create_forge_commit(self, payload: dict[str, Any]) -> ApiResponse:
         action = "commit"
         message = _required_text(payload, "message")
+        stage_all = _bool(payload, "stage_all", default=False)
         blocked = self._blocked_confirm(action, payload)
         if blocked is not None:
             return blocked
         try:
-            result = self.app.forge_commit(message=message, confirm=True)
+            result = self.app.forge_commit(
+                message=message,
+                confirm=True,
+                stage_all=stage_all,
+            )
         except ForgeActionError as exc:
             self._write_action_failure(
                 action=action,

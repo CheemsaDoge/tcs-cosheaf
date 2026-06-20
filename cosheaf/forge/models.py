@@ -132,6 +132,8 @@ class ForgeActionResult(AgentAccessModel):
     push_performed: bool = False
     github_issue_created: bool = False
     github_pr_created: bool = False
+    dirty_state_carried: bool = False
+    staging_performed: bool = False
     branch: str | None = None
     base: str | None = None
     head: str | None = None

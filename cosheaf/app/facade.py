@@ -261,13 +261,33 @@ class CosheafApp:
         """Preview GitHub PR creation without git or GitHub writes."""
         return ForgeService(self.context).pr_preview(base=base, head=head)
 
-    def forge_branch_create(self, branch: str, *, confirm: bool) -> ForgeActionResult:
+    def forge_branch_create(
+        self,
+        branch: str,
+        *,
+        confirm: bool,
+        allow_dirty: bool = False,
+    ) -> ForgeActionResult:
         """Create and switch to a local branch with explicit confirmation."""
-        return ForgeService(self.context).create_branch(branch, confirm=confirm)
+        return ForgeService(self.context).create_branch(
+            branch,
+            confirm=confirm,
+            allow_dirty=allow_dirty,
+        )
 
-    def forge_commit(self, *, message: str, confirm: bool) -> ForgeActionResult:
+    def forge_commit(
+        self,
+        *,
+        message: str,
+        confirm: bool,
+        stage_all: bool = False,
+    ) -> ForgeActionResult:
         """Run validation/gate and create one local git commit."""
-        return ForgeService(self.context).commit(message=message, confirm=confirm)
+        return ForgeService(self.context).commit(
+            message=message,
+            confirm=confirm,
+            stage_all=stage_all,
+        )
 
     def forge_push(
         self,

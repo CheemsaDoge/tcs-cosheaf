@@ -321,9 +321,10 @@ readiness.
 
 The live-local Forge PR page at `/forge/submit/` uses the same backend-only
 boundary. It exposes the B2.8.1 sequence: create or use a branch, stage files
-outside the browser, commit staged changes after validation/gate, push the
-non-protected branch with explicit confirmation, then create a draft PR with
-explicit confirmation. The page calls only the localhost server endpoints under
+through an explicit backend request when requested, commit staged changes after
+validation/gate, push the non-protected branch with explicit confirmation, then
+create a draft PR with explicit confirmation. The page calls only the localhost
+server endpoints under
 `/api/forge/branch/*`, `/api/forge/commit/*`, `/api/forge/push/*`, and
 `/api/forge/pr/*`; it never stores GitHub tokens or calls GitHub directly.
 When PR creation succeeds, it renders the returned PR URL as the primary

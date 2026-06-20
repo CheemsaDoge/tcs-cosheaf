@@ -321,7 +321,13 @@ class ForgeService:
         """Return a read-only sync placeholder for future link reconciliation."""
         return ForgeActionResult(action="sync")
 
-    def create_branch(self, branch: str, *, confirm: bool) -> ForgeActionResult:
+    def create_branch(
+        self,
+        branch: str,
+        *,
+        confirm: bool,
+        allow_dirty: bool = False,
+    ) -> ForgeActionResult:
         """Create and switch to a local branch after explicit confirmation."""
         normalized_branch = _git_ref(branch, "branch")
         if not confirm:
@@ -331,7 +337,7 @@ class ForgeService:
             )
         _ensure_unprotected_head(normalized_branch)
         status = _git_status(self.context)
-        if status:
+        if status and not allow_dirty:
             raise ForgeActionError(
                 "forge_dirty_state",
                 "dirty state blocks branch creation; commit, stash, or clean it first",
@@ -342,9 +348,16 @@ class ForgeService:
             action_performed=True,
             git_writes_performed=True,
             branch=normalized_branch,
+            dirty_state_carried=bool(status),
         )
 
-    def commit(self, *, message: str, confirm: bool) -> ForgeActionResult:
+    def commit(
+        self,
+        *,
+        message: str,
+        confirm: bool,
+        stage_all: bool = False,
+    ) -> ForgeActionResult:
         """Run validation/gate and create one local git commit."""
         normalized_message = _action_non_empty(message, "message")
         if not confirm:
@@ -352,6 +365,8 @@ class ForgeService:
                 "forge_confirm_required",
                 "forge commit requires --confirm",
             )
+        if stage_all:
+            _run_git(self.context, "add", "-A")
         status = _git_status(self.context)
         staged = _staged_changes(status)
         ambiguous = _ambiguous_dirty_lines(status)
@@ -389,6 +404,7 @@ class ForgeService:
             commit_hash=commit_hash,
             validation_performed=True,
             gate_performed=True,
+            staging_performed=stage_all,
         )
 
 
