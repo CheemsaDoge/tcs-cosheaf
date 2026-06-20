@@ -3,6 +3,33 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.11.1 local Workbench E2E happy path - 2026-06-20
+
+Issue #582 adds an automated local Workbench happy-path smoke on branch
+`web-workbench-e2e-happy-path`.
+
+The test exercises one in-process local Workbench flow through
+`ReadOnlySiteApi`: health/dashboard reads, local issue creation, pre-accepted
+artifact creation with source/evidence metadata, context build, validate, gate,
+review packet creation, explicit human review decision, promotion preview,
+accepted promotion, local branch/commit, PR preview, mocked GitHub PR creation
+through `gh`, and audit/repository-file verification. Its scenario report marks
+the PR creation as mocked and the other required operations as real, with no
+skipped or deferred step.
+
+To support that flow without manual CLI staging, local forge branch creation
+now accepts explicit `allow_dirty: true` in server/app/service calls to carry
+current worktree changes onto a new non-protected branch, while preserving the
+default dirty-state refusal. Local forge commit now accepts explicit
+`stage_all: true` in server/app/service calls to stage repository changes
+before validation, gate, and commit, while preserving the default requirement
+for already staged changes.
+
+This task does not add frontend UI changes, browser-side GitHub credentials,
+direct main commits, accepted-write bypasses, human-review bypasses,
+gate/verifier pass authority, token storage, production hosting, or hosted
+checkout/cache management.
+
 ## Longplan B2.10.2 hosted GitHub auth design and stub - 2026-06-20
 
 Issue #580 adds the hosted auth design stub on branch

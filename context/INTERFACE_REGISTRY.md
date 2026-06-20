@@ -221,7 +221,12 @@
   only redacted action flags and URLs, and write redacted runtime audit records
   through `append_web_action_audit` under ignored
   `.cosheaf/audit/web-actions.jsonl` for preview, success, auth or confirmation
-  refusal, and failure.
+  refusal, and failure. Local forge branch creation keeps the existing clean
+  worktree default, but confirmed requests may explicitly set
+  `allow_dirty: true` to carry current worktree changes onto the new branch.
+  Local forge commits keep the existing staged-changes default, but confirmed
+  requests may explicitly set `stage_all: true` to run backend staging before
+  validation, gate, and commit.
   Website server output is display context only and remains subordinate to
   repository YAML/JSON source files; it does not create accepted knowledge,
   human review, verifier pass, gate pass, promotion authority, token storage,
