@@ -2,7 +2,7 @@
 
 Milestone: **V18 / v1.0.0 AI Math Collaborator MVP**
 
-Status: **Post-v1.0.0 Longplan B2 Human Governance Workbench planning**
+Status: **Longplan B2 Web Workbench accepted with documented limitations**
 
 Plan: docs/CODEX_DEVELOPMENT_PLAN_V18.md
 
@@ -17,8 +17,9 @@ complete.
 
 Current focus:
 
-- define the Human Governance Workbench product contract;
+- complete the B2.12.2 final Web Workbench acceptance audit;
 - preserve static showcase mode as a read-only explanation mode;
+- preserve live-local Workbench authority boundaries;
 - maintain the published `v1.0.0` AI Math Collaborator MVP baseline;
 - keep downstream workspace-template and public KB pins aligned to `v1.0.0`;
 - preserve skipped-not-pass semantics for unavailable optional tools; and
@@ -26,6 +27,14 @@ Current focus:
   semantics unchanged.
 
 Post-v1.0.0 Longplan B/B2 website work:
+
+- issue #588 / branch `web-workbench-acceptance-audit` records the B2.12.2
+  final Web Workbench acceptance audit in
+  `docs/WEB_WORKBENCH_ACCEPTANCE_AUDIT.md`. The audit decision is
+  `ACCEPTED_WITH_LIMITATIONS`: the local Web Workbench satisfies the B2
+  human-governance workflow, while production hosted auth/SaaS behavior,
+  default localhost GitHub credentials, and static-mode write behavior remain
+  outside the accepted scope.
 
 - issue #542 / branch `web-action-audit-log` adds the B2.1.2 shared
   append-only web-action audit helper under `cosheaf.web_actions`, writing

@@ -3,6 +3,39 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.12.2 Web Workbench acceptance audit - 2026-06-20
+
+Issue #588 adds the final Web Workbench acceptance audit on branch
+`web-workbench-acceptance-audit`.
+
+The audit is recorded in `docs/WEB_WORKBENCH_ACCEPTANCE_AUDIT.md` with decision
+`ACCEPTED_WITH_LIMITATIONS`. The accepted scope is the local Web Workbench:
+static showcase mode, live-local repository reads, write-capable localhost
+actions with preview-before-confirm, source/evidence attachment, context
+builds, validate/gate runs, review packet generation, explicit human review
+decisions, accepted/refuted/obsolete promotion through policy checks, local
+branch/commit/forge PR preparation, audit inspection, role guards, and
+Markdown/LaTeX rendering on formula-bearing TCS text surfaces.
+
+The acceptance is deliberately limited. Hosted/collaborative mode remains a
+guard stub, not production SaaS. The default localhost server still has no
+server-side `ForgeCredentialProvider`, so live GitHub issue/PR creation may
+return `401 auth_required` unless an integration injects backend credentials.
+Static showcase mode is display-only. Live-local human review and promotion
+continue to require a configured local actor, exact confirmation, policy
+checks, and redacted audit entries.
+
+The audit preserves the authority boundaries: gate output, verifier output,
+rendered Markdown/LaTeX, context packs, review packets, audit logs, GitHub
+issues/PRs/CI/reviews, AI output, and operator output are not accepted
+authority. Skipped is not pass. Lean import/symbol resolution is not semantic
+alignment. Local actor is an audit label, not authentication. Public accepted
+artifacts still require source metadata and human review.
+
+This task does not add frontend UI behavior, server endpoints, production
+hosted auth, browser-side GitHub credentials, accepted-write shortcuts,
+human-review shortcuts, gate/verifier authority, or promotion-policy bypasses.
+
 ## Longplan B2.12.1 Web Workbench runbook - 2026-06-20
 
 Issue #586 adds the operator-facing Web Workbench runbook on branch
