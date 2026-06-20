@@ -47,6 +47,18 @@
   shapes for Workbench endpoints; they do not add endpoint execution,
   repository writes, Git writes, GitHub writes, human-review creation,
   promotion, or token handling by themselves.
+- Hosted Workbench auth stubs are implemented under `cosheaf.server.auth` and
+  re-exported through `cosheaf.server`. The Python surface defines
+  `HostedRole`, `HostedIdentity`, `HostedAuthProvider`,
+  `hosted_required_role`, and `hosted_action_allowed`. Roles are `reader`,
+  `contributor`, `reviewer`, `maintainer`, and `admin`. The role mapping covers
+  existing WebAction kinds so hosted deployments can refuse unauthenticated or
+  insufficient-role POST actions before repository, Git, GitHub, review, or
+  promotion writes. This surface is an authorization guard contract only; it
+  does not implement OAuth, GitHub App login, sessions, cookies, token parsing,
+  hosted checkout/cache management, webhooks, repo/server settings, browser
+  credentials, human-review authority, gate/verifier authority, accepted
+  status, or production SaaS.
 - The validate/gate CLI group is registered from `cosheaf.validation_cli` and
   delegates repository validation and gatekeeper runs to `cosheaf.app.open_app`.
   Public command names and JSON DTOs remain `cosheaf validate`,
@@ -90,9 +102,11 @@
   The Python surface
   defines `ReadOnlySiteApi`, `ApiResponse`, `make_handler`, and
   `serve_readonly_api`. `ReadOnlySiteApi` accepts an optional
-  `local_actor` for local Workbench audit identity and an optional backend
+  `local_actor` for local Workbench audit identity, optional
+  `web_action_mode`, optional `hosted_auth_provider`, and an optional backend
   `ForgeCredentialProvider` for authenticated create actions; the default CLI
-  server does not configure one. The HTTP surface is localhost JSON endpoints:
+  server configures local mode and does not configure a hosted provider or
+  forge credential provider. The HTTP surface is localhost JSON endpoints:
   `GET /api/health`, `/api/workspace`, `/api/workspace/live`, `/api/status`,
   `/api/artifacts`, `/api/artifacts/live`, `/api/artifacts/<artifact_id>`,
   `/api/artifacts/<artifact_id>/promotion-readiness`,
@@ -129,12 +143,19 @@
   `/api/forge/commit/create`, and `/api/forge/push/create`, plus authenticated
   create `POST /api/forge/issues/create`, `/api/forge/pr/create`, and
   `/api/forge/prs/create`. `GET /api/health` includes `local_actor`,
-  `local_actor_configured`, `local_actor_is_auth: false`, and
-  `local_actor_notice`. Confirmed human review decision and promotion actions
-  require a configured local actor in local mode and return
-  `400 local_actor_required` before repository writes when it is missing. The
-  local actor is an audit label only, not authentication or cryptographic
-  identity. The server calls `cosheaf.app.open_app` and app
+  `local_actor_configured`, `local_actor_is_auth: false`,
+  `local_actor_notice`, `web_action_mode`, `hosted_auth_configured`, and
+  `hosted_auth_production_ready: false`. Confirmed human review decision and
+  promotion actions require a configured local actor in local mode and return
+  `400 local_actor_required` before repository writes when it is missing. In
+  hosted mode, POST route guards use the `HostedAuthProvider` identity subject
+  as audit actor, return `403 hosted_auth_required` when no hosted identity is
+  available, and return `403 hosted_action_denied` when the identity lacks the
+  role required for that WebAction. Unauthorized hosted promotion is refused
+  before lifecycle writes. The local actor is an audit label only, not
+  authentication or cryptographic identity. Hosted auth is not production-ready
+  and does not add OAuth/session/token handling. The server calls
+  `cosheaf.app.open_app` and app
   facade methods in-process. Static endpoints generate website export payloads
   in a temporary directory outside the repository. Live endpoints read
   repository YAML records through app services/storage loaders, read existing

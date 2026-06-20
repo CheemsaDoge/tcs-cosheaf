@@ -3,6 +3,31 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.10.2 hosted GitHub auth design and stub - 2026-06-20
+
+Issue #580 adds the hosted auth design stub on branch
+`web-hosted-auth-design-stub`.
+
+The current surface includes `docs/AUTH.md` and `cosheaf.server.auth` with
+`HostedRole`, `HostedIdentity`, `HostedAuthProvider`,
+`hosted_required_role`, and `hosted_action_allowed`. Hosted roles are
+`reader`, `contributor`, `reviewer`, `maintainer`, and `admin`; the route
+guards map existing WebAction kinds to those roles.
+
+`ReadOnlySiteApi` now accepts `web_action_mode=WebActionMode.HOSTED` plus a
+server-provided `hosted_auth_provider`. In hosted mode, POST route guards run
+before Workbench action execution. Missing hosted identity returns
+`403 hosted_auth_required`; insufficient role returns
+`403 hosted_action_denied`; denied actions write hosted-mode audit entries
+without repository write flags. Unauthorized hosted promotion is refused
+before lifecycle writes. Hosted review and promotion confirms use the hosted
+identity subject as the audit actor instead of requiring `--local-actor`.
+
+This task does not add production SaaS, OAuth, GitHub App login, sessions,
+cookies, token parsing, browser credentials, webhook handling, hosted checkout
+caching, repo/server settings UI, human-review authority, gate/verifier pass
+authority, accepted status, or promotion-policy bypass.
+
 ## Longplan B2.10.1 local actor model - 2026-06-20
 
 Issue #578 adds the local actor model on branch `web-local-actor-model`.
