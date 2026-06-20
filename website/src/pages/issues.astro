@@ -40,7 +40,7 @@ const canWriteIssues = data.runtime.mode === "live-local";
           </a>
         ) : (
           <span class="badge neutral">
-            <I18nText text={localized("Read-only demo", "只读演示")} />
+            <I18nText text={localized("Sample mode", "只读样例")} />
           </span>
         )
       }
@@ -61,7 +61,7 @@ const canWriteIssues = data.runtime.mode === "live-local";
             <MarkdownRenderer content={issue.summary.split("\n\n")[0]} />
             <p>
               <a class="text-link" href={contextHref(issue.id)}>
-                <I18nText text={localized("Context pack", "上下文包")} />
+                <I18nText text={localized("Related material", "相关资料")} />
               </a>
             </p>
             <div class="related-list">

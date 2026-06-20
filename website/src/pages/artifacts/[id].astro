@@ -107,8 +107,8 @@ const relatedIssueItems = relatedIssues.map((issue) => ({
               <p>
                 <I18nText
                   text={localized(
-                    "No safe source links were exported for this demo fixture.",
-                    "此演示夹具没有导出安全来源链接。"
+                    "No safe source links were exported for this sample record.",
+                    "此样例记录没有导出安全来源链接。"
                   )}
                 />
               </p>
@@ -148,7 +148,7 @@ const relatedIssueItems = relatedIssues.map((issue) => ({
             <I18nText text={localized("Add evidence", "添加证据")} />
           </a>
           <a class="button-link secondary" href={`/artifacts/${encodeURIComponent(artifact.id)}/review-packet/`}>
-            <I18nText text={localized("Review packet", "审阅包")} />
+            <I18nText text={localized("Review summary", "审阅摘要")} />
           </a>
           <a class="button-link secondary" href={`/artifacts/${encodeURIComponent(artifact.id)}/review-decision/`}>
             <I18nText text={localized("Record review", "记录审阅")} />
@@ -157,7 +157,7 @@ const relatedIssueItems = relatedIssues.map((issue) => ({
             <I18nText text={localized("Check promotion", "检查晋升")} />
           </a>
           <a class="button-link secondary" href="/demo/">
-            <I18nText text={localized("Review PR path", "审阅 PR 入口")} />
+            <I18nText text={localized("Sample flow", "样例流程")} />
           </a>
         </div>
       </article>

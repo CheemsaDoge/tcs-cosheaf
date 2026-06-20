@@ -34,10 +34,10 @@ export const ISSUE_WORKBENCH_LABELS = {
   authors: localized("Authors", "作者"),
   closeReason: localized("Close reason", "关闭原因"),
   previewDiff: localized("Change preview", "变更预览"),
-  buildContext: localized("Build context", "构建上下文包"),
+  buildContext: localized("Prepare related material", "准备相关资料"),
   contextGuidance: localized(
-    "Context is review guidance only; it is not proof, gate pass, human review, accepted status, or promotion authority.",
-    "上下文包只是审阅参考，不是证明、准入检查通过、人工审阅、已接受状态或提升权威。"
+    "Related material helps review. It is not proof, check pass, human review, accepted status, or promotion authority.",
+    "相关资料只辅助审阅，不是证明、检查通过、人工审阅、已接受状态或晋升权威。"
   )
 } as const;
 

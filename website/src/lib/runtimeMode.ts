@@ -27,8 +27,8 @@ export const DEFAULT_API_BASE = "http://127.0.0.1:8765";
 
 const LABELS: Record<RuntimeMode, { en: string; zh: string }> = {
   "static-demo": {
-    en: "Read-only demo",
-    zh: "只读演示"
+    en: "Sample mode",
+    zh: "只读样例"
   },
   "live-local": {
     en: "Live local mode",

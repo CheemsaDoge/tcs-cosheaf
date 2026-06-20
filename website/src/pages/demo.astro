@@ -16,12 +16,12 @@ const previewRequests = buildPreviewRequests(data);
 ---
 
 <BaseLayout
-  title={localized("Demo", "演示")}
-  eyebrow={localized("Workspace fixture", "工作区夹具")}
+  title={localized("Sample flow", "样例流程")}
+  eyebrow={localized("Read-only sample data", "只读样例数据")}
 >
   <section class="split-layout">
     <article class="panel">
-      <p class="section-kicker"><I18nText text={localized("Demo issue", "演示议题")} /></p>
+      <p class="section-kicker"><I18nText text={localized("Sample issue", "样例议题")} /></p>
       <h2>{issue.title}</h2>
       <MarkdownRenderer content={issue.summary.split("\n\n")[0]} />
       <div class="tag-row">
@@ -30,21 +30,21 @@ const previewRequests = buildPreviewRequests(data);
     </article>
 
     <article class="panel">
-      <p class="section-kicker"><I18nText text={localized("Demo-only data", "仅演示数据")} /></p>
+      <p class="section-kicker"><I18nText text={localized("Sample-only data", "仅样例数据")} /></p>
       <h2><I18nText text={localized("Private fixture policy", "私有夹具策略")} /></h2>
       <p>
         <I18nText
           text={localized(
-            "Demo private records are rendered only because the fixture marks them with demo tags and keeps full statements out of the sidecar.",
-            "演示私有记录只有在夹具显式标记为 demo、且完整陈述未进入 sidecar 时才会渲染。"
+            "Sample private records appear only when fixtures mark them as safe samples and keep full statements out of the sidecar.",
+            "样例私有记录只有在夹具标记为安全样例、且完整陈述未进入 sidecar 时才会渲染。"
           )}
         />
       </p>
       <div
         class="workflow-rail"
-        aria-label="演示工作流"
-        data-i18n-aria-label-en="Demo workflow"
-        data-i18n-aria-label-zh="演示工作流"
+        aria-label="样例工作流"
+        data-i18n-aria-label-en="Sample workflow"
+        data-i18n-aria-label-zh="样例工作流"
       >
         <span><I18nText text={localized("Export", "导出")} /></span>
         <span><I18nText text={localized("Sanitize", "脱敏")} /></span>

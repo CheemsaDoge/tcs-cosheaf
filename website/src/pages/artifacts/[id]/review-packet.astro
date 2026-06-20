@@ -29,8 +29,8 @@ const canWriteReviews = data.runtime.mode === "live-local" && relatedIssues.leng
 ---
 
 <BaseLayout
-  title={localized(`Review packet: ${artifact.id}`, `审阅包：${artifact.id}`)}
-  eyebrow={localized("Review Workbench", "审阅工作台")}
+  title={localized(`Review summary: ${artifact.id}`, `审阅摘要：${artifact.id}`)}
+  eyebrow={localized("Review", "审阅")}
 >
   <section class="workbench-shell">
     <article class="panel workbench-main">
@@ -83,8 +83,8 @@ const canWriteReviews = data.runtime.mode === "live-local" && relatedIssues.leng
           <p>
             <I18nText
               text={localized(
-                "Review packet generation needs live local mode and a related issue.",
-                "生成审阅包需要本地实时模式和相关议题。"
+                "Review summary generation needs live local mode and a related issue.",
+                "生成审阅摘要需要本地实时模式和相关议题。"
               )}
             />
           </p>
@@ -98,9 +98,9 @@ const canWriteReviews = data.runtime.mode === "live-local" && relatedIssues.leng
       <pre
         class="json-block preview-output"
         id="review-packet-preview"
-        data-i18n-en="Preview a review packet before writing it."
-        data-i18n-zh="写入前先预览审阅包。"
-      >写入前先预览审阅包。</pre>
+        data-i18n-en="Preview the review summary before writing it."
+        data-i18n-zh="写入前先预览审阅摘要。"
+      >写入前先预览审阅摘要。</pre>
     </article>
   </section>
 
