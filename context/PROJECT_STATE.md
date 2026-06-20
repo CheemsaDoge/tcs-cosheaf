@@ -3,6 +3,28 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.11.2 negative authority E2E tests - 2026-06-20
+
+Issue #584 adds automated negative Workbench authority coverage on branch
+`web-workbench-authority-negative-tests`.
+
+The new in-process `ReadOnlySiteApi` tests verify fail-closed behavior for
+direct accepted artifact creation, promotion without human review, required
+skipped verifier output, AI/Codex reviewer identities, browser-supplied GitHub
+tokens, GitHub PR creation without backend credentials, public accepted
+promotion without required source metadata, and direct `main` commit attempts.
+Blocked attempts are audited with user-readable error codes while redacting
+secret-like request fields.
+
+Local forge commit now checks the current branch before optional `stage_all`
+handling and refuses `main`/`master` with `forge_protected_branch`. This keeps
+the B2.11.1 explicit staging helper from becoming a direct-main write bypass.
+
+This task does not add frontend UI changes, accepted-write shortcuts,
+human-review shortcuts, skipped-verifier pass authority, browser-side token
+storage, hosted auth production behavior, or direct GitHub calls from the
+frontend.
+
 ## Longplan B2.11.1 local Workbench E2E happy path - 2026-06-20
 
 Issue #582 adds an automated local Workbench happy-path smoke on branch

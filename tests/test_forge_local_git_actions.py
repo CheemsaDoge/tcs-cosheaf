@@ -160,6 +160,7 @@ def test_forge_commit_requires_confirm(tmp_path: Path) -> None:
 
 def test_forge_commit_runs_checks_and_creates_local_commit(tmp_path: Path) -> None:
     _init_repo(tmp_path)
+    _git(tmp_path, "switch", "-c", "feature.local")
     (tmp_path / "README.md").write_text("changed\n", encoding="utf-8")
     _git(tmp_path, "add", "README.md")
 
@@ -186,14 +187,41 @@ def test_forge_commit_runs_checks_and_creates_local_commit(tmp_path: Path) -> No
     assert payload["github_writes_performed"] is False
     assert payload["push_performed"] is False
     assert payload["github_pr_created"] is False
+    assert payload["branch"] == "feature.local"
     assert payload["validation_performed"] is True
     assert payload["gate_performed"] is True
     assert payload["commit_hash"]
     assert _git(tmp_path, "log", "-1", "--pretty=%s") == "Update README"
 
 
+def test_forge_commit_refuses_protected_current_branch(tmp_path: Path) -> None:
+    _init_repo(tmp_path)
+    (tmp_path / "README.md").write_text("changed\n", encoding="utf-8")
+    _git(tmp_path, "add", "README.md")
+
+    result = runner.invoke(
+        app,
+        [
+            "forge",
+            "commit",
+            "--message",
+            "Update README",
+            "--confirm",
+            "--repo-root",
+            str(tmp_path),
+            "--json",
+        ],
+    )
+
+    assert result.exit_code == 1, result.output
+    payload = json.loads(result.output)
+    assert payload["code"] == "forge_protected_branch"
+    assert _git(tmp_path, "log", "-1", "--pretty=%s") == "Initial commit"
+
+
 def test_forge_commit_refuses_untracked_ambiguity(tmp_path: Path) -> None:
     _init_repo(tmp_path)
+    _git(tmp_path, "switch", "-c", "feature.local")
     (tmp_path / "README.md").write_text("changed\n", encoding="utf-8")
     (tmp_path / "scratch.txt").write_text("untracked\n", encoding="utf-8")
     _git(tmp_path, "add", "README.md")

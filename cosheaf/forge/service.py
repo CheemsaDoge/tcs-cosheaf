@@ -365,6 +365,8 @@ class ForgeService:
                 "forge_confirm_required",
                 "forge commit requires --confirm",
             )
+        current_branch = _current_branch(self.context)
+        _ensure_unprotected_head(current_branch)
         if stage_all:
             _run_git(self.context, "add", "-A")
         status = _git_status(self.context)
@@ -401,6 +403,7 @@ class ForgeService:
             action="commit",
             action_performed=True,
             git_writes_performed=True,
+            branch=current_branch,
             commit_hash=commit_hash,
             validation_performed=True,
             gate_performed=True,

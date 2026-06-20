@@ -226,7 +226,8 @@
   `allow_dirty: true` to carry current worktree changes onto the new branch.
   Local forge commits keep the existing staged-changes default, but confirmed
   requests may explicitly set `stage_all: true` to run backend staging before
-  validation, gate, and commit.
+  validation, gate, and commit; commit creation refuses current `main` or
+  `master` branches before optional staging.
   Website server output is display context only and remains subordinate to
   repository YAML/JSON source files; it does not create accepted knowledge,
   human review, verifier pass, gate pass, promotion authority, token storage,
@@ -1270,10 +1271,11 @@
   creates and switches to a local branch. It does not push, create a PR, call
   GitHub, read tokens, or change accepted/promotion state.
 - `cosheaf forge commit --message <message> --confirm --json`: refuses to run
-  without `--confirm`, refuses untracked or unstaged ambiguity, requires staged
-  changes, runs repository validation and gatekeeper in-process, and creates
-  one local commit. It does not push, create a PR, call GitHub, read tokens, or
-  change accepted/promotion state.
+  without `--confirm`, refuses current `main`/`master` branches, refuses
+  untracked or unstaged ambiguity, requires staged changes unless the caller
+  explicitly requests backend staging, runs repository validation and gatekeeper
+  in-process, and creates one local commit. It does not push, create a PR, call
+  GitHub, read tokens, or change accepted/promotion state.
 - `cosheaf forge push --branch <branch> --confirm --json`: refuses to run
   without `--confirm`, refuses `main`/`master`, and runs
   `git push -u origin <branch>`. It does not call the GitHub API, read tokens,

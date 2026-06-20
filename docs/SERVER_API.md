@@ -513,12 +513,14 @@ are logged to ignored runtime JSONL at `.cosheaf/audit/web-actions.jsonl`.
 
 The local Forge endpoints `branch/create`, `commit/create`, and `push/create`
 require `confirm: true` but do not require a GitHub credential provider.
-Branch creation and push refuse `main`/`master`; branch creation refuses dirty
-state unless the confirmed request explicitly sets `allow_dirty: true`, in
-which case current worktree changes are carried onto the new branch. Commit
-requires already staged changes by default, or may stage repository changes
-itself when the confirmed request explicitly sets `stage_all: true`; it still
-runs validation/gate before committing.
+Branch creation and push refuse `main`/`master`; commit creation also refuses
+when the current branch is `main` or `master`, before optional staging or
+commit execution. Branch creation refuses dirty state unless the confirmed
+request explicitly sets `allow_dirty: true`, in which case current worktree
+changes are carried onto the new branch. Commit requires already staged changes
+by default, or may stage repository changes itself when the confirmed request
+explicitly sets `stage_all: true`; it still runs validation/gate before
+committing.
 
 These endpoints do not create accepted knowledge, human review, verifier pass,
 gate pass, promotion authority, token storage, production hosting, checkout
