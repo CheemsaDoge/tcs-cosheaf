@@ -13,6 +13,7 @@ import {
   statusExplanation
 } from "../../lib/siteData";
 import { ISSUE_WORKBENCH_LABELS } from "../../lib/issueWorkbench";
+import { FORGE_ISSUE_LABELS } from "../../lib/forgeWorkbench";
 
 export async function getStaticPaths() {
   const data = await loadSiteData();
@@ -37,6 +38,8 @@ if (!issue) {
 }
 const canWriteIssues = data.runtime.mode === "live-local";
 const canCloseIssue = canWriteIssues && issue.status !== "closed";
+const canPublishGitHubIssue = canWriteIssues && issue.status !== "closed";
+const issueSourcePath = `issues/${issue.status === "closed" ? "closed" : "open"}/${issue.id}.yaml`;
 ---
 
 <BaseLayout title={issue.title} eyebrow={localized("Issue detail", "议题详情")}>
@@ -87,6 +90,61 @@ const canCloseIssue = canWriteIssues && issue.status !== "closed";
           })
         }
       </div>
+    </article>
+  </section>
+
+  <section class="workbench-shell compact">
+    <article class="panel workbench-main">
+      <div class="panel-heading">
+        <div>
+          <p class="section-kicker"><I18nText text={FORGE_ISSUE_LABELS.publish} /></p>
+          <h2><I18nText text={FORGE_ISSUE_LABELS.title} /></h2>
+        </div>
+      </div>
+      <p class="preview-warning">
+        <I18nText text={FORGE_ISSUE_LABELS.warning} />
+      </p>
+      {
+        canPublishGitHubIssue ? (
+          <form
+            class="workbench-form"
+            data-github-issue-publish-form
+            data-mode={data.runtime.mode}
+            data-api-base={data.runtime.api_base}
+            data-output="#github-issue-publish-preview"
+            data-url-output="#github-issue-publish-url"
+          >
+            <input type="hidden" name="sourcePath" value={issueSourcePath} />
+            <div class="preview-toolbar">
+              <button class="preview-button" type="button" data-preview>
+                <I18nText text={FORGE_ISSUE_LABELS.preview} />
+              </button>
+              <button class="preview-button danger" type="submit" data-confirm disabled>
+                <I18nText text={FORGE_ISSUE_LABELS.confirm} />
+              </button>
+            </div>
+          </form>
+        ) : (
+          <p>
+            <I18nText
+              text={localized(
+                "GitHub issue publishing requires a live open local issue.",
+                "发布 GitHub 议题需要本地实时模式中的打开议题。"
+              )}
+            />
+          </p>
+        )
+      }
+    </article>
+    <article class="panel preview-panel workbench-preview">
+      <p class="section-kicker"><I18nText text={FORGE_ISSUE_LABELS.result} /></p>
+      <a id="github-issue-publish-url" class="button-link secondary" hidden></a>
+      <pre
+        class="json-block preview-output"
+        id="github-issue-publish-preview"
+        data-i18n-en="Preview GitHub issue publication before creating it."
+        data-i18n-zh="创建前先预览 GitHub 议题发布。"
+      >创建前先预览 GitHub 议题发布。</pre>
     </article>
   </section>
 

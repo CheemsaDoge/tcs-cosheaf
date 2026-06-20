@@ -3,6 +3,20 @@
 This file is ordered newest first. Older sections are historical snapshots and
 must not override the current status recorded at the top of the file.
 
+## Longplan B2.3.2 GitHub issue publish UI gap closure - 2026-06-20
+
+Issue #590 adds the missing issue-detail GitHub issue publish UI on branch
+`web-github-issue-publish-ui`.
+
+Open live-local issue detail pages now expose a preview-before-confirm
+`Publish to GitHub` flow backed by `/api/forge/issues/preview` and
+`/api/forge/issues/create`. The browser sends only a repository-local issue
+source path and adds `confirm: true` only on confirmed submit. Created GitHub
+issue URLs are displayed from the backend response. The UI keeps GitHub
+publication external workflow context only: it requires server-side
+credentials, never stores browser tokens, and does not create Cosheaf human
+review, gate pass, accepted status, or promotion authority.
+
 ## Longplan B2.12.2 Web Workbench acceptance audit - 2026-06-20
 
 Issue #588 adds the final Web Workbench acceptance audit on branch

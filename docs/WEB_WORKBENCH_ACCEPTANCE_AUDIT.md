@@ -75,7 +75,7 @@ overclaimed:
 | Human review decision | Accepted | `docs/SERVER_API.md` documents review decision preview/create and the explicit human-review requirements; `tests/test_web_review_decision_workbench.py` covers confirmation, local actor requirement, missing notes, AI reviewer refusal, and keep-draft behavior. |
 | Accepted/refuted/obsolete promotion | Accepted with policy limits | `docs/SERVER_API.md` documents promotion readiness, preview, and confirm for `accepted`, `refuted`, and `obsolete`; `tests/test_web_promotion_readiness_workbench.py` covers accepted promotion, refuted lifecycle movement, missing review blocking, local actor requirement, typed confirmation, justification, skipped-verifier blocking, and AI actor refusal. |
 | Branch/commit/push/PR | Accepted with local/GitHub limits | `docs/SERVER_API.md` documents forge branch/commit/push/PR endpoints; `tests/test_web_workbench_e2e_happy_path.py` covers branch, commit, PR preview, and mocked PR creation; `tests/test_web_authority_negative_e2e.py` proves direct `main` commit refusal. Live GitHub creation still requires server-side credentials. |
-| GitHub issue/PR linking | Accepted with backend credential limit | `docs/SERVER_API.md` documents backend-only GitHub issue/PR create endpoints and `401 auth_required` when credentials are missing; `docs/WEB_WORKBENCH_RUNBOOK.md` documents the default localhost limitation; forge tests and the E2E fake runner cover the behavior without browser tokens. |
+| GitHub issue/PR linking | Accepted with backend credential limit | `docs/SERVER_API.md` documents backend-only GitHub issue/PR create endpoints and `401 auth_required` when credentials are missing; issue detail pages expose a GitHub issue publish preview/confirm flow for open live-local issues; `docs/WEB_WORKBENCH_RUNBOOK.md` documents the default localhost limitation; forge tests and the E2E fake runner cover the behavior without browser tokens. |
 | Audit log | Accepted | `cosheaf.web_actions.append_web_action_audit` writes append-only redacted JSONL; `tests/test_web_action_audit.py` proves append and redaction; Workbench endpoint tests assert audit entries for preview, refused, and confirmed actions. |
 | Auth/role guard | Accepted as guard stub | `docs/AUTH.md` documents local actor and hosted roles; `tests/test_hosted_auth.py` covers hosted auth required, denied reviewer role, and maintainer promotion using hosted identity. Hosted auth is not production OAuth/GitHub App auth. |
 | Markdown and LaTeX rendering | Accepted | `docs/MARKDOWN_MATH_RENDERING.md` documents the shared Markdown/KaTeX renderer; `website/tests/markdownMathRenderer.test.ts` covers `Triangle graph $K_3$`, literal `K_3`, unsafe HTML, unsafe URLs, KaTeX trust, malformed formulas, and token redaction; `website/tests/markdownSurfaceWiring.test.ts` covers display-surface and editor-hint wiring. |
@@ -167,7 +167,7 @@ Result:
 | `make validate` | passed, checked 20 YAML records |
 | `make gate` | passed |
 | `cd website && npm ci` | passed |
-| `cd website && npm test` | passed, 109 tests in 14 files |
+| `cd website && npm test` | passed, 112 tests in 14 files |
 | `cd website && npm run build` | passed, 31 pages built |
 | `git diff --check` | passed |
 

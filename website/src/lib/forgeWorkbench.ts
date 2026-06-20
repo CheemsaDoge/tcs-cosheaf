@@ -11,6 +11,11 @@ export const FORGE_PR_FLOW_ENDPOINTS = {
   prCreate: "/api/forge/pr/create"
 } as const;
 
+export const FORGE_ISSUE_ENDPOINTS = {
+  preview: "/api/forge/issues/preview",
+  create: "/api/forge/issues/create"
+} as const;
+
 export const FORGE_PR_FLOW_LABELS = {
   title: localized("Submit pull request", "提交拉取请求"),
   workflow: localized("Forge workflow", "Forge 流程"),
@@ -33,6 +38,18 @@ export const FORGE_PR_FLOW_LABELS = {
   manualStage: localized("Stage files outside web", "在网页外暂存文件")
 } as const;
 
+export const FORGE_ISSUE_LABELS = {
+  publish: localized("Publish to GitHub", "发布到 GitHub"),
+  title: localized("Create GitHub issue", "创建 GitHub 议题"),
+  warning: localized(
+    "Publishing creates a real GitHub issue through the backend. It requires server-side credentials and does not create Cosheaf review, gate, or accepted authority.",
+    "发布会通过后端创建真实 GitHub 议题，需要服务端凭据；它不会创建 Cosheaf 审阅、准入检查或已接受权威。"
+  ),
+  preview: localized("Preview publish", "预览发布"),
+  confirm: localized("Confirm GitHub publish", "确认发布到 GitHub"),
+  result: localized("GitHub issue result", "GitHub 议题结果")
+} as const;
+
 export interface BranchInput {
   branch: string;
 }
@@ -50,6 +67,11 @@ export interface PrInput {
   base: string;
   head: string;
   draft?: boolean;
+  confirm?: boolean;
+}
+
+export interface GitHubIssuePublishInput {
+  sourcePath: string;
   confirm?: boolean;
 }
 
@@ -115,6 +137,18 @@ export function buildPrCreatePayload(input: PrInput): {
   };
 }
 
+export function buildGitHubIssuePublishPayload(
+  input: GitHubIssuePublishInput
+): { source_path: string; confirm?: true } {
+  const payload: { source_path: string; confirm?: true } = {
+    source_path: input.sourcePath.trim()
+  };
+  if (input.confirm) {
+    payload.confirm = true;
+  }
+  return payload;
+}
+
 export function extractPrUrl(payload: unknown): string {
   if (!payload || typeof payload !== "object") {
     return "";
@@ -124,5 +158,17 @@ export function extractPrUrl(payload: unknown): string {
     return "";
   }
   const url = (action as Record<string, unknown>).github_pr_url;
+  return typeof url === "string" ? url : "";
+}
+
+export function extractGitHubIssueUrl(payload: unknown): string {
+  if (!payload || typeof payload !== "object") {
+    return "";
+  }
+  const action = (payload as Record<string, unknown>).forge_action;
+  if (!action || typeof action !== "object") {
+    return "";
+  }
+  const url = (action as Record<string, unknown>).github_issue_url;
   return typeof url === "string" ? url : "";
 }
